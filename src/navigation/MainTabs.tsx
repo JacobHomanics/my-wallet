@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
+import { useBottomTabBarStyle } from '@/hooks/useBottomTabBarStyle';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { MainTabBar } from '@/navigation/MainTabBar';
 import type { MainTabParamList } from '@/navigation/types';
@@ -11,6 +12,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export function MainTabs() {
   const isDesktopWeb = useIsDesktopWeb();
+  const tabBarStyle = useBottomTabBarStyle();
 
   return (
     <Tab.Navigator
@@ -20,9 +22,10 @@ export function MainTabs() {
         tabBarPosition: isDesktopWeb ? 'top' : 'bottom',
         tabBarActiveTintColor: '#0f172a',
         tabBarInactiveTintColor: '#94a3b8',
-        tabBarStyle: {
-          backgroundColor: '#ffffff',
-          borderTopColor: '#e2e8f0',
+        tabBarStyle,
+        tabBarLabelStyle: {
+          // Room for descenders; default fontSize 10 clips "g" in Settings on web.
+          lineHeight: 13,
         },
       }}
     >
