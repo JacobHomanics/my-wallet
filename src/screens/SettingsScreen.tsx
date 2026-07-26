@@ -1,18 +1,50 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
-import { useAuth } from '@/hooks/useAuth';
+import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useSignOut } from '@/hooks/useSignOut';
+import { useUserWallets } from '@/hooks/useUserWallets';
+import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 
 export function SettingsScreen() {
-  const { user } = useAuth();
+  const { displayName } = useProfileIdentity();
+  const { ready, wallets } = useUserWallets();
   const { signOut } = useSignOut();
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Settings</Text>
-      <Text style={styles.subtitle}>
-        {user?.id ? `Signed in as ${user.id}` : 'Manage your account.'}
-      </Text>
+      <Text style={styles.subtitle}>Signed in as {displayName}.</Text>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Wallets</Text>
+        {!ready ? (
+          <ActivityIndicator color="#0f172a" style={styles.loader} />
+        ) : wallets.length === 0 ? (
+          <Text style={styles.empty}>Creating your wallets…</Text>
+        ) : (
+          wallets.map((wallet) => (
+            <View
+              key={`${wallet.chain}-${wallet.address}`}
+              style={styles.walletRow}
+            >
+              <Text style={styles.walletLabel}>{wallet.label}</Text>
+              <Text style={styles.walletAddress} selectable>
+                {formatWalletAddress(wallet.address)}
+              </Text>
+              <Text style={styles.walletFull} selectable>
+                {wallet.address}
+              </Text>
+            </View>
+          ))
+        )}
+      </View>
+
       <Pressable
         accessibilityRole="button"
         onPress={() => {
@@ -46,6 +78,50 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: '#475569',
     textAlign: 'center',
+  },
+  section: {
+    width: '100%',
+    maxWidth: 420,
+    marginTop: 28,
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  loader: {
+    marginTop: 8,
+  },
+  empty: {
+    fontSize: 15,
+    color: '#94a3b8',
+  },
+  walletRow: {
+    backgroundColor: '#ffffff',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 4,
+  },
+  walletLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  walletAddress: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0f172a',
+    fontVariant: ['tabular-nums'],
+  },
+  walletFull: {
+    fontSize: 12,
+    color: '#94a3b8',
   },
   button: {
     marginTop: 24,

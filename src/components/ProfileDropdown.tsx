@@ -8,7 +8,6 @@ import {
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/hooks/useAuth';
-import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import {
   getAvatarColor,
@@ -32,9 +31,7 @@ export function ProfileDropdown({
   onOpenSettings,
 }: ProfileDropdownProps) {
   const { logout } = useAuth();
-  const { displayName, copyValue, copyLabel, avatarSeed } =
-    useProfileIdentity();
-  const { copyToClipboard, isCopiedToClipboard } = useCopyToClipboard();
+  const { displayName, avatarSeed } = useProfileIdentity();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<View | null>(null);
 
@@ -82,32 +79,6 @@ export function ProfileDropdown({
 
       {isOpen ? (
         <View style={styles.menu}>
-          {copyValue ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                void copyToClipboard(copyValue);
-              }}
-              style={(pressState) => [
-                styles.menuItem,
-                pressState.pressed && styles.menuItemPressed,
-              ]}
-            >
-              <Ionicons
-                name={
-                  isCopiedToClipboard
-                    ? 'checkmark-circle-outline'
-                    : 'copy-outline'
-                }
-                size={18}
-                color="#0f172a"
-              />
-              <Text style={styles.menuItemLabel}>
-                {isCopiedToClipboard ? 'Copied!' : copyLabel}
-              </Text>
-            </Pressable>
-          ) : null}
-
           {onOpenSettings ? (
             <Pressable
               accessibilityRole="button"
@@ -125,7 +96,7 @@ export function ProfileDropdown({
             </Pressable>
           ) : null}
 
-          <View style={styles.separator} />
+          {onOpenSettings ? <View style={styles.separator} /> : null}
 
           <Pressable
             accessibilityRole="button"
@@ -140,7 +111,7 @@ export function ProfileDropdown({
           >
             <Ionicons name="log-out-outline" size={18} color="#b91c1c" />
             <Text style={[styles.menuItemLabel, styles.menuItemDanger]}>
-              Disconnect
+              Log out
             </Text>
           </Pressable>
         </View>

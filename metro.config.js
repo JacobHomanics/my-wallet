@@ -14,6 +14,7 @@ config.resolver.extraNodeModules = {
 };
 const PRIVY_CJS_ENTRY = require.resolve("@privy-io/react-auth");
 const PRIVY_CJS_UI_ENTRY = require.resolve("@privy-io/react-auth/ui");
+const PRIVY_CJS_SOLANA_ENTRY = require.resolve("@privy-io/react-auth/solana");
 
 const resolveRequestWithPackageExports = (context, moduleName, platform) => {
   // Note: do not shim `react-native` with Object.assign on RN 0.86+ —
@@ -25,6 +26,10 @@ const resolveRequestWithPackageExports = (context, moduleName, platform) => {
 
   if (platform === "web" && moduleName === "@privy-io/react-auth/ui") {
     return context.resolveRequest(context, PRIVY_CJS_UI_ENTRY, platform);
+  }
+
+  if (platform === "web" && moduleName === "@privy-io/react-auth/solana") {
+    return context.resolveRequest(context, PRIVY_CJS_SOLANA_ENTRY, platform);
   }
 
   if (moduleName === "isows") {

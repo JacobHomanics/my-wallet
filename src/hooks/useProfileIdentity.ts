@@ -29,8 +29,8 @@ function findLinkedAccount(user: UserLike, type: string) {
 }
 
 /**
- * Resolves a short label + copyable identity from the Privy user
- * (wallet address, email, phone, or user id — Scaffold-ETH–style pill).
+ * Resolves a short display label from the Privy user.
+ * Prefer email/phone over wallet address for the profile pill.
  */
 export function useProfileIdentity() {
   const { user } = useAuth();
@@ -39,21 +39,7 @@ export function useProfileIdentity() {
   if (!typedUser) {
     return {
       displayName: 'Account',
-      copyValue: '',
-      copyLabel: 'Copy',
       avatarSeed: 'guest',
-    };
-  }
-
-  const walletAddress =
-    typedUser.wallet?.address ??
-    findLinkedAccount(typedUser, 'wallet')?.address;
-  if (walletAddress) {
-    return {
-      displayName: truncateMiddle(walletAddress),
-      copyValue: walletAddress,
-      copyLabel: 'Copy address',
-      avatarSeed: walletAddress,
     };
   }
 
@@ -62,8 +48,6 @@ export function useProfileIdentity() {
   if (email) {
     return {
       displayName: email,
-      copyValue: email,
-      copyLabel: 'Copy email',
       avatarSeed: email,
     };
   }
@@ -75,16 +59,22 @@ export function useProfileIdentity() {
   if (phone) {
     return {
       displayName: phone,
-      copyValue: phone,
-      copyLabel: 'Copy phone',
       avatarSeed: phone,
+    };
+  }
+
+  const walletAddress =
+    typedUser.wallet?.address ??
+    findLinkedAccount(typedUser, 'wallet')?.address;
+  if (walletAddress) {
+    return {
+      displayName: truncateMiddle(walletAddress),
+      avatarSeed: walletAddress,
     };
   }
 
   return {
     displayName: truncateMiddle(typedUser.id, 8, 4),
-    copyValue: typedUser.id,
-    copyLabel: 'Copy user ID',
     avatarSeed: typedUser.id,
   };
 }
