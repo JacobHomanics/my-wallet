@@ -1,4 +1,11 @@
+import type { NavigatorScreenParams } from '@react-navigation/native';
+
 import type { LoginMethod } from '@/lib/privy/context/AuthFlowContext.shared';
+
+export type MainTabParamList = {
+  home: undefined;
+  settings: undefined;
+};
 
 export type RootStackParamList = {
   splash: undefined;
@@ -8,7 +15,7 @@ export type RootStackParamList = {
     method: LoginMethod;
     value: string;
   };
-  home: undefined;
+  home: NavigatorScreenParams<MainTabParamList> | undefined;
 };
 
 export const ROOT_STACK_INITIAL_ROUTE: keyof RootStackParamList = 'splash';

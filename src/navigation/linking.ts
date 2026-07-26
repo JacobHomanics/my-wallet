@@ -56,7 +56,13 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
       welcome: 'welcome',
       login: 'login',
       loginVerify: 'login/verify',
-      home: 'home',
+      home: {
+        path: 'home',
+        screens: {
+          home: '',
+          settings: 'settings',
+        },
+      },
     },
   },
 };

@@ -1,14 +1,9 @@
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/hooks/useAuth';
-import type { RootStackParamList } from '@/navigation/types';
 
 export function HomeScreen() {
-  const { user, logout } = useAuth();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { user } = useAuth();
 
   return (
     <View style={styles.container}>
@@ -16,17 +11,6 @@ export function HomeScreen() {
       <Text style={styles.subtitle}>
         Signed in{user?.id ? ` as ${user.id}` : ''}.
       </Text>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => {
-          void logout().then(() => {
-            navigation.replace('welcome');
-          });
-        }}
-        style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
-      >
-        <Text style={styles.buttonText}>Log out</Text>
-      </Pressable>
     </View>
   );
 }
@@ -51,20 +35,5 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: '#475569',
     textAlign: 'center',
-  },
-  button: {
-    marginTop: 24,
-    backgroundColor: '#0f172a',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 10,
-  },
-  buttonPressed: {
-    opacity: 0.85,
-  },
-  buttonText: {
-    color: '#f8fafc',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
