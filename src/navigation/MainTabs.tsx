@@ -19,7 +19,7 @@ export function MainTabs() {
       tabBar={(props) => <MainTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        animation: 'shift',
+        animation: isDesktopWeb ? 'none' : 'shift',
         transitionSpec: {
           animation: 'timing',
           config: {
