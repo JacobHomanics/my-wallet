@@ -2,28 +2,22 @@ import {
   useEmbeddedEthereumWallet,
   useEmbeddedSolanaWallet,
 } from '@privy-io/expo';
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 
 import { isEmbeddedWalletAlreadyExistsError } from '@/lib/privy/wallets/hasPrivyEmbeddedWallet';
+import { runExclusiveEnsure } from '@/lib/privy/wallets/runExclusiveEnsure';
 
 /**
  * Manually create embedded EVM then Solana wallets after whitelabel OTP.
- * Does not gate on hook `user` (can be stale immediately after loginWithCode).
+ * Shared process lock prevents duplicate creates from concurrent callers.
  * @see https://docs.privy.io/wallets/wallets/create/create-a-wallet
  */
 export function useCreateEmbeddedWallets() {
   const { create: createEthereumWallet } = useEmbeddedEthereumWallet();
   const solanaWallet = useEmbeddedSolanaWallet();
-  const inFlightRef = useRef(false);
 
   const ensureEmbeddedWallets = useCallback(async () => {
-    if (inFlightRef.current) {
-      return;
-    }
-
-    inFlightRef.current = true;
-
-    try {
+    await runExclusiveEnsure(async () => {
       // Always create EVM before Solana.
       try {
         await createEthereumWallet();
@@ -45,9 +39,7 @@ export function useCreateEmbeddedWallets() {
           }
         }
       }
-    } finally {
-      inFlightRef.current = false;
-    }
+    });
   }, [createEthereumWallet, solanaWallet]);
 
   return { ensureEmbeddedWallets };

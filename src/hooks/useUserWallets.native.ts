@@ -13,7 +13,7 @@ import { getPrivyEmbeddedWalletAddress } from '@/lib/privy/wallets/hasPrivyEmbed
 
 /**
  * Embedded EVM + Solana wallets for the authenticated user (native).
- * Prefers connected wallets; falls back to linked Privy accounts.
+ * One address per chain (primary embedded / first linked).
  */
 export function useUserWallets(): UserWalletsResult {
   const { isReady, user } = usePrivy();
@@ -25,43 +25,22 @@ export function useUserWallets(): UserWalletsResult {
   }
 
   const wallets: UserWallet[] = [];
-  const seen = new Set<string>();
 
-  const pushWallet = (
-    chain: UserWallet['chain'],
-    label: string,
-    address: string,
-  ) => {
-    const key = `${chain}:${address}`;
-    if (seen.has(key)) {
-      return;
-    }
-    seen.add(key);
-    wallets.push({ chain, label, address });
-  };
-
-  for (const ethereum of ethereumWallets) {
-    if (ethereum.address) {
-      pushWallet('ethereum', 'Ethereum', ethereum.address);
-    }
+  const ethereum =
+    ethereumWallets[0]?.address ??
+    getPrivyEmbeddedWalletAddress(user, 'ethereum');
+  if (ethereum) {
+    wallets.push({ chain: 'ethereum', label: 'Ethereum', address: ethereum });
   }
 
-  const linkedEthereum = getPrivyEmbeddedWalletAddress(user, 'ethereum');
-  if (linkedEthereum) {
-    pushWallet('ethereum', 'Ethereum', linkedEthereum);
-  }
-
-  if (isConnected(solanaWallet)) {
-    for (const solana of solanaWallet.wallets) {
-      if (solana.address) {
-        pushWallet('solana', 'Solana', solana.address);
-      }
-    }
-  }
-
-  const linkedSolana = getPrivyEmbeddedWalletAddress(user, 'solana');
-  if (linkedSolana) {
-    pushWallet('solana', 'Solana', linkedSolana);
+  const solanaConnected =
+    isConnected(solanaWallet) && solanaWallet.wallets[0]?.address
+      ? solanaWallet.wallets[0].address
+      : undefined;
+  const solana =
+    solanaConnected ?? getPrivyEmbeddedWalletAddress(user, 'solana');
+  if (solana) {
+    wallets.push({ chain: 'solana', label: 'Solana', address: solana });
   }
 
   return { ready: true, wallets };

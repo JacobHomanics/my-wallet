@@ -1,9 +1,9 @@
 import type { PrivyClientConfig } from '@privy-io/react-auth';
 
 /**
- * Ethereum + Solana embedded wallet config.
- * createOnLogin is kept as a fallback, but whitelabel OTP (`loginWithCode`)
- * does not trigger it — see `useCreateEmbeddedWallets`.
+ * Embedded wallets are created manually after whitelabel OTP
+ * (`useCreateEmbeddedWallets`). Keep createOnLogin off so it cannot race
+ * and mint a second pair of wallets.
  * @see https://docs.privy.io/basics/react/advanced/automatic-wallet-creation
  */
 export const privyConfig: PrivyClientConfig = {
@@ -12,10 +12,10 @@ export const privyConfig: PrivyClientConfig = {
   },
   embeddedWallets: {
     ethereum: {
-      createOnLogin: 'users-without-wallets',
+      createOnLogin: 'off',
     },
     solana: {
-      createOnLogin: 'users-without-wallets',
+      createOnLogin: 'off',
     },
   },
 };

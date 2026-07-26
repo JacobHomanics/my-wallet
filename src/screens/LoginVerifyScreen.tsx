@@ -12,7 +12,6 @@ import {
   View,
 } from 'react-native';
 
-import { useCreateEmbeddedWallets } from '@/hooks/useCreateEmbeddedWallets';
 import { useVerifyLoginCode } from '@/hooks/useVerifyLoginCode';
 import type { RootStackParamList } from '@/navigation/types';
 
@@ -21,7 +20,6 @@ export function LoginVerifyScreen() {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'loginVerify'>>();
   const { verify } = useVerifyLoginCode();
-  const { ensureEmbeddedWallets } = useCreateEmbeddedWallets();
   const [code, setCode] = useState('');
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -40,12 +38,8 @@ export function LoginVerifyScreen() {
 
     try {
       await verify(method, value, code);
-      // Whitelabel OTP does not trigger createOnLogin — create wallets here.
-      try {
-        await ensureEmbeddedWallets();
-      } catch (walletError) {
-        console.error('Failed to create embedded wallets after login', walletError);
-      }
+      // Wallet creation runs in EnsureEmbeddedWallets after auth settles
+      // (avoids racing a second create call from this screen).
       navigation.reset({
         index: 0,
         routes: [{ name: 'main' }],

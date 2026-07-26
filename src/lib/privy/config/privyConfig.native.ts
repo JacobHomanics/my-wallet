@@ -1,18 +1,18 @@
 import type { PrivyConfig } from '@privy-io/expo';
 
 /**
- * Ethereum + Solana embedded wallet config.
- * createOnLogin is kept as a fallback; whitelabel OTP still uses
- * `useCreateEmbeddedWallets` for reliable creation.
+ * Embedded wallets are created manually after whitelabel OTP
+ * (`useCreateEmbeddedWallets`). Keep createOnLogin off so it cannot race
+ * and mint a second pair of wallets.
  * @see https://docs.privy.io/basics/react-native/advanced/automatic-wallet-creation
  */
 export const privyConfig = {
   embedded: {
     ethereum: {
-      createOnLogin: 'users-without-wallets' as const,
+      createOnLogin: 'off' as const,
     },
     solana: {
-      createOnLogin: 'users-without-wallets' as const,
+      createOnLogin: 'off' as const,
     },
   },
 } as const satisfies PrivyConfig;
