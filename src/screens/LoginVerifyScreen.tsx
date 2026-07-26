@@ -11,13 +11,18 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BackButton } from '@/components/BackButton';
+import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useVerifyLoginCode } from '@/hooks/useVerifyLoginCode';
 import type { RootStackParamList } from '@/navigation/types';
 
 export function LoginVerifyScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
+  const isDesktopWeb = useIsDesktopWeb();
   const route = useRoute<RouteProp<RootStackParamList, 'loginVerify'>>();
   const { verify } = useVerifyLoginCode();
   const [code, setCode] = useState('');
@@ -54,55 +59,53 @@ export function LoginVerifyScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Enter code</Text>
-      <Text style={styles.subtitle}>
-        We sent a code to {value}.
-      </Text>
+      {!isDesktopWeb ? (
+        <View style={[styles.header, { paddingTop: insets.top + 4 }]}>
+          <BackButton accessibilityLabel="Back to login" />
+        </View>
+      ) : null}
 
-      <TextInput
-        autoCapitalize="none"
-        autoCorrect={false}
-        autoComplete="one-time-code"
-        keyboardType="number-pad"
-        placeholder="123456"
-        placeholderTextColor="#94a3b8"
-        style={styles.input}
-        value={code}
-        onChangeText={setCode}
-        editable={!isPending}
-        maxLength={8}
-      />
+      <View style={styles.content}>
+        <Text style={styles.title}>Enter code</Text>
+        <Text style={styles.subtitle}>
+          We sent a code to {value}.
+        </Text>
 
-      {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+        <TextInput
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="one-time-code"
+          keyboardType="number-pad"
+          placeholder="123456"
+          placeholderTextColor="#94a3b8"
+          style={styles.input}
+          value={code}
+          onChangeText={setCode}
+          editable={!isPending}
+          maxLength={8}
+        />
 
-      <Pressable
-        accessibilityRole="button"
-        disabled={!isValid || isPending}
-        onPress={() => {
-          void handleVerify();
-        }}
-        style={({ pressed }) => [
-          styles.button,
-          (!isValid || isPending) && styles.buttonDisabled,
-          pressed && isValid && !isPending && styles.buttonPressed,
-        ]}
-      >
-        {isPending ? (
-          <ActivityIndicator color="#f8fafc" />
-        ) : (
-          <Text style={styles.buttonText}>Verify</Text>
-        )}
-      </Pressable>
+        {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
 
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => {
-          navigation.goBack();
-        }}
-        style={styles.backButton}
-      >
-        <Text style={styles.backButtonText}>Back</Text>
-      </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          disabled={!isValid || isPending}
+          onPress={() => {
+            void handleVerify();
+          }}
+          style={({ pressed }) => [
+            styles.button,
+            (!isValid || isPending) && styles.buttonDisabled,
+            pressed && isValid && !isPending && styles.buttonPressed,
+          ]}
+        >
+          {isPending ? (
+            <ActivityIndicator color="#f8fafc" />
+          ) : (
+            <Text style={styles.buttonText}>Verify</Text>
+          )}
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -110,10 +113,18 @@ export function LoginVerifyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  header: {
+    paddingHorizontal: 8,
+    alignItems: 'flex-start',
+  },
+  content: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f8fafc',
     paddingHorizontal: 24,
+    paddingBottom: 48,
   },
   title: {
     fontSize: 28,
@@ -168,14 +179,5 @@ const styles = StyleSheet.create({
     color: '#f8fafc',
     fontSize: 16,
     fontWeight: '600',
-  },
-  backButton: {
-    marginTop: 16,
-    padding: 8,
-  },
-  backButtonText: {
-    color: '#475569',
-    fontSize: 15,
-    fontWeight: '500',
   },
 });
