@@ -3,6 +3,7 @@ import {
   createStackNavigator,
 } from '@react-navigation/stack';
 
+import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import {
   ROOT_STACK_INITIAL_ROUTE,
   rootStackScreens,
@@ -12,13 +13,17 @@ import type { RootStackParamList } from '@/navigation/types';
 const WebStack = createStackNavigator<RootStackParamList>();
 
 export function RootStack() {
+  const isDesktopWeb = useIsDesktopWeb();
+
   return (
     <WebStack.Navigator
       initialRouteName={ROOT_STACK_INITIAL_ROUTE}
       screenOptions={{
         headerShown: false,
-        animation: 'slide_from_right',
-        cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        animationEnabled: !isDesktopWeb,
+        cardStyleInterpolator: isDesktopWeb
+          ? CardStyleInterpolators.forNoAnimation
+          : CardStyleInterpolators.forHorizontalIOS,
       }}
     >
       <WebStack.Screen name="splash" component={rootStackScreens.splash} />
