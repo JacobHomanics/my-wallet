@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import type { RootStackParamList } from '@/navigation/types';
 
-const SPLASH_MIN_DURATION_MS = 1000;
+const SPLASH_MIN_DURATION_MS = 3000;
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // Native splash may already be hidden (e.g. web / late call).

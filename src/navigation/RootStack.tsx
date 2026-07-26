@@ -21,6 +21,10 @@ export function RootStack() {
       <NativeStack.Screen name="splash" component={rootStackScreens.splash} />
       <NativeStack.Screen name="welcome" component={rootStackScreens.welcome} />
       <NativeStack.Screen name="login" component={rootStackScreens.login} />
+      <NativeStack.Screen
+        name="loginVerify"
+        component={rootStackScreens.loginVerify}
+      />
       <NativeStack.Screen name="home" component={rootStackScreens.home} />
     </NativeStack.Navigator>
   );

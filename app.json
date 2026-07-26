@@ -9,10 +9,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.disgo.my-wallet"
+      "bundleIdentifier": "com.jacobhomanics.mywallet"
     },
     "android": {
-      "package": "com.disgo.mywallet",
+      "package": "com.jacobhomanics.mywallet",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

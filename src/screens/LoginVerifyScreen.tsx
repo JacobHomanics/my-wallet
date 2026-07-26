@@ -1,4 +1,5 @@
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import {
@@ -11,24 +12,22 @@ import {
   View,
 } from 'react-native';
 
-import { useSendLoginCode } from '@/hooks/useSendLoginCode';
-import type { LoginMethod } from '@/lib/privy/context/AuthFlowContext.shared';
-import { isValidEmail, isValidPhoneNumber } from '@/lib/validation';
+import { useVerifyLoginCode } from '@/hooks/useVerifyLoginCode';
 import type { RootStackParamList } from '@/navigation/types';
 
-export function LoginScreen() {
+export function LoginVerifyScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { send } = useSendLoginCode();
-  const [method, setMethod] = useState<LoginMethod>('email');
-  const [value, setValue] = useState('');
+  const route = useRoute<RouteProp<RootStackParamList, 'loginVerify'>>();
+  const { verify } = useVerifyLoginCode();
+  const [code, setCode] = useState('');
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const isValid =
-    method === 'email' ? isValidEmail(value) : isValidPhoneNumber(value);
+  const { method, value } = route.params;
+  const isValid = code.trim().length >= 4;
 
-  const handleContinue = async () => {
+  const handleVerify = async () => {
     if (!isValid || isPending) {
       return;
     }
@@ -38,15 +37,14 @@ export function LoginScreen() {
     Keyboard.dismiss();
 
     try {
-      await send(method, value);
-      navigation.navigate('loginVerify', { method, value: value.trim() });
+      await verify(method, value, code);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'home' }],
+      });
     } catch (error) {
       console.error(error);
-      setErrorMessage(
-        method === 'email'
-          ? 'Could not send an email code. Please try again.'
-          : 'Could not send an SMS code. Please try again.',
-      );
+      setErrorMessage('Invalid code. Please try again.');
     } finally {
       setIsPending(false);
     }
@@ -54,43 +52,23 @@ export function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Log in</Text>
+      <Text style={styles.title}>Enter code</Text>
       <Text style={styles.subtitle}>
-        Continue with email or phone number.
+        We sent a code to {value}.
       </Text>
-
-      <View style={styles.methodRow}>
-        <MethodChip
-          label="Email"
-          selected={method === 'email'}
-          onPress={() => {
-            setMethod('email');
-            setValue('');
-            setErrorMessage(null);
-          }}
-        />
-        <MethodChip
-          label="Phone"
-          selected={method === 'phone'}
-          onPress={() => {
-            setMethod('phone');
-            setValue('');
-            setErrorMessage(null);
-          }}
-        />
-      </View>
 
       <TextInput
         autoCapitalize="none"
         autoCorrect={false}
-        autoComplete={method === 'email' ? 'email' : 'tel'}
-        keyboardType={method === 'email' ? 'email-address' : 'phone-pad'}
-        placeholder={method === 'email' ? 'you@example.com' : '+1 (555) 555-5555'}
+        autoComplete="one-time-code"
+        keyboardType="number-pad"
+        placeholder="123456"
         placeholderTextColor="#94a3b8"
         style={styles.input}
-        value={value}
-        onChangeText={setValue}
+        value={code}
+        onChangeText={setCode}
         editable={!isPending}
+        maxLength={8}
       />
 
       {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
@@ -99,7 +77,7 @@ export function LoginScreen() {
         accessibilityRole="button"
         disabled={!isValid || isPending}
         onPress={() => {
-          void handleContinue();
+          void handleVerify();
         }}
         style={({ pressed }) => [
           styles.button,
@@ -110,32 +88,20 @@ export function LoginScreen() {
         {isPending ? (
           <ActivityIndicator color="#f8fafc" />
         ) : (
-          <Text style={styles.buttonText}>Continue</Text>
+          <Text style={styles.buttonText}>Verify</Text>
         )}
       </Pressable>
-    </View>
-  );
-}
 
-function MethodChip({
-  label,
-  selected,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      style={[styles.chip, selected && styles.chipSelected]}
-    >
-      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-        {label}
-      </Text>
-    </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => {
+          navigation.goBack();
+        }}
+        style={styles.backButton}
+      >
+        <Text style={styles.backButtonText}>Back</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -161,31 +127,6 @@ const styles = StyleSheet.create({
     color: '#475569',
     textAlign: 'center',
   },
-  methodRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    backgroundColor: '#fff',
-  },
-  chipSelected: {
-    backgroundColor: '#0f172a',
-    borderColor: '#0f172a',
-  },
-  chipText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#334155',
-  },
-  chipTextSelected: {
-    color: '#f8fafc',
-  },
   input: {
     width: '100%',
     maxWidth: 360,
@@ -197,6 +138,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#0f172a',
     backgroundColor: '#fff',
+    textAlign: 'center',
+    letterSpacing: 4,
   },
   error: {
     marginTop: 12,
@@ -223,5 +166,14 @@ const styles = StyleSheet.create({
     color: '#f8fafc',
     fontSize: 16,
     fontWeight: '600',
+  },
+  backButton: {
+    marginTop: 16,
+    padding: 8,
+  },
+  backButtonText: {
+    color: '#475569',
+    fontSize: 15,
+    fontWeight: '500',
   },
 });

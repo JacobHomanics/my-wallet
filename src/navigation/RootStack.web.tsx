@@ -24,6 +24,10 @@ export function RootStack() {
       <WebStack.Screen name="splash" component={rootStackScreens.splash} />
       <WebStack.Screen name="welcome" component={rootStackScreens.welcome} />
       <WebStack.Screen name="login" component={rootStackScreens.login} />
+      <WebStack.Screen
+        name="loginVerify"
+        component={rootStackScreens.loginVerify}
+      />
       <WebStack.Screen name="home" component={rootStackScreens.home} />
     </WebStack.Navigator>
   );

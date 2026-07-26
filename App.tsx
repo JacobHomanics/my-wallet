@@ -4,6 +4,7 @@ import '@ethersproject/shims';
 import { Buffer } from 'buffer';
 import * as WebBrowser from 'expo-web-browser';
 
+import { AuthFlowProvider } from '@/lib/privy/context/AuthFlowContext';
 import { RootNavigator } from '@/navigation/RootNavigator';
 import { PrivyProvider } from '@/providers/PrivyProvider';
 
@@ -15,7 +16,9 @@ WebBrowser.maybeCompleteAuthSession();
 export default function App() {
   return (
     <PrivyProvider>
-      <RootNavigator />
+      <AuthFlowProvider>
+        <RootNavigator />
+      </AuthFlowProvider>
     </PrivyProvider>
   );
 }

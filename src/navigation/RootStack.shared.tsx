@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 
 import { HomeScreen } from '@/screens/HomeScreen';
 import { LoginScreen } from '@/screens/LoginScreen';
+import { LoginVerifyScreen } from '@/screens/LoginVerifyScreen';
 import { SplashScreen } from '@/screens/SplashScreen';
 import { WelcomeScreen } from '@/screens/WelcomeScreen';
 import {
@@ -15,5 +16,6 @@ export const rootStackScreens = {
   splash: SplashScreen,
   welcome: WelcomeScreen,
   login: LoginScreen,
+  loginVerify: LoginVerifyScreen,
   home: HomeScreen,
 } as const satisfies Record<keyof RootStackParamList, ComponentType<object>>;
