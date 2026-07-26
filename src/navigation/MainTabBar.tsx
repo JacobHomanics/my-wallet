@@ -5,6 +5,7 @@ import {
 } from '@react-navigation/bottom-tabs';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ProfileDropdown } from '@/components/ProfileDropdown';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 
 const TAB_ICONS = {
@@ -81,6 +82,13 @@ function WebTopNav({ state, descriptors, navigation }: BottomTabBarProps) {
           );
         })}
       </View>
+
+      <ProfileDropdown
+        navigation={navigation as never}
+        onOpenSettings={() => {
+          navigation.navigate('settings');
+        }}
+      />
     </View>
   );
 }
@@ -108,6 +116,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#e2e8f0',
     boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+    zIndex: 10,
   },
   brandBlock: {
     flexDirection: 'row',
@@ -132,8 +141,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
+    flex: 1,
     gap: 8,
-    marginRight: 'auto',
     marginLeft: 16,
   },
   link: {
