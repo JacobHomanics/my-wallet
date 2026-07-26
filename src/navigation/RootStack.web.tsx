@@ -1,7 +1,4 @@
-import {
-  CardStyleInterpolators,
-  createStackNavigator,
-} from '@react-navigation/stack';
+import { createStackNavigator } from '@react-navigation/stack';
 
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import {
@@ -20,10 +17,7 @@ export function RootStack() {
       initialRouteName={ROOT_STACK_INITIAL_ROUTE}
       screenOptions={{
         headerShown: false,
-        animationEnabled: !isDesktopWeb,
-        cardStyleInterpolator: isDesktopWeb
-          ? CardStyleInterpolators.forNoAnimation
-          : CardStyleInterpolators.forHorizontalIOS,
+        animation: isDesktopWeb ? 'none' : 'slide_from_right',
       }}
     >
       <WebStack.Screen name="splash" component={rootStackScreens.splash} />
