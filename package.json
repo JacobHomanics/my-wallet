@@ -1,0 +1,35 @@
+{
+  "name": "my-wallet",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "packageManager": "pnpm@10.33.2",
+  "dependencies": {
+    "@expo/metro-runtime": "~57.0.7",
+    "expo": "~57.0.8",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.0",
+    "react-native-web": "^0.21.2"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3",
+    "@expo/webpack-config": "^19.0.1",
+    "@types/react": "~19.2.14",
+    "@types/web-push": "^3.6.4",
+    "eslint": "^9.39.4",
+    "husky": "^9.1.7"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "build:web": "expo export",
+    "lint": "eslint . --max-warnings 0 && tsc --noEmit --incremental",
+    "clear-all-temp": "rm -rf .expo ios android node_modules",
+    "prepare": "husky",
+    "check-types": "tsc --noEmit --incremental"
+  },
+  "private": true
+}

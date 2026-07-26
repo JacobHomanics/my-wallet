@@ -1,0 +1,41 @@
+name: Lint
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ci:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node: [lts/*]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      # setup-node cache: pnpm shells out to pnpm; install it first (reads packageManager from package.json).
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup node env
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+      
+      - name: Run lint
+        run: pnpm lint
+
+      - name: Check typings
+        run: pnpm check-types
