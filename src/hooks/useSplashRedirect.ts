@@ -47,6 +47,6 @@ export function useSplashRedirect() {
       return;
     }
 
-    navigation.replace(isAuthenticated ? 'home' : 'welcome');
+    navigation.replace(isAuthenticated ? 'main' : 'welcome');
   }, [canLeaveSplash, isAuthenticated, navigation, route.name]);
 }

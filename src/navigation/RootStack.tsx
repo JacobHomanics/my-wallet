@@ -25,7 +25,7 @@ export function RootStack() {
         name="loginVerify"
         component={rootStackScreens.loginVerify}
       />
-      <NativeStack.Screen name="home" component={rootStackScreens.home} />
+      <NativeStack.Screen name="main" component={rootStackScreens.main} />
     </NativeStack.Navigator>
   );
 }

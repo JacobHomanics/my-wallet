@@ -15,7 +15,7 @@ export type RootStackParamList = {
     method: LoginMethod;
     value: string;
   };
-  home: NavigatorScreenParams<MainTabParamList> | undefined;
+  main: NavigatorScreenParams<MainTabParamList> | undefined;
 };
 
 export const ROOT_STACK_INITIAL_ROUTE: keyof RootStackParamList = 'splash';

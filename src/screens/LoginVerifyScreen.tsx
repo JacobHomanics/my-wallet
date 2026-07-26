@@ -40,7 +40,7 @@ export function LoginVerifyScreen() {
       await verify(method, value, code);
       navigation.reset({
         index: 0,
-        routes: [{ name: 'home' }],
+        routes: [{ name: 'main' }],
       });
     } catch (error) {
       console.error(error);

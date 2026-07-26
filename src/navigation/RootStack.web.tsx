@@ -28,7 +28,7 @@ export function RootStack() {
         name="loginVerify"
         component={rootStackScreens.loginVerify}
       />
-      <WebStack.Screen name="home" component={rootStackScreens.home} />
+      <WebStack.Screen name="main" component={rootStackScreens.main} />
     </WebStack.Navigator>
   );
 }

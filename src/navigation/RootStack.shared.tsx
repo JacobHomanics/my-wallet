@@ -17,5 +17,5 @@ export const rootStackScreens = {
   welcome: WelcomeScreen,
   login: LoginScreen,
   loginVerify: LoginVerifyScreen,
-  home: MainTabs,
+  main: MainTabs,
 } as const satisfies Record<keyof RootStackParamList, ComponentType<object>>;

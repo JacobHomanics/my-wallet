@@ -49,14 +49,18 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
   config: {
     screens: {
       splash: {
-        path: '',
-        exact: true,
-        alias: ['splash'],
+        path: 'splash',
+        alias: [
+          {
+            path: '',
+            exact: true,
+          },
+        ],
       },
       welcome: 'welcome',
       login: 'login',
       loginVerify: 'login/verify',
-      home: {
+      main: {
         path: 'home',
         screens: {
           home: '',
