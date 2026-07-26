@@ -60,10 +60,11 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
       welcome: 'welcome',
       login: 'login',
       loginVerify: 'login/verify',
+      // Absolute tab paths so `main` does not claim '' (conflicts with splash).
       main: {
         screens: {
-          home: 'home',
-          settings: 'settings',
+          home: '/home',
+          settings: '/settings',
         },
       },
     },

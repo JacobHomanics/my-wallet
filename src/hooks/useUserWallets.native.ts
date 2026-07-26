@@ -9,9 +9,11 @@ import {
   type UserWallet,
   type UserWalletsResult,
 } from '@/hooks/useUserWallets.shared';
+import { getPrivyEmbeddedWalletAddress } from '@/lib/privy/wallets/hasPrivyEmbeddedWallet';
 
 /**
  * Embedded EVM + Solana wallets for the authenticated user (native).
+ * Prefers connected wallets; falls back to linked Privy embedded accounts.
  */
 export function useUserWallets(): UserWalletsResult {
   const { isReady, user } = usePrivy();
@@ -23,17 +25,33 @@ export function useUserWallets(): UserWalletsResult {
   }
 
   const wallets: UserWallet[] = [];
+  const seen = new Set<string>();
+
+  const pushWallet = (
+    chain: UserWallet['chain'],
+    label: string,
+    address: string,
+  ) => {
+    const key = `${chain}:${address}`;
+    if (seen.has(key)) {
+      return;
+    }
+
+    seen.add(key);
+    wallets.push({ chain, label, address });
+  };
 
   for (const ethereum of ethereumWallets) {
     if (!ethereum.address) {
       continue;
     }
 
-    wallets.push({
-      chain: 'ethereum',
-      label: 'Ethereum',
-      address: ethereum.address,
-    });
+    pushWallet('ethereum', 'Ethereum', ethereum.address);
+  }
+
+  const linkedEthereum = getPrivyEmbeddedWalletAddress(user, 'ethereum');
+  if (linkedEthereum) {
+    pushWallet('ethereum', 'Ethereum', linkedEthereum);
   }
 
   if (isConnected(solanaWallet)) {
@@ -42,12 +60,13 @@ export function useUserWallets(): UserWalletsResult {
         continue;
       }
 
-      wallets.push({
-        chain: 'solana',
-        label: 'Solana',
-        address: solana.address,
-      });
+      pushWallet('solana', 'Solana', solana.address);
     }
+  }
+
+  const linkedSolana = getPrivyEmbeddedWalletAddress(user, 'solana');
+  if (linkedSolana) {
+    pushWallet('solana', 'Solana', linkedSolana);
   }
 
   return { ready: true, wallets };

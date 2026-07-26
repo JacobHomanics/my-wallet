@@ -10,7 +10,10 @@ import {
 } from '@privy-io/react-auth/solana';
 import { useEffect, useRef } from 'react';
 
-import { hasPrivyEmbeddedWallet } from '@/lib/privy/wallets/hasPrivyEmbeddedWallet';
+import {
+  hasPrivyEmbeddedWallet,
+  isEmbeddedWalletAlreadyExistsError,
+} from '@/lib/privy/wallets/hasPrivyEmbeddedWallet';
 
 /**
  * After auth, ensure the user has embedded EVM then Solana wallets.
@@ -28,14 +31,7 @@ export function useEnsureEmbeddedWallets() {
   const inFlightRef = useRef(false);
 
   useEffect(() => {
-    if (
-      !ready ||
-      !authenticated ||
-      !user ||
-      !ethereumReady ||
-      !solanaReady ||
-      inFlightRef.current
-    ) {
+    if (!ready || !authenticated || !user || inFlightRef.current) {
       return;
     }
 
@@ -49,17 +45,42 @@ export function useEnsureEmbeddedWallets() {
       return;
     }
 
+    // Do not block EVM creation on Solana readiness (mobile web often lags).
+    if (!hasEthereum && !ethereumReady) {
+      return;
+    }
+
+    if (hasEthereum && !hasSolana && !solanaReady) {
+      return;
+    }
+
     inFlightRef.current = true;
 
     void (async () => {
       try {
         // Always create EVM before Solana.
         if (!hasEthereum) {
-          await createEthereumWallet();
+          try {
+            await createEthereumWallet();
+          } catch (error) {
+            if (!isEmbeddedWalletAlreadyExistsError(error)) {
+              throw error;
+            }
+          }
         }
 
         if (!hasSolana) {
-          await createSolanaWallet();
+          if (!solanaReady) {
+            return;
+          }
+
+          try {
+            await createSolanaWallet();
+          } catch (error) {
+            if (!isEmbeddedWalletAlreadyExistsError(error)) {
+              throw error;
+            }
+          }
         }
       } catch (error) {
         console.error('Failed to ensure embedded wallets', error);

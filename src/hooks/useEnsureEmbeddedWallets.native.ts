@@ -6,7 +6,10 @@ import {
 } from '@privy-io/expo';
 import { useEffect, useRef } from 'react';
 
-import { hasPrivyEmbeddedWallet } from '@/lib/privy/wallets/hasPrivyEmbeddedWallet';
+import {
+  hasPrivyEmbeddedWallet,
+  isEmbeddedWalletAlreadyExistsError,
+} from '@/lib/privy/wallets/hasPrivyEmbeddedWallet';
 
 /**
  * After auth, ensure the user has embedded EVM then Solana wallets.
@@ -41,11 +44,23 @@ export function useEnsureEmbeddedWallets() {
       try {
         // Always create EVM before Solana.
         if (needsEthereum) {
-          await createEthereumWallet();
+          try {
+            await createEthereumWallet();
+          } catch (error) {
+            if (!isEmbeddedWalletAlreadyExistsError(error)) {
+              throw error;
+            }
+          }
         }
 
         if (needsSolana && 'create' in solanaWallet) {
-          await solanaWallet.create();
+          try {
+            await solanaWallet.create();
+          } catch (error) {
+            if (!isEmbeddedWalletAlreadyExistsError(error)) {
+              throw error;
+            }
+          }
         }
       } catch (error) {
         console.error('Failed to ensure embedded wallets', error);
