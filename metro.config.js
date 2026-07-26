@@ -4,10 +4,6 @@ const { getDefaultConfig } = require("expo/metro-config");
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
 
-const projectRoot = __dirname;
-const reactNativeShimPath = path.resolve(projectRoot, "src/lib/reactNative.js");
-const reactNativeVendorPath = path.resolve(projectRoot, "src/lib/reactNativeVendor.ts");
-
 // styled-components/native requires this optional peer; pnpm can leave it
 // invisible to Metro's nested resolution — force the app-root install.
 config.resolver.extraNodeModules = {
@@ -20,18 +16,8 @@ const PRIVY_CJS_ENTRY = require.resolve("@privy-io/react-auth");
 const PRIVY_CJS_UI_ENTRY = require.resolve("@privy-io/react-auth/ui");
 
 const resolveRequestWithPackageExports = (context, moduleName, platform) => {
-  if (moduleName === "react-native") {
-    const origin = context.originModulePath ?? "";
-    const isShim = path.resolve(origin) === reactNativeShimPath;
-    const isVendorBridge = path.resolve(origin) === reactNativeVendorPath;
-
-    if (!isShim && !isVendorBridge) {
-      return {
-        type: "sourceFile",
-        filePath: reactNativeShimPath,
-      };
-    }
-  }
+  // Note: do not shim `react-native` with Object.assign on RN 0.86+ —
+  // public API uses getters and a copied object drops StyleSheet/etc.
 
   if (platform === "web" && moduleName === "@privy-io/react-auth") {
     return context.resolveRequest(context, PRIVY_CJS_ENTRY, platform);
