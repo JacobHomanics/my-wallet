@@ -5,6 +5,9 @@
   "packageManager": "pnpm@10.33.2",
   "dependencies": {
     "@expo/metro-runtime": "~57.0.7",
+    "@privy-io/expo": "^0.70.4",
+    "@privy-io/react-auth": "^3.35.2",
+    "css-to-react-native": "^3.2.0",
     "eslint-config-expo": "~57.0.0",
     "expo": "~57.0.8",
     "expo-status-bar": "~57.0.1",
