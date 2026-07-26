@@ -27,7 +27,7 @@ export function MainTabs() {
           title: 'Home',
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons
-              name={focused ? 'home' : 'home-outline'}
+              name={focused ? 'wallet' : 'wallet-outline'}
               color={color}
               size={size}
             />
