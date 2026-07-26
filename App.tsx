@@ -1,20 +1,18 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import 'fast-text-encoding';
+import 'react-native-get-random-values';
+import '@ethersproject/shims';
+import { Buffer } from 'buffer';
+
+import { RootNavigator } from '@/navigation/RootNavigator';
+import { PrivyProvider } from '@/providers/PrivyProvider';
+
+// Required by Privy / wallet crypto polyfills — keep after get-random-values.
+global.Buffer = Buffer;
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <PrivyProvider>
+      <RootNavigator />
+    </PrivyProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
