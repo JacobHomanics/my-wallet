@@ -2,30 +2,26 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { useAuth } from '@/hooks/useAuth';
 import type { RootStackParamList } from '@/navigation/types';
 
-export function HomeScreen() {
-  const { user, logout } = useAuth();
+export function WelcomeScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Home</Text>
+      <Text style={styles.brand}>My Wallet</Text>
       <Text style={styles.subtitle}>
-        Signed in{user?.id ? ` as ${user.id}` : ''}.
+        Your wallet, ready when you are.
       </Text>
       <Pressable
         accessibilityRole="button"
         onPress={() => {
-          void logout().then(() => {
-            navigation.replace('welcome');
-          });
+          navigation.navigate('login');
         }}
         style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
       >
-        <Text style={styles.buttonText}>Log out</Text>
+        <Text style={styles.buttonText}>Continue</Text>
       </Pressable>
     </View>
   );
@@ -39,7 +35,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
     paddingHorizontal: 24,
   },
-  title: {
+  brand: {
     fontSize: 28,
     fontWeight: '700',
     color: '#0f172a',

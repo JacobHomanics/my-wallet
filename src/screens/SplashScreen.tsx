@@ -1,6 +1,10 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import { useSplashRedirect } from '@/hooks/useSplashRedirect';
+
 export function SplashScreen() {
+  useSplashRedirect();
+
   return (
     <View style={styles.container}>
       <Text style={styles.brand}>My Wallet</Text>

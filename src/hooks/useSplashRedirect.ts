@@ -1,9 +1,11 @@
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
-
-export type AppScreen = 'splash' | 'home' | 'login';
+import type { RootStackParamList } from '@/navigation/types';
 
 const SPLASH_MIN_DURATION_MS = 1000;
 
@@ -11,7 +13,10 @@ SplashScreen.preventAutoHideAsync().catch(() => {
   // Native splash may already be hidden (e.g. web / late call).
 });
 
-export function useSplashGate(): { screen: AppScreen } {
+export function useSplashRedirect() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'splash'>>();
   const { isReady, isAuthenticated } = useAuth();
   const [hasMinDurationElapsed, setHasMinDurationElapsed] = useState(false);
 
@@ -37,9 +42,11 @@ export function useSplashGate(): { screen: AppScreen } {
     });
   }, [canLeaveSplash]);
 
-  if (!canLeaveSplash) {
-    return { screen: 'splash' };
-  }
+  useEffect(() => {
+    if (!canLeaveSplash || route.name !== 'splash') {
+      return;
+    }
 
-  return { screen: isAuthenticated ? 'home' : 'login' };
+    navigation.replace(isAuthenticated ? 'home' : 'welcome');
+  }, [canLeaveSplash, isAuthenticated, navigation, route.name]);
 }

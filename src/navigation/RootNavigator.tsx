@@ -1,19 +1,14 @@
+import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 
-import { useSplashGate } from '@/hooks/useSplashGate';
-import { HomeScreen } from '@/screens/HomeScreen';
-import { LoginScreen } from '@/screens/LoginScreen';
-import { SplashScreen } from '@/screens/SplashScreen';
+import { rootLinking } from '@/navigation/linking';
+import { RootStack } from '@/navigation/RootStack';
 
 export function RootNavigator() {
-  const { screen } = useSplashGate();
-
   return (
-    <>
-      {screen === 'splash' && <SplashScreen />}
-      {screen === 'home' && <HomeScreen />}
-      {screen === 'login' && <LoginScreen />}
+    <NavigationContainer linking={rootLinking}>
+      <RootStack />
       <StatusBar style="dark" />
-    </>
+    </NavigationContainer>
   );
 }
