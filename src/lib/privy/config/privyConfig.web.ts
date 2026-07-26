@@ -1,16 +1,10 @@
 import type { PrivyClientConfig } from '@privy-io/react-auth';
-import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana';
 
 /**
- * Web Privy config: create embedded EVM + Solana wallets for users who lack them.
+ * Ethereum + Solana embedded wallet config.
+ * createOnLogin is kept as a fallback, but whitelabel OTP (`loginWithCode`)
+ * does not trigger it — see `useCreateEmbeddedWallets`.
  * @see https://docs.privy.io/basics/react/advanced/automatic-wallet-creation
- * @see https://docs.privy.io/wallets/connectors/setup/configuring-external-connector-chains
- *
- * Note: createOnLogin does not run for whitelabel OTP (`loginWithCode`).
- * `useEnsureEmbeddedWallets` covers that path manually.
- *
- * Solana connectors are required for Solana wallet hooks to settle `ready` on web
- * (especially mobile browsers without extension wallets).
  */
 export const privyConfig: PrivyClientConfig = {
   appearance: {
@@ -22,11 +16,6 @@ export const privyConfig: PrivyClientConfig = {
     },
     solana: {
       createOnLogin: 'users-without-wallets',
-    },
-  },
-  externalWallets: {
-    solana: {
-      connectors: toSolanaWalletConnectors({ shouldAutoConnect: false }),
     },
   },
 };

@@ -19,7 +19,7 @@ function getLinkedAccounts(user: unknown): LinkedAccountLike[] {
   }
 
   const typed = user as UserLike;
-  // Web Privy uses camelCase; Expo api-types / js-sdk-core use snake_case.
+  // Web Privy: camelCase. Expo / api-types: snake_case.
   const linkedAccounts = typed.linkedAccounts ?? typed.linked_accounts;
   if (!Array.isArray(linkedAccounts)) {
     return [];
@@ -53,9 +53,7 @@ function isPrivyEmbeddedWallet(
   );
 }
 
-/**
- * Whether the Privy user already has an embedded wallet on the given chain.
- */
+/** Whether the user already has a Privy embedded wallet on the given chain. */
 export function hasPrivyEmbeddedWallet(
   user: unknown,
   chainType: 'ethereum' | 'solana',
@@ -65,9 +63,7 @@ export function hasPrivyEmbeddedWallet(
   );
 }
 
-/**
- * Address of the user's Privy embedded wallet on the given chain, if linked.
- */
+/** Address of the user's Privy embedded wallet on the given chain, if linked. */
 export function getPrivyEmbeddedWalletAddress(
   user: unknown,
   chainType: 'ethereum' | 'solana',
@@ -82,9 +78,7 @@ export function getPrivyEmbeddedWalletAddress(
   return linked?.address;
 }
 
-/**
- * True when Privy reports the wallet already exists (safe to treat as success).
- */
+/** True when Privy reports the wallet already exists (treat as success). */
 export function isEmbeddedWalletAlreadyExistsError(error: unknown): boolean {
   if (!error || typeof error !== 'object') {
     return false;

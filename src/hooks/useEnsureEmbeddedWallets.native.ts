@@ -1,78 +1,39 @@
-import {
-  isNotCreated,
-  useEmbeddedEthereumWallet,
-  useEmbeddedSolanaWallet,
-  usePrivy,
-} from '@privy-io/expo';
+import { usePrivy } from '@privy-io/expo';
 import { useEffect, useRef } from 'react';
 
-import {
-  hasPrivyEmbeddedWallet,
-  isEmbeddedWalletAlreadyExistsError,
-} from '@/lib/privy/wallets/hasPrivyEmbeddedWallet';
+import { useCreateEmbeddedWallets } from '@/hooks/useCreateEmbeddedWallets';
+import { hasPrivyEmbeddedWallet } from '@/lib/privy/wallets/hasPrivyEmbeddedWallet';
 
 /**
- * After auth, ensure the user has embedded EVM then Solana wallets.
- * EVM must be created first — creating Solana first can permanently block EVM.
- * @see https://docs.privy.io/wallets/wallets/create/create-a-wallet
+ * After auth, ensure embedded EVM + Solana wallets exist (whitelabel OTP path).
  */
 export function useEnsureEmbeddedWallets() {
   const { isReady, user } = usePrivy();
-  const { wallets: ethereumWallets, create: createEthereumWallet } =
-    useEmbeddedEthereumWallet();
-  const solanaWallet = useEmbeddedSolanaWallet();
-  const inFlightRef = useRef(false);
+  const { ensureEmbeddedWallets } = useCreateEmbeddedWallets();
+  const attemptedForUserRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!isReady || !user || inFlightRef.current) {
+    if (!isReady || !user) {
+      attemptedForUserRef.current = null;
       return;
     }
 
-    const needsEthereum =
-      ethereumWallets.length === 0 &&
-      !hasPrivyEmbeddedWallet(user, 'ethereum');
-    const needsSolana =
-      isNotCreated(solanaWallet) && !hasPrivyEmbeddedWallet(user, 'solana');
-
-    if (!needsEthereum && !needsSolana) {
+    const hasBoth =
+      hasPrivyEmbeddedWallet(user, 'ethereum') &&
+      hasPrivyEmbeddedWallet(user, 'solana');
+    if (hasBoth) {
       return;
     }
 
-    inFlightRef.current = true;
+    if (attemptedForUserRef.current === user.id) {
+      return;
+    }
 
-    void (async () => {
-      try {
-        // Always create EVM before Solana.
-        if (needsEthereum) {
-          try {
-            await createEthereumWallet();
-          } catch (error) {
-            if (!isEmbeddedWalletAlreadyExistsError(error)) {
-              throw error;
-            }
-          }
-        }
+    attemptedForUserRef.current = user.id;
 
-        if (needsSolana && 'create' in solanaWallet) {
-          try {
-            await solanaWallet.create();
-          } catch (error) {
-            if (!isEmbeddedWalletAlreadyExistsError(error)) {
-              throw error;
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Failed to ensure embedded wallets', error);
-      } finally {
-        inFlightRef.current = false;
-      }
-    })();
-  }, [
-    createEthereumWallet,
-    ethereumWallets.length,
-    isReady,
-    solanaWallet,
-    user,
-  ]);
+    void ensureEmbeddedWallets().catch((error) => {
+      attemptedForUserRef.current = null;
+      console.error('Failed to ensure embedded wallets', error);
+    });
+  }, [ensureEmbeddedWallets, isReady, user]);
 }

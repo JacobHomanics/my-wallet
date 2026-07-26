@@ -13,7 +13,7 @@ import { getPrivyEmbeddedWalletAddress } from '@/lib/privy/wallets/hasPrivyEmbed
 
 /**
  * Embedded EVM + Solana wallets for the authenticated user (native).
- * Prefers connected wallets; falls back to linked Privy embedded accounts.
+ * Prefers connected wallets; falls back to linked Privy accounts.
  */
 export function useUserWallets(): UserWalletsResult {
   const { isReady, user } = usePrivy();
@@ -36,17 +36,14 @@ export function useUserWallets(): UserWalletsResult {
     if (seen.has(key)) {
       return;
     }
-
     seen.add(key);
     wallets.push({ chain, label, address });
   };
 
   for (const ethereum of ethereumWallets) {
-    if (!ethereum.address) {
-      continue;
+    if (ethereum.address) {
+      pushWallet('ethereum', 'Ethereum', ethereum.address);
     }
-
-    pushWallet('ethereum', 'Ethereum', ethereum.address);
   }
 
   const linkedEthereum = getPrivyEmbeddedWalletAddress(user, 'ethereum');
@@ -56,11 +53,9 @@ export function useUserWallets(): UserWalletsResult {
 
   if (isConnected(solanaWallet)) {
     for (const solana of solanaWallet.wallets) {
-      if (!solana.address) {
-        continue;
+      if (solana.address) {
+        pushWallet('solana', 'Solana', solana.address);
       }
-
-      pushWallet('solana', 'Solana', solana.address);
     }
   }
 

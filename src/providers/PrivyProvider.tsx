@@ -1,4 +1,5 @@
 import { PrivyProvider as ExpoPrivyProvider } from '@privy-io/expo';
+import { PrivyElements } from '@privy-io/expo/ui';
 import type { ReactNode } from 'react';
 
 import { privyConfig } from '@/lib/privy/config/privyConfig.native';
@@ -15,6 +16,7 @@ export function PrivyProvider({ children }: Props) {
       clientId={privyCredentials.clientId}
       config={privyConfig}
     >
+      <PrivyElements />
       {children}
     </ExpoPrivyProvider>
   );

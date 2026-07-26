@@ -13,8 +13,7 @@ import { getPrivyEmbeddedWalletAddress } from '@/lib/privy/wallets/hasPrivyEmbed
 
 /**
  * Embedded EVM + Solana wallets for the authenticated user (web).
- * Prefers connected wallets; falls back to linked Privy embedded accounts
- * (mobile web can create wallets before they show as connected).
+ * Prefers connected wallets; falls back to linked Privy accounts.
  */
 export function useUserWallets(): UserWalletsResult {
   const { ready, authenticated, user } = usePrivy();
@@ -25,24 +24,27 @@ export function useUserWallets(): UserWalletsResult {
     return { ready: false, wallets: [] };
   }
 
-  // Surface linked wallets even if a chain's connector hook is still settling.
   const wallets: UserWallet[] = [];
   const seen = new Set<string>();
 
-  const pushWallet = (chain: UserWallet['chain'], label: string, address: string) => {
+  const pushWallet = (
+    chain: UserWallet['chain'],
+    label: string,
+    address: string,
+  ) => {
     const key = `${chain}:${address}`;
     if (seen.has(key)) {
       return;
     }
-
     seen.add(key);
     wallets.push({ chain, label, address });
   };
 
   if (ethereumReady) {
     const ethereum = getEmbeddedConnectedWallet(ethereumWallets);
-    if (ethereum?.address) {
-      pushWallet('ethereum', 'Ethereum', ethereum.address);
+    const address = ethereum?.address ?? ethereumWallets[0]?.address;
+    if (address) {
+      pushWallet('ethereum', 'Ethereum', address);
     }
   }
 
@@ -53,11 +55,9 @@ export function useUserWallets(): UserWalletsResult {
 
   if (solanaReady) {
     for (const solana of solanaWallets) {
-      if (!solana.address) {
-        continue;
+      if (solana.address) {
+        pushWallet('solana', 'Solana', solana.address);
       }
-
-      pushWallet('solana', 'Solana', solana.address);
     }
   }
 
@@ -66,7 +66,6 @@ export function useUserWallets(): UserWalletsResult {
     pushWallet('solana', 'Solana', linkedSolana);
   }
 
-  // Still warming connectors and no linked wallets yet — keep loading.
   if (!ethereumReady && !solanaReady && wallets.length === 0) {
     return { ready: false, wallets: [] };
   }
