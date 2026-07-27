@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   Pressable,
@@ -6,6 +7,7 @@ import {
   View,
 } from 'react-native';
 
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useSignOut } from '@/hooks/useSignOut';
 import { useUserWallets } from '@/hooks/useUserWallets';
@@ -15,6 +17,7 @@ export function SettingsScreen() {
   const { displayName } = useProfileIdentity();
   const { ready, wallets } = useUserWallets();
   const { signOut } = useSignOut();
+  const { copy, isCopied } = useCopyToClipboard();
 
   return (
     <View style={styles.container}>
@@ -28,20 +31,44 @@ export function SettingsScreen() {
         ) : wallets.length === 0 ? (
           <Text style={styles.empty}>Creating your wallets…</Text>
         ) : (
-          wallets.map((wallet) => (
-            <View
-              key={`${wallet.chain}-${wallet.address}`}
-              style={styles.walletRow}
-            >
-              <Text style={styles.walletLabel}>{wallet.label}</Text>
-              <Text style={styles.walletAddress} selectable>
-                {formatWalletAddress(wallet.address)}
-              </Text>
-              <Text style={styles.walletFull} selectable>
-                {wallet.address}
-              </Text>
-            </View>
-          ))
+          wallets.map((wallet) => {
+            const walletKey = `${wallet.chain}-${wallet.address}`;
+            const copied = isCopied(walletKey);
+
+            return (
+              <View key={walletKey} style={styles.walletRow}>
+                <View style={styles.walletHeader}>
+                  <Text style={styles.walletLabel}>{wallet.label}</Text>
+                  <Pressable
+                    accessibilityLabel={
+                      copied ? 'Address copied' : `Copy ${wallet.label} address`
+                    }
+                    accessibilityRole="button"
+                    hitSlop={8}
+                    onPress={() => {
+                      void copy(wallet.address, walletKey);
+                    }}
+                    style={({ pressed }) => [
+                      styles.copyButton,
+                      pressed && styles.copyButtonPressed,
+                    ]}
+                  >
+                    <Ionicons
+                      name={copied ? 'checkmark' : 'copy-outline'}
+                      size={18}
+                      color={copied ? '#15803d' : '#64748b'}
+                    />
+                  </Pressable>
+                </View>
+                <Text style={styles.walletAddress} selectable>
+                  {formatWalletAddress(wallet.address)}
+                </Text>
+                <Text style={styles.walletFull} selectable>
+                  {wallet.address}
+                </Text>
+              </View>
+            );
+          })
         )}
       </View>
 
@@ -108,10 +135,22 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     gap: 4,
   },
+  walletHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
   walletLabel: {
     fontSize: 13,
     fontWeight: '600',
     color: '#64748b',
+  },
+  copyButton: {
+    padding: 4,
+  },
+  copyButtonPressed: {
+    opacity: 0.7,
   },
   walletAddress: {
     fontSize: 16,
