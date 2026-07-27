@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -84,12 +84,8 @@ function ChainHeader({
   onToggle: () => void;
   compact?: boolean;
 }) {
-  const [iconFailed, setIconFailed] = useState(false);
-  const showIcon = Boolean(iconUrl) && !iconFailed;
-
-  useEffect(() => {
-    setIconFailed(false);
-  }, [iconUrl]);
+  const [failedIconUrl, setFailedIconUrl] = useState<string | null>(null);
+  const showIcon = Boolean(iconUrl) && iconUrl !== failedIconUrl;
 
   return (
     <Pressable
@@ -107,7 +103,7 @@ function ChainHeader({
             <Image
               accessibilityIgnoresInvertColors
               onError={() => {
-                setIconFailed(true);
+                setFailedIconUrl(iconUrl);
               }}
               source={{ uri: iconUrl! }}
               style={

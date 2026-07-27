@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useUserWallets } from '@/hooks/useUserWallets';
 import { getAlchemyApiKey } from '@/lib/alchemy/alchemyCredentials';
@@ -34,6 +34,12 @@ type TokenBalancesCache = {
   fetchedAt: number;
 };
 
+type FetchSnapshot = {
+  fetchId: string;
+  tokens: OwnedToken[];
+  error: string | null;
+};
+
 /** Shared across Home + Token Details so navigating does not refetch immediately. */
 let tokenBalancesCache: TokenBalancesCache | null = null;
 
@@ -55,6 +61,10 @@ function readFreshCache(key: string): TokenBalancesCache | null {
   return tokenBalancesCache;
 }
 
+function makeFetchId(key: string, reloadKey: number) {
+  return `${key}:${reloadKey}`;
+}
+
 /**
  * Loads fungible token balances for Privy Ethereum + Solana addresses via Alchemy.
  */
@@ -66,55 +76,43 @@ export function useTokenBalances(): TokenBalancesResult {
     wallets.find((wallet) => wallet.chain === 'solana')?.address ?? null;
   const hasAddress = Boolean(ethereumAddress || solanaAddress);
   const key = cacheKey(ethereumAddress, solanaAddress);
-  const cached = hasAddress ? readFreshCache(key) : null;
+  const apiKey = getAlchemyApiKey();
+  const missingApiKey = hasAddress && !apiKey;
 
-  const [tokens, setTokens] = useState<OwnedToken[]>(
-    () => cached?.tokens ?? [],
-  );
-  const [loading, setLoading] = useState(() => !cached && hasAddress);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(
-    () => cached?.error ?? null,
-  );
   const [reloadKey, setReloadKey] = useState(0);
-  const pullRefreshRef = useRef(false);
+  const [refreshFetchId, setRefreshFetchId] = useState<string | null>(null);
+  const [snapshot, setSnapshot] = useState<FetchSnapshot | null>(() => {
+    if (!hasAddress) {
+      return null;
+    }
+    const cached = readFreshCache(key);
+    if (!cached) {
+      return null;
+    }
+    return {
+      fetchId: makeFetchId(key, 0),
+      tokens: cached.tokens,
+      error: cached.error,
+    };
+  });
+
+  const fetchId = makeFetchId(key, reloadKey);
+  const isRefresh = refreshFetchId === fetchId;
+  const freshCache = hasAddress && !isRefresh ? readFreshCache(key) : null;
+  const snapshotMatches = snapshot?.fetchId === fetchId;
+  const snapshotForKey =
+    snapshot && snapshot.fetchId.startsWith(`${key}:`) ? snapshot : null;
 
   useEffect(() => {
-    if (!walletsReady) {
+    if (!walletsReady || !hasAddress || !apiKey) {
       return;
     }
 
-    if (!hasAddress) {
-      setTokens([]);
-      setError(null);
-      setLoading(false);
-      setRefreshing(false);
+    if (!isRefresh && readFreshCache(key)) {
       return;
     }
 
-    const apiKey = getAlchemyApiKey();
-    if (!apiKey) {
-      setTokens([]);
-      setError('Missing EXPO_PUBLIC_ALCHEMY_API_KEY');
-      setLoading(false);
-      setRefreshing(false);
-      return;
-    }
-
-    const isPullRefresh = pullRefreshRef.current;
-    pullRefreshRef.current = false;
-
-    if (!isPullRefresh) {
-      const fresh = readFreshCache(key);
-      if (fresh) {
-        setTokens(fresh.tokens);
-        setError(fresh.error);
-        setLoading(false);
-        setRefreshing(false);
-        return;
-      }
-    }
-
+    const controller = new AbortController();
     const queries: WalletNetworksQuery[] = [];
     if (ethereumAddress) {
       queries.push({
@@ -128,15 +126,6 @@ export function useTokenBalances(): TokenBalancesResult {
         networks: ALCHEMY_SOLANA_NETWORKS,
       });
     }
-
-    const controller = new AbortController();
-
-    if (isPullRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-    setError(null);
 
     void (async () => {
       try {
@@ -189,20 +178,30 @@ export function useTokenBalances(): TokenBalancesResult {
           fetchedAt: Date.now(),
         };
 
-        setTokens(nextTokens);
-        setError(nextError);
+        setSnapshot({
+          fetchId,
+          tokens: nextTokens,
+          error: nextError,
+        });
       } catch (err) {
         if (controller.signal.aborted) {
           return;
         }
-        if (!isPullRefresh) {
-          setTokens([]);
-        }
-        setError(err instanceof Error ? err.message : 'Failed to load tokens');
+        const message =
+          err instanceof Error ? err.message : 'Failed to load tokens';
+        setSnapshot((previous) => ({
+          fetchId,
+          tokens:
+            isRefresh && previous?.fetchId.startsWith(`${key}:`)
+              ? previous.tokens
+              : [],
+          error: message,
+        }));
       } finally {
         if (!controller.signal.aborted) {
-          setLoading(false);
-          setRefreshing(false);
+          setRefreshFetchId((current) =>
+            current === fetchId ? null : current,
+          );
         }
       }
     })();
@@ -211,15 +210,47 @@ export function useTokenBalances(): TokenBalancesResult {
       controller.abort();
     };
   }, [
+    apiKey,
     ethereumAddress,
     solanaAddress,
+    fetchId,
     hasAddress,
-    walletsReady,
-    reloadKey,
+    isRefresh,
     key,
+    walletsReady,
   ]);
 
-  const totalUsd = tokens.reduce<number | null>((sum, token) => {
+  const visibleTokens = !hasAddress
+    ? []
+    : snapshotMatches && snapshot
+      ? snapshot.tokens
+      : freshCache
+        ? freshCache.tokens
+        : isRefresh && snapshotForKey
+          ? snapshotForKey.tokens
+          : [];
+
+  const visibleError = missingApiKey
+    ? 'Missing EXPO_PUBLIC_ALCHEMY_API_KEY'
+    : !hasAddress
+      ? null
+      : snapshotMatches && snapshot
+        ? snapshot.error
+        : freshCache
+          ? freshCache.error
+          : isRefresh && snapshotForKey
+            ? snapshotForKey.error
+            : null;
+
+  const settled = Boolean(snapshotMatches || freshCache);
+  const refreshing = Boolean(isRefresh && !snapshotMatches);
+  const loading =
+    !walletsReady ||
+    Boolean(
+      hasAddress && !missingApiKey && !settled && visibleTokens.length === 0,
+    );
+
+  const totalUsd = visibleTokens.reduce<number | null>((sum, token) => {
     if (token.usdValue == null) {
       return sum;
     }
@@ -230,14 +261,15 @@ export function useTokenBalances(): TokenBalancesResult {
     ready: walletsReady,
     ethereumAddress,
     solanaAddress,
-    tokens,
+    tokens: visibleTokens,
     totalUsd,
-    loading: !walletsReady || Boolean(hasAddress && loading && tokens.length === 0),
+    loading,
     refreshing,
-    error,
+    error: visibleError,
     refresh: () => {
-      pullRefreshRef.current = true;
-      setReloadKey((prev) => prev + 1);
+      const nextReloadKey = reloadKey + 1;
+      setRefreshFetchId(makeFetchId(key, nextReloadKey));
+      setReloadKey(nextReloadKey);
     },
   };
 }

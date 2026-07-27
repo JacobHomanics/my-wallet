@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { getNetworkIconUrl } from '@/lib/alchemy/networkIcons';
@@ -22,21 +22,13 @@ export function TokenIcon({
   size = 40,
   showNetworkBadge = true,
 }: TokenIconProps) {
-  const [logoFailed, setLogoFailed] = useState(false);
-  const [chainFailed, setChainFailed] = useState(false);
+  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
+  const [failedChainUrl, setFailedChainUrl] = useState<string | null>(null);
   const chainIconUrl = getNetworkIconUrl(network);
-  const showLogo = Boolean(logoUrl) && !logoFailed;
+  const showLogo = Boolean(logoUrl) && logoUrl !== failedLogoUrl;
   const showChain =
-    showNetworkBadge && Boolean(chainIconUrl) && !chainFailed;
+    showNetworkBadge && Boolean(chainIconUrl) && chainIconUrl !== failedChainUrl;
   const badgeSize = Math.max(18, Math.round(size * 0.5));
-
-  useEffect(() => {
-    setLogoFailed(false);
-  }, [logoUrl]);
-
-  useEffect(() => {
-    setChainFailed(false);
-  }, [chainIconUrl]);
 
   return (
     <View style={{ width: size, height: size }}>
@@ -44,7 +36,7 @@ export function TokenIcon({
         <Image
           accessibilityIgnoresInvertColors
           onError={() => {
-            setLogoFailed(true);
+            setFailedLogoUrl(logoUrl);
           }}
           source={{ uri: logoUrl! }}
           style={[
@@ -79,7 +71,7 @@ export function TokenIcon({
             accessibilityIgnoresInvertColors
             accessibilityLabel={`${network} network`}
             onError={() => {
-              setChainFailed(true);
+              setFailedChainUrl(chainIconUrl);
             }}
             source={{ uri: chainIconUrl! }}
             style={{
