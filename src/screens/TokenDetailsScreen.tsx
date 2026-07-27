@@ -294,7 +294,7 @@ export function TokenDetailsScreen() {
               accessibilityRole="button"
               hitSlop={8}
               onPress={() => {
-                navigation.goBack();
+                navigation.navigate('index');
               }}
               style={({ pressed }) => [
                 styles.webBack,
@@ -304,7 +304,12 @@ export function TokenDetailsScreen() {
               <Text style={styles.webBackText}>Back</Text>
             </Pressable>
           ) : (
-            <BackButton accessibilityLabel="Back to home" />
+            <BackButton
+              accessibilityLabel="Back to home"
+              onPress={() => {
+                navigation.navigate('index');
+              }}
+            />
           )}
           <Text style={styles.topBarTitle}>Balances</Text>
           <View style={styles.topBarSpacer} />
