@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ActivityIndicator,
   FlatList,
@@ -12,11 +14,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import {
   formatUsdValue,
   type OwnedToken,
 } from '@/lib/alchemy/fetchTokensByAddress';
+import type { HomeStackParamList } from '@/navigation/types';
 
 function TokenRow({ token }: { token: OwnedToken }) {
   const usdLabel = formatUsdValue(token.usdValue);
@@ -75,6 +79,9 @@ function TokenRow({ token }: { token: OwnedToken }) {
 
 export function TokenDetailsScreen() {
   const insets = useSafeAreaInsets();
+  const isDesktopWeb = useIsDesktopWeb();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const {
     ethereumAddress,
     solanaAddress,
@@ -96,7 +103,24 @@ export function TokenDetailsScreen() {
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
       <View style={styles.topBar}>
-        <BackButton accessibilityLabel="Back to home" />
+        {isDesktopWeb ? (
+          <Pressable
+            accessibilityLabel="Back to home"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => {
+              navigation.goBack();
+            }}
+            style={({ pressed }) => [
+              styles.webBack,
+              pressed && styles.webBackPressed,
+            ]}
+          >
+            <Text style={styles.webBackText}>Back</Text>
+          </Pressable>
+        ) : (
+          <BackButton accessibilityLabel="Back to home" />
+        )}
         <Text style={styles.topBarTitle}>Token breakdown</Text>
         <View style={styles.topBarSpacer} />
       </View>
@@ -169,6 +193,20 @@ const styles = StyleSheet.create({
   },
   topBarSpacer: {
     width: 44,
+  },
+  webBack: {
+    minWidth: 44,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+    justifyContent: 'center',
+  },
+  webBackPressed: {
+    opacity: 0.7,
+  },
+  webBackText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0f172a',
   },
   total: {
     paddingHorizontal: 24,

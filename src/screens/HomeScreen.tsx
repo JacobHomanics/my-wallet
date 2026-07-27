@@ -76,16 +76,17 @@ export function HomeScreen() {
           {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
           {showDetailsButton ? (
             <Pressable
-              accessibilityRole="button"
+              accessibilityRole="link"
+              hitSlop={8}
               onPress={() => {
                 navigation.navigate('tokenDetails');
               }}
               style={({ pressed }) => [
-                styles.detailsButton,
-                pressed && styles.detailsButtonPressed,
+                styles.detailsLink,
+                pressed && styles.detailsLinkPressed,
               ]}
             >
-              <Text style={styles.detailsButtonText}>Show advanced details</Text>
+              <Text style={styles.detailsLinkText}>Show advanced details</Text>
             </Pressable>
           ) : null}
         </>
@@ -149,21 +150,17 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-  detailsButton: {
-    marginTop: 28,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#cbd5e1',
-    backgroundColor: '#ffffff',
+  detailsLink: {
+    marginTop: 20,
+    paddingVertical: 4,
   },
-  detailsButtonPressed: {
-    opacity: 0.85,
+  detailsLinkPressed: {
+    opacity: 0.6,
   },
-  detailsButtonText: {
+  detailsLinkText: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#0f172a',
+    fontWeight: '500',
+    color: '#64748b',
+    textDecorationLine: 'underline',
   },
 });
