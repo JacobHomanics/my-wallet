@@ -270,7 +270,7 @@ export function ConfirmSendScreen() {
               {sending ? (
                 <ActivityIndicator color="#f8fafc" />
               ) : (
-                <Text style={styles.primaryButtonText}>Confirm & send</Text>
+                <Text style={styles.primaryButtonText}>Submit</Text>
               )}
             </Pressable>
           </ScrollView>
