@@ -52,6 +52,9 @@ export function useSendTransaction(): SendTransactionResult {
           const chainId = getEvmChainId(params.token.network);
           const isNative = isNativeTokenAddress(params.token.tokenAddress);
 
+          // Headless: Privy's confirmation modal uses DOM/Headless UI and
+          // crashes under react-native-web (hooks mismatch → white screen).
+          // The Send screen is already the confirmation UI.
           const { hash } = await sendTransaction(
             isNative
               ? {
@@ -70,7 +73,7 @@ export function useSendTransaction(): SendTransactionResult {
                 },
             {
               address: wallet.address,
-              uiOptions: { showWalletUIs: true },
+              uiOptions: { showWalletUIs: false },
             },
           );
 
@@ -95,7 +98,7 @@ export function useSendTransaction(): SendTransactionResult {
           wallet,
           chain: 'solana:mainnet',
           options: {
-            uiOptions: { showWalletUIs: true },
+            uiOptions: { showWalletUIs: false },
           },
         });
 

@@ -5,7 +5,6 @@ import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   KeyboardAvoidingView,
   Modal,
@@ -23,6 +22,7 @@ import { BackButton } from '@/components/BackButton';
 import { TokenIcon } from '@/components/TokenIcon';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendForm } from '@/hooks/useSendForm';
+import { useSendStatus } from '@/hooks/useSendStatus';
 import { useSendTransaction } from '@/hooks/useSendTransaction';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
@@ -97,6 +97,7 @@ export function SendScreen() {
     send,
     sending,
   } = useSendTransaction();
+  const { status, clearStatus, setSuccess, setError } = useSendStatus();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const form = useSendForm(tokens, route.params?.tokenId);
@@ -149,10 +150,27 @@ export function SendScreen() {
 
   const onSelectToken = useCallback(
     (tokenId: string) => {
+      clearStatus();
       setSelectedTokenId(tokenId);
       setPickerOpen(false);
     },
-    [setSelectedTokenId],
+    [clearStatus, setSelectedTokenId],
+  );
+
+  const onRecipientChange = useCallback(
+    (value: string) => {
+      clearStatus();
+      setRecipient(value);
+    },
+    [clearStatus, setRecipient],
+  );
+
+  const onAmountChange = useCallback(
+    (value: string) => {
+      clearStatus();
+      setAmount(value);
+    },
+    [clearStatus, setAmount],
   );
 
   const onContinue = useCallback(() => {
@@ -160,37 +178,44 @@ export function SendScreen() {
       return;
     }
 
+    clearStatus();
+
     void (async () => {
-      const result = await send({
-        token: selectedToken,
-        recipient: recipient.trim(),
-        amountRaw,
-      });
-      refresh();
-      Alert.alert(
-        'Sent',
-        `${amount} ${selectedToken.symbol} sent.\n${formatWalletAddress(result.hash, 8, 8)}`,
-        [
-          {
-            text: 'Done',
-            onPress: () => {
-              navigation.goBack();
-            },
-          },
-        ],
-      );
+      try {
+        const result = await send({
+          token: selectedToken,
+          recipient: recipient.trim(),
+          amountRaw,
+        });
+        refresh();
+        setSuccess({
+          hash: result.hash,
+          amount,
+          symbol: selectedToken.symbol,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Transaction failed';
+        setError(message);
+      }
     })();
   }, [
     amount,
     amountRaw,
     canContinue,
-    navigation,
+    clearStatus,
     recipient,
     refresh,
     selectedToken,
     send,
     sending,
+    setError,
+    setSuccess,
   ]);
+
+  const onDone = useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -226,6 +251,29 @@ export function SendScreen() {
             <ActivityIndicator color="#0f172a" style={styles.loader} />
           ) : !hasWallet ? (
             <Text style={styles.empty}>Creating your wallets…</Text>
+          ) : status?.kind === 'success' ? (
+            <View style={styles.result}>
+              <View style={styles.resultIcon}>
+                <Ionicons name="checkmark-circle" size={48} color="#15803d" />
+              </View>
+              <Text style={styles.resultTitle}>Sent</Text>
+              <Text style={styles.resultAmount}>
+                {status.amount} {status.symbol}
+              </Text>
+              <Text style={styles.resultHash} selectable>
+                {formatWalletAddress(status.hash, 10, 10)}
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={onDone}
+                style={({ pressed }) => [
+                  styles.continueButton,
+                  pressed && styles.continueButtonPressed,
+                ]}
+              >
+                <Text style={styles.continueButtonText}>Done</Text>
+              </Pressable>
+            </View>
           ) : (
             <ScrollView
               contentContainerStyle={styles.form}
@@ -277,7 +325,7 @@ export function SendScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 editable={Boolean(selectedToken)}
-                onChangeText={setRecipient}
+                onChangeText={onRecipientChange}
                 placeholder={recipientHint}
                 placeholderTextColor="#94a3b8"
                 style={[
@@ -297,7 +345,10 @@ export function SendScreen() {
                   <Pressable
                     accessibilityRole="button"
                     hitSlop={8}
-                    onPress={setMaxAmount}
+                    onPress={() => {
+                      clearStatus();
+                      setMaxAmount();
+                    }}
                     style={({ pressed }) => [
                       styles.maxButton,
                       pressed && styles.maxButtonPressed,
@@ -317,7 +368,7 @@ export function SendScreen() {
                 <TextInput
                   editable={Boolean(selectedToken)}
                   keyboardType="decimal-pad"
-                  onChangeText={setAmount}
+                  onChangeText={onAmountChange}
                   placeholder="0"
                   placeholderTextColor="#94a3b8"
                   style={styles.amountInput}
@@ -336,6 +387,10 @@ export function SendScreen() {
                   Balance {selectedToken.balanceFormatted}{' '}
                   {selectedToken.symbol}
                 </Text>
+              ) : null}
+
+              {status?.kind === 'error' ? (
+                <Text style={styles.sendError}>{status.message}</Text>
               ) : null}
 
               <Pressable
@@ -471,6 +526,34 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     textAlign: 'center',
   },
+  result: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 48,
+    alignItems: 'center',
+  },
+  resultIcon: {
+    marginBottom: 16,
+  },
+  resultTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginBottom: 8,
+  },
+  resultAmount: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#334155',
+    marginBottom: 12,
+    fontVariant: ['tabular-nums'],
+  },
+  resultHash: {
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 32,
+    fontVariant: ['tabular-nums'],
+  },
   form: {
     paddingHorizontal: 24,
     paddingBottom: 32,
@@ -600,9 +683,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#b91c1c',
   },
+  sendError: {
+    marginTop: 20,
+    fontSize: 14,
+    color: '#b91c1c',
+    textAlign: 'center',
+  },
   continueButton: {
     marginTop: 32,
     alignItems: 'center',
+    alignSelf: 'stretch',
     backgroundColor: '#0f172a',
     paddingHorizontal: 20,
     paddingVertical: 14,

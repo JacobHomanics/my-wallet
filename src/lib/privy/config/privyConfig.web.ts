@@ -11,6 +11,9 @@ export const privyConfig: PrivyClientConfig = {
     walletChainType: 'ethereum-and-solana',
   },
   embeddedWallets: {
+    // Privy confirmation modals are DOM/Headless UI and break on
+    // react-native-web; this app uses its own Send confirmation UI.
+    showWalletUIs: false,
     ethereum: {
       createOnLogin: 'off',
     },
