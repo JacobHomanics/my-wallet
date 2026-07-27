@@ -138,6 +138,7 @@ function ChainSection({
           ))}
         </View>
       ) : null}
+      <View style={styles.chainDivider} />
     </View>
   );
 }
@@ -355,6 +356,11 @@ const styles = StyleSheet.create({
   },
   chainSection: {
     gap: 4,
+  },
+  chainDivider: {
+    marginTop: 12,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#e2e8f0',
   },
   chainHeader: {
     flexDirection: 'row',
