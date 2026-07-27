@@ -14,6 +14,7 @@ import {
   getSolanaRpcUrl,
   toHexQuantity,
 } from '@/lib/send/rpc';
+import { sendPrivyEvmTransaction } from '@/lib/send/sendPrivyEvmTransaction';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { isNativeTokenAddress } from '@/lib/alchemy/tokenLogos';
 import type {
@@ -95,27 +96,26 @@ export function useSendTransaction(): SendTransactionResult {
 
           await ensureEvmChain(provider, params.token.network);
 
+          const network = params.token.network;
           const isNative = isNativeTokenAddress(params.token.tokenAddress);
-          const hash = (await provider.request({
-            method: 'eth_sendTransaction',
-            params: [
-              isNative
-                ? {
-                    from,
-                    to: params.recipient.trim(),
-                    value: toHexQuantity(params.amountRaw),
-                  }
-                : {
-                    from,
-                    to: params.token.tokenAddress!,
-                    data: encodeErc20Transfer(
-                      params.recipient.trim(),
-                      params.amountRaw,
-                    ),
-                    value: toHexQuantity(0n),
-                  },
-            ],
-          })) as string;
+
+          const hash = await sendPrivyEvmTransaction({
+            provider,
+            network,
+            from,
+            ...(isNative
+              ? {
+                  to: params.recipient.trim(),
+                  value: toHexQuantity(params.amountRaw),
+                }
+              : {
+                  to: params.token.tokenAddress!,
+                  data: encodeErc20Transfer(
+                    params.recipient.trim(),
+                    params.amountRaw,
+                  ),
+                }),
+          });
 
           return { hash, chain: 'ethereum' };
         }
