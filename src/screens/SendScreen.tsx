@@ -23,7 +23,9 @@ import { BackButton } from '@/components/BackButton';
 import { TokenIcon } from '@/components/TokenIcon';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendForm } from '@/hooks/useSendForm';
+import { useSendTransaction } from '@/hooks/useSendTransaction';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
+import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import {
   formatUsdValue,
   type OwnedToken,
@@ -89,8 +91,12 @@ export function SendScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'send'>>();
-  const { tokens, loading, ready, ethereumAddress, solanaAddress } =
+  const { tokens, loading, ready, ethereumAddress, solanaAddress, refresh } =
     useTokenBalances();
+  const {
+    send,
+    sending,
+  } = useSendTransaction();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const form = useSendForm(tokens, route.params?.tokenId);
@@ -98,6 +104,7 @@ export function SendScreen() {
     selectedToken,
     recipient,
     amount,
+    amountRaw,
     chain,
     recipientValid,
     exceedsBalance,
@@ -149,15 +156,41 @@ export function SendScreen() {
   );
 
   const onContinue = useCallback(() => {
-    if (!canContinue || !selectedToken) {
+    if (!canContinue || !selectedToken || amountRaw == null || sending) {
       return;
     }
-    // Signing lands in a follow-up; confirm the form is ready for now.
-    Alert.alert(
-      'Ready to send',
-      `${amount} ${selectedToken.symbol} to ${recipient.trim()} on ${selectedToken.networkLabel}`,
-    );
-  }, [amount, canContinue, recipient, selectedToken]);
+
+    void (async () => {
+      const result = await send({
+        token: selectedToken,
+        recipient: recipient.trim(),
+        amountRaw,
+      });
+      refresh();
+      Alert.alert(
+        'Sent',
+        `${amount} ${selectedToken.symbol} sent.\n${formatWalletAddress(result.hash, 8, 8)}`,
+        [
+          {
+            text: 'Done',
+            onPress: () => {
+              navigation.goBack();
+            },
+          },
+        ],
+      );
+    })();
+  }, [
+    amount,
+    amountRaw,
+    canContinue,
+    navigation,
+    recipient,
+    refresh,
+    selectedToken,
+    send,
+    sending,
+  ]);
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -307,15 +340,22 @@ export function SendScreen() {
 
               <Pressable
                 accessibilityRole="button"
-                disabled={!canContinue}
+                disabled={!canContinue || sending}
                 onPress={onContinue}
                 style={({ pressed }) => [
                   styles.continueButton,
-                  !canContinue && styles.continueButtonDisabled,
-                  pressed && canContinue && styles.continueButtonPressed,
+                  (!canContinue || sending) && styles.continueButtonDisabled,
+                  pressed &&
+                    canContinue &&
+                    !sending &&
+                    styles.continueButtonPressed,
                 ]}
               >
-                <Text style={styles.continueButtonText}>Continue</Text>
+                {sending ? (
+                  <ActivityIndicator color="#f8fafc" />
+                ) : (
+                  <Text style={styles.continueButtonText}>Send</Text>
+                )}
               </Pressable>
             </ScrollView>
           )}
