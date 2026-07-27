@@ -11,7 +11,6 @@ import {
   View,
 } from 'react-native';
 
-import { useDeposit } from '@/hooks/useDeposit';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatUsdValue } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
@@ -30,16 +29,10 @@ export function HomeScreen() {
     error,
     refresh,
   } = useTokenBalances();
-  const { deposit, canDeposit, isDepositing, error: depositError } =
-    useDeposit();
 
   const onRefresh = useCallback(() => {
     refresh();
   }, [refresh]);
-
-  const onDeposit = useCallback(() => {
-    void deposit();
-  }, [deposit]);
 
   const totalLabel = formatUsdValue(totalUsd) ?? '$0.00';
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
@@ -82,28 +75,6 @@ export function HomeScreen() {
             {totalLabel}
           </Text>
           {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
-          <Pressable
-            accessibilityRole="button"
-            disabled={!canDeposit || isDepositing}
-            onPress={onDeposit}
-            style={({ pressed }) => [
-              styles.depositButton,
-              (!canDeposit || isDepositing) && styles.depositButtonDisabled,
-              pressed &&
-                canDeposit &&
-                !isDepositing &&
-                styles.depositButtonPressed,
-            ]}
-          >
-            {isDepositing ? (
-              <ActivityIndicator color="#f8fafc" />
-            ) : (
-              <Text style={styles.depositButtonText}>Deposit</Text>
-            )}
-          </Pressable>
-          {depositError ? (
-            <Text style={styles.depositError}>{depositError}</Text>
-          ) : null}
           {showDetailsButton ? (
             <Pressable
               accessibilityRole="link"
@@ -179,36 +150,6 @@ const styles = StyleSheet.create({
     color: '#f8fafc',
     fontSize: 15,
     fontWeight: '600',
-  },
-  depositButton: {
-    marginTop: 24,
-    minWidth: 160,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0f172a',
-    paddingHorizontal: 28,
-    paddingVertical: 14,
-    borderRadius: 12,
-    minHeight: 48,
-  },
-  depositButtonPressed: {
-    opacity: 0.85,
-  },
-  depositButtonDisabled: {
-    opacity: 0.5,
-  },
-  depositButtonText: {
-    color: '#f8fafc',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  depositError: {
-    marginTop: 10,
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#b91c1c',
-    textAlign: 'center',
-    maxWidth: 280,
   },
   detailsLink: {
     marginTop: 20,
