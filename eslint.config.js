@@ -4,9 +4,9 @@ const { defineConfig } = require("eslint/config");
 module.exports = defineConfig([
   expoConfig,
   {
-    files: ["App.tsx"],
+    files: ["App.tsx", "index.ts", "polyfills.ts"],
     rules: {
-      // Polyfills require `global.Buffer = Buffer` between side-effect imports; order matters at runtime.
+      // Polyfills require side-effect import order; `global.Buffer` between imports.
       "import/first": "off",
     },
   },

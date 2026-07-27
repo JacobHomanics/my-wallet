@@ -1,3 +1,6 @@
+// Polyfills first (Privy + Solana) — must precede app imports.
+import './polyfills';
+
 import 'react-native-gesture-handler';
 import '@expo/metro-runtime';
 import { registerRootComponent } from 'expo';
