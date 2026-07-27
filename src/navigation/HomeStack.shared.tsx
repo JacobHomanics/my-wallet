@@ -4,6 +4,7 @@ import type { HomeStackParamList } from '@/navigation/types';
 import { ConfirmSendScreen } from '@/screens/ConfirmSendScreen';
 import { HomeScreen } from '@/screens/HomeScreen';
 import { SendScreen } from '@/screens/SendScreen';
+import { SentScreen } from '@/screens/SentScreen';
 import { TokenDetailsScreen } from '@/screens/TokenDetailsScreen';
 
 export const HOME_STACK_INITIAL_ROUTE: keyof HomeStackParamList = 'index';
@@ -13,4 +14,5 @@ export const homeStackScreens = {
   tokenDetails: TokenDetailsScreen,
   send: SendScreen,
   confirmSend: ConfirmSendScreen,
+  sent: SentScreen,
 } as const satisfies Record<keyof HomeStackParamList, ComponentType<object>>;

@@ -20,7 +20,6 @@ import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendStatus } from '@/hooks/useSendStatus';
 import { useSendTransaction } from '@/hooks/useSendTransaction';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
-import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import {
   estimateTokenAmountUsd,
   formatUsdValue,
@@ -42,7 +41,7 @@ export function ConfirmSendScreen() {
   const { tokenId, recipient, amount } = route.params;
   const { tokens, loading, ready, refresh } = useTokenBalances();
   const { send, sending } = useSendTransaction();
-  const { status, clearStatus, setSuccess, setError } = useSendStatus();
+  const { error, clearStatus, setError } = useSendStatus();
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
 
@@ -88,13 +87,7 @@ export function ConfirmSendScreen() {
   const trimmedRecipient = recipient.trim();
 
   const onConfirm = useCallback(() => {
-    if (
-      !canSend ||
-      !token ||
-      amountRaw == null ||
-      sending ||
-      status?.kind === 'success'
-    ) {
+    if (!canSend || !token || amountRaw == null || sending) {
       return;
     }
 
@@ -108,14 +101,14 @@ export function ConfirmSendScreen() {
           amountRaw,
         });
         refresh();
-        setSuccess({
+        navigation.navigate('sent', {
           hash: result.hash,
           amount,
           symbol: token.symbol,
         });
-      } catch (error) {
+      } catch (err) {
         const message =
-          error instanceof Error ? error.message : 'Transaction failed';
+          err instanceof Error ? err.message : 'Transaction failed';
         setError(message);
       }
     })();
@@ -124,19 +117,14 @@ export function ConfirmSendScreen() {
     amountRaw,
     canSend,
     clearStatus,
+    navigation,
     refresh,
     send,
     sending,
     setError,
-    setSuccess,
-    status?.kind,
     token,
     trimmedRecipient,
   ]);
-
-  const onDone = useCallback(() => {
-    navigation.popToTop();
-  }, [navigation]);
 
   const onCancelPress = useCallback(() => {
     if (sending) {
@@ -151,8 +139,8 @@ export function ConfirmSendScreen() {
 
   const onConfirmExit = useCallback(() => {
     setCancelConfirmOpen(false);
-    navigation.popToTop();
-  }, [navigation]);
+    navigation.navigate('send', { tokenId });
+  }, [navigation, tokenId]);
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -182,29 +170,6 @@ export function ConfirmSendScreen() {
 
         {!ready || (loading && tokens.length === 0) ? (
           <ActivityIndicator color="#0f172a" style={styles.loader} />
-        ) : status?.kind === 'success' ? (
-          <View style={styles.result}>
-            <View style={styles.resultIcon}>
-              <Ionicons name="checkmark-circle" size={48} color="#15803d" />
-            </View>
-            <Text style={styles.resultTitle}>Sent</Text>
-            <Text style={styles.resultAmount}>
-              {status.amount} {status.symbol}
-            </Text>
-            <Text style={styles.resultHash} selectable>
-              {formatWalletAddress(status.hash, 10, 10)}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onDone}
-              style={({ pressed }) => [
-                styles.primaryButton,
-                pressed && styles.primaryButtonPressed,
-              ]}
-            >
-              <Text style={styles.primaryButtonText}>Done</Text>
-            </Pressable>
-          </View>
         ) : (
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
             <Text style={styles.heroUsd}>
@@ -271,9 +236,7 @@ export function ConfirmSendScreen() {
             {invalidReason ? (
               <Text style={styles.error}>{invalidReason}</Text>
             ) : null}
-            {status?.kind === 'error' ? (
-              <Text style={styles.error}>{status.message}</Text>
-            ) : null}
+            {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <View style={styles.actions}>
               <Pressable
@@ -648,33 +611,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#f8fafc',
-  },
-  result: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    alignItems: 'center',
-  },
-  resultIcon: {
-    marginBottom: 16,
-  },
-  resultTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#0f172a',
-    marginBottom: 8,
-  },
-  resultAmount: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 12,
-    fontVariant: ['tabular-nums'],
-  },
-  resultHash: {
-    fontSize: 14,
-    color: '#64748b',
-    marginBottom: 32,
-    fontVariant: ['tabular-nums'],
   },
 });

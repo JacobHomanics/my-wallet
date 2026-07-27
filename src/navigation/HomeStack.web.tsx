@@ -30,6 +30,7 @@ export function HomeStack() {
         name="confirmSend"
         component={homeStackScreens.confirmSend}
       />
+      <WebStack.Screen name="sent" component={homeStackScreens.sent} />
     </WebStack.Navigator>
   );
 }

@@ -28,6 +28,7 @@ export function HomeStack() {
         name="confirmSend"
         component={homeStackScreens.confirmSend}
       />
+      <NativeStack.Screen name="sent" component={homeStackScreens.sent} />
     </NativeStack.Navigator>
   );
 }

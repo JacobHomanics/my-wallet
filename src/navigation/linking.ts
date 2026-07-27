@@ -82,6 +82,14 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
                   amount: (amount: string) => amount,
                 },
               },
+              sent: {
+                path: '/send/sent',
+                parse: {
+                  hash: (hash: string) => hash,
+                  amount: (amount: string) => amount,
+                  symbol: (symbol: string) => symbol,
+                },
+              },
             },
           },
           settings: 'settings',

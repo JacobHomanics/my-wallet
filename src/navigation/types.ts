@@ -11,6 +11,11 @@ export type HomeStackParamList = {
     recipient: string;
     amount: string;
   };
+  sent: {
+    hash: string;
+    amount: string;
+    symbol: string;
+  };
 };
 
 export type MainTabParamList = {

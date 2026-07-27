@@ -48,7 +48,8 @@ export function MainTabs() {
             !isDesktopWeb &&
             (focusedRoute === 'tokenDetails' ||
               focusedRoute === 'send' ||
-              focusedRoute === 'confirmSend');
+              focusedRoute === 'confirmSend' ||
+              focusedRoute === 'sent');
 
           return {
             title: 'Home',
