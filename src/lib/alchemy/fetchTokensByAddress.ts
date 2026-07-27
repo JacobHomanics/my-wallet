@@ -232,12 +232,13 @@ export type TokenChainGroup = {
   networkLabel: string;
   tokens: OwnedToken[];
   totalUsd: number | null;
+  /** Present on the Unknown section: unpriced tokens grouped by chain. */
+  subgroups?: TokenChainGroup[];
 };
 
-/** Groups already chain-sorted tokens into per-network sections. */
-export function groupOwnedTokensByChain(
-  tokens: OwnedToken[],
-): TokenChainGroup[] {
+export const UNKNOWN_TOKEN_NETWORK = 'unknown';
+
+function groupTokensByNetwork(tokens: OwnedToken[]): TokenChainGroup[] {
   const groups: TokenChainGroup[] = [];
 
   for (const token of tokens) {
@@ -255,6 +256,45 @@ export function groupOwnedTokensByChain(
       networkLabel: token.networkLabel,
       tokens: [token],
       totalUsd: token.usdValue,
+    });
+  }
+
+  return groups;
+}
+
+/** Groups priced tokens by chain; unpriced tokens go in a trailing "Unknown" section. */
+export function groupOwnedTokensByChain(
+  tokens: OwnedToken[],
+): TokenChainGroup[] {
+  const priced: OwnedToken[] = [];
+  const unknownTokens: OwnedToken[] = [];
+
+  for (const token of tokens) {
+    if (token.usdValue == null) {
+      unknownTokens.push(token);
+    } else {
+      priced.push(token);
+    }
+  }
+
+  const groups = groupTokensByNetwork(priced);
+
+  if (unknownTokens.length > 0) {
+    unknownTokens.sort((a, b) => {
+      const networkDelta =
+        getNetworkSortIndex(a.network) - getNetworkSortIndex(b.network);
+      if (networkDelta !== 0) {
+        return networkDelta;
+      }
+      return a.symbol.localeCompare(b.symbol);
+    });
+
+    groups.push({
+      network: UNKNOWN_TOKEN_NETWORK,
+      networkLabel: 'Unknown',
+      tokens: unknownTokens,
+      totalUsd: null,
+      subgroups: groupTokensByNetwork(unknownTokens),
     });
   }
 

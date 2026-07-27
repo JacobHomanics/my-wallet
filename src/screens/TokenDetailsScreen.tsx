@@ -21,6 +21,7 @@ import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useTokensByChain } from '@/hooks/useTokensByChain';
 import {
   formatUsdValue,
+  UNKNOWN_TOKEN_NETWORK,
   type OwnedToken,
   type TokenChainGroup,
 } from '@/lib/alchemy/fetchTokensByAddress';
@@ -64,79 +65,166 @@ function TokenRow({ token }: { token: OwnedToken }) {
   );
 }
 
+function ChainHeader({
+  label,
+  meta,
+  usdLabel,
+  iconUrl,
+  iconFallback,
+  expanded,
+  onToggle,
+  compact = false,
+}: {
+  label: string;
+  meta: string;
+  usdLabel: string | null;
+  iconUrl: string | null;
+  iconFallback: string;
+  expanded: boolean;
+  onToggle: () => void;
+  compact?: boolean;
+}) {
+  const [iconFailed, setIconFailed] = useState(false);
+  const showIcon = Boolean(iconUrl) && !iconFailed;
+
+  useEffect(() => {
+    setIconFailed(false);
+  }, [iconUrl]);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ expanded }}
+      onPress={onToggle}
+      style={({ pressed }) => [
+        compact ? styles.nestedHeader : styles.chainHeader,
+        pressed && styles.chainHeaderPressed,
+      ]}
+    >
+      <View style={styles.chainHeaderLeft}>
+        {showIcon ? (
+          <View style={compact ? styles.nestedChainIcon : styles.chainIcon}>
+            <Image
+              accessibilityIgnoresInvertColors
+              onError={() => {
+                setIconFailed(true);
+              }}
+              source={{ uri: iconUrl! }}
+              style={
+                compact ? styles.nestedChainIconImage : styles.chainIconImage
+              }
+            />
+          </View>
+        ) : (
+          <View
+            style={
+              compact ? styles.nestedChainIconFallback : styles.chainIconFallback
+            }
+          >
+            <Text
+              style={
+                compact
+                  ? styles.nestedChainIconFallbackText
+                  : styles.chainIconFallbackText
+              }
+            >
+              {iconFallback}
+            </Text>
+          </View>
+        )}
+        <View style={styles.chainHeaderText}>
+          <Text style={compact ? styles.nestedLabel : styles.chainLabel}>
+            {label}
+          </Text>
+          <Text style={styles.chainMeta}>{meta}</Text>
+        </View>
+      </View>
+      <View style={styles.chainHeaderRight}>
+        {usdLabel ? <Text style={styles.chainUsd}>{usdLabel}</Text> : null}
+        <Ionicons
+          name={expanded ? 'chevron-down' : 'chevron-forward'}
+          size={compact ? 14 : 16}
+          color="#94a3b8"
+        />
+      </View>
+    </Pressable>
+  );
+}
+
 function ChainSection({
   group,
   expanded,
   onToggle,
+  collapsedNetworks,
+  onToggleNetwork,
 }: {
   group: TokenChainGroup;
   expanded: boolean;
   onToggle: () => void;
+  collapsedNetworks: Record<string, boolean>;
+  onToggleNetwork: (key: string) => void;
 }) {
-  const [chainIconFailed, setChainIconFailed] = useState(false);
-  const chainIconUrl = getNetworkIconUrl(group.network);
-  const showChainIcon = Boolean(chainIconUrl) && !chainIconFailed;
+  const isUnknown = group.network === UNKNOWN_TOKEN_NETWORK;
+  const subgroups = group.subgroups ?? [];
   const chainUsd = formatUsdValue(group.totalUsd);
   const tokenCountLabel =
     group.tokens.length === 1 ? '1 token' : `${group.tokens.length} tokens`;
 
-  useEffect(() => {
-    setChainIconFailed(false);
-  }, [chainIconUrl]);
-
   return (
     <View style={styles.chainSection}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ expanded }}
-        onPress={onToggle}
-        style={({ pressed }) => [
-          styles.chainHeader,
-          pressed && styles.chainHeaderPressed,
-        ]}
-      >
-        <View style={styles.chainHeaderLeft}>
-          {showChainIcon ? (
-            <View style={styles.chainIcon}>
-              <Image
-                accessibilityIgnoresInvertColors
-                onError={() => {
-                  setChainIconFailed(true);
-                }}
-                source={{ uri: chainIconUrl! }}
-                style={styles.chainIconImage}
-              />
-            </View>
-          ) : (
-            <View style={styles.chainIconFallback}>
-              <Text style={styles.chainIconFallbackText}>
-                {group.networkLabel.slice(0, 1)}
-              </Text>
-            </View>
-          )}
-          <View style={styles.chainHeaderText}>
-            <Text style={styles.chainLabel}>{group.networkLabel}</Text>
-            <Text style={styles.chainMeta}>{tokenCountLabel}</Text>
-          </View>
-        </View>
-        <View style={styles.chainHeaderRight}>
-          {chainUsd ? (
-            <Text style={styles.chainUsd}>{chainUsd}</Text>
-          ) : null}
-          <Ionicons
-            name={expanded ? 'chevron-down' : 'chevron-forward'}
-            size={16}
-            color="#94a3b8"
-          />
-        </View>
-      </Pressable>
+      <ChainHeader
+        label={group.networkLabel}
+        meta={tokenCountLabel}
+        usdLabel={chainUsd}
+        iconUrl={isUnknown ? null : getNetworkIconUrl(group.network)}
+        iconFallback={isUnknown ? '?' : group.networkLabel.slice(0, 1)}
+        expanded={expanded}
+        onToggle={onToggle}
+      />
 
       {expanded ? (
-        <View style={styles.chainTokens}>
-          {group.tokens.map((token) => (
-            <TokenRow key={token.id} token={token} />
-          ))}
-        </View>
+        isUnknown && subgroups.length > 0 ? (
+          <View style={styles.unknownSubgroups}>
+            {subgroups.map((subgroup) => {
+              const subgroupKey = `${UNKNOWN_TOKEN_NETWORK}:${subgroup.network}`;
+              const subgroupExpanded = !collapsedNetworks[subgroupKey];
+              const subgroupCount =
+                subgroup.tokens.length === 1
+                  ? '1 token'
+                  : `${subgroup.tokens.length} tokens`;
+
+              return (
+                <View key={subgroup.network} style={styles.nestedSection}>
+                  <ChainHeader
+                    compact
+                    label={subgroup.networkLabel}
+                    meta={subgroupCount}
+                    usdLabel={null}
+                    iconUrl={getNetworkIconUrl(subgroup.network)}
+                    iconFallback={subgroup.networkLabel.slice(0, 1)}
+                    expanded={subgroupExpanded}
+                    onToggle={() => {
+                      onToggleNetwork(subgroupKey);
+                    }}
+                  />
+                  {subgroupExpanded ? (
+                    <View style={styles.chainTokens}>
+                      {subgroup.tokens.map((token) => (
+                        <TokenRow key={token.id} token={token} />
+                      ))}
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })}
+          </View>
+        ) : (
+          <View style={styles.chainTokens}>
+            {group.tokens.map((token) => (
+              <TokenRow key={token.id} token={token} />
+            ))}
+          </View>
+        )
       ) : null}
       <View style={styles.chainDivider} />
     </View>
@@ -198,7 +286,7 @@ export function TokenDetailsScreen() {
         ) : (
           <BackButton accessibilityLabel="Back to home" />
         )}
-        <Text style={styles.topBarTitle}>Token breakdown</Text>
+        <Text style={styles.topBarTitle}>Balances</Text>
         <View style={styles.topBarSpacer} />
       </View>
 
@@ -246,9 +334,11 @@ export function TokenDetailsScreen() {
             <ChainSection
               group={item}
               expanded={!collapsedNetworks[item.network]}
+              collapsedNetworks={collapsedNetworks}
               onToggle={() => {
                 toggleNetwork(item.network);
               }}
+              onToggleNetwork={toggleNetwork}
             />
           )}
           style={styles.list}
@@ -361,6 +451,51 @@ const styles = StyleSheet.create({
     marginTop: 12,
     height: StyleSheet.hairlineWidth,
     backgroundColor: '#e2e8f0',
+  },
+  unknownSubgroups: {
+    gap: 8,
+    paddingTop: 4,
+    paddingLeft: 4,
+  },
+  nestedSection: {
+    gap: 2,
+  },
+  nestedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingVertical: 4,
+  },
+  nestedLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  nestedChainIcon: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    overflow: 'hidden',
+    backgroundColor: '#e2e8f0',
+  },
+  nestedChainIconImage: {
+    width: 18,
+    height: 18,
+  },
+  nestedChainIconFallback: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    overflow: 'hidden',
+    backgroundColor: '#e2e8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nestedChainIconFallbackText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#475569',
   },
   chainHeader: {
     flexDirection: 'row',
