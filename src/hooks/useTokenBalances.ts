@@ -4,6 +4,7 @@ import { useUserWallets } from '@/hooks/useUserWallets';
 import { getAlchemyApiKey } from '@/lib/alchemy/alchemyCredentials';
 import {
   fetchTokensByAddress,
+  sortOwnedTokens,
   type OwnedToken,
   type WalletNetworksQuery,
 } from '@/lib/alchemy/fetchTokensByAddress';
@@ -120,17 +121,7 @@ export function useTokenBalances(): TokenBalancesResult {
           }
         }
 
-        nextTokens.sort((a, b) => {
-          const aUsd = a.usdValue ?? -1;
-          const bUsd = b.usdValue ?? -1;
-          if (bUsd !== aUsd) {
-            return bUsd - aUsd;
-          }
-          if (a.networkLabel !== b.networkLabel) {
-            return a.networkLabel.localeCompare(b.networkLabel);
-          }
-          return a.symbol.localeCompare(b.symbol);
-        });
+        sortOwnedTokens(nextTokens);
 
         setTokens(nextTokens);
         setError(

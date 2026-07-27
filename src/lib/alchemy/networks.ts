@@ -9,9 +9,23 @@ export const ALCHEMY_EVM_NETWORKS = [
 /** Data API network enum is `solana-mainnet` (not `sol-mainnet`). */
 export const ALCHEMY_SOLANA_NETWORKS = ['solana-mainnet'] as const;
 
+/** Display / sort order for token lists (Ethereum → L2s → Solana). */
+export const ALCHEMY_NETWORK_SORT_ORDER = [
+  ...ALCHEMY_EVM_NETWORKS,
+  ...ALCHEMY_SOLANA_NETWORKS,
+] as const;
+
 export type AlchemyEvmNetwork = (typeof ALCHEMY_EVM_NETWORKS)[number];
 export type AlchemySolanaNetwork = (typeof ALCHEMY_SOLANA_NETWORKS)[number];
 export type AlchemyNetwork = AlchemyEvmNetwork | AlchemySolanaNetwork;
+
+const NETWORK_SORT_INDEX = Object.fromEntries(
+  ALCHEMY_NETWORK_SORT_ORDER.map((network, index) => [network, index]),
+) as Record<string, number>;
+
+export function getNetworkSortIndex(network: string): number {
+  return NETWORK_SORT_INDEX[network] ?? Number.MAX_SAFE_INTEGER;
+}
 
 const NETWORK_LABELS: Record<AlchemyNetwork, string> = {
   'eth-mainnet': 'Ethereum',
