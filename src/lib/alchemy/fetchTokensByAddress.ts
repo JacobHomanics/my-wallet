@@ -2,7 +2,6 @@ import {
   getDefaultTokenDecimals,
   getNativeTokenFallback,
   getNetworkLabel,
-  getNetworkSortIndex,
 } from '@/lib/alchemy/networks';
 import {
   isNativeTokenAddress,
@@ -210,11 +209,10 @@ function formatContractSymbol(tokenAddress: string | null | undefined) {
   return `${tokenAddress.slice(0, 6)}…`;
 }
 
-/** Sort by chain, then USD value (desc), then symbol. */
+/** Sort by chain label (A–Z), then USD value (desc), then symbol. */
 export function sortOwnedTokens(tokens: OwnedToken[]): OwnedToken[] {
   return tokens.sort((a, b) => {
-    const networkDelta =
-      getNetworkSortIndex(a.network) - getNetworkSortIndex(b.network);
+    const networkDelta = a.networkLabel.localeCompare(b.networkLabel);
     if (networkDelta !== 0) {
       return networkDelta;
     }
@@ -277,12 +275,12 @@ export function groupOwnedTokensByChain(
     }
   }
 
+  sortOwnedTokens(priced);
   const groups = groupTokensByNetwork(priced);
 
   if (unknownTokens.length > 0) {
     unknownTokens.sort((a, b) => {
-      const networkDelta =
-        getNetworkSortIndex(a.network) - getNetworkSortIndex(b.network);
+      const networkDelta = a.networkLabel.localeCompare(b.networkLabel);
       if (networkDelta !== 0) {
         return networkDelta;
       }
