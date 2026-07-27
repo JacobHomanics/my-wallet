@@ -227,6 +227,41 @@ export function sortOwnedTokens(tokens: OwnedToken[]): OwnedToken[] {
   });
 }
 
+export type TokenChainGroup = {
+  network: string;
+  networkLabel: string;
+  tokens: OwnedToken[];
+  totalUsd: number | null;
+};
+
+/** Groups already chain-sorted tokens into per-network sections. */
+export function groupOwnedTokensByChain(
+  tokens: OwnedToken[],
+): TokenChainGroup[] {
+  const groups: TokenChainGroup[] = [];
+
+  for (const token of tokens) {
+    const last = groups[groups.length - 1];
+    if (last && last.network === token.network) {
+      last.tokens.push(token);
+      if (token.usdValue != null) {
+        last.totalUsd = (last.totalUsd ?? 0) + token.usdValue;
+      }
+      continue;
+    }
+
+    groups.push({
+      network: token.network,
+      networkLabel: token.networkLabel,
+      tokens: [token],
+      totalUsd: token.usdValue,
+    });
+  }
+
+  return groups;
+}
+
+
 export type FetchTokensByAddressParams = {
   apiKey: string;
   /** Up to 2 wallet/network pairs (Alchemy Portfolio API limit). */

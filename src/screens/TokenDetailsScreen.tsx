@@ -1,9 +1,11 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -16,10 +18,13 @@ import { BackButton } from '@/components/BackButton';
 import { TokenIcon } from '@/components/TokenIcon';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
+import { useTokensByChain } from '@/hooks/useTokensByChain';
 import {
   formatUsdValue,
   type OwnedToken,
+  type TokenChainGroup,
 } from '@/lib/alchemy/fetchTokensByAddress';
+import { getNetworkIconUrl } from '@/lib/alchemy/networkIcons';
 import type { HomeStackParamList } from '@/navigation/types';
 
 function TokenRow({ token }: { token: OwnedToken }) {
@@ -37,12 +42,11 @@ function TokenRow({ token }: { token: OwnedToken }) {
           <Text style={styles.tokenSymbol} numberOfLines={1}>
             {token.symbol}
           </Text>
-          <Text style={styles.tokenMeta} numberOfLines={1}>
-            {token.networkLabel}
-            {token.name && token.name !== token.symbol
-              ? ` · ${token.name}`
-              : ''}
-          </Text>
+          {token.name && token.name !== token.symbol ? (
+            <Text style={styles.tokenMeta} numberOfLines={1}>
+              {token.name}
+            </Text>
+          ) : null}
         </View>
       </View>
       <View style={styles.tokenRight}>
@@ -55,6 +59,82 @@ function TokenRow({ token }: { token: OwnedToken }) {
           </Text>
         ) : null}
       </View>
+    </View>
+  );
+}
+
+function ChainSection({
+  group,
+  expanded,
+  onToggle,
+}: {
+  group: TokenChainGroup;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const [chainIconFailed, setChainIconFailed] = useState(false);
+  const chainIconUrl = getNetworkIconUrl(group.network);
+  const showChainIcon = Boolean(chainIconUrl) && !chainIconFailed;
+  const chainUsd = formatUsdValue(group.totalUsd);
+  const tokenCountLabel =
+    group.tokens.length === 1 ? '1 token' : `${group.tokens.length} tokens`;
+
+  useEffect(() => {
+    setChainIconFailed(false);
+  }, [chainIconUrl]);
+
+  return (
+    <View style={styles.chainSection}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        onPress={onToggle}
+        style={({ pressed }) => [
+          styles.chainHeader,
+          pressed && styles.chainHeaderPressed,
+        ]}
+      >
+        <View style={styles.chainHeaderLeft}>
+          {showChainIcon ? (
+            <Image
+              accessibilityIgnoresInvertColors
+              onError={() => {
+                setChainIconFailed(true);
+              }}
+              source={{ uri: chainIconUrl! }}
+              style={styles.chainIcon}
+            />
+          ) : (
+            <View style={styles.chainIconFallback}>
+              <Text style={styles.chainIconFallbackText}>
+                {group.networkLabel.slice(0, 1)}
+              </Text>
+            </View>
+          )}
+          <View style={styles.chainHeaderText}>
+            <Text style={styles.chainLabel}>{group.networkLabel}</Text>
+            <Text style={styles.chainMeta}>{tokenCountLabel}</Text>
+          </View>
+        </View>
+        <View style={styles.chainHeaderRight}>
+          {chainUsd ? (
+            <Text style={styles.chainUsd}>{chainUsd}</Text>
+          ) : null}
+          <Ionicons
+            name={expanded ? 'chevron-down' : 'chevron-forward'}
+            size={18}
+            color="#94a3b8"
+          />
+        </View>
+      </Pressable>
+
+      {expanded ? (
+        <View style={styles.chainTokens}>
+          {group.tokens.map((token) => (
+            <TokenRow key={token.id} token={token} />
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -74,10 +154,21 @@ export function TokenDetailsScreen() {
     error,
     refresh,
   } = useTokenBalances();
+  const chainGroups = useTokensByChain(tokens);
+  const [collapsedNetworks, setCollapsedNetworks] = useState<
+    Record<string, boolean>
+  >({});
 
   const onRefresh = useCallback(() => {
     refresh();
   }, [refresh]);
+
+  const toggleNetwork = useCallback((network: string) => {
+    setCollapsedNetworks((current) => ({
+      ...current,
+      [network]: !current[network],
+    }));
+  }, []);
 
   const totalLabel = formatUsdValue(totalUsd);
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
@@ -128,10 +219,10 @@ export function TokenDetailsScreen() {
       ) : (
         <FlatList
           contentContainerStyle={
-            tokens.length === 0 ? styles.listEmpty : styles.listContent
+            chainGroups.length === 0 ? styles.listEmpty : styles.listContent
           }
-          data={tokens}
-          keyExtractor={(item) => item.id}
+          data={chainGroups}
+          keyExtractor={(item) => item.network}
           ListEmptyComponent={
             <Text style={styles.empty}>
               No tokens found on Ethereum or Solana.
@@ -147,7 +238,15 @@ export function TokenDetailsScreen() {
               tintColor="#0f172a"
             />
           }
-          renderItem={({ item }) => <TokenRow token={item} />}
+          renderItem={({ item }) => (
+            <ChainSection
+              group={item}
+              expanded={!collapsedNetworks[item.network]}
+              onToggle={() => {
+                toggleNetwork(item.network);
+              }}
+            />
+          )}
           style={styles.list}
         />
       )}
@@ -245,23 +344,95 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 24,
     paddingBottom: 32,
-    gap: 10,
+    gap: 12,
   },
   listEmpty: {
     flexGrow: 1,
     justifyContent: 'center',
+  },
+  chainSection: {
+    backgroundColor: '#ffffff',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#e2e8f0',
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  chainHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  chainHeaderPressed: {
+    backgroundColor: '#f8fafc',
+  },
+  chainHeaderLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    minWidth: 0,
+  },
+  chainIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#e2e8f0',
+  },
+  chainIconFallback: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#e2e8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chainIconFallbackText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  chainHeaderText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  chainLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0f172a',
+  },
+  chainMeta: {
+    fontSize: 13,
+    color: '#94a3b8',
+  },
+  chainHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chainUsd: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0f172a',
+    fontVariant: ['tabular-nums'],
+  },
+  chainTokens: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#e2e8f0',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    gap: 8,
   },
   tokenRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    backgroundColor: '#ffffff',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 4,
+    paddingVertical: 6,
   },
   tokenLeft: {
     flex: 1,
