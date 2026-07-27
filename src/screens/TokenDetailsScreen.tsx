@@ -96,14 +96,16 @@ function ChainSection({
       >
         <View style={styles.chainHeaderLeft}>
           {showChainIcon ? (
-            <Image
-              accessibilityIgnoresInvertColors
-              onError={() => {
-                setChainIconFailed(true);
-              }}
-              source={{ uri: chainIconUrl! }}
-              style={styles.chainIcon}
-            />
+            <View style={styles.chainIcon}>
+              <Image
+                accessibilityIgnoresInvertColors
+                onError={() => {
+                  setChainIconFailed(true);
+                }}
+                source={{ uri: chainIconUrl! }}
+                style={styles.chainIconImage}
+              />
+            </View>
           ) : (
             <View style={styles.chainIconFallback}>
               <Text style={styles.chainIconFallbackText}>
@@ -122,7 +124,7 @@ function ChainSection({
           ) : null}
           <Ionicons
             name={expanded ? 'chevron-down' : 'chevron-forward'}
-            size={18}
+            size={16}
             color="#94a3b8"
           />
         </View>
@@ -344,95 +346,93 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 24,
     paddingBottom: 32,
-    gap: 12,
+    gap: 20,
   },
   listEmpty: {
     flexGrow: 1,
     justifyContent: 'center',
   },
   chainSection: {
-    backgroundColor: '#ffffff',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#e2e8f0',
-    borderRadius: 14,
-    overflow: 'hidden',
+    gap: 4,
   },
   chainHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 6,
   },
   chainHeaderPressed: {
-    backgroundColor: '#f8fafc',
+    opacity: 0.65,
   },
   chainHeaderLeft: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     minWidth: 0,
   },
   chainIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    overflow: 'hidden',
     backgroundColor: '#e2e8f0',
   },
+  chainIconImage: {
+    width: 22,
+    height: 22,
+  },
   chainIconFallback: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    overflow: 'hidden',
     backgroundColor: '#e2e8f0',
     alignItems: 'center',
     justifyContent: 'center',
   },
   chainIconFallbackText: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '700',
     color: '#475569',
   },
   chainHeaderText: {
     flex: 1,
     minWidth: 0,
-    gap: 2,
+    gap: 1,
   },
   chainLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#334155',
   },
   chainMeta: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#94a3b8',
   },
   chainHeaderRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   chainUsd: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#0f172a',
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#64748b',
     fontVariant: ['tabular-nums'],
   },
   chainTokens: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#e2e8f0',
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    gap: 8,
+    gap: 6,
+    paddingLeft: 4,
+    paddingTop: 4,
   },
   tokenRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    paddingHorizontal: 4,
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
   tokenLeft: {
     flex: 1,

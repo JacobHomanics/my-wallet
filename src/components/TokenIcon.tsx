@@ -61,22 +61,30 @@ export function TokenIcon({
         </View>
       )}
       {showChain ? (
-        <Image
-          accessibilityIgnoresInvertColors
-          accessibilityLabel={`${network} network`}
-          onError={() => {
-            setChainFailed(true);
-          }}
-          source={{ uri: chainIconUrl! }}
+        <View
           style={[
-            styles.chainBadge,
+            styles.chainBadgeWrap,
             {
               width: badgeSize,
               height: badgeSize,
               borderRadius: badgeSize / 2,
             },
           ]}
-        />
+        >
+          <Image
+            accessibilityIgnoresInvertColors
+            accessibilityLabel={`${network} network`}
+            onError={() => {
+              setChainFailed(true);
+            }}
+            source={{ uri: chainIconUrl! }}
+            style={{
+              width: badgeSize,
+              height: badgeSize,
+              borderRadius: badgeSize / 2,
+            }}
+          />
+        </View>
       ) : null}
     </View>
   );
@@ -95,10 +103,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#475569',
   },
-  chainBadge: {
+  chainBadgeWrap: {
     position: 'absolute',
     right: -2,
     bottom: -2,
+    overflow: 'hidden',
     borderWidth: 1.5,
     borderColor: '#ffffff',
     backgroundColor: '#f8fafc',
