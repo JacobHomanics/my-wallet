@@ -74,6 +74,14 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
                   tokenId: (tokenId: string) => tokenId,
                 },
               },
+              confirmSend: {
+                path: '/send/confirm',
+                parse: {
+                  tokenId: (tokenId: string) => tokenId,
+                  recipient: (recipient: string) => recipient,
+                  amount: (amount: string) => amount,
+                },
+              },
             },
           },
           settings: 'settings',

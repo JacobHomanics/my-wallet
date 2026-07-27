@@ -22,10 +22,7 @@ import { BackButton } from '@/components/BackButton';
 import { TokenIcon } from '@/components/TokenIcon';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendForm } from '@/hooks/useSendForm';
-import { useSendStatus } from '@/hooks/useSendStatus';
-import { useSendTransaction } from '@/hooks/useSendTransaction';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
-import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import {
   formatUsdValue,
   type OwnedToken,
@@ -91,13 +88,8 @@ export function SendScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'send'>>();
-  const { tokens, loading, ready, ethereumAddress, solanaAddress, refresh } =
+  const { tokens, loading, ready, ethereumAddress, solanaAddress } =
     useTokenBalances();
-  const {
-    send,
-    sending,
-  } = useSendTransaction();
-  const { status, clearStatus, setSuccess, setError } = useSendStatus();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const form = useSendForm(tokens, route.params?.tokenId);
@@ -105,7 +97,6 @@ export function SendScreen() {
     selectedToken,
     recipient,
     amount,
-    amountRaw,
     chain,
     recipientValid,
     exceedsBalance,
@@ -150,72 +141,23 @@ export function SendScreen() {
 
   const onSelectToken = useCallback(
     (tokenId: string) => {
-      clearStatus();
       setSelectedTokenId(tokenId);
       setPickerOpen(false);
     },
-    [clearStatus, setSelectedTokenId],
-  );
-
-  const onRecipientChange = useCallback(
-    (value: string) => {
-      clearStatus();
-      setRecipient(value);
-    },
-    [clearStatus, setRecipient],
-  );
-
-  const onAmountChange = useCallback(
-    (value: string) => {
-      clearStatus();
-      setAmount(value);
-    },
-    [clearStatus, setAmount],
+    [setSelectedTokenId],
   );
 
   const onContinue = useCallback(() => {
-    if (!canContinue || !selectedToken || amountRaw == null || sending) {
+    if (!canContinue || !selectedToken) {
       return;
     }
 
-    clearStatus();
-
-    void (async () => {
-      try {
-        const result = await send({
-          token: selectedToken,
-          recipient: recipient.trim(),
-          amountRaw,
-        });
-        refresh();
-        setSuccess({
-          hash: result.hash,
-          amount,
-          symbol: selectedToken.symbol,
-        });
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Transaction failed';
-        setError(message);
-      }
-    })();
-  }, [
-    amount,
-    amountRaw,
-    canContinue,
-    clearStatus,
-    recipient,
-    refresh,
-    selectedToken,
-    send,
-    sending,
-    setError,
-    setSuccess,
-  ]);
-
-  const onDone = useCallback(() => {
-    navigation.goBack();
-  }, [navigation]);
+    navigation.navigate('confirmSend', {
+      tokenId: selectedToken.id,
+      recipient: recipient.trim(),
+      amount,
+    });
+  }, [amount, canContinue, navigation, recipient, selectedToken]);
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -251,29 +193,6 @@ export function SendScreen() {
             <ActivityIndicator color="#0f172a" style={styles.loader} />
           ) : !hasWallet ? (
             <Text style={styles.empty}>Creating your wallets…</Text>
-          ) : status?.kind === 'success' ? (
-            <View style={styles.result}>
-              <View style={styles.resultIcon}>
-                <Ionicons name="checkmark-circle" size={48} color="#15803d" />
-              </View>
-              <Text style={styles.resultTitle}>Sent</Text>
-              <Text style={styles.resultAmount}>
-                {status.amount} {status.symbol}
-              </Text>
-              <Text style={styles.resultHash} selectable>
-                {formatWalletAddress(status.hash, 10, 10)}
-              </Text>
-              <Pressable
-                accessibilityRole="button"
-                onPress={onDone}
-                style={({ pressed }) => [
-                  styles.continueButton,
-                  pressed && styles.continueButtonPressed,
-                ]}
-              >
-                <Text style={styles.continueButtonText}>Done</Text>
-              </Pressable>
-            </View>
           ) : (
             <ScrollView
               contentContainerStyle={styles.form}
@@ -325,7 +244,7 @@ export function SendScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 editable={Boolean(selectedToken)}
-                onChangeText={onRecipientChange}
+                onChangeText={setRecipient}
                 placeholder={recipientHint}
                 placeholderTextColor="#94a3b8"
                 style={[
@@ -345,10 +264,7 @@ export function SendScreen() {
                   <Pressable
                     accessibilityRole="button"
                     hitSlop={8}
-                    onPress={() => {
-                      clearStatus();
-                      setMaxAmount();
-                    }}
+                    onPress={setMaxAmount}
                     style={({ pressed }) => [
                       styles.maxButton,
                       pressed && styles.maxButtonPressed,
@@ -368,7 +284,7 @@ export function SendScreen() {
                 <TextInput
                   editable={Boolean(selectedToken)}
                   keyboardType="decimal-pad"
-                  onChangeText={onAmountChange}
+                  onChangeText={setAmount}
                   placeholder="0"
                   placeholderTextColor="#94a3b8"
                   style={styles.amountInput}
@@ -389,28 +305,17 @@ export function SendScreen() {
                 </Text>
               ) : null}
 
-              {status?.kind === 'error' ? (
-                <Text style={styles.sendError}>{status.message}</Text>
-              ) : null}
-
               <Pressable
                 accessibilityRole="button"
-                disabled={!canContinue || sending}
+                disabled={!canContinue}
                 onPress={onContinue}
                 style={({ pressed }) => [
                   styles.continueButton,
-                  (!canContinue || sending) && styles.continueButtonDisabled,
-                  pressed &&
-                    canContinue &&
-                    !sending &&
-                    styles.continueButtonPressed,
+                  !canContinue && styles.continueButtonDisabled,
+                  pressed && canContinue && styles.continueButtonPressed,
                 ]}
               >
-                {sending ? (
-                  <ActivityIndicator color="#f8fafc" />
-                ) : (
-                  <Text style={styles.continueButtonText}>Send</Text>
-                )}
+                <Text style={styles.continueButtonText}>Continue</Text>
               </Pressable>
             </ScrollView>
           )}
@@ -525,34 +430,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#94a3b8',
     textAlign: 'center',
-  },
-  result: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    alignItems: 'center',
-  },
-  resultIcon: {
-    marginBottom: 16,
-  },
-  resultTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#0f172a',
-    marginBottom: 8,
-  },
-  resultAmount: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 12,
-    fontVariant: ['tabular-nums'],
-  },
-  resultHash: {
-    fontSize: 14,
-    color: '#64748b',
-    marginBottom: 32,
-    fontVariant: ['tabular-nums'],
   },
   form: {
     paddingHorizontal: 24,
@@ -682,12 +559,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 13,
     color: '#b91c1c',
-  },
-  sendError: {
-    marginTop: 20,
-    fontSize: 14,
-    color: '#b91c1c',
-    textAlign: 'center',
   },
   continueButton: {
     marginTop: 32,

@@ -6,6 +6,11 @@ export type HomeStackParamList = {
   index: undefined;
   tokenDetails: undefined;
   send: { tokenId?: string } | undefined;
+  confirmSend: {
+    tokenId: string;
+    recipient: string;
+    amount: string;
+  };
 };
 
 export type MainTabParamList = {

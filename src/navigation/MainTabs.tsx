@@ -46,7 +46,9 @@ export function MainTabs() {
           // Keep the desktop top nav; on mobile hide the tab bar for the push.
           const hideTabBar =
             !isDesktopWeb &&
-            (focusedRoute === 'tokenDetails' || focusedRoute === 'send');
+            (focusedRoute === 'tokenDetails' ||
+              focusedRoute === 'send' ||
+              focusedRoute === 'confirmSend');
 
           return {
             title: 'Home',

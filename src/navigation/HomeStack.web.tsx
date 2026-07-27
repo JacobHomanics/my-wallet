@@ -26,6 +26,10 @@ export function HomeStack() {
         component={homeStackScreens.tokenDetails}
       />
       <WebStack.Screen name="send" component={homeStackScreens.send} />
+      <WebStack.Screen
+        name="confirmSend"
+        component={homeStackScreens.confirmSend}
+      />
     </WebStack.Navigator>
   );
 }

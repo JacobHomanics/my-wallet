@@ -24,6 +24,10 @@ export function HomeStack() {
         component={homeStackScreens.tokenDetails}
       />
       <NativeStack.Screen name="send" component={homeStackScreens.send} />
+      <NativeStack.Screen
+        name="confirmSend"
+        component={homeStackScreens.confirmSend}
+      />
     </NativeStack.Navigator>
   );
 }
