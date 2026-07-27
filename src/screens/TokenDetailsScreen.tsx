@@ -301,73 +301,75 @@ export function TokenDetailsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-      <View style={styles.topBar}>
-        {isDesktopWeb ? (
-          <Pressable
-            accessibilityLabel="Back to home"
-            accessibilityRole="button"
-            hitSlop={8}
-            onPress={() => {
-              navigation.goBack();
-            }}
-            style={({ pressed }) => [
-              styles.webBack,
-              pressed && styles.webBackPressed,
-            ]}
-          >
-            <Text style={styles.webBackText}>Back</Text>
-          </Pressable>
-        ) : (
-          <BackButton accessibilityLabel="Back to home" />
-        )}
-        <Text style={styles.topBarTitle}>Balances</Text>
-        <View style={styles.topBarSpacer} />
-      </View>
-
-      {totalLabel ? <Text style={styles.total}>{totalLabel}</Text> : null}
-
-      {!hasWallet || loading ? (
-        <ActivityIndicator color="#0f172a" style={styles.loader} />
-      ) : error && tokens.length === 0 ? (
-        <View style={styles.errorBlock}>
-          <Text style={styles.errorText}>{error}</Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={onRefresh}
-            style={({ pressed }) => [
-              styles.retryButton,
-              pressed && styles.retryButtonPressed,
-            ]}
-          >
-            <Text style={styles.retryButtonText}>Try again</Text>
-          </Pressable>
+      <View style={styles.content}>
+        <View style={styles.topBar}>
+          {isDesktopWeb ? (
+            <Pressable
+              accessibilityLabel="Back to home"
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={() => {
+                navigation.goBack();
+              }}
+              style={({ pressed }) => [
+                styles.webBack,
+                pressed && styles.webBackPressed,
+              ]}
+            >
+              <Text style={styles.webBackText}>Back</Text>
+            </Pressable>
+          ) : (
+            <BackButton accessibilityLabel="Back to home" />
+          )}
+          <Text style={styles.topBarTitle}>Balances</Text>
+          <View style={styles.topBarSpacer} />
         </View>
-      ) : (
-        <FlatList
-          contentContainerStyle={
-            chainGroups.length === 0 ? styles.listEmpty : styles.listContent
-          }
-          data={chainGroups}
-          keyExtractor={(item) => item.network}
-          ListEmptyComponent={
-            <Text style={styles.empty}>
-              No tokens found on Ethereum or Solana.
-            </Text>
-          }
-          ListHeaderComponent={
-            error ? <Text style={styles.errorBanner}>{error}</Text> : null
-          }
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor="#0f172a"
-            />
-          }
-          renderItem={renderChainSection}
-          style={styles.list}
-        />
-      )}
+
+        {totalLabel ? <Text style={styles.total}>{totalLabel}</Text> : null}
+
+        {!hasWallet || loading ? (
+          <ActivityIndicator color="#0f172a" style={styles.loader} />
+        ) : error && tokens.length === 0 ? (
+          <View style={styles.errorBlock}>
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onRefresh}
+              style={({ pressed }) => [
+                styles.retryButton,
+                pressed && styles.retryButtonPressed,
+              ]}
+            >
+              <Text style={styles.retryButtonText}>Try again</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <FlatList
+            contentContainerStyle={
+              chainGroups.length === 0 ? styles.listEmpty : styles.listContent
+            }
+            data={chainGroups}
+            keyExtractor={(item) => item.network}
+            ListEmptyComponent={
+              <Text style={styles.empty}>
+                No tokens found on Ethereum or Solana.
+              </Text>
+            }
+            ListHeaderComponent={
+              error ? <Text style={styles.errorBanner}>{error}</Text> : null
+            }
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor="#0f172a"
+              />
+            }
+            renderItem={renderChainSection}
+            style={styles.list}
+          />
+        )}
+      </View>
     </View>
   );
 }
@@ -376,6 +378,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
+  },
+  content: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 640,
+    alignSelf: 'center',
   },
   topBar: {
     flexDirection: 'row',
