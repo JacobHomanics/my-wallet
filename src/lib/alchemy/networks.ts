@@ -51,3 +51,13 @@ export function getNativeTokenFallback(network: string) {
 export function getDefaultTokenDecimals(network: string): number {
   return network === 'solana-mainnet' ? 9 : 18;
 }
+
+export function isSolanaNetwork(network: string): boolean {
+  return (ALCHEMY_SOLANA_NETWORKS as readonly string[]).includes(network);
+}
+
+export function getNetworkChain(
+  network: string,
+): 'ethereum' | 'solana' {
+  return isSolanaNetwork(network) ? 'solana' : 'ethereum';
+}

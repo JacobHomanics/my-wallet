@@ -25,6 +25,7 @@ export function HomeStack() {
         name="tokenDetails"
         component={homeStackScreens.tokenDetails}
       />
+      <WebStack.Screen name="send" component={homeStackScreens.send} />
     </WebStack.Navigator>
   );
 }

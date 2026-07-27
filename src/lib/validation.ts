@@ -6,3 +6,29 @@ export function isValidPhoneNumber(value: string): boolean {
   const digits = value.replace(/\D/g, '');
   return digits.length >= 10 && digits.length <= 15;
 }
+
+/** EIP-55 checksum not required — accepts any 0x-prefixed 20-byte hex address. */
+export function isValidEvmAddress(value: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(value.trim());
+}
+
+/**
+ * Solana addresses are base58-encoded 32-byte pubkeys (typically 32–44 chars).
+ * Rejects characters that are not in the Bitcoin/Solana base58 alphabet.
+ */
+export function isValidSolanaAddress(value: string): boolean {
+  const trimmed = value.trim();
+  if (trimmed.length < 32 || trimmed.length > 44) {
+    return false;
+  }
+  return /^[1-9A-HJ-NP-Za-km-z]+$/.test(trimmed);
+}
+
+export function isValidRecipientAddress(
+  value: string,
+  chain: 'ethereum' | 'solana',
+): boolean {
+  return chain === 'solana'
+    ? isValidSolanaAddress(value)
+    : isValidEvmAddress(value);
+}

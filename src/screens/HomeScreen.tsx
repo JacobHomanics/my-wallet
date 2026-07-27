@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -36,7 +37,7 @@ export function HomeScreen() {
 
   const totalLabel = formatUsdValue(totalUsd) ?? '$0.00';
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
-  const showDetailsButton =
+  const showActions =
     ready && hasWallet && !(loading && tokens.length === 0);
 
   return (
@@ -75,20 +76,35 @@ export function HomeScreen() {
             {totalLabel}
           </Text>
           {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
-          {showDetailsButton ? (
-            <Pressable
-              accessibilityRole="link"
-              hitSlop={8}
-              onPress={() => {
-                navigation.navigate('tokenDetails');
-              }}
-              style={({ pressed }) => [
-                styles.detailsLink,
-                pressed && styles.detailsLinkPressed,
-              ]}
-            >
-              <Text style={styles.detailsLinkText}>Show advanced details</Text>
-            </Pressable>
+          {showActions ? (
+            <>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  navigation.navigate('send');
+                }}
+                style={({ pressed }) => [
+                  styles.sendButton,
+                  pressed && styles.sendButtonPressed,
+                ]}
+              >
+                <Ionicons name="arrow-up" size={18} color="#f8fafc" />
+                <Text style={styles.sendButtonText}>Send</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="link"
+                hitSlop={8}
+                onPress={() => {
+                  navigation.navigate('tokenDetails');
+                }}
+                style={({ pressed }) => [
+                  styles.detailsLink,
+                  pressed && styles.detailsLinkPressed,
+                ]}
+              >
+                <Text style={styles.detailsLinkText}>Show advanced details</Text>
+              </Pressable>
+            </>
           ) : null}
         </>
       )}
@@ -149,6 +165,24 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#f8fafc',
     fontSize: 15,
+    fontWeight: '600',
+  },
+  sendButton: {
+    marginTop: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#0f172a',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  sendButtonPressed: {
+    opacity: 0.85,
+  },
+  sendButtonText: {
+    color: '#f8fafc',
+    fontSize: 16,
     fontWeight: '600',
   },
   detailsLink: {

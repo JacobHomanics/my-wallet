@@ -5,6 +5,7 @@ import type { LoginMethod } from '@/lib/privy/context/AuthFlowContext.shared';
 export type HomeStackParamList = {
   index: undefined;
   tokenDetails: undefined;
+  send: { tokenId?: string } | undefined;
 };
 
 export type MainTabParamList = {

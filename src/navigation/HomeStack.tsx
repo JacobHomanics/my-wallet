@@ -23,6 +23,7 @@ export function HomeStack() {
         name="tokenDetails"
         component={homeStackScreens.tokenDetails}
       />
+      <NativeStack.Screen name="send" component={homeStackScreens.send} />
     </NativeStack.Navigator>
   );
 }

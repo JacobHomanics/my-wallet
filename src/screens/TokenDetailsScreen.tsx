@@ -46,11 +46,26 @@ function isNetworkExpandedInState(
   return defaultNetworkExpanded(network);
 }
 
-const TokenRow = memo(function TokenRow({ token }: { token: OwnedToken }) {
+const TokenRow = memo(function TokenRow({
+  token,
+  onPress,
+}: {
+  token: OwnedToken;
+  onPress: (tokenId: string) => void;
+}) {
   const usdLabel = formatUsdValue(token.usdValue);
 
   return (
-    <View style={styles.tokenRow}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => {
+        onPress(token.id);
+      }}
+      style={({ pressed }) => [
+        styles.tokenRow,
+        pressed && styles.tokenRowPressed,
+      ]}
+    >
       <View style={styles.tokenLeft}>
         <TokenIcon
           logoUrl={token.logoUrl}
@@ -79,7 +94,7 @@ const TokenRow = memo(function TokenRow({ token }: { token: OwnedToken }) {
           </Text>
         ) : null}
       </View>
-    </View>
+    </Pressable>
   );
 });
 
@@ -172,12 +187,14 @@ const ChainSection = memo(function ChainSection({
   onToggle,
   expandedNetworks,
   onToggleNetwork,
+  onTokenPress,
 }: {
   group: TokenChainGroup;
   expanded: boolean;
   onToggle: () => void;
   expandedNetworks: Record<string, boolean>;
   onToggleNetwork: (key: string) => void;
+  onTokenPress: (tokenId: string) => void;
 }) {
   const isUnknown = group.network === UNKNOWN_TOKEN_NETWORK;
   const subgroups = group.subgroups ?? [];
@@ -228,7 +245,11 @@ const ChainSection = memo(function ChainSection({
                   {subgroupExpanded ? (
                     <View style={styles.chainTokens}>
                       {subgroup.tokens.map((token) => (
-                        <TokenRow key={token.id} token={token} />
+                        <TokenRow
+                          key={token.id}
+                          onPress={onTokenPress}
+                          token={token}
+                        />
                       ))}
                     </View>
                   ) : null}
@@ -239,7 +260,11 @@ const ChainSection = memo(function ChainSection({
         ) : (
           <View style={styles.chainTokens}>
             {group.tokens.map((token) => (
-              <TokenRow key={token.id} token={token} />
+              <TokenRow
+                key={token.id}
+                onPress={onTokenPress}
+                token={token}
+              />
             ))}
           </View>
         )
@@ -281,6 +306,13 @@ export function TokenDetailsScreen() {
     }));
   }, []);
 
+  const onTokenPress = useCallback(
+    (tokenId: string) => {
+      navigation.navigate('send', { tokenId });
+    },
+    [navigation],
+  );
+
   const renderChainSection = useCallback(
     ({ item }: { item: TokenChainGroup }) => (
       <ChainSection
@@ -291,9 +323,10 @@ export function TokenDetailsScreen() {
           toggleNetwork(item.network);
         }}
         onToggleNetwork={toggleNetwork}
+        onTokenPress={onTokenPress}
       />
     ),
-    [expandedNetworks, toggleNetwork],
+    [expandedNetworks, onTokenPress, toggleNetwork],
   );
 
   const totalLabel = formatUsdValue(totalUsd);
@@ -607,6 +640,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
     paddingVertical: 8,
+  },
+  tokenRowPressed: {
+    opacity: 0.65,
   },
   tokenLeft: {
     flex: 1,

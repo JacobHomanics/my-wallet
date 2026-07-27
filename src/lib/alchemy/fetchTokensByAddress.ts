@@ -115,6 +115,40 @@ export function formatRawTokenBalance(
   return `${negative ? '-' : ''}${whole.toString()}.${fractionStr}`;
 }
 
+/**
+ * Parses a decimal amount string into raw token units.
+ * Returns null for empty, invalid, or over-precision input.
+ */
+export function parseTokenAmountToRaw(
+  amount: string,
+  decimals: number,
+): bigint | null {
+  const trimmed = amount.trim();
+  if (!trimmed || trimmed === '.' || trimmed.startsWith('-')) {
+    return null;
+  }
+
+  if (!/^\d+(\.\d*)?$/.test(trimmed) && !/^\.\d+$/.test(trimmed)) {
+    return null;
+  }
+
+  const safeDecimals = Math.max(0, Math.min(decimals, 36));
+  const [wholePart = '0', fractionPart = ''] = trimmed.split('.');
+
+  if (fractionPart.length > safeDecimals) {
+    return null;
+  }
+
+  const whole = wholePart === '' ? '0' : wholePart;
+  const paddedFraction = fractionPart.padEnd(safeDecimals, '0');
+
+  try {
+    return BigInt(whole) * 10n ** BigInt(safeDecimals) + BigInt(paddedFraction || '0');
+  } catch {
+    return null;
+  }
+}
+
 function formatUsd(value: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',

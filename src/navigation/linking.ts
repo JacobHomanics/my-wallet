@@ -68,6 +68,12 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               // Absolute so it stays /tokens (not /home/tokens) without
               // stealing splash's empty-path alias.
               tokenDetails: '/tokens',
+              send: {
+                path: '/send',
+                parse: {
+                  tokenId: (tokenId: string) => tokenId,
+                },
+              },
             },
           },
           settings: 'settings',
