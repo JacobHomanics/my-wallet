@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -14,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { TokenIcon } from '@/components/TokenIcon';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import {
@@ -24,33 +24,15 @@ import type { HomeStackParamList } from '@/navigation/types';
 
 function TokenRow({ token }: { token: OwnedToken }) {
   const usdLabel = formatUsdValue(token.usdValue);
-  const [logoFailed, setLogoFailed] = useState(false);
-
-  useEffect(() => {
-    setLogoFailed(false);
-  }, [token.logoUrl]);
-
-  const showLogo = Boolean(token.logoUrl) && !logoFailed;
 
   return (
     <View style={styles.tokenRow}>
       <View style={styles.tokenLeft}>
-        {showLogo ? (
-          <Image
-            accessibilityIgnoresInvertColors
-            onError={() => {
-              setLogoFailed(true);
-            }}
-            source={{ uri: token.logoUrl! }}
-            style={styles.tokenLogo}
-          />
-        ) : (
-          <View style={styles.tokenLogoFallback}>
-            <Text style={styles.tokenLogoFallbackText}>
-              {token.symbol.slice(0, 1)}
-            </Text>
-          </View>
-        )}
+        <TokenIcon
+          logoUrl={token.logoUrl}
+          network={token.network}
+          symbol={token.symbol}
+        />
         <View style={styles.tokenText}>
           <Text style={styles.tokenSymbol} numberOfLines={1}>
             {token.symbol}
@@ -287,25 +269,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     minWidth: 0,
-  },
-  tokenLogo: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#e2e8f0',
-  },
-  tokenLogoFallback: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#e2e8f0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tokenLogoFallbackText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#475569',
   },
   tokenText: {
     flex: 1,
