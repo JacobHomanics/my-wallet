@@ -28,6 +28,24 @@ import {
 import { getNetworkIconUrl } from '@/lib/alchemy/networkIcons';
 import type { RootStackParamList } from '@/navigation/types';
 
+/** Priced chains open by default; Unknown (+ its nested groups) stay closed. */
+function defaultNetworkExpanded(network: string) {
+  return (
+    network !== UNKNOWN_TOKEN_NETWORK &&
+    !network.startsWith(`${UNKNOWN_TOKEN_NETWORK}:`)
+  );
+}
+
+function isNetworkExpandedInState(
+  network: string,
+  expandedNetworks: Record<string, boolean>,
+) {
+  if (network in expandedNetworks) {
+    return Boolean(expandedNetworks[network]);
+  }
+  return defaultNetworkExpanded(network);
+}
+
 const TokenRow = memo(function TokenRow({ token }: { token: OwnedToken }) {
   const usdLabel = formatUsdValue(token.usdValue);
 
@@ -184,7 +202,10 @@ const ChainSection = memo(function ChainSection({
           <View style={styles.unknownSubgroups}>
             {subgroups.map((subgroup) => {
               const subgroupKey = `${UNKNOWN_TOKEN_NETWORK}:${subgroup.network}`;
-              const subgroupExpanded = Boolean(expandedNetworks[subgroupKey]);
+              const subgroupExpanded = isNetworkExpandedInState(
+                subgroupKey,
+                expandedNetworks,
+              );
               const subgroupCount =
                 subgroup.tokens.length === 1
                   ? '1 token'
@@ -244,7 +265,7 @@ export function TokenDetailsScreen() {
     refresh,
   } = useTokenBalances();
   const chainGroups = useTokensByChain(tokens);
-  // Start collapsed so we don't mount every token logo at once (major web lag).
+  // Priced chains start open; Unknown (often huge) starts collapsed for perf.
   const [expandedNetworks, setExpandedNetworks] = useState<
     Record<string, boolean>
   >({});
@@ -256,7 +277,7 @@ export function TokenDetailsScreen() {
   const toggleNetwork = useCallback((network: string) => {
     setExpandedNetworks((current) => ({
       ...current,
-      [network]: !current[network],
+      [network]: !isNetworkExpandedInState(network, current),
     }));
   }, []);
 
@@ -264,7 +285,7 @@ export function TokenDetailsScreen() {
     ({ item }: { item: TokenChainGroup }) => (
       <ChainSection
         group={item}
-        expanded={Boolean(expandedNetworks[item.network])}
+        expanded={isNetworkExpandedInState(item.network, expandedNetworks)}
         expandedNetworks={expandedNetworks}
         onToggle={() => {
           toggleNetwork(item.network);
