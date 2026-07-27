@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -20,8 +20,12 @@ import { useSendStatus } from '@/hooks/useSendStatus';
 import { useSendTransaction } from '@/hooks/useSendTransaction';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
+import {
+  estimateTokenAmountUsd,
+  formatUsdValue,
+  parseTokenAmountToRaw,
+} from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkChain } from '@/lib/alchemy/networks';
-import { parseTokenAmountToRaw } from '@/lib/alchemy/fetchTokensByAddress';
 import { isValidRecipientAddress } from '@/lib/validation';
 import type { HomeStackParamList } from '@/navigation/types';
 
@@ -38,6 +42,7 @@ export function ConfirmSendScreen() {
   const { tokens, loading, ready, refresh } = useTokenBalances();
   const { send, sending } = useSendTransaction();
   const { status, clearStatus, setSuccess, setError } = useSendStatus();
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const token = useMemo(
     () => tokens.find((item) => item.id === tokenId) ?? null,
@@ -50,6 +55,13 @@ export function ConfirmSendScreen() {
     }
     return parseTokenAmountToRaw(amount, token.decimals);
   }, [amount, token]);
+
+  const usdLabel = useMemo(() => {
+    if (!token || amountRaw == null) {
+      return null;
+    }
+    return formatUsdValue(estimateTokenAmountUsd(token, amountRaw));
+  }, [amountRaw, token]);
 
   const chain = token ? getNetworkChain(token.network) : null;
   const recipientValid = chain
@@ -71,6 +83,8 @@ export function ConfirmSendScreen() {
           ? 'Amount exceeds balance.'
           : null;
 
+  const trimmedRecipient = recipient.trim();
+
   const onConfirm = useCallback(() => {
     if (
       !canSend ||
@@ -88,7 +102,7 @@ export function ConfirmSendScreen() {
       try {
         const result = await send({
           token,
-          recipient: recipient.trim(),
+          recipient: trimmedRecipient,
           amountRaw,
         });
         refresh();
@@ -108,7 +122,6 @@ export function ConfirmSendScreen() {
     amountRaw,
     canSend,
     clearStatus,
-    recipient,
     refresh,
     send,
     sending,
@@ -116,6 +129,7 @@ export function ConfirmSendScreen() {
     setSuccess,
     status?.kind,
     token,
+    trimmedRecipient,
   ]);
 
   const onDone = useCallback(() => {
@@ -174,39 +188,67 @@ export function ConfirmSendScreen() {
             </Pressable>
           </View>
         ) : (
-          <ScrollView
-            contentContainerStyle={styles.body}
-            style={styles.flex}
-          >
-            {token ? (
-              <View style={styles.tokenRow}>
-                <TokenIcon
-                  logoUrl={token.logoUrl}
-                  network={token.network}
-                  size={44}
-                  symbol={token.symbol}
+          <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
+            <Text style={styles.heroUsd}>
+              {usdLabel ?? `${amount} ${token?.symbol ?? ''}`.trim()}
+            </Text>
+
+            <Text style={styles.toLabel}>To</Text>
+            <Text style={styles.toAddress} selectable>
+              {trimmedRecipient}
+            </Text>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ expanded: showAdvanced }}
+              onPress={() => {
+                setShowAdvanced((open) => !open);
+              }}
+              style={({ pressed }) => [
+                styles.advancedToggle,
+                pressed && styles.advancedTogglePressed,
+              ]}
+            >
+              <Text style={styles.advancedToggleText}>
+                {showAdvanced ? 'Hide advanced details' : 'Show advanced details'}
+              </Text>
+              <Ionicons
+                name={showAdvanced ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color="#64748b"
+              />
+            </Pressable>
+
+            {showAdvanced ? (
+              <View style={styles.advanced}>
+                {token ? (
+                  <View style={styles.tokenRow}>
+                    <TokenIcon
+                      logoUrl={token.logoUrl}
+                      network={token.network}
+                      size={36}
+                      symbol={token.symbol}
+                    />
+                    <View style={styles.tokenText}>
+                      <Text style={styles.tokenSymbol}>{token.symbol}</Text>
+                      <Text style={styles.tokenMeta}>{token.name}</Text>
+                    </View>
+                  </View>
+                ) : null}
+
+                <SummaryRow
+                  label="Amount"
+                  value={`${amount} ${token?.symbol ?? ''}`.trim()}
                 />
-                <View style={styles.tokenText}>
-                  <Text style={styles.tokenSymbol}>{token.symbol}</Text>
-                  <Text style={styles.tokenMeta}>{token.networkLabel}</Text>
-                </View>
+                <View style={styles.divider} />
+                <SummaryRow
+                  label="Network"
+                  value={token?.networkLabel ?? '—'}
+                />
+                <View style={styles.divider} />
+                <SummaryRow label="Recipient" value={trimmedRecipient} mono />
               </View>
             ) : null}
-
-            <View style={styles.card}>
-              <SummaryRow label="Amount" value={`${amount} ${token?.symbol ?? ''}`.trim()} />
-              <View style={styles.divider} />
-              <SummaryRow
-                label="To"
-                value={formatWalletAddress(recipient.trim(), 8, 8)}
-                mono
-              />
-              <View style={styles.divider} />
-              <SummaryRow
-                label="Network"
-                value={token?.networkLabel ?? '—'}
-              />
-            </View>
 
             {invalidReason ? (
               <Text style={styles.error}>{invalidReason}</Text>
@@ -252,7 +294,7 @@ function SummaryRow({
       <Text style={styles.summaryLabel}>{label}</Text>
       <Text
         style={[styles.summaryValue, mono && styles.summaryMono]}
-        numberOfLines={2}
+        numberOfLines={mono ? 4 : 2}
         selectable
       >
         {value}
@@ -311,13 +353,66 @@ const styles = StyleSheet.create({
   body: {
     paddingHorizontal: 24,
     paddingBottom: 32,
-    paddingTop: 12,
+    paddingTop: 28,
+    alignItems: 'center',
+  },
+  heroUsd: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#0f172a',
+    letterSpacing: -0.6,
+    textAlign: 'center',
+    fontVariant: ['tabular-nums'],
+  },
+  toLabel: {
+    marginTop: 36,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    alignSelf: 'stretch',
+  },
+  toAddress: {
+    marginTop: 8,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#0f172a',
+    alignSelf: 'stretch',
+    fontVariant: ['tabular-nums'],
+  },
+  advancedToggle: {
+    marginTop: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  advancedTogglePressed: {
+    opacity: 0.65,
+  },
+  advancedToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  advanced: {
+    marginTop: 8,
+    alignSelf: 'stretch',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 4,
   },
   tokenRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    marginBottom: 24,
+    gap: 12,
+    paddingVertical: 14,
   },
   tokenText: {
     flex: 1,
@@ -325,21 +420,13 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   tokenSymbol: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
     color: '#0f172a',
   },
   tokenMeta: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#94a3b8',
-  },
-  card: {
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 4,
   },
   summaryRow: {
     paddingVertical: 14,
@@ -370,6 +457,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#b91c1c',
     textAlign: 'center',
+    alignSelf: 'stretch',
   },
   primaryButton: {
     marginTop: 28,

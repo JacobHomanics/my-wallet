@@ -164,6 +164,30 @@ export function formatUsdValue(value: number | null): string | null {
   return formatUsd(value);
 }
 
+/**
+ * Estimates USD for a send amount from the token's known balance USD value.
+ */
+export function estimateTokenAmountUsd(
+  token: OwnedToken,
+  amountRaw: bigint,
+): number | null {
+  if (token.usdValue == null || token.rawBalance <= 0n || amountRaw < 0n) {
+    return null;
+  }
+  if (amountRaw === 0n) {
+    return 0;
+  }
+
+  const full = Number(token.rawBalance);
+  const part = Number(amountRaw);
+  if (!Number.isFinite(full) || !Number.isFinite(part) || full === 0) {
+    return null;
+  }
+
+  const usd = token.usdValue * (part / full);
+  return Number.isFinite(usd) ? usd : null;
+}
+
 function usdPrice(prices: AlchemyTokenPrice[] | null | undefined): number | null {
   const usd = prices?.find(
     (price) => price.currency?.toLowerCase() === 'usd' && price.value,
