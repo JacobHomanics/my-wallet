@@ -8,6 +8,7 @@ import {
 import { LoginScreen } from '@/screens/LoginScreen';
 import { LoginVerifyScreen } from '@/screens/LoginVerifyScreen';
 import { SplashScreen } from '@/screens/SplashScreen';
+import { TokenDetailsScreen } from '@/screens/TokenDetailsScreen';
 import { WelcomeScreen } from '@/screens/WelcomeScreen';
 
 export { ROOT_STACK_INITIAL_ROUTE };
@@ -18,4 +19,5 @@ export const rootStackScreens = {
   login: LoginScreen,
   loginVerify: LoginVerifyScreen,
   main: MainTabs,
+  tokenDetails: TokenDetailsScreen,
 } as const satisfies Record<keyof RootStackParamList, ComponentType<object>>;

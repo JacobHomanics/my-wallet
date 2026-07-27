@@ -26,6 +26,10 @@ export function RootStack() {
         component={rootStackScreens.loginVerify}
       />
       <NativeStack.Screen name="main" component={rootStackScreens.main} />
+      <NativeStack.Screen
+        name="tokenDetails"
+        component={rootStackScreens.tokenDetails}
+      />
     </NativeStack.Navigator>
   );
 }

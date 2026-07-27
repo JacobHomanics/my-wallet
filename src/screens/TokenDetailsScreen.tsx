@@ -25,7 +25,7 @@ import {
   type TokenChainGroup,
 } from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkIconUrl } from '@/lib/alchemy/networkIcons';
-import type { HomeStackParamList } from '@/navigation/types';
+import type { RootStackParamList } from '@/navigation/types';
 
 function TokenRow({ token }: { token: OwnedToken }) {
   const usdLabel = formatUsdValue(token.usdValue);
@@ -146,7 +146,7 @@ export function TokenDetailsScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const navigation =
-    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
     ethereumAddress,
     solanaAddress,

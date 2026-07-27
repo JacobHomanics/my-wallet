@@ -62,16 +62,11 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
       loginVerify: 'login/verify',
       main: {
         screens: {
-          home: {
-            path: 'home',
-            screens: {
-              homeIndex: '',
-              tokenDetails: 'tokens',
-            },
-          },
+          home: 'home',
           settings: 'settings',
         },
       },
+      tokenDetails: 'tokens',
     },
   },
 };
