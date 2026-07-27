@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useUserWallets } from '@/hooks/useUserWallets';
 import { getAlchemyApiKey } from '@/lib/alchemy/alchemyCredentials';
@@ -257,6 +257,12 @@ export function useTokenBalances(): TokenBalancesResult {
     return (sum ?? 0) + token.usdValue;
   }, null);
 
+  const refresh = useCallback(() => {
+    const nextReloadKey = reloadKey + 1;
+    setRefreshFetchId(makeFetchId(key, nextReloadKey));
+    setReloadKey(nextReloadKey);
+  }, [key, reloadKey]);
+
   return {
     ready: walletsReady,
     ethereumAddress,
@@ -266,10 +272,6 @@ export function useTokenBalances(): TokenBalancesResult {
     loading,
     refreshing,
     error: visibleError,
-    refresh: () => {
-      const nextReloadKey = reloadKey + 1;
-      setRefreshFetchId(makeFetchId(key, nextReloadKey));
-      setReloadKey(nextReloadKey);
-    },
+    refresh,
   };
 }

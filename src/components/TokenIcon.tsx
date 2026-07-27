@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { memo, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { getNetworkIconUrl } from '@/lib/alchemy/networkIcons';
 
@@ -15,7 +16,7 @@ type TokenIconProps = {
 /**
  * Token logo with an optional chain badge anchored to the bottom-right.
  */
-export function TokenIcon({
+export const TokenIcon = memo(function TokenIcon({
   symbol,
   logoUrl,
   network,
@@ -35,10 +36,11 @@ export function TokenIcon({
       {showLogo ? (
         <Image
           accessibilityIgnoresInvertColors
+          cachePolicy="memory-disk"
           onError={() => {
             setFailedLogoUrl(logoUrl);
           }}
-          source={{ uri: logoUrl! }}
+          source={logoUrl}
           style={[
             styles.logo,
             { width: size, height: size, borderRadius: size / 2 },
@@ -70,10 +72,11 @@ export function TokenIcon({
           <Image
             accessibilityIgnoresInvertColors
             accessibilityLabel={`${network} network`}
+            cachePolicy="memory-disk"
             onError={() => {
               setFailedChainUrl(chainIconUrl);
             }}
-            source={{ uri: chainIconUrl! }}
+            source={chainIconUrl}
             style={{
               width: badgeSize,
               height: badgeSize,
@@ -84,7 +87,7 @@ export function TokenIcon({
       ) : null}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   logo: {

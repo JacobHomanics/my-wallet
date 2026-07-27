@@ -1,17 +1,17 @@
-import { useCallback, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
@@ -28,7 +28,7 @@ import {
 import { getNetworkIconUrl } from '@/lib/alchemy/networkIcons';
 import type { RootStackParamList } from '@/navigation/types';
 
-function TokenRow({ token }: { token: OwnedToken }) {
+const TokenRow = memo(function TokenRow({ token }: { token: OwnedToken }) {
   const usdLabel = formatUsdValue(token.usdValue);
 
   return (
@@ -63,9 +63,9 @@ function TokenRow({ token }: { token: OwnedToken }) {
       </View>
     </View>
   );
-}
+});
 
-function ChainHeader({
+const ChainHeader = memo(function ChainHeader({
   label,
   meta,
   usdLabel,
@@ -102,10 +102,11 @@ function ChainHeader({
           <View style={compact ? styles.nestedChainIcon : styles.chainIcon}>
             <Image
               accessibilityIgnoresInvertColors
+              cachePolicy="memory-disk"
               onError={() => {
                 setFailedIconUrl(iconUrl);
               }}
-              source={{ uri: iconUrl! }}
+              source={iconUrl}
               style={
                 compact ? styles.nestedChainIconImage : styles.chainIconImage
               }
@@ -145,19 +146,19 @@ function ChainHeader({
       </View>
     </Pressable>
   );
-}
+});
 
-function ChainSection({
+const ChainSection = memo(function ChainSection({
   group,
   expanded,
   onToggle,
-  collapsedNetworks,
+  expandedNetworks,
   onToggleNetwork,
 }: {
   group: TokenChainGroup;
   expanded: boolean;
   onToggle: () => void;
-  collapsedNetworks: Record<string, boolean>;
+  expandedNetworks: Record<string, boolean>;
   onToggleNetwork: (key: string) => void;
 }) {
   const isUnknown = group.network === UNKNOWN_TOKEN_NETWORK;
@@ -183,7 +184,7 @@ function ChainSection({
           <View style={styles.unknownSubgroups}>
             {subgroups.map((subgroup) => {
               const subgroupKey = `${UNKNOWN_TOKEN_NETWORK}:${subgroup.network}`;
-              const subgroupExpanded = !collapsedNetworks[subgroupKey];
+              const subgroupExpanded = Boolean(expandedNetworks[subgroupKey]);
               const subgroupCount =
                 subgroup.tokens.length === 1
                   ? '1 token'
@@ -225,7 +226,7 @@ function ChainSection({
       <View style={styles.chainDivider} />
     </View>
   );
-}
+});
 
 export function TokenDetailsScreen() {
   const insets = useSafeAreaInsets();
@@ -243,7 +244,8 @@ export function TokenDetailsScreen() {
     refresh,
   } = useTokenBalances();
   const chainGroups = useTokensByChain(tokens);
-  const [collapsedNetworks, setCollapsedNetworks] = useState<
+  // Start collapsed so we don't mount every token logo at once (major web lag).
+  const [expandedNetworks, setExpandedNetworks] = useState<
     Record<string, boolean>
   >({});
 
@@ -252,11 +254,26 @@ export function TokenDetailsScreen() {
   }, [refresh]);
 
   const toggleNetwork = useCallback((network: string) => {
-    setCollapsedNetworks((current) => ({
+    setExpandedNetworks((current) => ({
       ...current,
       [network]: !current[network],
     }));
   }, []);
+
+  const renderChainSection = useCallback(
+    ({ item }: { item: TokenChainGroup }) => (
+      <ChainSection
+        group={item}
+        expanded={Boolean(expandedNetworks[item.network])}
+        expandedNetworks={expandedNetworks}
+        onToggle={() => {
+          toggleNetwork(item.network);
+        }}
+        onToggleNetwork={toggleNetwork}
+      />
+    ),
+    [expandedNetworks, toggleNetwork],
+  );
 
   const totalLabel = formatUsdValue(totalUsd);
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
@@ -326,17 +343,7 @@ export function TokenDetailsScreen() {
               tintColor="#0f172a"
             />
           }
-          renderItem={({ item }) => (
-            <ChainSection
-              group={item}
-              expanded={!collapsedNetworks[item.network]}
-              collapsedNetworks={collapsedNetworks}
-              onToggle={() => {
-                toggleNetwork(item.network);
-              }}
-              onToggleNetwork={toggleNetwork}
-            />
-          )}
+          renderItem={renderChainSection}
           style={styles.list}
         />
       )}
