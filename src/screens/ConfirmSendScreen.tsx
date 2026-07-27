@@ -5,6 +5,7 @@ import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -43,6 +44,7 @@ export function ConfirmSendScreen() {
   const { send, sending } = useSendTransaction();
   const { status, clearStatus, setSuccess, setError } = useSendStatus();
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
 
   const token = useMemo(
     () => tokens.find((item) => item.id === tokenId) ?? null,
@@ -133,6 +135,22 @@ export function ConfirmSendScreen() {
   ]);
 
   const onDone = useCallback(() => {
+    navigation.popToTop();
+  }, [navigation]);
+
+  const onCancelPress = useCallback(() => {
+    if (sending) {
+      return;
+    }
+    setCancelConfirmOpen(true);
+  }, [sending]);
+
+  const onDismissCancelConfirm = useCallback(() => {
+    setCancelConfirmOpen(false);
+  }, []);
+
+  const onConfirmExit = useCallback(() => {
+    setCancelConfirmOpen(false);
     navigation.popToTop();
   }, [navigation]);
 
@@ -257,25 +275,82 @@ export function ConfirmSendScreen() {
               <Text style={styles.error}>{status.message}</Text>
             ) : null}
 
-            <Pressable
-              accessibilityRole="button"
-              disabled={!canSend || sending}
-              onPress={onConfirm}
-              style={({ pressed }) => [
-                styles.primaryButton,
-                (!canSend || sending) && styles.primaryButtonDisabled,
-                pressed && canSend && !sending && styles.primaryButtonPressed,
-              ]}
-            >
-              {sending ? (
-                <ActivityIndicator color="#f8fafc" />
-              ) : (
-                <Text style={styles.primaryButtonText}>Submit</Text>
-              )}
-            </Pressable>
+            <View style={styles.actions}>
+              <Pressable
+                accessibilityRole="button"
+                disabled={sending}
+                onPress={onCancelPress}
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  sending && styles.secondaryButtonDisabled,
+                  pressed && !sending && styles.secondaryButtonPressed,
+                ]}
+              >
+                <Text style={styles.secondaryButtonText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                disabled={!canSend || sending}
+                onPress={onConfirm}
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  styles.actionPrimary,
+                  (!canSend || sending) && styles.primaryButtonDisabled,
+                  pressed &&
+                    canSend &&
+                    !sending &&
+                    styles.primaryButtonPressed,
+                ]}
+              >
+                {sending ? (
+                  <ActivityIndicator color="#f8fafc" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>Submit</Text>
+                )}
+              </Pressable>
+            </View>
           </ScrollView>
         )}
       </View>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={cancelConfirmOpen}
+        onRequestClose={onDismissCancelConfirm}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Changes not saved</Text>
+            <Text style={styles.modalBody}>
+              If you exit without saving, all entered data on this page will be
+              lost. Would you like to proceed?
+            </Text>
+            <View style={styles.modalActions}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={onDismissCancelConfirm}
+                style={({ pressed }) => [
+                  styles.modalSecondaryButton,
+                  pressed && styles.modalSecondaryButtonPressed,
+                ]}
+              >
+                <Text style={styles.modalSecondaryButtonText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                onPress={onConfirmExit}
+                style={({ pressed }) => [
+                  styles.modalPrimaryButton,
+                  pressed && styles.modalPrimaryButtonPressed,
+                ]}
+              >
+                <Text style={styles.modalPrimaryButtonText}>Continue</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -459,14 +534,45 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     alignSelf: 'stretch',
   },
-  primaryButton: {
+  actions: {
     marginTop: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    gap: 12,
+  },
+  secondaryButton: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 10,
+  },
+  secondaryButtonDisabled: {
+    opacity: 0.45,
+  },
+  secondaryButtonPressed: {
+    opacity: 0.85,
+  },
+  secondaryButtonText: {
+    color: '#0f172a',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  primaryButton: {
     alignItems: 'center',
     alignSelf: 'stretch',
     backgroundColor: '#0f172a',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
+  },
+  actionPrimary: {
+    flex: 1,
+    marginTop: 0,
   },
   primaryButtonDisabled: {
     opacity: 0.45,
@@ -478,6 +584,70 @@ const styles = StyleSheet.create({
     color: '#f8fafc',
     fontSize: 16,
     fontWeight: '600',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginBottom: 8,
+  },
+  modalBody: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#475569',
+    marginBottom: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalSecondaryButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    backgroundColor: '#fff',
+  },
+  modalSecondaryButtonPressed: {
+    opacity: 0.85,
+  },
+  modalSecondaryButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0f172a',
+  },
+  modalPrimaryButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#0f172a',
+  },
+  modalPrimaryButtonPressed: {
+    opacity: 0.85,
+  },
+  modalPrimaryButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#f8fafc',
   },
   result: {
     flex: 1,
