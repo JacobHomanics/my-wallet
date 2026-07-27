@@ -3,9 +3,9 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { useBottomTabBarStyle } from '@/hooks/useBottomTabBarStyle';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { HomeStack } from '@/navigation/HomeStack';
 import { MainTabBar } from '@/navigation/MainTabBar';
 import type { MainTabParamList } from '@/navigation/types';
-import { HomeScreen } from '@/screens/HomeScreen';
 import { SettingsScreen } from '@/screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -38,7 +38,7 @@ export function MainTabs() {
     >
       <Tab.Screen
         name="home"
-        component={HomeScreen}
+        component={HomeStack}
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused, size }) => (

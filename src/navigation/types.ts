@@ -2,8 +2,13 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 
 import type { LoginMethod } from '@/lib/privy/context/AuthFlowContext.shared';
 
+export type HomeStackParamList = {
+  homeIndex: undefined;
+  tokenDetails: undefined;
+};
+
 export type MainTabParamList = {
-  home: undefined;
+  home: NavigatorScreenParams<HomeStackParamList> | undefined;
   settings: undefined;
 };
 

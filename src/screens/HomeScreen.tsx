@@ -1,77 +1,23 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ActivityIndicator,
-  FlatList,
-  Image,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 
 import { useTokenBalances } from '@/hooks/useTokenBalances';
-import {
-  formatUsdValue,
-  type OwnedToken,
-} from '@/lib/alchemy/fetchTokensByAddress';
-
-function TokenRow({ token }: { token: OwnedToken }) {
-  const usdLabel = formatUsdValue(token.usdValue);
-  const [logoFailed, setLogoFailed] = useState(false);
-
-  useEffect(() => {
-    setLogoFailed(false);
-  }, [token.logoUrl]);
-
-  const showLogo = Boolean(token.logoUrl) && !logoFailed;
-
-  return (
-    <View style={styles.tokenRow}>
-      <View style={styles.tokenLeft}>
-        {showLogo ? (
-          <Image
-            accessibilityIgnoresInvertColors
-            onError={() => {
-              setLogoFailed(true);
-            }}
-            source={{ uri: token.logoUrl! }}
-            style={styles.tokenLogo}
-          />
-        ) : (
-          <View style={styles.tokenLogoFallback}>
-            <Text style={styles.tokenLogoFallbackText}>
-              {token.symbol.slice(0, 1)}
-            </Text>
-          </View>
-        )}
-        <View style={styles.tokenText}>
-          <Text style={styles.tokenSymbol} numberOfLines={1}>
-            {token.symbol}
-          </Text>
-          <Text style={styles.tokenMeta} numberOfLines={1}>
-            {token.networkLabel}
-            {token.name && token.name !== token.symbol
-              ? ` · ${token.name}`
-              : ''}
-          </Text>
-        </View>
-      </View>
-      <View style={styles.tokenRight}>
-        <Text style={styles.tokenBalance} numberOfLines={1}>
-          {token.balanceFormatted}
-        </Text>
-        {usdLabel ? (
-          <Text style={styles.tokenUsd} numberOfLines={1}>
-            {usdLabel}
-          </Text>
-        ) : null}
-      </View>
-    </View>
-  );
-}
+import { formatUsdValue } from '@/lib/alchemy/fetchTokensByAddress';
+import type { HomeStackParamList } from '@/navigation/types';
 
 export function HomeScreen() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const {
     ready,
     ethereumAddress,
@@ -88,24 +34,24 @@ export function HomeScreen() {
     refresh();
   }, [refresh]);
 
-  const totalLabel = formatUsdValue(totalUsd);
+  const totalLabel = formatUsdValue(totalUsd) ?? '$0.00';
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
+  const showDetailsButton = ready && hasWallet && !(loading && tokens.length === 0);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Tokens</Text>
-        {totalLabel ? (
-          <Text style={styles.total}>{totalLabel}</Text>
-        ) : (
-          <Text style={styles.subtitle}>
-            Balances across Ethereum and Solana
-          </Text>
-        )}
-      </View>
-
+    <ScrollView
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor="#0f172a"
+        />
+      }
+      style={styles.container}
+    >
       {!ready || loading ? (
-        <ActivityIndicator color="#0f172a" style={styles.loader} />
+        <ActivityIndicator color="#0f172a" />
       ) : !hasWallet ? (
         <Text style={styles.empty}>Creating your wallets…</Text>
       ) : error && tokens.length === 0 ? (
@@ -123,32 +69,28 @@ export function HomeScreen() {
           </Pressable>
         </View>
       ) : (
-        <FlatList
-          contentContainerStyle={
-            tokens.length === 0 ? styles.listEmpty : styles.listContent
-          }
-          data={tokens}
-          keyExtractor={(item) => item.id}
-          ListEmptyComponent={
-            <Text style={styles.empty}>
-              No tokens found on Ethereum or Solana.
-            </Text>
-          }
-          ListHeaderComponent={
-            error ? <Text style={styles.errorBanner}>{error}</Text> : null
-          }
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor="#0f172a"
-            />
-          }
-          renderItem={({ item }) => <TokenRow token={item} />}
-          style={styles.list}
-        />
+        <>
+          <Text style={styles.total} accessibilityRole="header">
+            {totalLabel}
+          </Text>
+          {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
+          {showDetailsButton ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                navigation.navigate('tokenDetails');
+              }}
+              style={({ pressed }) => [
+                styles.detailsButton,
+                pressed && styles.detailsButtonPressed,
+              ]}
+            >
+              <Text style={styles.detailsButtonText}>Show advanced details</Text>
+            </Pressable>
+          ) : null}
+        </>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -156,44 +98,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
-    paddingTop: 24,
   },
-  header: {
+  content: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 24,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#0f172a',
-    letterSpacing: -0.5,
+    paddingVertical: 48,
   },
   total: {
-    marginTop: 8,
-    fontSize: 22,
-    fontWeight: '600',
+    fontSize: 48,
+    fontWeight: '700',
     color: '#0f172a',
+    letterSpacing: -1,
     fontVariant: ['tabular-nums'],
-  },
-  subtitle: {
-    marginTop: 8,
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#64748b',
-  },
-  loader: {
-    marginTop: 48,
+    textAlign: 'center',
   },
   empty: {
-    marginTop: 48,
-    paddingHorizontal: 24,
     fontSize: 15,
     color: '#94a3b8',
     textAlign: 'center',
   },
   errorBlock: {
-    marginTop: 48,
-    paddingHorizontal: 24,
     alignItems: 'center',
     gap: 16,
   },
@@ -204,9 +130,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   errorBanner: {
-    marginBottom: 12,
+    marginTop: 12,
     fontSize: 13,
     color: '#b91c1c',
+    textAlign: 'center',
   },
   retryButton: {
     backgroundColor: '#0f172a',
@@ -222,84 +149,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-    gap: 10,
-  },
-  listEmpty: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
-  tokenRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    backgroundColor: '#ffffff',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    paddingHorizontal: 14,
+  detailsButton: {
+    marginTop: 28,
+    paddingHorizontal: 18,
     paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#cbd5e1',
+    backgroundColor: '#ffffff',
   },
-  tokenLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    minWidth: 0,
+  detailsButtonPressed: {
+    opacity: 0.85,
   },
-  tokenLogo: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#e2e8f0',
-  },
-  tokenLogoFallback: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#e2e8f0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tokenLogoFallbackText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#475569',
-  },
-  tokenText: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  tokenSymbol: {
-    fontSize: 16,
+  detailsButtonText: {
+    fontSize: 15,
     fontWeight: '600',
     color: '#0f172a',
-  },
-  tokenMeta: {
-    fontSize: 13,
-    color: '#94a3b8',
-  },
-  tokenRight: {
-    alignItems: 'flex-end',
-    gap: 2,
-    maxWidth: '42%',
-  },
-  tokenBalance: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0f172a',
-    fontVariant: ['tabular-nums'],
-  },
-  tokenUsd: {
-    fontSize: 13,
-    color: '#64748b',
-    fontVariant: ['tabular-nums'],
   },
 });
