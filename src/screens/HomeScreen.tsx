@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -18,14 +18,24 @@ import {
 
 function TokenRow({ token }: { token: OwnedToken }) {
   const usdLabel = formatUsdValue(token.usdValue);
+  const [logoFailed, setLogoFailed] = useState(false);
+
+  useEffect(() => {
+    setLogoFailed(false);
+  }, [token.logoUrl]);
+
+  const showLogo = Boolean(token.logoUrl) && !logoFailed;
 
   return (
     <View style={styles.tokenRow}>
       <View style={styles.tokenLeft}>
-        {token.logoUrl ? (
+        {showLogo ? (
           <Image
             accessibilityIgnoresInvertColors
-            source={{ uri: token.logoUrl }}
+            onError={() => {
+              setLogoFailed(true);
+            }}
+            source={{ uri: token.logoUrl! }}
             style={styles.tokenLogo}
           />
         ) : (

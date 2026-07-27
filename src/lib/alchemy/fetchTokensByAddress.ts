@@ -3,6 +3,10 @@ import {
   getNativeTokenFallback,
   getNetworkLabel,
 } from '@/lib/alchemy/networks';
+import {
+  isNativeTokenAddress,
+  resolveTokenLogoUrl,
+} from '@/lib/alchemy/tokenLogos';
 
 export type OwnedToken = {
   id: string;
@@ -157,7 +161,7 @@ function toOwnedToken(row: AlchemyTokenRow): OwnedToken | null {
     return null;
   }
 
-  const isNative = row.tokenAddress == null;
+  const isNative = isNativeTokenAddress(row.tokenAddress);
   const nativeFallback = getNativeTokenFallback(network);
   const decimals =
     row.tokenMetadata?.decimals ??
@@ -176,18 +180,25 @@ function toOwnedToken(row: AlchemyTokenRow): OwnedToken | null {
       ? balanceAsNumber * unitPrice
       : null;
 
+  const tokenAddress = isNative ? null : (row.tokenAddress ?? null);
+
   return {
-    id: `${network}:${row.tokenAddress ?? 'native'}`,
+    id: `${network}:${tokenAddress ?? 'native'}`,
     network,
     networkLabel: getNetworkLabel(network),
-    tokenAddress: row.tokenAddress ?? null,
+    tokenAddress,
     symbol,
     name,
     decimals,
     rawBalance,
     balanceFormatted: formatRawTokenBalance(rawBalance, decimals),
     usdValue,
-    logoUrl: row.tokenMetadata?.logo ?? null,
+    logoUrl: resolveTokenLogoUrl({
+      network,
+      tokenAddress,
+      symbol,
+      alchemyLogo: row.tokenMetadata?.logo,
+    }),
   };
 }
 
