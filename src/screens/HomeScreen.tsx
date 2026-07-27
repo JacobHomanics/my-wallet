@@ -89,7 +89,7 @@ export function HomeScreen() {
                 ]}
               >
                 <Ionicons name="arrow-up" size={18} color="#f8fafc" />
-                <Text style={styles.sendButtonText}>Send</Text>
+                <Text style={styles.sendButtonText}>Pay</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="link"
