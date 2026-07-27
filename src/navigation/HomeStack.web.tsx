@@ -20,7 +20,7 @@ export function HomeStack() {
         animation: isDesktopWeb ? 'none' : 'slide_from_right',
       }}
     >
-      <WebStack.Screen name="home" component={homeStackScreens.home} />
+      <WebStack.Screen name="index" component={homeStackScreens.index} />
       <WebStack.Screen
         name="tokenDetails"
         component={homeStackScreens.tokenDetails}

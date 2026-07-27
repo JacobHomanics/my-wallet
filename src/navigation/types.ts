@@ -3,7 +3,7 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { LoginMethod } from '@/lib/privy/context/AuthFlowContext.shared';
 
 export type HomeStackParamList = {
-  home: undefined;
+  index: undefined;
   tokenDetails: undefined;
 };
 

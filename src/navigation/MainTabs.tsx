@@ -42,7 +42,7 @@ export function MainTabs() {
         component={HomeStack}
         options={({ route }) => {
           const focusedRoute =
-            getFocusedRouteNameFromRoute(route) ?? 'home';
+            getFocusedRouteNameFromRoute(route) ?? 'index';
           // Keep the desktop top nav; on mobile hide the tab bar for the push.
           const hideTabBar =
             !isDesktopWeb && focusedRoute === 'tokenDetails';

@@ -18,7 +18,7 @@ export function HomeStack() {
         gestureEnabled: true,
       }}
     >
-      <NativeStack.Screen name="home" component={homeStackScreens.home} />
+      <NativeStack.Screen name="index" component={homeStackScreens.index} />
       <NativeStack.Screen
         name="tokenDetails"
         component={homeStackScreens.tokenDetails}

@@ -63,10 +63,11 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
       main: {
         screens: {
           home: {
-            path: '',
             screens: {
-              home: 'home',
-              tokenDetails: 'tokens',
+              index: 'home',
+              // Absolute so it stays /tokens (not /home/tokens) without
+              // stealing splash's empty-path alias.
+              tokenDetails: '/tokens',
             },
           },
           settings: 'settings',
