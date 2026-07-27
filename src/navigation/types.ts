@@ -15,6 +15,12 @@ export type HomeStackParamList = {
     hash: string;
     amount: string;
     symbol: string;
+    /** Formatted USD, e.g. "$12.34". Null/omitted when unknown. */
+    usdLabel?: string | null;
+    network: string;
+    networkLabel: string;
+    tokenName: string;
+    logoUrl: string | null;
   };
 };
 

@@ -1,11 +1,18 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { TokenIcon } from '@/components/TokenIcon';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import type { HomeStackParamList } from '@/navigation/types';
 
@@ -17,11 +24,26 @@ export function SentScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'sent'>>();
-  const { hash, amount, symbol } = route.params;
+  const {
+    hash,
+    amount,
+    symbol,
+    usdLabel,
+    network,
+    networkLabel,
+    tokenName,
+    logoUrl,
+  } = route.params;
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const onDone = useCallback(() => {
     navigation.navigate('index');
   }, [navigation]);
+
+  const heroAmount =
+    usdLabel && usdLabel.trim()
+      ? usdLabel
+      : `${amount} ${symbol}`.trim();
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -32,17 +54,64 @@ export function SentScreen() {
           <View style={styles.topBarSpacer} />
         </View>
 
-        <View style={styles.result}>
+        <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
           <View style={styles.resultIcon}>
             <Ionicons name="checkmark-circle" size={48} color="#15803d" />
           </View>
           <Text style={styles.resultTitle}>Sent</Text>
-          <Text style={styles.resultAmount}>
-            {amount} {symbol}
-          </Text>
-          <Text style={styles.resultHash} selectable>
-            {formatWalletAddress(hash, 10, 10)}
-          </Text>
+          <Text style={styles.heroUsd}>{heroAmount}</Text>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showAdvanced }}
+            onPress={() => {
+              setShowAdvanced((open) => !open);
+            }}
+            style={({ pressed }) => [
+              styles.advancedToggle,
+              pressed && styles.advancedTogglePressed,
+            ]}
+          >
+            <Text style={styles.advancedToggleText}>
+              {showAdvanced ? 'Hide advanced details' : 'Show advanced details'}
+            </Text>
+            <Ionicons
+              name={showAdvanced ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color="#64748b"
+            />
+          </Pressable>
+
+          {showAdvanced ? (
+            <View style={styles.advanced}>
+              <View style={styles.tokenRow}>
+                <TokenIcon
+                  logoUrl={logoUrl}
+                  network={network}
+                  size={36}
+                  symbol={symbol}
+                />
+                <View style={styles.tokenText}>
+                  <Text style={styles.tokenSymbol}>{symbol}</Text>
+                  <Text style={styles.tokenMeta}>{tokenName}</Text>
+                </View>
+              </View>
+              <View style={styles.divider} />
+              <SummaryRow
+                label="Amount"
+                value={`${amount} ${symbol}`.trim()}
+              />
+              <View style={styles.divider} />
+              <SummaryRow label="Network" value={networkLabel} />
+              <View style={styles.divider} />
+              <SummaryRow
+                label="Transaction"
+                value={formatWalletAddress(hash, 10, 10)}
+                mono
+              />
+            </View>
+          ) : null}
+
           <Pressable
             accessibilityRole="button"
             onPress={onDone}
@@ -53,8 +122,31 @@ export function SentScreen() {
           >
             <Text style={styles.primaryButtonText}>Done</Text>
           </Pressable>
-        </View>
+        </ScrollView>
       </View>
+    </View>
+  );
+}
+
+function SummaryRow({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <View style={styles.summaryRow}>
+      <Text style={styles.summaryLabel}>{label}</Text>
+      <Text
+        style={[styles.summaryValue, mono && styles.summaryMono]}
+        numberOfLines={2}
+        selectable
+      >
+        {value}
+      </Text>
     </View>
   );
 }
@@ -63,6 +155,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
+  },
+  flex: {
+    flex: 1,
   },
   content: {
     flex: 1,
@@ -86,10 +181,10 @@ const styles = StyleSheet.create({
   topBarSpacer: {
     width: 44,
   },
-  result: {
-    flex: 1,
+  body: {
     paddingHorizontal: 24,
-    paddingTop: 48,
+    paddingBottom: 32,
+    paddingTop: 36,
     alignItems: 'center',
   },
   resultIcon: {
@@ -101,20 +196,87 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     marginBottom: 8,
   },
-  resultAmount: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 12,
+  heroUsd: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#0f172a',
+    letterSpacing: -0.6,
+    textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },
-  resultHash: {
+  advancedToggle: {
+    marginTop: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  advancedTogglePressed: {
+    opacity: 0.65,
+  },
+  advancedToggleText: {
     fontSize: 14,
+    fontWeight: '600',
     color: '#64748b',
-    marginBottom: 32,
+  },
+  advanced: {
+    marginTop: 8,
+    alignSelf: 'stretch',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
+  tokenRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+  },
+  tokenText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  tokenSymbol: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0f172a',
+  },
+  tokenMeta: {
+    fontSize: 13,
+    color: '#94a3b8',
+  },
+  summaryRow: {
+    paddingVertical: 14,
+    gap: 6,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  summaryValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0f172a',
+  },
+  summaryMono: {
     fontVariant: ['tabular-nums'],
+    fontWeight: '500',
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#e2e8f0',
   },
   primaryButton: {
+    marginTop: 28,
     alignItems: 'center',
     alignSelf: 'stretch',
     backgroundColor: '#0f172a',

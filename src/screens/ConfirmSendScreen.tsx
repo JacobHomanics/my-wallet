@@ -105,6 +105,11 @@ export function ConfirmSendScreen() {
           hash: result.hash,
           amount,
           symbol: token.symbol,
+          usdLabel,
+          network: token.network,
+          networkLabel: token.networkLabel,
+          tokenName: token.name,
+          logoUrl: token.logoUrl,
         });
       } catch (err) {
         const message =
@@ -124,6 +129,7 @@ export function ConfirmSendScreen() {
     setError,
     token,
     trimmedRecipient,
+    usdLabel,
   ]);
 
   const onCancelPress = useCallback(() => {
