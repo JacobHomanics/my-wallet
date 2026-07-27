@@ -25,6 +25,36 @@ export type TokenBalancesResult = {
   refresh: () => void;
 };
 
+const CACHE_TTL_MS = 60_000;
+
+type TokenBalancesCache = {
+  key: string;
+  tokens: OwnedToken[];
+  error: string | null;
+  fetchedAt: number;
+};
+
+/** Shared across Home + Token Details so navigating does not refetch immediately. */
+let tokenBalancesCache: TokenBalancesCache | null = null;
+
+function cacheKey(
+  ethereumAddress: string | null,
+  solanaAddress: string | null,
+) {
+  return `${ethereumAddress ?? ''}|${solanaAddress ?? ''}`;
+}
+
+function readFreshCache(key: string): TokenBalancesCache | null {
+  if (
+    !tokenBalancesCache ||
+    tokenBalancesCache.key !== key ||
+    Date.now() - tokenBalancesCache.fetchedAt > CACHE_TTL_MS
+  ) {
+    return null;
+  }
+  return tokenBalancesCache;
+}
+
 /**
  * Loads fungible token balances for Privy Ethereum + Solana addresses via Alchemy.
  */
@@ -35,11 +65,17 @@ export function useTokenBalances(): TokenBalancesResult {
   const solanaAddress =
     wallets.find((wallet) => wallet.chain === 'solana')?.address ?? null;
   const hasAddress = Boolean(ethereumAddress || solanaAddress);
+  const key = cacheKey(ethereumAddress, solanaAddress);
+  const cached = hasAddress ? readFreshCache(key) : null;
 
-  const [tokens, setTokens] = useState<OwnedToken[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [tokens, setTokens] = useState<OwnedToken[]>(
+    () => cached?.tokens ?? [],
+  );
+  const [loading, setLoading] = useState(() => !cached && hasAddress);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    () => cached?.error ?? null,
+  );
   const [reloadKey, setReloadKey] = useState(0);
   const pullRefreshRef = useRef(false);
 
@@ -65,6 +101,20 @@ export function useTokenBalances(): TokenBalancesResult {
       return;
     }
 
+    const isPullRefresh = pullRefreshRef.current;
+    pullRefreshRef.current = false;
+
+    if (!isPullRefresh) {
+      const fresh = readFreshCache(key);
+      if (fresh) {
+        setTokens(fresh.tokens);
+        setError(fresh.error);
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+    }
+
     const queries: WalletNetworksQuery[] = [];
     if (ethereumAddress) {
       queries.push({
@@ -80,13 +130,10 @@ export function useTokenBalances(): TokenBalancesResult {
     }
 
     const controller = new AbortController();
-    const isPullRefresh = pullRefreshRef.current;
-    pullRefreshRef.current = false;
 
     if (isPullRefresh) {
       setRefreshing(true);
     } else {
-      setTokens([]);
       setLoading(true);
     }
     setError(null);
@@ -112,7 +159,13 @@ export function useTokenBalances(): TokenBalancesResult {
         for (const result of results) {
           if (result.status === 'fulfilled') {
             nextTokens.push(...result.value);
-          } else if (result.reason && !(result.reason instanceof Error && result.reason.name === 'AbortError')) {
+          } else if (
+            result.reason &&
+            !(
+              result.reason instanceof Error &&
+              result.reason.name === 'AbortError'
+            )
+          ) {
             errors.push(
               result.reason instanceof Error
                 ? result.reason.message
@@ -122,15 +175,22 @@ export function useTokenBalances(): TokenBalancesResult {
         }
 
         sortOwnedTokens(nextTokens);
+        const nextError =
+          nextTokens.length === 0 && errors.length > 0
+            ? (errors[0] ?? 'Failed to load tokens')
+            : errors.length > 0
+              ? (errors[0] ?? null)
+              : null;
+
+        tokenBalancesCache = {
+          key,
+          tokens: nextTokens,
+          error: nextError,
+          fetchedAt: Date.now(),
+        };
 
         setTokens(nextTokens);
-        setError(
-          nextTokens.length === 0 && errors.length > 0
-            ? errors[0] ?? 'Failed to load tokens'
-            : errors.length > 0
-              ? errors[0] ?? null
-              : null,
-        );
+        setError(nextError);
       } catch (err) {
         if (controller.signal.aborted) {
           return;
@@ -156,6 +216,7 @@ export function useTokenBalances(): TokenBalancesResult {
     hasAddress,
     walletsReady,
     reloadKey,
+    key,
   ]);
 
   const totalUsd = tokens.reduce<number | null>((sum, token) => {
@@ -171,12 +232,12 @@ export function useTokenBalances(): TokenBalancesResult {
     solanaAddress,
     tokens,
     totalUsd,
-    loading: !walletsReady || Boolean(hasAddress && loading),
+    loading: !walletsReady || Boolean(hasAddress && loading && tokens.length === 0),
     refreshing,
     error,
     refresh: () => {
       pullRefreshRef.current = true;
-      setReloadKey((key) => key + 1);
+      setReloadKey((prev) => prev + 1);
     },
   };
 }

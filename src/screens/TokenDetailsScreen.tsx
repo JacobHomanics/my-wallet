@@ -36,6 +36,7 @@ function TokenRow({ token }: { token: OwnedToken }) {
         <TokenIcon
           logoUrl={token.logoUrl}
           network={token.network}
+          showNetworkBadge={false}
           symbol={token.symbol}
         />
         <View style={styles.tokenText}>

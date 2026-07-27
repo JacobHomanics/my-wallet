@@ -8,22 +8,26 @@ type TokenIconProps = {
   logoUrl: string | null;
   network: string;
   size?: number;
+  /** When false, omit the chain badge (e.g. already shown in a chain section header). */
+  showNetworkBadge?: boolean;
 };
 
 /**
- * Token logo with a chain badge anchored to the bottom-right.
+ * Token logo with an optional chain badge anchored to the bottom-right.
  */
 export function TokenIcon({
   symbol,
   logoUrl,
   network,
   size = 40,
+  showNetworkBadge = true,
 }: TokenIconProps) {
   const [logoFailed, setLogoFailed] = useState(false);
   const [chainFailed, setChainFailed] = useState(false);
   const chainIconUrl = getNetworkIconUrl(network);
   const showLogo = Boolean(logoUrl) && !logoFailed;
-  const showChain = Boolean(chainIconUrl) && !chainFailed;
+  const showChain =
+    showNetworkBadge && Boolean(chainIconUrl) && !chainFailed;
   const badgeSize = Math.max(18, Math.round(size * 0.5));
 
   useEffect(() => {
