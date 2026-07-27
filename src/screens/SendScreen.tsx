@@ -213,20 +213,40 @@ export function SendScreen() {
               </Pressable>
 
               <Text style={styles.label}>To</Text>
-              <TextInput
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={Boolean(selectedToken)}
-                onChangeText={setRecipient}
-                placeholder={recipientHint}
-                placeholderTextColor="#94a3b8"
+              <View
                 style={[
-                  styles.input,
+                  styles.recipientRow,
                   !selectedToken && styles.inputDisabled,
                   recipientError ? styles.inputError : null,
                 ]}
-                value={recipient}
-              />
+              >
+                <TextInput
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={Boolean(selectedToken)}
+                  onChangeText={setRecipient}
+                  placeholder={recipientHint}
+                  placeholderTextColor="#94a3b8"
+                  style={styles.recipientInput}
+                  value={recipient}
+                />
+                {recipient.trim() && selectedToken ? (
+                  <Pressable
+                    accessibilityLabel="Clear recipient"
+                    accessibilityRole="button"
+                    hitSlop={8}
+                    onPress={() => {
+                      setRecipient('');
+                    }}
+                    style={({ pressed }) => [
+                      styles.clearButton,
+                      pressed && styles.clearButtonPressed,
+                    ]}
+                  >
+                    <Ionicons name="close-circle" size={20} color="#94a3b8" />
+                  </Pressable>
+                ) : null}
+              </View>
               {recipientError ? (
                 <Text style={styles.fieldError}>{recipientError}</Text>
               ) : null}
@@ -459,15 +479,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#94a3b8',
   },
-  input: {
+  recipientRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#cbd5e1',
     borderRadius: 12,
-    paddingHorizontal: 16,
+    paddingLeft: 16,
+    paddingRight: 8,
+    backgroundColor: '#fff',
+  },
+  recipientInput: {
+    flex: 1,
     paddingVertical: 14,
+    paddingRight: 8,
     fontSize: 16,
     color: '#0f172a',
-    backgroundColor: '#fff',
+  },
+  clearButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clearButtonPressed: {
+    opacity: 0.6,
   },
   inputDisabled: {
     backgroundColor: '#f1f5f9',
