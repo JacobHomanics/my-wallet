@@ -4,9 +4,9 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -281,21 +281,6 @@ export function TokenDetailsScreen() {
     }));
   }, []);
 
-  const renderChainSection = useCallback(
-    ({ item }: { item: TokenChainGroup }) => (
-      <ChainSection
-        group={item}
-        expanded={isNetworkExpandedInState(item.network, expandedNetworks)}
-        expandedNetworks={expandedNetworks}
-        onToggle={() => {
-          toggleNetwork(item.network);
-        }}
-        onToggleNetwork={toggleNetwork}
-      />
-    ),
-    [expandedNetworks, toggleNetwork],
-  );
-
   const totalLabel = formatUsdValue(totalUsd);
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
 
@@ -325,8 +310,6 @@ export function TokenDetailsScreen() {
           <View style={styles.topBarSpacer} />
         </View>
 
-        {totalLabel ? <Text style={styles.total}>{totalLabel}</Text> : null}
-
         {!hasWallet || loading ? (
           <ActivityIndicator color="#0f172a" style={styles.loader} />
         ) : error && tokens.length === 0 ? (
@@ -344,19 +327,9 @@ export function TokenDetailsScreen() {
             </Pressable>
           </View>
         ) : (
-          <FlatList
+          <ScrollView
             contentContainerStyle={
               chainGroups.length === 0 ? styles.listEmpty : styles.listContent
-            }
-            data={chainGroups}
-            keyExtractor={(item) => item.network}
-            ListEmptyComponent={
-              <Text style={styles.empty}>
-                No tokens found on Ethereum or Solana.
-              </Text>
-            }
-            ListHeaderComponent={
-              error ? <Text style={styles.errorBanner}>{error}</Text> : null
             }
             refreshControl={
               <RefreshControl
@@ -365,9 +338,32 @@ export function TokenDetailsScreen() {
                 tintColor="#0f172a"
               />
             }
-            renderItem={renderChainSection}
             style={styles.list}
-          />
+          >
+            {totalLabel ? <Text style={styles.total}>{totalLabel}</Text> : null}
+            {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
+            {chainGroups.length === 0 ? (
+              <Text style={styles.empty}>
+                No tokens found on Ethereum or Solana.
+              </Text>
+            ) : (
+              chainGroups.map((group) => (
+                <ChainSection
+                  key={group.network}
+                  group={group}
+                  expanded={isNetworkExpandedInState(
+                    group.network,
+                    expandedNetworks,
+                  )}
+                  expandedNetworks={expandedNetworks}
+                  onToggle={() => {
+                    toggleNetwork(group.network);
+                  }}
+                  onToggleNetwork={toggleNetwork}
+                />
+              ))
+            )}
+          </ScrollView>
         )}
       </View>
     </View>
@@ -377,6 +373,7 @@ export function TokenDetailsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minHeight: 0,
     backgroundColor: '#f8fafc',
   },
   content: {
@@ -384,6 +381,8 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 640,
     alignSelf: 'center',
+    minHeight: 0,
+    overflow: 'hidden',
   },
   topBar: {
     flexDirection: 'row',
@@ -416,7 +415,6 @@ const styles = StyleSheet.create({
     color: '#0f172a',
   },
   total: {
-    paddingHorizontal: 24,
     marginBottom: 12,
     fontSize: 22,
     fontWeight: '600',
@@ -466,11 +464,13 @@ const styles = StyleSheet.create({
   },
   list: {
     flex: 1,
+    minHeight: 0,
   },
   listContent: {
     paddingHorizontal: 24,
     paddingBottom: 32,
     gap: 20,
+    flexGrow: 1,
   },
   listEmpty: {
     flexGrow: 1,

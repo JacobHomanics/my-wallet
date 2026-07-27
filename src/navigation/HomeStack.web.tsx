@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -18,6 +19,8 @@ export function HomeStack() {
       screenOptions={{
         headerShown: false,
         animation: isDesktopWeb ? 'none' : 'slide_from_right',
+        // Bounded card height so ScrollView/FlatList can scroll on web.
+        cardStyle: Platform.OS === 'web' ? { flex: 1 } : undefined,
       }}
     >
       <WebStack.Screen name="index" component={homeStackScreens.index} />

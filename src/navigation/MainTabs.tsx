@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
+import { Platform } from 'react-native';
 
 import { useBottomTabBarStyle } from '@/hooks/useBottomTabBarStyle';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -35,6 +36,9 @@ export function MainTabs() {
           // Room for descenders; default fontSize 10 clips "g" in Settings on web.
           lineHeight: 13,
         },
+        // Pass a bounded height into tab scenes so nested ScrollViews scroll on web.
+        sceneStyle:
+          Platform.OS === 'web' ? { flex: 1, minHeight: 0 } : undefined,
       }}
     >
       <Tab.Screen
