@@ -1,7 +1,5 @@
 import { useCallback } from 'react';
-import type { CompositeNavigationProp } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
-import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ActivityIndicator,
@@ -16,18 +14,11 @@ import {
 import { useDeposit } from '@/hooks/useDeposit';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatUsdValue } from '@/lib/alchemy/fetchTokensByAddress';
-import type {
-  MainTabParamList,
-  RootStackParamList,
-} from '@/navigation/types';
-
-type HomeScreenNavigationProp = CompositeNavigationProp<
-  BottomTabNavigationProp<MainTabParamList, 'home'>,
-  NativeStackNavigationProp<RootStackParamList>
->;
+import type { HomeStackParamList } from '@/navigation/types';
 
 export function HomeScreen() {
-  const navigation = useNavigation<HomeScreenNavigationProp>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const {
     ready,
     ethereumAddress,

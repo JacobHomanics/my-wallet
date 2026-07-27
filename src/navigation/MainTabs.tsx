@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 
 import { useBottomTabBarStyle } from '@/hooks/useBottomTabBarStyle';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { HomeStack } from '@/navigation/HomeStack';
 import { MainTabBar } from '@/navigation/MainTabBar';
 import type { MainTabParamList } from '@/navigation/types';
-import { HomeScreen } from '@/screens/HomeScreen';
 import { SettingsScreen } from '@/screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -38,16 +39,25 @@ export function MainTabs() {
     >
       <Tab.Screen
         name="home"
-        component={HomeScreen}
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons
-              name={focused ? 'wallet' : 'wallet-outline'}
-              color={color}
-              size={size}
-            />
-          ),
+        component={HomeStack}
+        options={({ route }) => {
+          const focusedRoute =
+            getFocusedRouteNameFromRoute(route) ?? 'home';
+          // Keep the desktop top nav; on mobile hide the tab bar for the push.
+          const hideTabBar =
+            !isDesktopWeb && focusedRoute === 'tokenDetails';
+
+          return {
+            title: 'Home',
+            tabBarStyle: hideTabBar ? { display: 'none' } : tabBarStyle,
+            tabBarIcon: ({ color, focused, size }) => (
+              <Ionicons
+                name={focused ? 'wallet' : 'wallet-outline'}
+                color={color}
+                size={size}
+              />
+            ),
+          };
         }}
       />
       <Tab.Screen

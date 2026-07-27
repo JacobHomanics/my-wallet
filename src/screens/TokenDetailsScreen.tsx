@@ -26,7 +26,7 @@ import {
   type TokenChainGroup,
 } from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkIconUrl } from '@/lib/alchemy/networkIcons';
-import type { RootStackParamList } from '@/navigation/types';
+import type { HomeStackParamList } from '@/navigation/types';
 
 /** Priced chains open by default; Unknown (+ its nested groups) stay closed. */
 function defaultNetworkExpanded(network: string) {
@@ -253,7 +253,7 @@ export function TokenDetailsScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const {
     ethereumAddress,
     solanaAddress,

@@ -28,10 +28,6 @@ export function RootStack() {
         component={rootStackScreens.loginVerify}
       />
       <WebStack.Screen name="main" component={rootStackScreens.main} />
-      <WebStack.Screen
-        name="tokenDetails"
-        component={rootStackScreens.tokenDetails}
-      />
     </WebStack.Navigator>
   );
 }
