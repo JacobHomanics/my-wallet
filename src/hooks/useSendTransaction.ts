@@ -99,6 +99,8 @@ export function useSendTransaction(): SendTransactionResult {
           chain: 'solana:mainnet',
           options: {
             uiOptions: { showWalletUIs: false },
+            // Alchemy Solana often lacks `signatureSubscribe`; return after broadcast.
+            optimisticBroadcast: true,
           },
         });
 

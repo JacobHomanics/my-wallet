@@ -49,6 +49,13 @@ export function getSolanaRpcUrl(): string {
   return getAlchemyRpcUrl('solana-mainnet');
 }
 
+/** WebSocket endpoint for Solana subscriptions (Privy `rpcSubscriptions`). */
+export function getSolanaRpcSubscriptionsUrl(): string {
+  // Alchemy free/lower tiers often reject `signatureSubscribe`. Use public WSS
+  // for subscriptions while HTTP RPC can still go through Alchemy.
+  return 'wss://api.mainnet-beta.solana.com';
+}
+
 export function getEvmNativeCurrency(network: string) {
   if (!isAlchemyEvmNetwork(network)) {
     return { name: 'Ether', symbol: 'ETH', decimals: 18 };
