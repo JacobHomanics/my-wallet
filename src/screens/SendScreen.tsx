@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -19,68 +19,15 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { TokenChainSection } from '@/components/TokenChainSection';
 import { TokenIcon } from '@/components/TokenIcon';
+import { useExpandedNetworks } from '@/hooks/useExpandedNetworks';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendForm } from '@/hooks/useSendForm';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
-import {
-  formatUsdValue,
-  type OwnedToken,
-} from '@/lib/alchemy/fetchTokensByAddress';
+import { useTokensByChain } from '@/hooks/useTokensByChain';
+import type { TokenChainGroup } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
-
-const TokenPickerRow = memo(function TokenPickerRow({
-  token,
-  selected,
-  onSelect,
-}: {
-  token: OwnedToken;
-  selected: boolean;
-  onSelect: (tokenId: string) => void;
-}) {
-  const usdLabel = formatUsdValue(token.usdValue);
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      onPress={() => {
-        onSelect(token.id);
-      }}
-      style={({ pressed }) => [
-        styles.pickerRow,
-        selected && styles.pickerRowSelected,
-        pressed && styles.pickerRowPressed,
-      ]}
-    >
-      <View style={styles.pickerLeft}>
-        <TokenIcon
-          logoUrl={token.logoUrl}
-          network={token.network}
-          symbol={token.symbol}
-        />
-        <View style={styles.pickerText}>
-          <Text style={styles.pickerSymbol} numberOfLines={1}>
-            {token.symbol}
-          </Text>
-          <Text style={styles.pickerMeta} numberOfLines={1}>
-            {token.networkLabel}
-          </Text>
-        </View>
-      </View>
-      <View style={styles.pickerRight}>
-        <Text style={styles.pickerBalance} numberOfLines={1}>
-          {token.balanceFormatted}
-        </Text>
-        {usdLabel ? (
-          <Text style={styles.pickerUsd} numberOfLines={1}>
-            {usdLabel}
-          </Text>
-        ) : null}
-      </View>
-    </Pressable>
-  );
-});
 
 export function SendScreen() {
   const insets = useSafeAreaInsets();
@@ -90,6 +37,8 @@ export function SendScreen() {
   const route = useRoute<RouteProp<HomeStackParamList, 'send'>>();
   const { tokens, loading, ready, ethereumAddress, solanaAddress } =
     useTokenBalances();
+  const chainGroups = useTokensByChain(tokens);
+  const { expandedNetworks, isExpanded, toggleNetwork } = useExpandedNetworks();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const form = useSendForm(tokens, route.params?.tokenId);
@@ -145,6 +94,30 @@ export function SendScreen() {
       setPickerOpen(false);
     },
     [setSelectedTokenId],
+  );
+
+  const renderChainSection = useCallback(
+    ({ item }: { item: TokenChainGroup }) => (
+      <TokenChainSection
+        group={item}
+        expanded={isExpanded(item.network)}
+        expandedNetworks={expandedNetworks}
+        onToggle={() => {
+          toggleNetwork(item.network);
+        }}
+        onToggleNetwork={toggleNetwork}
+        onTokenPress={onSelectToken}
+        selectedTokenId={selectedToken?.id}
+        showNetworkMeta
+      />
+    ),
+    [
+      expandedNetworks,
+      isExpanded,
+      onSelectToken,
+      selectedToken?.id,
+      toggleNetwork,
+    ],
   );
 
   const onContinue = useCallback(() => {
@@ -356,20 +329,14 @@ export function SendScreen() {
 
           <FlatList
             contentContainerStyle={
-              tokens.length === 0 ? styles.pickerEmpty : styles.pickerList
+              chainGroups.length === 0 ? styles.pickerEmpty : styles.pickerList
             }
-            data={tokens}
-            keyExtractor={(item) => item.id}
+            data={chainGroups}
+            keyExtractor={(item) => item.network}
             ListEmptyComponent={
               <Text style={styles.empty}>No tokens available to send.</Text>
             }
-            renderItem={({ item }) => (
-              <TokenPickerRow
-                onSelect={onSelectToken}
-                selected={item.id === selectedToken?.id}
-                token={item}
-              />
-            )}
+            renderItem={renderChainSection}
           />
         </View>
       </Modal>
@@ -613,62 +580,10 @@ const styles = StyleSheet.create({
   pickerList: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    gap: 4,
+    gap: 20,
   },
   pickerEmpty: {
     flexGrow: 1,
     justifyContent: 'center',
-  },
-  pickerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-  },
-  pickerRowSelected: {
-    backgroundColor: '#e2e8f0',
-  },
-  pickerRowPressed: {
-    opacity: 0.75,
-  },
-  pickerLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    minWidth: 0,
-  },
-  pickerText: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  pickerSymbol: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0f172a',
-  },
-  pickerMeta: {
-    fontSize: 13,
-    color: '#94a3b8',
-  },
-  pickerRight: {
-    alignItems: 'flex-end',
-    gap: 2,
-    maxWidth: '42%',
-  },
-  pickerBalance: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0f172a',
-    fontVariant: ['tabular-nums'],
-  },
-  pickerUsd: {
-    fontSize: 13,
-    color: '#64748b',
-    fontVariant: ['tabular-nums'],
   },
 });
