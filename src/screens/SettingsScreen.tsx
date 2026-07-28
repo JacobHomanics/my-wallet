@@ -60,7 +60,12 @@ export function SettingsScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: Math.max(insets.bottom, 24) + 24 },
+          {
+            paddingTop: Math.max(insets.top, 12) + 12,
+            paddingBottom: Math.max(insets.bottom, 24) + 24,
+            paddingLeft: Math.max(insets.left, 24),
+            paddingRight: Math.max(insets.right, 24),
+          },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -232,8 +237,6 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 24,
   },
   title: {
     fontSize: 28,
