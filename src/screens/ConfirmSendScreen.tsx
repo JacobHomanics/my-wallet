@@ -86,6 +86,7 @@ export function ConfirmSendScreen() {
     ethereumRecipient,
     solanaRecipient,
     recipientsValid,
+    amountValid,
     insufficientFunds,
     filledUsd,
     canContinue,
@@ -108,12 +109,12 @@ export function ConfirmSendScreen() {
   const canSend = canContinue && allocations.length > 0;
 
   const invalidReason =
-    allocations.length === 0
-      ? 'Nothing to send. Go back and enter an amount.'
-      : !recipientsValid
-        ? 'Recipient address is invalid.'
-        : insufficientFunds
-          ? 'Insufficient funds for this payment.'
+    insufficientFunds || (amountValid && allocations.length === 0)
+      ? 'Insufficient funds for this payment.'
+      : allocations.length === 0
+        ? 'Nothing to send. Go back and enter an amount.'
+        : !recipientsValid
+          ? 'Recipient address is invalid.'
           : !canContinue
             ? 'Enter a valid amount and recipients to continue.'
             : null;
