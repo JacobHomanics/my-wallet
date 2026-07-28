@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import type { RouteProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ActivityIndicator,
@@ -15,31 +14,25 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
-import { TokenIcon } from '@/components/TokenIcon';
+import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
+import { StrategyPickerModal } from '@/components/StrategyPickerModal';
+import { TokenPickerModal } from '@/components/TokenPickerModal';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
-import { resetSendDraft } from '@/hooks/useSendDraft';
+import { resetSendDraft, useSendDraftUi } from '@/hooks/useSendDraft';
+import { useSendForm } from '@/hooks/useSendForm';
 import { useSendPayment } from '@/hooks/useSendPayment';
 import { useSendStatus } from '@/hooks/useSendStatus';
+import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import {
-  estimateTokenAmountUsd,
   formatUsdAmountInput,
   formatUsdValue,
-  parseTokenAmountToRaw,
-  type OwnedToken,
 } from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkChain } from '@/lib/alchemy/networks';
-import { isValidRecipientAddress } from '@/lib/validation';
+import { parseUsdInput } from '@/lib/strategies/allocatePayment';
 import type { HomeStackParamList } from '@/navigation/types';
-
-type ResolvedLeg = {
-  token: OwnedToken;
-  amount: string;
-  amountRaw: bigint;
-  usd: number | null;
-};
 
 /**
  * Review + execute a multi-token payment prepared on the Send screen.
@@ -49,92 +42,74 @@ export function ConfirmSendScreen() {
   const isDesktopWeb = useIsDesktopWeb();
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const route = useRoute<RouteProp<HomeStackParamList, 'confirmSend'>>();
-  const {
-    usdAmount,
-    ethereumRecipient,
-    solanaRecipient,
-    legs: legParams,
-  } = route.params;
   const { tokens, loading, ready, refresh } = useTokenBalances();
   const { sendPayment, sending } = useSendPayment();
   const { error, clearStatus, setError } = useSendStatus();
   const { copy, isCopied } = useCopyToClipboard();
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const { showAdvanced, toggleAdvanced, allocationInputUnit, setAllocationInputUnit } =
+    useSendDraftUi();
+  const {
+    strategies,
+    selectedStrategy,
+    selectedStrategyId,
+    pickerOpen: strategyPickerOpen,
+    openPicker: openStrategyPicker,
+    closePicker: closeStrategyPicker,
+    onSelectStrategy,
+  } = useStrategyPicker();
+  const [tokenPickerOpen, setTokenPickerOpen] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
 
-  const legs = useMemo((): ResolvedLeg[] => {
-    const resolved: ResolvedLeg[] = [];
-    for (const leg of legParams ?? []) {
-      const token = tokens.find((item) => item.id === leg.tokenId);
-      if (!token) {
-        continue;
-      }
-      const amountRaw = parseTokenAmountToRaw(leg.amount, token.decimals);
-      if (amountRaw == null || amountRaw <= 0n) {
-        continue;
-      }
-      resolved.push({
-        token,
-        amount: leg.amount,
-        amountRaw,
-        usd: estimateTokenAmountUsd(token, amountRaw),
-      });
-    }
-    return resolved;
-  }, [legParams, tokens]);
+  const form = useSendForm(
+    tokens,
+    selectedStrategyId,
+    undefined,
+    allocationInputUnit,
+  );
+  const {
+    amount,
+    allocations,
+    allocationInputs,
+    needsEthereumRecipient,
+    needsSolanaRecipient,
+    ethereumRecipient,
+    solanaRecipient,
+    recipientsValid,
+    insufficientFunds,
+    canContinue,
+    setAllocationAmount,
+    removeAllocation,
+    addAllocation,
+  } = form;
+
+  const trimmedEthereum = ethereumRecipient.trim();
+  const trimmedSolana = solanaRecipient.trim();
 
   const usdLabel = useMemo(() => {
-    const fromLegs = legs.reduce<number | null>((sum, leg) => {
-      if (leg.usd == null) {
+    const fromLegs = allocations.reduce<number | null>((sum, leg) => {
+      if (!Number.isFinite(leg.usd)) {
         return sum;
       }
       return (sum ?? 0) + leg.usd;
     }, null);
-    if (fromLegs != null) {
+    if (fromLegs != null && fromLegs > 0) {
       return formatUsdValue(fromLegs);
     }
-    const parsed = Number(usdAmount);
-    return Number.isFinite(parsed) ? formatUsdValue(parsed) : `$${usdAmount}`;
-  }, [legs, usdAmount]);
+    const parsed = parseUsdInput(amount);
+    return parsed != null ? formatUsdValue(parsed) : null;
+  }, [allocations, amount]);
 
-  const needsEthereum = legs.some(
-    (leg) => getNetworkChain(leg.token.network) === 'ethereum',
-  );
-  const needsSolana = legs.some(
-    (leg) => getNetworkChain(leg.token.network) === 'solana',
-  );
-  const trimmedEthereum = ethereumRecipient?.trim() ?? '';
-  const trimmedSolana = solanaRecipient?.trim() ?? '';
-  const ethereumRecipientValid = needsEthereum
-    ? isValidRecipientAddress(trimmedEthereum, 'ethereum')
-    : true;
-  const solanaRecipientValid = needsSolana
-    ? isValidRecipientAddress(trimmedSolana, 'solana')
-    : true;
-  const recipientsValid = ethereumRecipientValid && solanaRecipientValid;
-
-  const amountsValid =
-    legs.length > 0 &&
-    legs.every(
-      (leg) => leg.amountRaw > 0n && leg.amountRaw <= leg.token.rawBalance,
-    );
-
-  const canSend =
-    legs.length > 0 &&
-    legs.length === (legParams?.length ?? 0) &&
-    recipientsValid &&
-    amountsValid;
+  const canSend = canContinue && allocations.length > 0;
 
   const invalidReason =
-    (legParams?.length ?? 0) === 0
+    allocations.length === 0
       ? 'Nothing to send. Go back and enter an amount.'
-      : legs.length !== (legParams?.length ?? 0)
-        ? 'One or more tokens are unavailable. Go back and try again.'
-        : !recipientsValid
-          ? 'Recipient address is invalid.'
-          : !amountsValid
-            ? 'Insufficient funds for this payment.'
+      : !recipientsValid
+        ? 'Recipient address is invalid.'
+        : insufficientFunds
+          ? 'Insufficient funds for this payment.'
+          : !canContinue
+            ? 'Enter a valid amount and recipients to continue.'
             : null;
 
   const onConfirm = useCallback(() => {
@@ -147,14 +122,14 @@ export function ConfirmSendScreen() {
     void (async () => {
       try {
         const results = await sendPayment(
-          legs.map((leg) => {
+          allocations.map((leg) => {
             const chain = getNetworkChain(leg.token.network);
             return {
               token: leg.token,
               recipient:
                 chain === 'solana' ? trimmedSolana : trimmedEthereum,
               amountRaw: leg.amountRaw,
-              amountFormatted: leg.amount,
+              amountFormatted: leg.amountFormatted,
             };
           }),
         );
@@ -162,7 +137,8 @@ export function ConfirmSendScreen() {
         refresh();
         navigation.navigate('sent', {
           usdLabel:
-            usdLabel ?? `$${formatUsdAmountInput(Number(usdAmount) || 0)}`,
+            usdLabel ??
+            `$${formatUsdAmountInput(parseUsdInput(amount) ?? 0)}`,
           legs: results.map((result) => ({
             hash: result.hash,
             amount: result.amount,
@@ -180,9 +156,10 @@ export function ConfirmSendScreen() {
       }
     })();
   }, [
+    allocations,
+    amount,
     canSend,
     clearStatus,
-    legs,
     navigation,
     refresh,
     sendPayment,
@@ -190,7 +167,6 @@ export function ConfirmSendScreen() {
     setError,
     trimmedEthereum,
     trimmedSolana,
-    usdAmount,
     usdLabel,
   ]);
 
@@ -214,6 +190,20 @@ export function ConfirmSendScreen() {
   const goToSend = useCallback(() => {
     navigation.navigate('send');
   }, [navigation]);
+
+  const onAddToken = useCallback(
+    (tokenId: string) => {
+      addAllocation(tokenId);
+      setTokenPickerOpen(false);
+    },
+    [addAllocation],
+  );
+
+  const allocatedTokenIds = allocations.map((leg) => leg.token.id);
+  const canAddToken = tokens.some(
+    (token) =>
+      token.rawBalance > 0n && !allocatedTokenIds.includes(token.id),
+  );
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -243,11 +233,13 @@ export function ConfirmSendScreen() {
           <ActivityIndicator color="#0f172a" style={styles.loader} />
         ) : (
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
-            <Text style={styles.heroUsd}>{usdLabel ?? `$${usdAmount}`}</Text>
+            <Text style={styles.heroUsd}>
+              {usdLabel ?? `$${amount || '0'}`}
+            </Text>
 
             <View style={styles.toSection}>
               <Text style={styles.toLabel}>To</Text>
-              {needsEthereum ? (
+              {needsEthereumRecipient ? (
                 <View style={styles.toAddressRow}>
                   <Text style={styles.toChainLabel}>EVM</Text>
                   <Text style={styles.toAddress} selectable>
@@ -277,7 +269,7 @@ export function ConfirmSendScreen() {
                   </Pressable>
                 </View>
               ) : null}
-              {needsSolana ? (
+              {needsSolanaRecipient ? (
                 <View style={styles.toAddressRow}>
                   <Text style={styles.toChainLabel}>Solana</Text>
                   <Text style={styles.toAddress} selectable>
@@ -300,7 +292,9 @@ export function ConfirmSendScreen() {
                     ]}
                   >
                     <Ionicons
-                      name={isCopied('solana') ? 'checkmark' : 'copy-outline'}
+                      name={
+                        isCopied('solana') ? 'checkmark' : 'copy-outline'
+                      }
                       size={18}
                       color={isCopied('solana') ? '#15803d' : '#64748b'}
                     />
@@ -312,9 +306,7 @@ export function ConfirmSendScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityState={{ expanded: showAdvanced }}
-              onPress={() => {
-                setShowAdvanced((open) => !open);
-              }}
+              onPress={toggleAdvanced}
               style={({ pressed }) => [
                 styles.advancedToggle,
                 pressed && styles.advancedTogglePressed,
@@ -333,32 +325,20 @@ export function ConfirmSendScreen() {
             </Pressable>
 
             {showAdvanced ? (
-              <View style={styles.advanced}>
-                {legs.map((leg, index) => (
-                  <View key={leg.token.id}>
-                    {index > 0 ? <View style={styles.divider} /> : null}
-                    <View style={styles.tokenRow}>
-                      <TokenIcon
-                        logoUrl={leg.token.logoUrl}
-                        network={leg.token.network}
-                        size={36}
-                        symbol={leg.token.symbol}
-                      />
-                      <View style={styles.tokenText}>
-                        <Text style={styles.tokenSymbol}>
-                          {leg.amount} {leg.token.symbol}
-                        </Text>
-                        <Text style={styles.tokenMeta}>
-                          {leg.token.networkLabel}
-                          {leg.usd != null
-                            ? ` · ${formatUsdValue(leg.usd)}`
-                            : ''}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                ))}
-              </View>
+              <SendAdvancedDetails
+                allocationInputUnit={allocationInputUnit}
+                allocationInputs={allocationInputs}
+                allocations={allocations}
+                canAddToken={canAddToken}
+                onAddToken={() => {
+                  setTokenPickerOpen(true);
+                }}
+                onAllocationAmountChange={setAllocationAmount}
+                onAllocationInputUnitChange={setAllocationInputUnit}
+                onOpenStrategyPicker={openStrategyPicker}
+                onRemoveAllocation={removeAllocation}
+                selectedStrategy={selectedStrategy}
+              />
             ) : null}
 
             {invalidReason ? (
@@ -403,6 +383,24 @@ export function ConfirmSendScreen() {
           </ScrollView>
         )}
       </View>
+
+      <StrategyPickerModal
+        onClose={closeStrategyPicker}
+        onSelect={onSelectStrategy}
+        selectedStrategyId={selectedStrategyId}
+        strategies={strategies}
+        visible={strategyPickerOpen}
+      />
+
+      <TokenPickerModal
+        excludeTokenIds={allocatedTokenIds}
+        onClose={() => {
+          setTokenPickerOpen(false);
+        }}
+        onSelect={onAddToken}
+        tokens={tokens}
+        visible={tokenPickerOpen}
+      />
 
       <Modal
         animationType="fade"
@@ -566,39 +564,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#64748b',
-  },
-  advanced: {
-    marginTop: 8,
-    alignSelf: 'stretch',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-  },
-  tokenRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-  },
-  tokenText: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  tokenSymbol: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0f172a',
-  },
-  tokenMeta: {
-    fontSize: 13,
-    color: '#94a3b8',
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#e2e8f0',
   },
   error: {
     marginTop: 16,
