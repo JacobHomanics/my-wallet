@@ -9,6 +9,8 @@ export type UserWalletsResult = {
   wallets: UserWallet[];
 };
 
+//
+
 export function formatWalletAddress(address: string, start = 10, end = 8) {
   if (address.length <= start + end + 3) {
     return address;
