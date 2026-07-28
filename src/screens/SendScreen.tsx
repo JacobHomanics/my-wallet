@@ -19,13 +19,14 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TokenChainSection } from '@/components/TokenChainSection';
 import { TokenIcon } from '@/components/TokenIcon';
 import { useExpandedNetworks } from '@/hooks/useExpandedNetworks';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendForm } from '@/hooks/useSendForm';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
-import { usePaymentStrategy } from '@/hooks/usePaymentStrategy';
+import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useTokensByChain } from '@/hooks/useTokensByChain';
 import {
@@ -45,7 +46,15 @@ export function SendScreen() {
   const chainGroups = useTokensByChain(tokens);
   const { expandedNetworks, isExpanded, toggleNetwork } = useExpandedNetworks();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
-  const { selectedStrategy } = usePaymentStrategy();
+  const {
+    strategies,
+    selectedStrategy,
+    selectedStrategyId,
+    pickerOpen: strategyPickerOpen,
+    openPicker: openStrategyPicker,
+    closePicker: closeStrategyPicker,
+    onSelectStrategy,
+  } = useStrategyPicker();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const form = useSendForm(tokens, route.params?.tokenId);
@@ -288,12 +297,21 @@ export function SendScreen() {
 
               {showAdvanced ? (
                 <View style={styles.advanced}>
-                  <View style={styles.strategyRow}>
+                  <Pressable
+                    accessibilityLabel={`Payment strategy ${selectedStrategy.label}`}
+                    accessibilityRole="button"
+                    onPress={openStrategyPicker}
+                    style={({ pressed }) => [
+                      styles.strategyRow,
+                      pressed && styles.strategyRowPressed,
+                    ]}
+                  >
                     <Text style={styles.strategyRowLabel}>Strategy</Text>
                     <Text style={styles.strategyRowValue}>
                       {selectedStrategy.label}
                     </Text>
-                  </View>
+                    <Ionicons name="chevron-down" size={18} color="#94a3b8" />
+                  </Pressable>
 
                   <View style={styles.advancedDivider} />
 
@@ -401,6 +419,14 @@ export function SendScreen() {
           />
         </View>
       </Modal>
+
+      <StrategyPickerModal
+        onClose={closeStrategyPicker}
+        onSelect={onSelectStrategy}
+        selectedStrategyId={selectedStrategyId}
+        strategies={strategies}
+        visible={strategyPickerOpen}
+      />
     </View>
   );
 }
@@ -534,9 +560,11 @@ const styles = StyleSheet.create({
   strategyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: 12,
     paddingVertical: 12,
+  },
+  strategyRowPressed: {
+    opacity: 0.7,
   },
   strategyRowLabel: {
     fontSize: 14,
