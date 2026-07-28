@@ -26,6 +26,7 @@ import { usePopToHome } from '@/hooks/usePopToHome';
 import { useSendDraftUi } from '@/hooks/useSendDraft';
 import { useSendForm } from '@/hooks/useSendForm';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
+import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import type { HomeStackParamList } from '@/navigation/types';
 
@@ -37,8 +38,8 @@ export function SendScreen() {
   const route = useRoute<RouteProp<HomeStackParamList, 'send'>>();
   const { tokens, totalUsd, loading, ready, ethereumAddress, solanaAddress } =
     useTokenBalances();
-  const { showAdvanced, toggleAdvanced, allocationInputUnit, setAllocationInputUnit } =
-    useSendDraftUi();
+  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const { allocationInputUnit, setAllocationInputUnit } = useSendDraftUi();
   const {
     strategies,
     selectedStrategy,

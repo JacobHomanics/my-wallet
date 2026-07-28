@@ -19,7 +19,6 @@ export type SendDraft = {
   manualLegs: SendDraftManualLeg[] | null;
   allocationInputs: Record<string, string>;
   allocationInputUnit: AllocationInputUnit;
-  showAdvanced: boolean;
   /** When set, overrides the default strategy for this send only. */
   strategyId: PaymentStrategyId | null;
 };
@@ -33,7 +32,6 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   manualLegs: null,
   allocationInputs: {},
   allocationInputUnit: 'token',
-  showAdvanced: false,
   strategyId: null,
 };
 
@@ -123,22 +121,11 @@ export function useSendDraft(): SendDraft {
 export function useSendDraftUi() {
   const draft = useSendDraft();
 
-  const setShowAdvanced = useCallback((showAdvanced: boolean) => {
-    updateSendDraft({ showAdvanced });
-  }, []);
-
-  const toggleAdvanced = useCallback(() => {
-    updateSendDraft({ showAdvanced: !getSendDraftSnapshot().showAdvanced });
-  }, []);
-
   const setAllocationInputUnit = useCallback((allocationInputUnit: AllocationInputUnit) => {
     updateSendDraft({ allocationInputUnit });
   }, []);
 
   return {
-    showAdvanced: draft.showAdvanced,
-    setShowAdvanced,
-    toggleAdvanced,
     allocationInputUnit: draft.allocationInputUnit,
     setAllocationInputUnit,
   };

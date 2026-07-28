@@ -27,6 +27,7 @@ import { useSendForm } from '@/hooks/useSendForm';
 import { useSendPayment } from '@/hooks/useSendPayment';
 import { useSendStatus } from '@/hooks/useSendStatus';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
+import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import { getNetworkChain } from '@/lib/alchemy/networks';
@@ -44,8 +45,8 @@ export function ConfirmSendScreen() {
   const { sendPayment, sending } = useSendPayment();
   const { error, clearStatus, setError } = useSendStatus();
   const { copy, isCopied } = useCopyToClipboard();
-  const { showAdvanced, toggleAdvanced, allocationInputUnit, setAllocationInputUnit } =
-    useSendDraftUi();
+  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const { allocationInputUnit, setAllocationInputUnit } = useSendDraftUi();
   const {
     strategies,
     selectedStrategy,
