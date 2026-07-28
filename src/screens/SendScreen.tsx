@@ -197,6 +197,7 @@ export function SendScreen() {
                 <Text style={styles.balanceValue}>{totalLabel}</Text>
               </View>
 
+              <View style={styles.formBody}>
               <Text style={styles.label}>Amount</Text>
               <View
                 style={[
@@ -375,6 +376,7 @@ export function SendScreen() {
               >
                 <Text style={styles.continueButtonText}>Continue</Text>
               </Pressable>
+              </View>
             </ScrollView>
           )}
         </View>
@@ -456,6 +458,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   form: {
+    flexGrow: 1,
     paddingHorizontal: 24,
   },
   balanceRow: {
@@ -475,6 +478,11 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     fontVariant: ['tabular-nums'],
     textAlign: 'right',
+  },
+  formBody: {
+    flex: 1,
+    justifyContent: 'center',
+    width: '100%',
   },
   label: {
     marginTop: 20,
