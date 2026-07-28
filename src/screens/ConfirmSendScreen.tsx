@@ -105,9 +105,13 @@ export function ConfirmSendScreen() {
   const baseUsd =
     requestedUsd != null ? Math.max(0, requestedUsd - tipUsd) : null;
   const requiredLabel =
+    baseUsd != null
+      ? formatFromUsd(baseUsd)
+      : `${currencySymbol}${amount || '0'}`;
+  const totalLabel =
     requestedUsd != null
       ? formatFromUsd(requestedUsd)
-      : `${currencySymbol}${amount || '0'}`;
+      : requiredLabel;
   const availableLabel =
     insufficientFunds ? formatFromUsd(filledUsd) : null;
 
@@ -159,7 +163,7 @@ export function ConfirmSendScreen() {
         refresh();
         navigation.navigate('sent', {
           usdLabel:
-            requiredLabel ??
+            totalLabel ??
             `${currencySymbol}${formatAmountInputFromUsd(requestedUsd ?? 0)}`,
           legs: results.map((result) => ({
             hash: result.hash,
@@ -185,10 +189,10 @@ export function ConfirmSendScreen() {
     navigation,
     refresh,
     requestedUsd,
-    requiredLabel,
     sendPayment,
     sending,
     setError,
+    totalLabel,
     trimmedEthereum,
     trimmedSolana,
   ]);
