@@ -36,9 +36,9 @@ export function SettingsScreen() {
       <Text style={styles.subtitle}>Signed in as {displayName}.</Text>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Strategy</Text>
+        <Text style={styles.sectionTitle}>Default strategy</Text>
         <Pressable
-          accessibilityLabel={`Payment strategy ${selectedStrategy.label}`}
+          accessibilityLabel={`Default strategy ${selectedStrategy.label}`}
           accessibilityRole="button"
           onPress={openPicker}
           style={({ pressed }) => [
