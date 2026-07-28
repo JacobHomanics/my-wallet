@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   formatRawTokenBalance,
   formatUsdAmountInput,
-  formatUsdValue,
   parseTokenAmountToRaw,
   parseUsdAmountToTokenRaw,
   type OwnedToken,
@@ -24,7 +23,6 @@ export type SendFormState = {
   recipientValid: boolean;
   amountValid: boolean;
   exceedsBalance: boolean;
-  balanceHint: string | null;
   tokenAmountHint: string | null;
   canContinue: boolean;
   setSelectedTokenId: (tokenId: string | null) => void;
@@ -146,17 +144,6 @@ export function useSendForm(
 
   const canContinue = Boolean(selectedToken) && recipientValid && amountValid;
 
-  const balanceHint = useMemo(() => {
-    if (!selectedToken) {
-      return null;
-    }
-    if (amountIsUsd) {
-      const usdLabel = formatUsdValue(selectedToken.usdValue);
-      return usdLabel ? `Balance ${usdLabel}` : null;
-    }
-    return `Balance ${selectedToken.balanceFormatted} ${selectedToken.symbol}`;
-  }, [amountIsUsd, selectedToken]);
-
   const tokenAmountHint = useMemo(() => {
     if (!amountIsUsd || !selectedToken || !tokenAmount) {
       return null;
@@ -203,7 +190,6 @@ export function useSendForm(
     recipientValid,
     amountValid,
     exceedsBalance,
-    balanceHint,
     tokenAmountHint,
     canContinue,
     setSelectedTokenId,

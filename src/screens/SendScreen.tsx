@@ -67,7 +67,6 @@ export function SendScreen() {
     chain,
     recipientValid,
     exceedsBalance,
-    balanceHint,
     tokenAmountHint,
     canContinue,
     setSelectedTokenId,
@@ -263,16 +262,9 @@ export function SendScreen() {
               </View>
               {amountError ? (
                 <Text style={styles.fieldError}>{amountError}</Text>
-              ) : (
-                <>
-                  {balanceHint ? (
-                    <Text style={styles.balanceHint}>{balanceHint}</Text>
-                  ) : null}
-                  {tokenAmountHint ? (
-                    <Text style={styles.tokenAmountHint}>{tokenAmountHint}</Text>
-                  ) : null}
-                </>
-              )}
+              ) : tokenAmountHint ? (
+                <Text style={styles.tokenAmountHint}>{tokenAmountHint}</Text>
+              ) : null}
 
               <Pressable
                 accessibilityRole="button"
@@ -683,14 +675,8 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     marginRight: 4,
   },
-  balanceHint: {
-    marginTop: 8,
-    fontSize: 13,
-    color: '#94a3b8',
-    fontVariant: ['tabular-nums'],
-  },
   tokenAmountHint: {
-    marginTop: 4,
+    marginTop: 8,
     fontSize: 13,
     color: '#94a3b8',
     fontVariant: ['tabular-nums'],
