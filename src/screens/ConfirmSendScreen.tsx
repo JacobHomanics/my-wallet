@@ -259,7 +259,9 @@ export function ConfirmSendScreen() {
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
             <Text style={styles.heroUsd}>{requiredLabel}</Text>
             {availableLabel ? (
-              <Text style={styles.availableUsd}>({availableLabel})</Text>
+              <Text style={styles.availableUsd}>
+                Available Balance: {availableLabel}
+              </Text>
             ) : null}
 
             <View style={styles.tipSection}>
@@ -594,7 +596,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 18,
     fontWeight: '600',
-    color: '#15803d',
+    color: '#b91c1c',
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },
