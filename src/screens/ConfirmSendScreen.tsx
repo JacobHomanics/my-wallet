@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -83,6 +83,7 @@ export function ConfirmSendScreen() {
     solanaRecipient,
     recipientsValid,
     insufficientFunds,
+    filledUsd,
     canContinue,
     setAllocationAmount,
     removeAllocation,
@@ -92,19 +93,13 @@ export function ConfirmSendScreen() {
   const trimmedEthereum = ethereumRecipient.trim();
   const trimmedSolana = solanaRecipient.trim();
 
-  const usdLabel = useMemo(() => {
-    const fromLegs = allocations.reduce<number | null>((sum, leg) => {
-      if (!Number.isFinite(leg.usd)) {
-        return sum;
-      }
-      return (sum ?? 0) + leg.usd;
-    }, null);
-    if (fromLegs != null && fromLegs > 0) {
-      return formatFromUsd(fromLegs);
-    }
-    const parsed = parseDisplayInputToUsd(amount);
-    return parsed != null ? formatFromUsd(parsed) : null;
-  }, [allocations, amount, formatFromUsd, parseDisplayInputToUsd]);
+  const requiredUsd = parseDisplayInputToUsd(amount);
+  const requiredLabel =
+    requiredUsd != null
+      ? formatFromUsd(requiredUsd)
+      : `${currencySymbol}${amount || '0'}`;
+  const availableLabel =
+    insufficientFunds ? formatFromUsd(filledUsd) : null;
 
   const canSend = canContinue && allocations.length > 0;
 
@@ -144,7 +139,7 @@ export function ConfirmSendScreen() {
         refresh();
         navigation.navigate('sent', {
           usdLabel:
-            usdLabel ??
+            requiredLabel ??
             `${currencySymbol}${formatAmountInputFromUsd(
               parseDisplayInputToUsd(amount) ?? 0,
             )}`,
@@ -174,12 +169,12 @@ export function ConfirmSendScreen() {
     navigation,
     parseDisplayInputToUsd,
     refresh,
+    requiredLabel,
     sendPayment,
     sending,
     setError,
     trimmedEthereum,
     trimmedSolana,
-    usdLabel,
   ]);
 
   const onCancelPress = useCallback(() => {
@@ -242,9 +237,10 @@ export function ConfirmSendScreen() {
           <ActivityIndicator color="#0f172a" style={styles.loader} />
         ) : (
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
-            <Text style={styles.heroUsd}>
-              {usdLabel ?? `${currencySymbol}${amount || '0'}`}
-            </Text>
+            <Text style={styles.heroUsd}>{requiredLabel}</Text>
+            {availableLabel ? (
+              <Text style={styles.availableUsd}>({availableLabel})</Text>
+            ) : null}
 
             {needsEthereumRecipient ||
               needsSolanaRecipient ||
@@ -526,6 +522,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0f172a',
     letterSpacing: -0.6,
+    textAlign: 'center',
+    fontVariant: ['tabular-nums'],
+  },
+  availableUsd: {
+    marginTop: 6,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#15803d',
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },

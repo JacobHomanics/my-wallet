@@ -118,6 +118,7 @@ export function useSendForm(
     initialDraft.solanaRecipient,
   );
   const [amount, setAmountState] = useState(initialDraft.amount);
+  const [amountLocked, setAmountLocked] = useState(initialDraft.amountLocked);
   const [amountUsd, setAmountUsd] = useState<number | null>(null);
   const [manualAllocations, setManualAllocations] = useState<
     PaymentAllocation[] | null
@@ -213,6 +214,7 @@ export function useSendForm(
       ethereumRecipient,
       solanaRecipient,
       amount: displayAmount,
+      amountLocked,
       manualLegs: manualLegsFromAllocations(
         resolvedManualBase != null ? allocations : null,
       ),
@@ -221,6 +223,7 @@ export function useSendForm(
   }, [
     allocationInputs,
     allocations,
+    amountLocked,
     displayAmount,
     ethereumRecipient,
     resolvedManualBase,
@@ -266,15 +269,6 @@ export function useSendForm(
   );
   const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
 
-  const canFulfill =
-    resolvedManualBase != null
-      ? amountValid && hasPositiveLeg && legsWithinBalance
-      : strategyPlan.canFulfill;
-
-  const insufficientFunds =
-    amountValid &&
-    (resolvedManualBase != null ? !canFulfill : !strategyPlan.canFulfill);
-
   const filledUsd =
     resolvedManualBase != null
       ? allocations.reduce((sum, leg) => sum + leg.usd, 0)
@@ -284,6 +278,21 @@ export function useSendForm(
     resolvedManualBase != null
       ? Math.max(0, (usdAmount ?? 0) - filledUsd)
       : strategyPlan.remainingUsd;
+
+  const coversRequestedAmount =
+    usdAmount != null && filledUsd + 0.005 >= usdAmount;
+
+  const canFulfill =
+    resolvedManualBase != null
+      ? amountValid &&
+        hasPositiveLeg &&
+        legsWithinBalance &&
+        (!amountLocked || coversRequestedAmount)
+      : strategyPlan.canFulfill;
+
+  const insufficientFunds =
+    amountValid &&
+    (resolvedManualBase != null ? !canFulfill : !strategyPlan.canFulfill);
 
   const canContinue =
     amountValid &&
@@ -303,6 +312,7 @@ export function useSendForm(
 
   const setAmount = useCallback((value: string) => {
     const sanitized = sanitizeAmountInput(value);
+    setAmountLocked(false);
     setAmountState(sanitized);
     const usd = parseDisplayInputToUsd(sanitized);
     if (usd != null) {
@@ -313,6 +323,18 @@ export function useSendForm(
     setManualAllocations(null);
     setAllocationInputs({});
   }, [parseDisplayInputToUsd]);
+
+  const syncAmountFromLegs = useCallback(
+    (next: PaymentAllocation[]) => {
+      if (amountLocked) {
+        return;
+      }
+      const totalUsd = next.reduce((sum, leg) => sum + leg.usd, 0);
+      setAmountState(totalUsd > 0 ? formatAmountInputFromUsd(totalUsd) : '');
+      setAmountUsd(totalUsd > 0 ? totalUsd : null);
+    },
+    [amountLocked, formatAmountInputFromUsd],
+  );
 
   const setAllocationAmount = useCallback(
     (tokenId: string, value: string) => {
@@ -342,9 +364,7 @@ export function useSendForm(
           usd: 0,
         };
         setManualAllocations(next);
-        const totalUsd = next.reduce((sum, leg) => sum + leg.usd, 0);
-        setAmountState(totalUsd > 0 ? formatAmountInputFromUsd(totalUsd) : '');
-        setAmountUsd(totalUsd > 0 ? totalUsd : null);
+        syncAmountFromLegs(next);
         return;
       }
 
@@ -380,16 +400,14 @@ export function useSendForm(
         usd,
       };
       setManualAllocations(next);
-      const totalUsd = next.reduce((sum, leg) => sum + leg.usd, 0);
-      setAmountState(totalUsd > 0 ? formatAmountInputFromUsd(totalUsd) : '');
-      setAmountUsd(totalUsd > 0 ? totalUsd : null);
+      syncAmountFromLegs(next);
     },
     [
       allocationInputUnit,
-      formatAmountInputFromUsd,
       manualAllocations,
       parseDisplayInputToUsd,
       strategyPlan.allocations,
+      syncAmountFromLegs,
       tokens,
     ],
   );
@@ -405,11 +423,9 @@ export function useSendForm(
         const { [tokenId]: _removed, ...rest } = current;
         return rest;
       });
-      const totalUsd = next.reduce((sum, leg) => sum + leg.usd, 0);
-      setAmountState(totalUsd > 0 ? formatAmountInputFromUsd(totalUsd) : '');
-      setAmountUsd(totalUsd > 0 ? totalUsd : null);
+      syncAmountFromLegs(next);
     },
-    [formatAmountInputFromUsd, manualAllocations, strategyPlan.allocations],
+    [manualAllocations, strategyPlan.allocations, syncAmountFromLegs],
   );
 
   const addAllocation = useCallback(

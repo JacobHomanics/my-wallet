@@ -16,6 +16,11 @@ export type SendDraft = {
   ethereumRecipient: string;
   solanaRecipient: string;
   amount: string;
+  /**
+   * When true (e.g. receive QR payment request), editing token legs must not
+   * rewrite the requested amount.
+   */
+  amountLocked: boolean;
   manualLegs: SendDraftManualLeg[] | null;
   allocationInputs: Record<string, string>;
   allocationInputUnit: AllocationInputUnit;
@@ -29,6 +34,7 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   ethereumRecipient: '',
   solanaRecipient: '',
   amount: '',
+  amountLocked: false,
   manualLegs: null,
   allocationInputs: {},
   allocationInputUnit: 'token',
@@ -69,11 +75,13 @@ export function hydrateSendDraftFromConfirmParams(params: {
   ethereumRecipient?: string;
   solanaRecipient?: string;
 }): void {
+  const amount = params.usdAmount?.trim() ?? '';
   sendDraft = {
     ...DEFAULT_SEND_DRAFT,
     ethereumRecipient: params.ethereumRecipient?.trim() ?? '',
     solanaRecipient: params.solanaRecipient?.trim() ?? '',
-    amount: params.usdAmount?.trim() ?? '',
+    amount,
+    amountLocked: amount.length > 0,
   };
   listeners.forEach((listener) => {
     listener();
