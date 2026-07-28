@@ -188,6 +188,65 @@ export function estimateTokenAmountUsd(
   return Number.isFinite(usd) ? usd : null;
 }
 
+/**
+ * Converts a USD amount string into raw token units using the token's
+ * balance / USD value ratio. Clamps tiny float overshoot to full balance.
+ */
+export function parseUsdAmountToTokenRaw(
+  usdAmount: string,
+  token: OwnedToken,
+): bigint | null {
+  if (token.usdValue == null || token.usdValue <= 0 || token.rawBalance <= 0n) {
+    return null;
+  }
+
+  const trimmed = usdAmount.trim();
+  if (!trimmed || trimmed === '.' || trimmed.startsWith('-')) {
+    return null;
+  }
+  if (!/^\d+(\.\d*)?$/.test(trimmed) && !/^\.\d+$/.test(trimmed)) {
+    return null;
+  }
+
+  const usd = Number(trimmed);
+  if (!Number.isFinite(usd) || usd < 0) {
+    return null;
+  }
+  if (usd === 0) {
+    return 0n;
+  }
+
+  const full = Number(token.rawBalance);
+  if (!Number.isFinite(full) || full === 0) {
+    return null;
+  }
+
+  const rawNumber = Math.round((usd / token.usdValue) * full);
+  if (!Number.isFinite(rawNumber) || rawNumber < 0) {
+    return null;
+  }
+
+  let amountRaw = BigInt(rawNumber);
+  // Float rounding can nudge Max slightly over; clamp when within balance USD.
+  if (amountRaw > token.rawBalance && usd <= token.usdValue + 0.005) {
+    amountRaw = token.rawBalance;
+  }
+  return amountRaw;
+}
+
+/** Formats a USD number for amount input (no currency symbol). */
+export function formatUsdAmountInput(value: number): string {
+  if (!Number.isFinite(value) || value < 0) {
+    return '0';
+  }
+  if (value === 0) {
+    return '0';
+  }
+  // Keep enough precision for small balances while trimming trailing zeros.
+  const fixed = value.toFixed(6).replace(/\.?0+$/, '');
+  return fixed === '' ? '0' : fixed;
+}
+
 function usdPrice(prices: AlchemyTokenPrice[] | null | undefined): number | null {
   const usd = prices?.find(
     (price) => price.currency?.toLowerCase() === 'usd' && price.value,

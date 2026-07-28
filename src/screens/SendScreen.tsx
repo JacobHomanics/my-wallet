@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -24,9 +24,13 @@ import { TokenIcon } from '@/components/TokenIcon';
 import { useExpandedNetworks } from '@/hooks/useExpandedNetworks';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendForm } from '@/hooks/useSendForm';
+import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useTokensByChain } from '@/hooks/useTokensByChain';
-import type { TokenChainGroup } from '@/lib/alchemy/fetchTokensByAddress';
+import {
+  formatUsdValue,
+  type TokenChainGroup,
+} from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
 
 export function SendScreen() {
@@ -35,10 +39,11 @@ export function SendScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'send'>>();
-  const { tokens, loading, ready, ethereumAddress, solanaAddress } =
+  const { tokens, totalUsd, loading, ready, ethereumAddress, solanaAddress } =
     useTokenBalances();
   const chainGroups = useTokensByChain(tokens);
   const { expandedNetworks, isExpanded, toggleNetwork } = useExpandedNetworks();
+  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const form = useSendForm(tokens, route.params?.tokenId);
@@ -46,26 +51,20 @@ export function SendScreen() {
     selectedToken,
     recipient,
     amount,
+    tokenAmount,
+    amountIsUsd,
     chain,
     recipientValid,
     exceedsBalance,
+    balanceHint,
+    tokenAmountHint,
     canContinue,
     setSelectedTokenId,
     setRecipient,
     setAmount,
-    setMaxAmount,
   } = form;
 
-  useEffect(() => {
-    const tokenId = route.params?.tokenId;
-    if (!tokenId || selectedToken) {
-      return;
-    }
-    if (tokens.some((token) => token.id === tokenId)) {
-      setSelectedTokenId(tokenId);
-    }
-  }, [route.params?.tokenId, selectedToken, setSelectedTokenId, tokens]);
-
+  const totalLabel = formatUsdValue(totalUsd) ?? '$0.00';
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
   const recipientHint =
     chain === 'solana'
@@ -121,16 +120,16 @@ export function SendScreen() {
   );
 
   const onContinue = useCallback(() => {
-    if (!canContinue || !selectedToken) {
+    if (!canContinue || !selectedToken || !tokenAmount) {
       return;
     }
 
     navigation.navigate('confirmSend', {
       tokenId: selectedToken.id,
       recipient: recipient.trim(),
-      amount,
+      amount: tokenAmount,
     });
-  }, [amount, canContinue, navigation, recipient, selectedToken]);
+  }, [canContinue, navigation, recipient, selectedToken, tokenAmount]);
 
   const goHome = useCallback(() => {
     navigation.navigate('index');
@@ -177,45 +176,12 @@ export function SendScreen() {
               keyboardShouldPersistTaps="handled"
               style={styles.flex}
             >
-              <Text style={styles.label}>Token</Text>
-              <Pressable
-                accessibilityLabel={
-                  selectedToken
-                    ? `Selected token ${selectedToken.symbol}`
-                    : 'Select a token'
-                }
-                accessibilityRole="button"
-                onPress={() => {
-                  setPickerOpen(true);
-                }}
-                style={({ pressed }) => [
-                  styles.fieldButton,
-                  pressed && styles.fieldButtonPressed,
-                ]}
+              <Text
+                accessibilityLabel={`Balance ${totalLabel}`}
+                style={styles.totalBalance}
               >
-                {selectedToken ? (
-                  <View style={styles.selectedToken}>
-                    <TokenIcon
-                      logoUrl={selectedToken.logoUrl}
-                      network={selectedToken.network}
-                      size={36}
-                      symbol={selectedToken.symbol}
-                    />
-                    <View style={styles.selectedTokenText}>
-                      <Text style={styles.selectedSymbol}>
-                        {selectedToken.symbol}
-                      </Text>
-                      <Text style={styles.selectedMeta}>
-                        {selectedToken.balanceFormatted} ·{' '}
-                        {selectedToken.networkLabel}
-                      </Text>
-                    </View>
-                  </View>
-                ) : (
-                  <Text style={styles.placeholder}>Select a token</Text>
-                )}
-                <Ionicons name="chevron-down" size={18} color="#94a3b8" />
-              </Pressable>
+                {totalLabel}
+              </Text>
 
               <Text style={styles.label}>To</Text>
               <View
@@ -258,19 +224,6 @@ export function SendScreen() {
 
               <View style={styles.amountHeader}>
                 <Text style={styles.labelInline}>Amount</Text>
-                {selectedToken ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    hitSlop={8}
-                    onPress={setMaxAmount}
-                    style={({ pressed }) => [
-                      styles.maxButton,
-                      pressed && styles.maxButtonPressed,
-                    ]}
-                  >
-                    <Text style={styles.maxButtonText}>Max</Text>
-                  </Pressable>
-                ) : null}
               </View>
               <View
                 style={[
@@ -279,6 +232,9 @@ export function SendScreen() {
                   amountError ? styles.inputError : null,
                 ]}
               >
+                {amountIsUsd ? (
+                  <Text style={styles.amountPrefix}>$</Text>
+                ) : null}
                 <TextInput
                   editable={Boolean(selectedToken)}
                   keyboardType="decimal-pad"
@@ -288,7 +244,7 @@ export function SendScreen() {
                   style={styles.amountInput}
                   value={amount}
                 />
-                {selectedToken ? (
+                {!amountIsUsd && selectedToken ? (
                   <Text style={styles.amountSymbol}>
                     {selectedToken.symbol}
                   </Text>
@@ -296,11 +252,80 @@ export function SendScreen() {
               </View>
               {amountError ? (
                 <Text style={styles.fieldError}>{amountError}</Text>
-              ) : selectedToken ? (
-                <Text style={styles.balanceHint}>
-                  Balance {selectedToken.balanceFormatted}{' '}
-                  {selectedToken.symbol}
+              ) : (
+                <>
+                  {balanceHint ? (
+                    <Text style={styles.balanceHint}>{balanceHint}</Text>
+                  ) : null}
+                  {tokenAmountHint ? (
+                    <Text style={styles.tokenAmountHint}>{tokenAmountHint}</Text>
+                  ) : null}
+                </>
+              )}
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ expanded: showAdvanced }}
+                onPress={toggleAdvanced}
+                style={({ pressed }) => [
+                  styles.advancedToggle,
+                  pressed && styles.advancedTogglePressed,
+                ]}
+              >
+                <Text style={styles.advancedToggleText}>
+                  {showAdvanced
+                    ? 'Hide advanced details'
+                    : 'Show advanced details'}
                 </Text>
+                <Ionicons
+                  name={showAdvanced ? 'chevron-up' : 'chevron-down'}
+                  size={16}
+                  color="#64748b"
+                />
+              </Pressable>
+
+              {showAdvanced ? (
+                <View style={styles.advanced}>
+                  <Text style={styles.advancedLabel}>Token</Text>
+                  <Pressable
+                    accessibilityLabel={
+                      selectedToken
+                        ? `Selected token ${selectedToken.symbol}`
+                        : 'Select a token'
+                    }
+                    accessibilityRole="button"
+                    onPress={() => {
+                      setPickerOpen(true);
+                    }}
+                    style={({ pressed }) => [
+                      styles.fieldButton,
+                      pressed && styles.fieldButtonPressed,
+                    ]}
+                  >
+                    {selectedToken ? (
+                      <View style={styles.selectedToken}>
+                        <TokenIcon
+                          logoUrl={selectedToken.logoUrl}
+                          network={selectedToken.network}
+                          size={36}
+                          symbol={selectedToken.symbol}
+                        />
+                        <View style={styles.selectedTokenText}>
+                          <Text style={styles.selectedSymbol}>
+                            {selectedToken.symbol}
+                          </Text>
+                          <Text style={styles.selectedMeta}>
+                            {selectedToken.balanceFormatted} ·{' '}
+                            {selectedToken.networkLabel}
+                          </Text>
+                        </View>
+                      </View>
+                    ) : (
+                      <Text style={styles.placeholder}>Select a token</Text>
+                    )}
+                    <Ionicons name="chevron-down" size={18} color="#94a3b8" />
+                  </Pressable>
+                </View>
               ) : null}
 
               <Pressable
@@ -427,6 +452,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 32,
   },
+  totalBalance: {
+    marginTop: 12,
+    marginBottom: 8,
+    fontSize: 40,
+    fontWeight: '700',
+    color: '#0f172a',
+    letterSpacing: -1,
+    fontVariant: ['tabular-nums'],
+    textAlign: 'center',
+  },
   label: {
     marginTop: 20,
     marginBottom: 8,
@@ -443,6 +478,42 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
+  advancedToggle: {
+    marginTop: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  advancedTogglePressed: {
+    opacity: 0.65,
+  },
+  advancedToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  advanced: {
+    marginTop: 8,
+    alignSelf: 'stretch',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
+  },
+  advancedLabel: {
+    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
   fieldButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -453,7 +524,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8fafc',
     minHeight: 64,
   },
   fieldButtonPressed: {
@@ -519,21 +590,6 @@ const styles = StyleSheet.create({
   amountHeader: {
     marginTop: 20,
     marginBottom: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  maxButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  maxButtonPressed: {
-    opacity: 0.6,
-  },
-  maxButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#0f172a',
   },
   amountRow: {
     flexDirection: 'row',
@@ -557,8 +613,20 @@ const styles = StyleSheet.create({
     color: '#64748b',
     marginLeft: 8,
   },
+  amountPrefix: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0f172a',
+    marginRight: 4,
+  },
   balanceHint: {
     marginTop: 8,
+    fontSize: 13,
+    color: '#94a3b8',
+    fontVariant: ['tabular-nums'],
+  },
+  tokenAmountHint: {
+    marginTop: 4,
     fontSize: 13,
     color: '#94a3b8',
     fontVariant: ['tabular-nums'],
