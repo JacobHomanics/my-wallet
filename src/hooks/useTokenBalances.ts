@@ -165,7 +165,6 @@ export function useTokenBalances(): TokenBalancesResult {
           }
         }
 
-        sortOwnedTokens(nextTokens, selectedChainPriorityId);
         const nextError =
           nextTokens.length === 0 && errors.length > 0
             ? (errors[0] ?? 'Failed to load tokens')
@@ -222,20 +221,27 @@ export function useTokenBalances(): TokenBalancesResult {
     walletsReady,
   ]);
 
-  const visibleTokensUnsorted = !hasAddress
-    ? []
-    : snapshotMatches && snapshot
-      ? snapshot.tokens
-      : freshCache
-        ? freshCache.tokens
-        : isRefresh && snapshotForKey
-          ? snapshotForKey.tokens
-          : [];
+  const visibleTokens = useMemo(() => {
+    const unsorted = !hasAddress
+      ? []
+      : snapshotMatches && snapshot
+        ? snapshot.tokens
+        : freshCache
+          ? freshCache.tokens
+          : isRefresh && snapshotForKey
+            ? snapshotForKey.tokens
+            : [];
 
-  const visibleTokens = useMemo(
-    () => sortOwnedTokens(visibleTokensUnsorted, selectedChainPriorityId),
-    [selectedChainPriorityId, visibleTokensUnsorted],
-  );
+    return sortOwnedTokens(unsorted, selectedChainPriorityId);
+  }, [
+    freshCache,
+    hasAddress,
+    isRefresh,
+    selectedChainPriorityId,
+    snapshot,
+    snapshotForKey,
+    snapshotMatches,
+  ]);
 
   const visibleError = missingApiKey
     ? 'Missing EXPO_PUBLIC_ALCHEMY_API_KEY'
