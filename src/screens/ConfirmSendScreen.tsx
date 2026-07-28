@@ -247,9 +247,9 @@ export function ConfirmSendScreen() {
             </Text>
 
             {needsEthereumRecipient ||
-            needsSolanaRecipient ||
-            trimmedEthereum ||
-            trimmedSolana ? (
+              needsSolanaRecipient ||
+              trimmedEthereum ||
+              trimmedSolana ? (
               <View style={styles.toSection}>
                 <Text style={styles.toLabel}>To</Text>
                 {needsEthereumRecipient || trimmedEthereum ? (
@@ -392,9 +392,9 @@ export function ConfirmSendScreen() {
                   styles.actionPrimary,
                   (!canSend || sending) && styles.primaryButtonDisabled,
                   pressed &&
-                    canSend &&
-                    !sending &&
-                    styles.primaryButtonPressed,
+                  canSend &&
+                  !sending &&
+                  styles.primaryButtonPressed,
                 ]}
               >
                 {sending ? (
@@ -591,7 +591,8 @@ const styles = StyleSheet.create({
   },
   error: {
     marginTop: 16,
-    fontSize: 14,
+    fontSize: 24,
+    lineHeight: 32,
     color: '#b91c1c',
     textAlign: 'center',
     alignSelf: 'stretch',
