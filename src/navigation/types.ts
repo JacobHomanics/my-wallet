@@ -2,25 +2,35 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 
 import type { LoginMethod } from '@/lib/privy/context/AuthFlowContext.shared';
 
+export type ConfirmSendLeg = {
+  tokenId: string;
+  /** Token units to send for this leg. */
+  amount: string;
+};
+
+export type SentLeg = {
+  hash: string;
+  amount: string;
+  symbol: string;
+  network: string;
+  networkLabel: string;
+  tokenName: string;
+  logoUrl: string | null;
+};
+
 export type HomeStackParamList = {
   index: undefined;
   tokenDetails: undefined;
   send: { tokenId?: string } | undefined;
   confirmSend: {
-    tokenId: string;
     recipient: string;
-    amount: string;
+    /** USD amount string the user entered. */
+    usdAmount: string;
+    legs: ConfirmSendLeg[];
   };
   sent: {
-    hash: string;
-    amount: string;
-    symbol: string;
-    /** Formatted USD, e.g. "$12.34". Null/omitted when unknown. */
-    usdLabel?: string | null;
-    network: string;
-    networkLabel: string;
-    tokenName: string;
-    logoUrl: string | null;
+    usdLabel: string;
+    legs: SentLeg[];
   };
 };
 

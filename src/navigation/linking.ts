@@ -77,22 +77,34 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               confirmSend: {
                 path: '/send/confirm',
                 parse: {
-                  tokenId: (tokenId: string) => tokenId,
                   recipient: (recipient: string) => recipient,
-                  amount: (amount: string) => amount,
+                  usdAmount: (usdAmount: string) => usdAmount,
+                  legs: (legs: string) => {
+                    try {
+                      return JSON.parse(legs) as unknown;
+                    } catch {
+                      return [];
+                    }
+                  },
+                },
+                stringify: {
+                  legs: (legs: unknown) => JSON.stringify(legs ?? []),
                 },
               },
               sent: {
                 path: '/send/sent',
                 parse: {
-                  hash: (hash: string) => hash,
-                  amount: (amount: string) => amount,
-                  symbol: (symbol: string) => symbol,
-                  usdLabel: (usdLabel: string) => usdLabel || null,
-                  network: (network: string) => network,
-                  networkLabel: (networkLabel: string) => networkLabel,
-                  tokenName: (tokenName: string) => tokenName,
-                  logoUrl: (logoUrl: string) => logoUrl || null,
+                  usdLabel: (usdLabel: string) => usdLabel,
+                  legs: (legs: string) => {
+                    try {
+                      return JSON.parse(legs) as unknown;
+                    } catch {
+                      return [];
+                    }
+                  },
+                },
+                stringify: {
+                  legs: (legs: unknown) => JSON.stringify(legs ?? []),
                 },
               },
             },

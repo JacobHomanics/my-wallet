@@ -17,20 +17,29 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton } from '@/components/BackButton';
 import { TokenIcon } from '@/components/TokenIcon';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useSendPayment } from '@/hooks/useSendPayment';
 import { useSendStatus } from '@/hooks/useSendStatus';
-import { useSendTransaction } from '@/hooks/useSendTransaction';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import {
   estimateTokenAmountUsd,
+  formatUsdAmountInput,
   formatUsdValue,
   parseTokenAmountToRaw,
+  type OwnedToken,
 } from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { isValidRecipientAddress } from '@/lib/validation';
 import type { HomeStackParamList } from '@/navigation/types';
 
+type ResolvedLeg = {
+  token: OwnedToken;
+  amount: string;
+  amountRaw: bigint;
+  usd: number | null;
+};
+
 /**
- * Review + execute a transfer prepared on the Send screen.
+ * Review + execute a multi-token payment prepared on the Send screen.
  */
 export function ConfirmSendScreen() {
   const insets = useSafeAreaInsets();
@@ -38,56 +47,77 @@ export function ConfirmSendScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'confirmSend'>>();
-  const { tokenId, recipient, amount } = route.params;
+  const { recipient, usdAmount, legs: legParams } = route.params;
   const { tokens, loading, ready, refresh } = useTokenBalances();
-  const { send, sending } = useSendTransaction();
+  const { sendPayment, sending } = useSendPayment();
   const { error, clearStatus, setError } = useSendStatus();
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
 
-  const token = useMemo(
-    () => tokens.find((item) => item.id === tokenId) ?? null,
-    [tokenId, tokens],
-  );
-
-  const amountRaw = useMemo(() => {
-    if (!token) {
-      return null;
+  const legs = useMemo((): ResolvedLeg[] => {
+    const resolved: ResolvedLeg[] = [];
+    for (const leg of legParams ?? []) {
+      const token = tokens.find((item) => item.id === leg.tokenId);
+      if (!token) {
+        continue;
+      }
+      const amountRaw = parseTokenAmountToRaw(leg.amount, token.decimals);
+      if (amountRaw == null || amountRaw <= 0n) {
+        continue;
+      }
+      resolved.push({
+        token,
+        amount: leg.amount,
+        amountRaw,
+        usd: estimateTokenAmountUsd(token, amountRaw),
+      });
     }
-    return parseTokenAmountToRaw(amount, token.decimals);
-  }, [amount, token]);
+    return resolved;
+  }, [legParams, tokens]);
 
   const usdLabel = useMemo(() => {
-    if (!token || amountRaw == null) {
-      return null;
+    const fromLegs = legs.reduce<number | null>((sum, leg) => {
+      if (leg.usd == null) {
+        return sum;
+      }
+      return (sum ?? 0) + leg.usd;
+    }, null);
+    if (fromLegs != null) {
+      return formatUsdValue(fromLegs);
     }
-    return formatUsdValue(estimateTokenAmountUsd(token, amountRaw));
-  }, [amountRaw, token]);
+    const parsed = Number(usdAmount);
+    return Number.isFinite(parsed) ? formatUsdValue(parsed) : `$${usdAmount}`;
+  }, [legs, usdAmount]);
 
-  const chain = token ? getNetworkChain(token.network) : null;
-  const recipientValid = chain
-    ? isValidRecipientAddress(recipient, chain)
-    : false;
-  const amountValid =
-    amountRaw != null && amountRaw > 0n && token != null
-      ? amountRaw <= token.rawBalance
-      : false;
-  const canSend = Boolean(token) && recipientValid && amountValid;
-
-  const invalidReason = !token
-    ? 'Token not found. Go back and select a token again.'
-    : !recipientValid
-      ? 'Recipient address is invalid.'
-      : amountRaw == null || amountRaw <= 0n
-        ? 'Amount is invalid.'
-        : !amountValid
-          ? 'Amount exceeds balance.'
-          : null;
-
+  const chain = legs[0] ? getNetworkChain(legs[0].token.network) : null;
   const trimmedRecipient = recipient.trim();
+  const recipientValid = chain
+    ? isValidRecipientAddress(trimmedRecipient, chain)
+    : false;
+
+  const amountsValid = legs.length > 0 && legs.every(
+    (leg) => leg.amountRaw > 0n && leg.amountRaw <= leg.token.rawBalance,
+  );
+
+  const canSend =
+    legs.length > 0 &&
+    legs.length === (legParams?.length ?? 0) &&
+    recipientValid &&
+    amountsValid;
+
+  const invalidReason =
+    (legParams?.length ?? 0) === 0
+      ? 'Nothing to send. Go back and enter an amount.'
+      : legs.length !== (legParams?.length ?? 0)
+        ? 'One or more tokens are unavailable. Go back and try again.'
+        : !recipientValid
+          ? 'Recipient address is invalid.'
+          : !amountsValid
+            ? 'Insufficient funds for this payment.'
+            : null;
 
   const onConfirm = useCallback(() => {
-    if (!canSend || !token || amountRaw == null || sending) {
+    if (!canSend || sending) {
       return;
     }
 
@@ -95,21 +125,26 @@ export function ConfirmSendScreen() {
 
     void (async () => {
       try {
-        const result = await send({
-          token,
-          recipient: trimmedRecipient,
-          amountRaw,
-        });
+        const results = await sendPayment(
+          legs.map((leg) => ({
+            token: leg.token,
+            recipient: trimmedRecipient,
+            amountRaw: leg.amountRaw,
+            amountFormatted: leg.amount,
+          })),
+        );
         refresh();
         navigation.navigate('sent', {
-          hash: result.hash,
-          amount,
-          symbol: token.symbol,
-          usdLabel,
-          network: token.network,
-          networkLabel: token.networkLabel,
-          tokenName: token.name,
-          logoUrl: token.logoUrl,
+          usdLabel: usdLabel ?? `$${formatUsdAmountInput(Number(usdAmount) || 0)}`,
+          legs: results.map((result) => ({
+            hash: result.hash,
+            amount: result.amount,
+            symbol: result.symbol,
+            network: result.network,
+            networkLabel: result.networkLabel,
+            tokenName: result.tokenName,
+            logoUrl: result.logoUrl,
+          })),
         });
       } catch (err) {
         const message =
@@ -118,17 +153,16 @@ export function ConfirmSendScreen() {
       }
     })();
   }, [
-    amount,
-    amountRaw,
     canSend,
     clearStatus,
+    legs,
     navigation,
     refresh,
-    send,
+    sendPayment,
     sending,
     setError,
-    token,
     trimmedRecipient,
+    usdAmount,
     usdLabel,
   ]);
 
@@ -145,8 +179,8 @@ export function ConfirmSendScreen() {
 
   const onConfirmExit = useCallback(() => {
     setCancelConfirmOpen(false);
-    navigation.navigate('send', { tokenId });
-  }, [navigation, tokenId]);
+    navigation.navigate('send');
+  }, [navigation]);
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -178,9 +212,7 @@ export function ConfirmSendScreen() {
           <ActivityIndicator color="#0f172a" style={styles.loader} />
         ) : (
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
-            <Text style={styles.heroUsd}>
-              {usdLabel ?? `${amount} ${token?.symbol ?? ''}`.trim()}
-            </Text>
+            <Text style={styles.heroUsd}>{usdLabel ?? `$${usdAmount}`}</Text>
 
             <Text style={styles.toLabel}>To</Text>
             <Text style={styles.toAddress} selectable>
@@ -210,30 +242,30 @@ export function ConfirmSendScreen() {
 
             {showAdvanced ? (
               <View style={styles.advanced}>
-                {token ? (
-                  <View style={styles.tokenRow}>
-                    <TokenIcon
-                      logoUrl={token.logoUrl}
-                      network={token.network}
-                      size={36}
-                      symbol={token.symbol}
-                    />
-                    <View style={styles.tokenText}>
-                      <Text style={styles.tokenSymbol}>{token.symbol}</Text>
-                      <Text style={styles.tokenMeta}>{token.name}</Text>
+                {legs.map((leg, index) => (
+                  <View key={leg.token.id}>
+                    {index > 0 ? <View style={styles.divider} /> : null}
+                    <View style={styles.tokenRow}>
+                      <TokenIcon
+                        logoUrl={leg.token.logoUrl}
+                        network={leg.token.network}
+                        size={36}
+                        symbol={leg.token.symbol}
+                      />
+                      <View style={styles.tokenText}>
+                        <Text style={styles.tokenSymbol}>
+                          {leg.amount} {leg.token.symbol}
+                        </Text>
+                        <Text style={styles.tokenMeta}>
+                          {leg.token.networkLabel}
+                          {leg.usd != null
+                            ? ` · ${formatUsdValue(leg.usd)}`
+                            : ''}
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                ) : null}
-
-                <SummaryRow
-                  label="Amount"
-                  value={`${amount} ${token?.symbol ?? ''}`.trim()}
-                />
-                <View style={styles.divider} />
-                <SummaryRow
-                  label="Network"
-                  value={token?.networkLabel ?? '—'}
-                />
+                ))}
                 <View style={styles.divider} />
                 <SummaryRow label="Recipient" value={trimmedRecipient} mono />
               </View>
@@ -274,7 +306,9 @@ export function ConfirmSendScreen() {
                 {sending ? (
                   <ActivityIndicator color="#f8fafc" />
                 ) : (
-                  <Text style={styles.primaryButtonText}>Submit</Text>
+                  <Text style={styles.primaryButtonText}>
+                    {legs.length > 1 ? `Submit (${legs.length})` : 'Submit'}
+                  </Text>
                 )}
               </Pressable>
             </View>

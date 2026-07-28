@@ -10,7 +10,8 @@ export const PAYMENT_STRATEGIES: readonly PaymentStrategy[] = [
   {
     id: 'prioritize-stablecoins',
     label: 'Prioritize Stablecoins',
-    description: 'Prefer stablecoins when choosing which token to send.',
+    description:
+      'Use stablecoins first when funding a USD payment, then other tokens.',
   },
 ] as const;
 

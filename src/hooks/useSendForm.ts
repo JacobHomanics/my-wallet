@@ -1,34 +1,31 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
+import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import {
-  formatRawTokenBalance,
-  formatUsdAmountInput,
-  parseTokenAmountToRaw,
-  parseUsdAmountToTokenRaw,
-  type OwnedToken,
-} from '@/lib/alchemy/fetchTokensByAddress';
-import { getNetworkChain } from '@/lib/alchemy/networks';
+  allocatePaymentUsd,
+  parseUsdInput,
+  type PaymentAllocation,
+} from '@/lib/strategies/allocatePayment';
+import type { PaymentStrategyId } from '@/lib/strategies';
 import { isValidRecipientAddress } from '@/lib/validation';
 
 export type SendFormState = {
-  selectedToken: OwnedToken | null;
-  recipient: string;
-  /** USD when the token is priced; otherwise token units. */
+  /** USD amount the user is trying to send. */
   amount: string;
-  /** Token amount string for confirm / send (always token units). */
-  tokenAmount: string | null;
-  amountIsUsd: boolean;
+  allocations: PaymentAllocation[];
   chain: 'ethereum' | 'solana' | null;
-  amountRaw: bigint | null;
+  filledUsd: number;
+  remainingUsd: number;
+  canFulfill: boolean;
+  recipient: string;
   recipientValid: boolean;
   amountValid: boolean;
-  exceedsBalance: boolean;
+  /** True when USD amount is set but holdings cannot cover it. */
+  insufficientFunds: boolean;
   tokenAmountHint: string | null;
   canContinue: boolean;
-  setSelectedTokenId: (tokenId: string | null) => void;
   setRecipient: (value: string) => void;
   setAmount: (value: string) => void;
-  setMaxAmount: () => void;
 };
 
 function sanitizeAmountInput(value: string): string {
@@ -43,87 +40,59 @@ function sanitizeAmountInput(value: string): string {
   );
 }
 
-/** Prefer an explicit id, otherwise the highest-USD token. */
-function pickDefaultTokenId(
-  tokens: OwnedToken[],
-  preferredId?: string | null,
-): string | null {
-  if (tokens.length === 0) {
+function recipientChainHint(
+  recipient: string,
+): 'ethereum' | 'solana' | null {
+  const trimmed = recipient.trim();
+  if (!trimmed) {
     return null;
   }
-  if (preferredId && tokens.some((token) => token.id === preferredId)) {
-    return preferredId;
+  if (isValidRecipientAddress(trimmed, 'ethereum')) {
+    return 'ethereum';
   }
-  let best = tokens[0];
-  let bestUsd = best.usdValue ?? -1;
-  for (let i = 1; i < tokens.length; i += 1) {
-    const token = tokens[i];
-    const usd = token.usdValue ?? -1;
-    if (usd > bestUsd) {
-      best = token;
-      bestUsd = usd;
-    }
+  if (isValidRecipientAddress(trimmed, 'solana')) {
+    return 'solana';
   }
-  return best.id;
+  return null;
 }
 
 export function useSendForm(
   tokens: OwnedToken[],
-  initialTokenId?: string | null,
+  strategyId: PaymentStrategyId,
+  preferredTokenId?: string | null,
 ): SendFormState {
-  const [selectedTokenId, setSelectedTokenId] = useState<string | null>(
-    initialTokenId ?? null,
-  );
   const [recipient, setRecipientState] = useState('');
   const [amount, setAmountState] = useState('');
 
-  useEffect(() => {
-    const stillValid =
-      selectedTokenId != null &&
-      tokens.some((token) => token.id === selectedTokenId);
-    if (stillValid) {
-      return;
-    }
-    setSelectedTokenId(pickDefaultTokenId(tokens, initialTokenId));
-  }, [initialTokenId, selectedTokenId, tokens]);
+  const usdAmount = useMemo(() => parseUsdInput(amount), [amount]);
 
-  const selectedToken = useMemo(() => {
-    if (!selectedTokenId) {
-      return null;
-    }
-    return tokens.find((token) => token.id === selectedTokenId) ?? null;
-  }, [selectedTokenId, tokens]);
-
-  const amountIsUsd = Boolean(
-    selectedToken &&
-      selectedToken.usdValue != null &&
-      selectedToken.usdValue > 0,
+  const chainFromRecipient = useMemo(
+    () => recipientChainHint(recipient),
+    [recipient],
   );
 
-  const chain = selectedToken
-    ? getNetworkChain(selectedToken.network)
-    : null;
+  const plan = useMemo(() => {
+    if (usdAmount == null || usdAmount <= 0) {
+      return {
+        allocations: [] as PaymentAllocation[],
+        filledUsd: 0,
+        remainingUsd: 0,
+        canFulfill: false,
+        chain: chainFromRecipient,
+      };
+    }
 
-  const amountRaw = useMemo(() => {
-    if (!selectedToken || !amount.trim()) {
-      return null;
-    }
-    if (amountIsUsd) {
-      return parseUsdAmountToTokenRaw(amount, selectedToken);
-    }
-    return parseTokenAmountToRaw(amount, selectedToken.decimals);
-  }, [amount, amountIsUsd, selectedToken]);
+    return allocatePaymentUsd({
+      tokens,
+      usdAmount,
+      strategyId,
+      chain: chainFromRecipient,
+      preferredTokenId,
+    });
+  }, [chainFromRecipient, preferredTokenId, strategyId, tokens, usdAmount]);
 
-  const tokenAmount = useMemo(() => {
-    if (!selectedToken || amountRaw == null || amountRaw <= 0n) {
-      return null;
-    }
-    return formatRawTokenBalance(
-      amountRaw,
-      selectedToken.decimals,
-      selectedToken.decimals,
-    );
-  }, [amountRaw, selectedToken]);
+  const chain = plan.chain;
+  const allocations = plan.allocations;
 
   const recipientValid = useMemo(() => {
     if (!chain || !recipient.trim()) {
@@ -132,24 +101,27 @@ export function useSendForm(
     return isValidRecipientAddress(recipient, chain);
   }, [chain, recipient]);
 
-  const exceedsBalance = useMemo(() => {
-    if (!selectedToken || amountRaw == null) {
-      return false;
-    }
-    return amountRaw > selectedToken.rawBalance;
-  }, [amountRaw, selectedToken]);
+  const amountValid = usdAmount != null && usdAmount > 0;
+  const insufficientFunds = amountValid && !plan.canFulfill;
 
-  const amountValid =
-    amountRaw != null && amountRaw > 0n && !exceedsBalance;
-
-  const canContinue = Boolean(selectedToken) && recipientValid && amountValid;
+  const canContinue =
+    amountValid &&
+    plan.canFulfill &&
+    allocations.length > 0 &&
+    recipientValid;
 
   const tokenAmountHint = useMemo(() => {
-    if (!amountIsUsd || !selectedToken || !tokenAmount) {
+    if (!amountValid || allocations.length === 0) {
       return null;
     }
-    return `≈ ${tokenAmount} ${selectedToken.symbol}`;
-  }, [amountIsUsd, selectedToken, tokenAmount]);
+    if (allocations.length === 1) {
+      const leg = allocations[0];
+      return `≈ ${leg.amountFormatted} ${leg.token.symbol}`;
+    }
+    return allocations
+      .map((leg) => `${leg.amountFormatted} ${leg.token.symbol}`)
+      .join(' + ');
+  }, [allocations, amountValid]);
 
   const setRecipient = useCallback((value: string) => {
     setRecipientState(value);
@@ -159,42 +131,20 @@ export function useSendForm(
     setAmountState(sanitizeAmountInput(value));
   }, []);
 
-  const setMaxAmount = useCallback(() => {
-    if (!selectedToken) {
-      return;
-    }
-    if (
-      selectedToken.usdValue != null &&
-      selectedToken.usdValue > 0
-    ) {
-      setAmountState(formatUsdAmountInput(selectedToken.usdValue));
-      return;
-    }
-    setAmountState(
-      formatRawTokenBalance(
-        selectedToken.rawBalance,
-        selectedToken.decimals,
-        selectedToken.decimals,
-      ),
-    );
-  }, [selectedToken]);
-
   return {
-    selectedToken,
-    recipient,
     amount,
-    tokenAmount,
-    amountIsUsd,
+    allocations,
     chain,
-    amountRaw,
+    filledUsd: plan.filledUsd,
+    remainingUsd: plan.remainingUsd,
+    canFulfill: plan.canFulfill,
+    recipient,
     recipientValid,
     amountValid,
-    exceedsBalance,
+    insufficientFunds,
     tokenAmountHint,
     canContinue,
-    setSelectedTokenId,
     setRecipient,
     setAmount,
-    setMaxAmount,
   };
 }

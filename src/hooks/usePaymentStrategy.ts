@@ -35,7 +35,7 @@ function setSelectedStrategyId(id: PaymentStrategyId): void {
 }
 
 /**
- * Selected payment strategy (settings). Logic for applying strategies comes later.
+ * Selected payment strategy. Applied when allocating tokens to a USD amount.
  */
 export function usePaymentStrategy(): {
   strategies: readonly PaymentStrategy[];

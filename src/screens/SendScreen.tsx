@@ -1,13 +1,11 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ActivityIndicator,
-  FlatList,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -20,19 +18,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
-import { TokenChainSection } from '@/components/TokenChainSection';
 import { TokenIcon } from '@/components/TokenIcon';
-import { useExpandedNetworks } from '@/hooks/useExpandedNetworks';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendForm } from '@/hooks/useSendForm';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
-import { useTokensByChain } from '@/hooks/useTokensByChain';
-import {
-  formatUsdValue,
-  type TokenChainGroup,
-} from '@/lib/alchemy/fetchTokensByAddress';
+import { formatUsdValue } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
 
 export function SendScreen() {
@@ -43,8 +35,6 @@ export function SendScreen() {
   const route = useRoute<RouteProp<HomeStackParamList, 'send'>>();
   const { tokens, totalUsd, loading, ready, ethereumAddress, solanaAddress } =
     useTokenBalances();
-  const chainGroups = useTokensByChain(tokens);
-  const { expandedNetworks, isExpanded, toggleNetwork } = useExpandedNetworks();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const {
     strategies,
@@ -55,21 +45,21 @@ export function SendScreen() {
     closePicker: closeStrategyPicker,
     onSelectStrategy,
   } = useStrategyPicker();
-  const [pickerOpen, setPickerOpen] = useState(false);
 
-  const form = useSendForm(tokens, route.params?.tokenId);
+  const form = useSendForm(
+    tokens,
+    selectedStrategyId,
+    route.params?.tokenId,
+  );
   const {
-    selectedToken,
     recipient,
     amount,
-    tokenAmount,
-    amountIsUsd,
+    allocations,
     chain,
     recipientValid,
-    exceedsBalance,
+    insufficientFunds,
     tokenAmountHint,
     canContinue,
-    setSelectedTokenId,
     setRecipient,
     setAmount,
   } = form;
@@ -81,65 +71,38 @@ export function SendScreen() {
       ? 'Solana address'
       : chain === 'ethereum'
         ? '0x… Ethereum address'
-        : 'Select a token first';
+        : 'Wallet address';
 
   const amountError =
-    amount.trim() && exceedsBalance
-      ? 'Amount exceeds balance'
+    amount.trim() && insufficientFunds
+      ? 'Insufficient funds for this amount'
       : amount.trim() && !form.amountValid
         ? 'Enter a valid amount'
         : null;
 
   const recipientError =
-    recipient.trim() && !recipientValid && chain
+    recipient.trim() && !recipientValid
       ? chain === 'solana'
         ? 'Enter a valid Solana address'
-        : 'Enter a valid Ethereum address'
+        : chain === 'ethereum'
+          ? 'Enter a valid Ethereum address'
+          : 'Enter a valid address'
       : null;
 
-  const onSelectToken = useCallback(
-    (tokenId: string) => {
-      setSelectedTokenId(tokenId);
-      setPickerOpen(false);
-    },
-    [setSelectedTokenId],
-  );
-
-  const renderChainSection = useCallback(
-    ({ item }: { item: TokenChainGroup }) => (
-      <TokenChainSection
-        group={item}
-        expanded={isExpanded(item.network)}
-        expandedNetworks={expandedNetworks}
-        onToggle={() => {
-          toggleNetwork(item.network);
-        }}
-        onToggleNetwork={toggleNetwork}
-        onTokenPress={onSelectToken}
-        selectedTokenId={selectedToken?.id}
-        showNetworkMeta
-      />
-    ),
-    [
-      expandedNetworks,
-      isExpanded,
-      onSelectToken,
-      selectedToken?.id,
-      toggleNetwork,
-    ],
-  );
-
   const onContinue = useCallback(() => {
-    if (!canContinue || !selectedToken || !tokenAmount) {
+    if (!canContinue || allocations.length === 0) {
       return;
     }
 
     navigation.navigate('confirmSend', {
-      tokenId: selectedToken.id,
       recipient: recipient.trim(),
-      amount: tokenAmount,
+      usdAmount: amount,
+      legs: allocations.map((leg) => ({
+        tokenId: leg.token.id,
+        amount: leg.amountFormatted,
+      })),
     });
-  }, [canContinue, navigation, recipient, selectedToken, tokenAmount]);
+  }, [allocations, amount, canContinue, navigation, recipient]);
 
   const goHome = useCallback(() => {
     navigation.navigate('index');
@@ -197,21 +160,19 @@ export function SendScreen() {
               <View
                 style={[
                   styles.recipientRow,
-                  !selectedToken && styles.inputDisabled,
                   recipientError ? styles.inputError : null,
                 ]}
               >
                 <TextInput
                   autoCapitalize="none"
                   autoCorrect={false}
-                  editable={Boolean(selectedToken)}
                   onChangeText={setRecipient}
                   placeholder={recipientHint}
                   placeholderTextColor="#94a3b8"
                   style={styles.recipientInput}
                   value={recipient}
                 />
-                {recipient.trim() && selectedToken ? (
+                {recipient.trim() ? (
                   <Pressable
                     accessibilityLabel="Clear recipient"
                     accessibilityRole="button"
@@ -238,15 +199,11 @@ export function SendScreen() {
               <View
                 style={[
                   styles.amountRow,
-                  !selectedToken && styles.inputDisabled,
                   amountError ? styles.inputError : null,
                 ]}
               >
-                {amountIsUsd ? (
-                  <Text style={styles.amountPrefix}>$</Text>
-                ) : null}
+                <Text style={styles.amountPrefix}>$</Text>
                 <TextInput
-                  editable={Boolean(selectedToken)}
                   keyboardType="decimal-pad"
                   onChangeText={setAmount}
                   placeholder="0"
@@ -254,11 +211,6 @@ export function SendScreen() {
                   style={styles.amountInput}
                   value={amount}
                 />
-                {!amountIsUsd && selectedToken ? (
-                  <Text style={styles.amountSymbol}>
-                    {selectedToken.symbol}
-                  </Text>
-                ) : null}
               </View>
               {amountError ? (
                 <Text style={styles.fieldError}>{amountError}</Text>
@@ -307,45 +259,34 @@ export function SendScreen() {
 
                   <View style={styles.advancedDivider} />
 
-                  <Text style={styles.advancedLabel}>Token</Text>
-                  <Pressable
-                    accessibilityLabel={
-                      selectedToken
-                        ? `Selected token ${selectedToken.symbol}`
-                        : 'Select a token'
-                    }
-                    accessibilityRole="button"
-                    onPress={() => {
-                      setPickerOpen(true);
-                    }}
-                    style={({ pressed }) => [
-                      styles.fieldButton,
-                      pressed && styles.fieldButtonPressed,
-                    ]}
-                  >
-                    {selectedToken ? (
-                      <View style={styles.selectedToken}>
+                  <Text style={styles.advancedLabel}>Tokens</Text>
+                  {allocations.length === 0 ? (
+                    <Text style={styles.allocationEmpty}>
+                      Enter an amount to see which tokens will be used.
+                    </Text>
+                  ) : (
+                    allocations.map((leg) => (
+                      <View key={leg.token.id} style={styles.allocationRow}>
                         <TokenIcon
-                          logoUrl={selectedToken.logoUrl}
-                          network={selectedToken.network}
+                          logoUrl={leg.token.logoUrl}
+                          network={leg.token.network}
                           size={36}
-                          symbol={selectedToken.symbol}
+                          symbol={leg.token.symbol}
                         />
-                        <View style={styles.selectedTokenText}>
-                          <Text style={styles.selectedSymbol}>
-                            {selectedToken.symbol}
+                        <View style={styles.allocationText}>
+                          <Text style={styles.allocationSymbol}>
+                            {leg.token.symbol}
                           </Text>
-                          <Text style={styles.selectedMeta}>
-                            {selectedToken.balanceFormatted} ·{' '}
-                            {selectedToken.networkLabel}
+                          <Text style={styles.allocationMeta}>
+                            {leg.amountFormatted} · {leg.token.networkLabel}
                           </Text>
                         </View>
+                        <Text style={styles.allocationUsd}>
+                          {formatUsdValue(leg.usd) ?? '—'}
+                        </Text>
                       </View>
-                    ) : (
-                      <Text style={styles.placeholder}>Select a token</Text>
-                    )}
-                    <Ionicons name="chevron-down" size={18} color="#94a3b8" />
-                  </Pressable>
+                    ))
+                  )}
                 </View>
               ) : null}
 
@@ -365,52 +306,6 @@ export function SendScreen() {
           )}
         </View>
       </KeyboardAvoidingView>
-
-      <Modal
-        animationType="slide"
-        onRequestClose={() => {
-          setPickerOpen(false);
-        }}
-        presentationStyle="pageSheet"
-        visible={pickerOpen}
-      >
-        <View
-          style={[
-            styles.modalContainer,
-            { paddingTop: Math.max(insets.top, 12) },
-          ]}
-        >
-          <View style={styles.modalTopBar}>
-            <Text style={styles.modalTitle}>Select token</Text>
-            <Pressable
-              accessibilityLabel="Close"
-              accessibilityRole="button"
-              hitSlop={8}
-              onPress={() => {
-                setPickerOpen(false);
-              }}
-              style={({ pressed }) => [
-                styles.modalClose,
-                pressed && styles.modalClosePressed,
-              ]}
-            >
-              <Ionicons name="close" size={22} color="#0f172a" />
-            </Pressable>
-          </View>
-
-          <FlatList
-            contentContainerStyle={
-              chainGroups.length === 0 ? styles.pickerEmpty : styles.pickerList
-            }
-            data={chainGroups}
-            keyExtractor={(item) => item.network}
-            ListEmptyComponent={
-              <Text style={styles.empty}>No tokens available to send.</Text>
-            }
-            renderItem={renderChainSection}
-          />
-        </View>
-      </Modal>
 
       <StrategyPickerModal
         onClose={closeStrategyPicker}
@@ -570,46 +465,36 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#0f172a',
   },
-  fieldButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    backgroundColor: '#f8fafc',
-    minHeight: 64,
+  allocationEmpty: {
+    fontSize: 14,
+    color: '#94a3b8',
+    paddingVertical: 8,
   },
-  fieldButtonPressed: {
-    opacity: 0.85,
-  },
-  selectedToken: {
-    flex: 1,
+  allocationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    minWidth: 0,
+    paddingVertical: 10,
   },
-  selectedTokenText: {
+  allocationText: {
     flex: 1,
     minWidth: 0,
     gap: 2,
   },
-  selectedSymbol: {
+  allocationSymbol: {
     fontSize: 16,
     fontWeight: '600',
     color: '#0f172a',
   },
-  selectedMeta: {
+  allocationMeta: {
     fontSize: 13,
     color: '#94a3b8',
   },
-  placeholder: {
-    fontSize: 16,
-    color: '#94a3b8',
+  allocationUsd: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0f172a',
+    fontVariant: ['tabular-nums'],
   },
   recipientRow: {
     flexDirection: 'row',
@@ -637,9 +522,6 @@ const styles = StyleSheet.create({
   clearButtonPressed: {
     opacity: 0.6,
   },
-  inputDisabled: {
-    backgroundColor: '#f1f5f9',
-  },
   inputError: {
     borderColor: '#fca5a5',
   },
@@ -662,12 +544,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#0f172a',
     fontVariant: ['tabular-nums'],
-  },
-  amountSymbol: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#64748b',
-    marginLeft: 8,
   },
   amountPrefix: {
     fontSize: 16,
@@ -705,44 +581,5 @@ const styles = StyleSheet.create({
     color: '#f8fafc',
     fontSize: 16,
     fontWeight: '600',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  modalTopBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e2e8f0',
-  },
-  modalTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#0f172a',
-    paddingLeft: 40,
-  },
-  modalClose: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalClosePressed: {
-    opacity: 0.6,
-  },
-  pickerList: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 20,
-  },
-  pickerEmpty: {
-    flexGrow: 1,
-    justifyContent: 'center',
   },
 });

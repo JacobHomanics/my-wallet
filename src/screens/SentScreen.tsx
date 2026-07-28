@@ -17,33 +17,19 @@ import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
- * Shown after a successful send from the confirm screen.
+ * Shown after a successful multi-token payment from the confirm screen.
  */
 export function SentScreen() {
   const insets = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'sent'>>();
-  const {
-    hash,
-    amount,
-    symbol,
-    usdLabel,
-    network,
-    networkLabel,
-    tokenName,
-    logoUrl,
-  } = route.params;
+  const { usdLabel, legs } = route.params;
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const onDone = useCallback(() => {
     navigation.navigate('index');
   }, [navigation]);
-
-  const heroAmount =
-    usdLabel && usdLabel.trim()
-      ? usdLabel
-      : `${amount} ${symbol}`.trim();
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -59,7 +45,7 @@ export function SentScreen() {
             <Ionicons name="checkmark-circle" size={48} color="#15803d" />
           </View>
           <Text style={styles.resultTitle}>Sent</Text>
-          <Text style={styles.heroUsd}>{heroAmount}</Text>
+          <Text style={styles.heroUsd}>{usdLabel}</Text>
 
           <Pressable
             accessibilityRole="button"
@@ -84,31 +70,30 @@ export function SentScreen() {
 
           {showAdvanced ? (
             <View style={styles.advanced}>
-              <View style={styles.tokenRow}>
-                <TokenIcon
-                  logoUrl={logoUrl}
-                  network={network}
-                  size={36}
-                  symbol={symbol}
-                />
-                <View style={styles.tokenText}>
-                  <Text style={styles.tokenSymbol}>{symbol}</Text>
-                  <Text style={styles.tokenMeta}>{tokenName}</Text>
+              {legs.map((leg, index) => (
+                <View key={`${leg.hash}-${leg.symbol}`}>
+                  {index > 0 ? <View style={styles.divider} /> : null}
+                  <View style={styles.tokenRow}>
+                    <TokenIcon
+                      logoUrl={leg.logoUrl}
+                      network={leg.network}
+                      size={36}
+                      symbol={leg.symbol}
+                    />
+                    <View style={styles.tokenText}>
+                      <Text style={styles.tokenSymbol}>
+                        {leg.amount} {leg.symbol}
+                      </Text>
+                      <Text style={styles.tokenMeta}>{leg.networkLabel}</Text>
+                    </View>
+                  </View>
+                  <SummaryRow
+                    label="Transaction"
+                    value={formatWalletAddress(leg.hash, 10, 10)}
+                    mono
+                  />
                 </View>
-              </View>
-              <View style={styles.divider} />
-              <SummaryRow
-                label="Amount"
-                value={`${amount} ${symbol}`.trim()}
-              />
-              <View style={styles.divider} />
-              <SummaryRow label="Network" value={networkLabel} />
-              <View style={styles.divider} />
-              <SummaryRow
-                label="Transaction"
-                value={formatWalletAddress(hash, 10, 10)}
-                mono
-              />
+              ))}
             </View>
           ) : null}
 
@@ -184,11 +169,11 @@ const styles = StyleSheet.create({
   body: {
     paddingHorizontal: 24,
     paddingBottom: 32,
-    paddingTop: 36,
+    paddingTop: 28,
     alignItems: 'center',
   },
   resultIcon: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   resultTitle: {
     fontSize: 22,
@@ -252,7 +237,7 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
   },
   summaryRow: {
-    paddingVertical: 14,
+    paddingBottom: 14,
     gap: 6,
   },
   summaryLabel: {
