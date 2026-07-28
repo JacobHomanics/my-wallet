@@ -73,11 +73,7 @@ export async function fetchGasFeeEstimates(options: {
           return;
         }
         estimates.set(network, {
-          feePerTxRaw: evmFeePerTxRaw(
-            network,
-            gasPriceWei,
-            forTokenTransfer,
-          ),
+          feePerTxRaw: evmFeePerTxRaw(gasPriceWei, forTokenTransfer),
         });
       } catch {
         estimates.set(network, {
