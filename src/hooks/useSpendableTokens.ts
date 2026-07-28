@@ -13,6 +13,11 @@ import { isGasToken } from '@/lib/strategies/gasTokens';
 
 const EMPTY_ESTIMATES = new Map<string, NetworkGasFeeEstimate>();
 
+type FetchedFeeEstimates = {
+  networksKey: string;
+  estimates: Map<string, NetworkGasFeeEstimate>;
+};
+
 /**
  * Token balances with native gas reserved so Available Balance and allocation
  * reflect what can actually be sent (fees left on-chain for each potential leg).
@@ -55,38 +60,40 @@ export function useSpendableTokens(tokens: OwnedToken[]): {
     return map;
   }, [tokens]);
 
-  const [feeEstimates, setFeeEstimates] =
-    useState<Map<string, NetworkGasFeeEstimate>>(EMPTY_ESTIMATES);
-  const [gasEstimatesReady, setGasEstimatesReady] = useState(false);
+  const [fetched, setFetched] = useState<FetchedFeeEstimates | null>(null);
 
   useEffect(() => {
     if (!networksKey) {
-      setFeeEstimates(EMPTY_ESTIMATES);
-      setGasEstimatesReady(true);
       return;
     }
 
-    const networks = networksKey.split('|').filter(Boolean);
     const controller = new AbortController();
-    setGasEstimatesReady(false);
+    const key = networksKey;
 
     void (async () => {
       const estimates = await fetchGasFeeEstimates({
-        networks,
+        networks: key.split('|').filter(Boolean),
         forTokenTransferByNetwork,
         signal: controller.signal,
       });
       if (controller.signal.aborted) {
         return;
       }
-      setFeeEstimates(estimates);
-      setGasEstimatesReady(true);
+      setFetched({ networksKey: key, estimates });
     })();
 
     return () => {
       controller.abort();
     };
   }, [forTokenTransferByNetwork, networksKey]);
+
+  const feeEstimates =
+    !networksKey || fetched?.networksKey !== networksKey
+      ? EMPTY_ESTIMATES
+      : fetched.estimates;
+
+  const gasEstimatesReady =
+    !networksKey || fetched?.networksKey === networksKey;
 
   const spendableTokens = useMemo(
     () => applyGasReserves(tokens, feeEstimates),

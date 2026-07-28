@@ -17,6 +17,7 @@ import { TokenChainSection } from '@/components/TokenChainSection';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useExpandedNetworks } from '@/hooks/useExpandedNetworks';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useTokensByChain } from '@/hooks/useTokensByChain';
 import type { TokenChainGroup } from '@/lib/alchemy/fetchTokensByAddress';
@@ -37,9 +38,10 @@ export function TokenDetailsScreen() {
     error,
     refresh,
   } = useTokenBalances();
+  const { availableLabel } = useSpendableTokens(tokens);
   const chainGroups = useTokensByChain(tokens);
   const { expandedNetworks, isExpanded, toggleNetwork } = useExpandedNetworks();
-  const { formatFromUsd } = useFiatDisplay();
+  const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
 
   const onRefresh = useCallback(() => {
     refresh();
@@ -68,7 +70,7 @@ export function TokenDetailsScreen() {
     [expandedNetworks, isExpanded, onTokenPress, toggleNetwork],
   );
 
-  const totalLabel = formatFromUsd(totalUsd);
+  const ledgerLabel = formatFromUsd(totalUsd) ?? defaultFormattedZero;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
 
   return (
@@ -97,7 +99,22 @@ export function TokenDetailsScreen() {
           <View style={styles.topBarSpacer} />
         </View>
 
-        {totalLabel ? <Text style={styles.total}>{totalLabel}</Text> : null}
+        <View style={styles.summary}>
+          <View
+            accessibilityLabel={`Available Balance: ${availableLabel}`}
+            style={styles.balanceRow}
+          >
+            <Text style={styles.balanceLabel}>Available Balance:</Text>
+            <Text style={styles.balanceValue}>{availableLabel}</Text>
+          </View>
+          <View
+            accessibilityLabel={`Total Balance: ${ledgerLabel}`}
+            style={styles.balanceRow}
+          >
+            <Text style={styles.balanceLabel}>Total Balance:</Text>
+            <Text style={styles.balanceValue}>{ledgerLabel}</Text>
+          </View>
+        </View>
 
         {!hasWallet || loading ? (
           <ActivityIndicator color="#0f172a" style={styles.loader} />
@@ -187,13 +204,35 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#0f172a',
   },
-  total: {
+  summary: {
     paddingHorizontal: 24,
     marginBottom: 12,
-    fontSize: 22,
+    gap: 8,
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    backgroundColor: '#ffffff',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  balanceLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  balanceValue: {
+    flexShrink: 1,
+    fontSize: 16,
     fontWeight: '600',
     color: '#0f172a',
     fontVariant: ['tabular-nums'],
+    textAlign: 'right',
   },
   loader: {
     marginTop: 48,
@@ -246,6 +285,6 @@ const styles = StyleSheet.create({
   },
   listEmpty: {
     flexGrow: 1,
-    justifyContent: 'center',
+    paddingHorizontal: 24,
   },
 });
