@@ -65,11 +65,12 @@ function mergeAllocationResults(
   first: Omit<AllocatePaymentResult, 'chains'>,
   second: Omit<AllocatePaymentResult, 'chains'>,
 ): Omit<AllocatePaymentResult, 'chains'> {
+  const remainingUsd = second.remainingUsd;
   return {
     allocations: [...first.allocations, ...second.allocations],
     filledUsd: first.filledUsd + second.filledUsd,
-    remainingUsd: second.remainingUsd,
-    canFulfill: first.canFulfill && second.canFulfill,
+    remainingUsd,
+    canFulfill: remainingUsd <= FILL_TOLERANCE_USD,
   };
 }
 
@@ -311,7 +312,16 @@ export function allocatePaymentUsd(options: {
       case 'prioritize-stablecoins':
       default: {
         const priced = tokens.filter((token) => tokenUsd(token) > 0);
-        const ordered = sortForStrategy(priced, strategyId, preferredTokenId);
+        const nonGas = priced.filter((token) => !isGasToken(token));
+        const gas = priced.filter((token) => isGasToken(token));
+
+        if (nonGas.length > 0) {
+          const ordered = sortForStrategy(nonGas, strategyId, preferredTokenId);
+          const primary = allocateFromOrderedTokens(ordered, usdAmount);
+          return allocateRemainderFromGas(gas, primary);
+        }
+
+        const ordered = sortForStrategy(gas, strategyId, preferredTokenId);
         return allocateFromOrderedTokens(ordered, usdAmount);
       }
     }

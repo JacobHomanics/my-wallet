@@ -20,7 +20,7 @@ export const PAYMENT_STRATEGIES: readonly PaymentStrategy[] = [
     id: 'prioritize-stablecoins',
     label: 'Prioritize Stablecoins',
     description:
-      'Use stablecoins first when funding a USD payment, then other tokens.',
+      'Use stablecoins first when funding a USD payment, then other tokens. Gas tokens are last resort.',
   },
   {
     id: 'even-split',
