@@ -3,7 +3,7 @@ import { getStateFromPath as getStateFromPathDefault } from '@react-navigation/n
 import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
 
-import type { RootStackParamList } from '@/navigation/types';
+import type { RootStackParamList, HomeStackParamList } from '@/navigation/types';
 
 /** Custom URL scheme registered in app.json / Info.plist (Privy OAuth redirects). */
 export const APP_SCHEME = 'mywallet';
@@ -47,8 +47,47 @@ export function parseAppURL(url: string) {
 
 type NavState = PartialState<NavigationState>;
 
-/** Deep links to /send omit home; prepend it so back can pop with the right animation. */
-function ensureHomeIndexBeforeSend(
+const HOME_STACK_HISTORY: Partial<Record<keyof HomeStackParamList, string[]>> =
+  {
+    send: ['index'],
+    confirmSend: ['index', 'send'],
+  };
+
+function ensureHomeStackHistory(state: NavState): NavState {
+  const routes = state.routes ?? [];
+  if (!routes.length) {
+    return state;
+  }
+
+  const currentIndex = state.index ?? routes.length - 1;
+  const currentRoute = routes[currentIndex];
+  if (!currentRoute?.name) {
+    return state;
+  }
+
+  const requiredPrefix = HOME_STACK_HISTORY[currentRoute.name as keyof HomeStackParamList];
+  if (!requiredPrefix?.length) {
+    return state;
+  }
+
+  const existingByName = new Map(
+    routes.map((route) => [route.name, route] as const),
+  );
+  const ordered = [
+    ...requiredPrefix.map((name) => existingByName.get(name) ?? { name }),
+    ...routes.filter((route) => !requiredPrefix.includes(route.name)),
+  ];
+
+  const newIndex = ordered.findIndex((route) => route === currentRoute);
+  return {
+    ...state,
+    routes: ordered,
+    index: newIndex >= 0 ? newIndex : ordered.length - 1,
+  };
+}
+
+/** Deep links into /send omit ancestor screens; prepend them for pop animations. */
+function ensureHomeStackDeepLinkHistory(
   state: NavState | undefined,
 ): NavState | undefined {
   if (!state?.routes?.length) {
@@ -65,39 +104,15 @@ function ensureHomeIndexBeforeSend(
       if (route.name === 'home') {
         return {
           ...route,
-          state: prependHomeIndexForSend(route.state),
+          state: ensureHomeStackHistory(route.state),
         };
       }
 
       return {
         ...route,
-        state: ensureHomeIndexBeforeSend(route.state) ?? route.state,
+        state: ensureHomeStackDeepLinkHistory(route.state) ?? route.state,
       };
     }),
-  };
-}
-
-function prependHomeIndexForSend(state: NavState): NavState {
-  const routes = state.routes ?? [];
-  if (!routes.length) {
-    return state;
-  }
-
-  const currentIndex = state.index ?? routes.length - 1;
-  const currentRoute = routes[currentIndex];
-
-  if (currentRoute?.name !== 'send') {
-    return state;
-  }
-
-  if (routes.some((route) => route.name === 'index')) {
-    return state;
-  }
-
-  return {
-    ...state,
-    routes: [{ name: 'index' }, ...routes],
-    index: currentIndex + 1,
   };
 }
 
@@ -105,7 +120,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
   prefixes: getLinkingPrefixes(),
   getStateFromPath(path, options) {
     const state = getStateFromPathDefault(path, options);
-    return ensureHomeIndexBeforeSend(state);
+    return ensureHomeStackDeepLinkHistory(state);
   },
   config: {
     screens: {
