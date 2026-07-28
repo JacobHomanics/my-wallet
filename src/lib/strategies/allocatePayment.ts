@@ -4,6 +4,7 @@ import {
   type OwnedToken,
 } from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkChain } from '@/lib/alchemy/networks';
+import { isGasToken } from '@/lib/strategies/gasTokens';
 import { isStablecoin } from '@/lib/strategies/stablecoins';
 import type { PaymentStrategyId } from '@/lib/strategies';
 
@@ -24,8 +25,144 @@ export type AllocatePaymentResult = {
   chains: Array<'ethereum' | 'solana'>;
 };
 
+const FILL_TOLERANCE_USD = 0.005;
+
 function tokenUsd(token: OwnedToken): number {
   return token.usdValue != null && token.usdValue > 0 ? token.usdValue : 0;
+}
+
+function allocationFromUsd(
+  token: OwnedToken,
+  takeUsd: number,
+): PaymentAllocation | null {
+  if (takeUsd <= FILL_TOLERANCE_USD) {
+    return null;
+  }
+
+  const amountRaw = parseUsdAmountToTokenRaw(takeUsd.toFixed(8), token);
+  if (amountRaw == null || amountRaw <= 0n) {
+    return null;
+  }
+
+  const sentUsd =
+    token.usdValue != null && token.rawBalance > 0n
+      ? token.usdValue * (Number(amountRaw) / Number(token.rawBalance))
+      : takeUsd;
+
+  return {
+    token,
+    usd: sentUsd,
+    amountRaw,
+    amountFormatted: formatRawTokenBalance(
+      amountRaw,
+      token.decimals,
+      token.decimals,
+    ),
+  };
+}
+
+function mergeAllocationResults(
+  first: Omit<AllocatePaymentResult, 'chains'>,
+  second: Omit<AllocatePaymentResult, 'chains'>,
+): Omit<AllocatePaymentResult, 'chains'> {
+  return {
+    allocations: [...first.allocations, ...second.allocations],
+    filledUsd: first.filledUsd + second.filledUsd,
+    remainingUsd: second.remainingUsd,
+    canFulfill: first.canFulfill && second.canFulfill,
+  };
+}
+
+/**
+ * Splits `usdAmount` evenly across `tokens`, respecting each token's USD
+ * balance and redistributing shortfalls to tokens with remaining capacity.
+ */
+function evenSplitAmong(
+  tokens: OwnedToken[],
+  usdAmount: number,
+): Omit<AllocatePaymentResult, 'chains'> {
+  if (tokens.length === 0 || !(usdAmount > 0)) {
+    return {
+      allocations: [],
+      filledUsd: 0,
+      remainingUsd: Math.max(0, usdAmount),
+      canFulfill: false,
+    };
+  }
+
+  const assignedUsd = new Array<number>(tokens.length).fill(0);
+  const capacities = tokens.map((token) => tokenUsd(token));
+  let leftToFill = usdAmount;
+
+  while (leftToFill > FILL_TOLERANCE_USD) {
+    const eligible = tokens
+      .map((_, index) => index)
+      .filter((index) => assignedUsd[index] < capacities[index] - FILL_TOLERANCE_USD);
+    if (eligible.length === 0) {
+      break;
+    }
+
+    const share = leftToFill / eligible.length;
+    let progress = false;
+    for (const index of eligible) {
+      const room = capacities[index] - assignedUsd[index];
+      const take = Math.min(share, room);
+      if (take > FILL_TOLERANCE_USD / eligible.length) {
+        assignedUsd[index] += take;
+        leftToFill -= take;
+        progress = true;
+      }
+    }
+    if (!progress) {
+      break;
+    }
+  }
+
+  const allocations: PaymentAllocation[] = [];
+  for (let index = 0; index < tokens.length; index += 1) {
+    const leg = allocationFromUsd(tokens[index], assignedUsd[index]);
+    if (leg) {
+      allocations.push(leg);
+    }
+  }
+
+  const filledUsd = usdAmount - Math.max(0, leftToFill);
+  return {
+    allocations,
+    filledUsd,
+    remainingUsd: Math.max(0, leftToFill),
+    canFulfill: leftToFill <= FILL_TOLERANCE_USD,
+  };
+}
+
+/** Even split across non-gas tokens; gas tokens fill any remainder. */
+function allocateEvenSplit(
+  tokens: OwnedToken[],
+  usdAmount: number,
+): Omit<AllocatePaymentResult, 'chains'> {
+  const priced = tokens.filter((token) => tokenUsd(token) > 0);
+  const nonGas = priced.filter((token) => !isGasToken(token));
+  const gas = priced.filter((token) => isGasToken(token));
+
+  if (nonGas.length > 0) {
+    const primary = evenSplitAmong(nonGas, usdAmount);
+    if (primary.canFulfill || gas.length === 0) {
+      return primary;
+    }
+
+    const gasFill = evenSplitAmong(gas, primary.remainingUsd);
+    if (gasFill.canFulfill) {
+      return mergeAllocationResults(primary, gasFill);
+    }
+
+    const greedyGas = allocateFromOrderedTokens(
+      [...gas].sort((a, b) => tokenUsd(b) - tokenUsd(a)),
+      primary.remainingUsd,
+    );
+    return mergeAllocationResults(primary, greedyGas);
+  }
+
+  return evenSplitAmong(gas, usdAmount);
 }
 
 function sortForStrategy(
@@ -65,7 +202,7 @@ function allocateFromOrderedTokens(
   let remaining = usdAmount;
 
   for (const token of ordered) {
-    if (remaining <= 0.0000001) {
+    if (remaining <= FILL_TOLERANCE_USD) {
       break;
     }
     const available = tokenUsd(token);
@@ -74,32 +211,17 @@ function allocateFromOrderedTokens(
     }
 
     const takeUsd = Math.min(remaining, available);
-    const amountRaw = parseUsdAmountToTokenRaw(takeUsd.toFixed(8), token);
-    if (amountRaw == null || amountRaw <= 0n) {
+    const leg = allocationFromUsd(token, takeUsd);
+    if (!leg) {
       continue;
     }
 
-    // Recompute USD from raw so display matches what we send.
-    const sentUsd =
-      token.usdValue != null && token.rawBalance > 0n
-        ? token.usdValue * (Number(amountRaw) / Number(token.rawBalance))
-        : takeUsd;
-
-    allocations.push({
-      token,
-      usd: sentUsd,
-      amountRaw,
-      amountFormatted: formatRawTokenBalance(
-        amountRaw,
-        token.decimals,
-        token.decimals,
-      ),
-    });
-    remaining -= sentUsd;
+    allocations.push(leg);
+    remaining -= leg.usd;
   }
 
-  const filledUsd = Math.max(0, usdAmount - Math.max(0, remaining));
-  const canFulfill = remaining <= 0.005; // ~half-cent tolerance
+  const filledUsd = usdAmount - Math.max(0, remaining);
+  const canFulfill = remaining <= FILL_TOLERANCE_USD;
 
   return {
     allocations,
@@ -121,8 +243,6 @@ function chainsFromAllocations(
 
 /**
  * Picks one or more tokens across any chain to fulfill a USD payment.
- * Strategy only affects ordering (e.g. stables first), not which chains
- * are eligible — every priced balance can contribute.
  */
 export function allocatePaymentUsd(options: {
   tokens: OwnedToken[];
@@ -142,9 +262,14 @@ export function allocatePaymentUsd(options: {
     };
   }
 
-  const priced = tokens.filter((token) => tokenUsd(token) > 0);
-  const ordered = sortForStrategy(priced, strategyId, preferredTokenId);
-  const result = allocateFromOrderedTokens(ordered, usdAmount);
+  const result =
+    strategyId === 'even-split'
+      ? allocateEvenSplit(tokens, usdAmount)
+      : (() => {
+          const priced = tokens.filter((token) => tokenUsd(token) > 0);
+          const ordered = sortForStrategy(priced, strategyId, preferredTokenId);
+          return allocateFromOrderedTokens(ordered, usdAmount);
+        })();
 
   return {
     ...result,

@@ -1,4 +1,4 @@
-export type PaymentStrategyId = 'prioritize-stablecoins';
+export type PaymentStrategyId = 'prioritize-stablecoins' | 'even-split';
 
 export type PaymentStrategy = {
   id: PaymentStrategyId;
@@ -12,6 +12,12 @@ export const PAYMENT_STRATEGIES: readonly PaymentStrategy[] = [
     label: 'Prioritize Stablecoins',
     description:
       'Use stablecoins first when funding a USD payment, then other tokens.',
+  },
+  {
+    id: 'even-split',
+    label: 'Even Split',
+    description:
+      'Split the payment evenly across tokens. Gas tokens are used only if needed.',
   },
 ] as const;
 
