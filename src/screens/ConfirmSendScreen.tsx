@@ -16,10 +16,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { TokenIcon } from '@/components/TokenIcon';
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendPayment } from '@/hooks/useSendPayment';
 import { useSendStatus } from '@/hooks/useSendStatus';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
+import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import {
   estimateTokenAmountUsd,
   formatUsdAmountInput,
@@ -56,6 +58,7 @@ export function ConfirmSendScreen() {
   const { tokens, loading, ready, refresh } = useTokenBalances();
   const { sendPayment, sending } = useSendPayment();
   const { error, clearStatus, setError } = useSendStatus();
+  const { copy, isCopied } = useCopyToClipboard();
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
 
@@ -242,24 +245,64 @@ export function ConfirmSendScreen() {
             <View style={styles.toSection}>
               <Text style={styles.toLabel}>To</Text>
               {needsEthereum ? (
-                <>
-                  {needsSolana ? (
-                    <Text style={styles.toChainLabel}>EVM</Text>
-                  ) : null}
+                <View style={styles.toAddressRow}>
+                  <Text style={styles.toChainLabel}>EVM</Text>
                   <Text style={styles.toAddress} selectable>
-                    {trimmedEthereum}
+                    {formatWalletAddress(trimmedEthereum)}
                   </Text>
-                </>
+                  <Pressable
+                    accessibilityLabel={
+                      isCopied('evm')
+                        ? 'EVM address copied'
+                        : 'Copy EVM address'
+                    }
+                    accessibilityRole="button"
+                    hitSlop={8}
+                    onPress={() => {
+                      void copy(trimmedEthereum, 'evm');
+                    }}
+                    style={({ pressed }) => [
+                      styles.copyButton,
+                      pressed && styles.copyButtonPressed,
+                    ]}
+                  >
+                    <Ionicons
+                      name={isCopied('evm') ? 'checkmark' : 'copy-outline'}
+                      size={18}
+                      color={isCopied('evm') ? '#15803d' : '#64748b'}
+                    />
+                  </Pressable>
+                </View>
               ) : null}
               {needsSolana ? (
-                <>
-                  {needsEthereum ? (
-                    <Text style={styles.toChainLabel}>Solana</Text>
-                  ) : null}
+                <View style={styles.toAddressRow}>
+                  <Text style={styles.toChainLabel}>Solana</Text>
                   <Text style={styles.toAddress} selectable>
-                    {trimmedSolana}
+                    {formatWalletAddress(trimmedSolana)}
                   </Text>
-                </>
+                  <Pressable
+                    accessibilityLabel={
+                      isCopied('solana')
+                        ? 'Solana address copied'
+                        : 'Copy Solana address'
+                    }
+                    accessibilityRole="button"
+                    hitSlop={8}
+                    onPress={() => {
+                      void copy(trimmedSolana, 'solana');
+                    }}
+                    style={({ pressed }) => [
+                      styles.copyButton,
+                      pressed && styles.copyButtonPressed,
+                    ]}
+                  >
+                    <Ionicons
+                      name={isCopied('solana') ? 'checkmark' : 'copy-outline'}
+                      size={18}
+                      color={isCopied('solana') ? '#15803d' : '#64748b'}
+                    />
+                  </Pressable>
+                </View>
               ) : null}
             </View>
 
@@ -473,19 +516,36 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   toChainLabel: {
-    marginTop: 16,
-    fontSize: 12,
+    flexShrink: 0,
+    fontSize: 13,
     fontWeight: '600',
     color: '#94a3b8',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   toAddress: {
-    marginTop: 8,
+    flexShrink: 1,
+    minWidth: 0,
     fontSize: 16,
     fontWeight: '500',
     color: '#0f172a',
     fontVariant: ['tabular-nums'],
+  },
+  toAddressRow: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 10,
+  },
+  copyButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  copyButtonPressed: {
+    opacity: 0.65,
   },
   advancedToggle: {
     marginTop: 28,
