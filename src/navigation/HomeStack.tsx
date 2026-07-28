@@ -27,6 +27,10 @@ export function HomeStack() {
         name="transactions"
         component={homeStackScreens.transactions}
       />
+      <NativeStack.Screen
+        name="contacts"
+        component={homeStackScreens.contacts}
+      />
       <NativeStack.Screen name="receive" component={homeStackScreens.receive} />
       <NativeStack.Screen
         name="receiveQr"

@@ -22,6 +22,7 @@ export type HomeStackParamList = {
   index: undefined;
   tokenDetails: undefined;
   transactions: undefined;
+  contacts: undefined;
   receive: undefined;
   receiveQr: {
     /** Display-currency amount string entered on the receive screen. */

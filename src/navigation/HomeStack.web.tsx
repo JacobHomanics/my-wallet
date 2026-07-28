@@ -36,6 +36,10 @@ export function HomeStack() {
         name="transactions"
         component={homeStackScreens.transactions}
       />
+      <WebStack.Screen
+        name="contacts"
+        component={homeStackScreens.contacts}
+      />
       <WebStack.Screen name="receive" component={homeStackScreens.receive} />
       <WebStack.Screen
         name="receiveQr"

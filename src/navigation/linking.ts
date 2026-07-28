@@ -74,6 +74,7 @@ const HOME_STACK_HISTORY: Partial<Record<keyof HomeStackParamList, string[]>> =
   {
     tokenDetails: ['index'],
     transactions: ['index'],
+    contacts: ['index'],
     receive: ['index'],
     receiveQr: ['index', 'receive'],
     send: ['index'],
@@ -196,6 +197,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               // stealing splash's empty-path alias.
               tokenDetails: '/tokens',
               transactions: '/transactions',
+              contacts: '/contacts',
               receive: '/receive',
               receiveQr: {
                 path: '/receive/qr',

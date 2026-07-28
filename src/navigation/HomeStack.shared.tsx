@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 
 import type { HomeStackParamList } from '@/navigation/types';
 import { ConfirmSendScreen } from '@/screens/ConfirmSendScreen';
+import { ContactsScreen } from '@/screens/ContactsScreen';
 import { HomeScreen } from '@/screens/HomeScreen';
 import { ReceiveQrScreen } from '@/screens/ReceiveQrScreen';
 import { ReceiveScreen } from '@/screens/ReceiveScreen';
@@ -16,6 +17,7 @@ export const homeStackScreens = {
   index: HomeScreen,
   tokenDetails: TokenDetailsScreen,
   transactions: TransactionsScreen,
+  contacts: ContactsScreen,
   receive: ReceiveScreen,
   receiveQr: ReceiveQrScreen,
   send: SendScreen,

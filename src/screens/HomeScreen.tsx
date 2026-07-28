@@ -131,19 +131,34 @@ export function HomeScreen() {
       </View>
 
       {showActions ? (
-        <Pressable
-          accessibilityRole="link"
-          hitSlop={8}
-          onPress={() => {
-            navigation.navigate('transactions');
-          }}
-          style={({ pressed }) => [
-            styles.transactionsLink,
-            pressed && styles.detailsLinkPressed,
-          ]}
-        >
-          <Text style={styles.detailsLinkText}>Transactions</Text>
-        </Pressable>
+        <View style={styles.bottomLinks}>
+          <Pressable
+            accessibilityRole="link"
+            hitSlop={8}
+            onPress={() => {
+              navigation.navigate('transactions');
+            }}
+            style={({ pressed }) => [
+              styles.bottomLink,
+              pressed && styles.detailsLinkPressed,
+            ]}
+          >
+            <Text style={styles.detailsLinkText}>Transactions</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="link"
+            hitSlop={8}
+            onPress={() => {
+              navigation.navigate('contacts');
+            }}
+            style={({ pressed }) => [
+              styles.bottomLink,
+              pressed && styles.detailsLinkPressed,
+            ]}
+          >
+            <Text style={styles.detailsLinkText}>Contacts</Text>
+          </Pressable>
+        </View>
       ) : null}
     </ScrollView>
   );
@@ -244,8 +259,13 @@ const styles = StyleSheet.create({
     color: '#64748b',
     textDecorationLine: 'underline',
   },
-  transactionsLink: {
-    alignSelf: 'center',
+  bottomLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 24,
+  },
+  bottomLink: {
     paddingVertical: 4,
   },
 });
