@@ -17,6 +17,7 @@ import { BackButton } from '@/components/BackButton';
 import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
+import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { usePopToSend } from '@/hooks/usePopToSend';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -61,6 +62,7 @@ export function ConfirmSendScreen() {
   const [tokenPickerOpen, setTokenPickerOpen] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const popToSend = usePopToSend();
+  const openFreshSend = useOpenFreshSend();
 
   const form = useSendForm(
     tokens,
@@ -185,9 +187,8 @@ export function ConfirmSendScreen() {
 
   const onConfirmExit = useCallback(() => {
     setCancelConfirmOpen(false);
-    resetSendDraft();
-    popToSend();
-  }, [popToSend]);
+    openFreshSend();
+  }, [openFreshSend]);
 
   const goToSend = popToSend;
 
