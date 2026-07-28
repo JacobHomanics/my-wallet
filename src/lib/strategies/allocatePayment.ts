@@ -4,6 +4,10 @@ import {
   type OwnedToken,
 } from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkChain } from '@/lib/alchemy/networks';
+import {
+  compareChainFamilies,
+  partitionTokensByChainPriority,
+} from '@/lib/config/chainPriority';
 import { isGasToken } from '@/lib/strategies/gasTokens';
 import { isStablecoin } from '@/lib/strategies/stablecoins';
 import type { PaymentStrategyId } from '@/lib/strategies';
@@ -153,6 +157,60 @@ function allocateEvenSplit(
   return evenSplitAmong(gas, usdAmount);
 }
 
+function allocatePrioritizeStablecoins(
+  tokens: OwnedToken[],
+  usdAmount: number,
+  preferredTokenId?: string | null,
+): Omit<AllocatePaymentResult, 'chains'> {
+  const priced = tokens.filter((token) => tokenUsd(token) > 0);
+  const nonGas = priced.filter((token) => !isGasToken(token));
+  const gas = priced.filter((token) => isGasToken(token));
+
+  if (nonGas.length > 0) {
+    const ordered = sortForStrategy(nonGas, 'prioritize-stablecoins', preferredTokenId);
+    const primary = allocateFromOrderedTokens(ordered, usdAmount);
+    return allocateRemainderFromGas(gas, primary);
+  }
+
+  const ordered = sortForStrategy(gas, 'prioritize-stablecoins', preferredTokenId);
+  return allocateFromOrderedTokens(ordered, usdAmount);
+}
+
+/**
+ * Runs `allocate` on the preferred chain's tokens first, then uses the other
+ * chain only for any remainder. Skipped when the user picked a specific token.
+ */
+function allocateWithChainPriority(
+  allocate: (
+    tokens: OwnedToken[],
+    usdAmount: number,
+    preferredTokenId?: string | null,
+  ) => Omit<AllocatePaymentResult, 'chains'>,
+  tokens: OwnedToken[],
+  usdAmount: number,
+  preferredTokenId?: string | null,
+): Omit<AllocatePaymentResult, 'chains'> {
+  if (preferredTokenId) {
+    return allocate(tokens, usdAmount, preferredTokenId);
+  }
+
+  const { preferred, fallback } = partitionTokensByChainPriority(tokens);
+  if (fallback.length === 0) {
+    return allocate(preferred, usdAmount, preferredTokenId);
+  }
+  if (preferred.length === 0) {
+    return allocate(fallback, usdAmount, preferredTokenId);
+  }
+
+  const primary = allocate(preferred, usdAmount, preferredTokenId);
+  if (primary.canFulfill) {
+    return primary;
+  }
+
+  const secondary = allocate(fallback, primary.remainingUsd, preferredTokenId);
+  return mergeAllocationResults(primary, secondary);
+}
+
 function allocateRemainderFromGas(
   gas: OwnedToken[],
   prior: Omit<AllocatePaymentResult, 'chains'>,
@@ -245,6 +303,14 @@ function sortForStrategy(
       }
     }
 
+    const chainDelta = compareChainFamilies(
+      getNetworkChain(a.network),
+      getNetworkChain(b.network),
+    );
+    if (chainDelta !== 0) {
+      return chainDelta;
+    }
+
     return tokenUsd(b) - tokenUsd(a);
   });
   return ranked;
@@ -294,7 +360,7 @@ function chainsFromAllocations(
   for (const leg of allocations) {
     set.add(getNetworkChain(leg.token.network));
   }
-  return [...set];
+  return [...set].sort(compareChainFamilies);
 }
 
 /**
@@ -321,28 +387,27 @@ export function allocatePaymentUsd(options: {
   const result = (() => {
     switch (strategyId) {
       case 'even-split':
-        return allocateEvenSplit(tokens, usdAmount);
+        return allocateWithChainPriority(
+          allocateEvenSplit,
+          tokens,
+          usdAmount,
+          preferredTokenId,
+        );
       case 'prioritize-stablecoins-even-split':
-        return allocatePrioritizeStablecoinsThenEvenSplit(
+        return allocateWithChainPriority(
+          allocatePrioritizeStablecoinsThenEvenSplit,
           tokens,
           usdAmount,
           preferredTokenId,
         );
       case 'prioritize-stablecoins':
-      default: {
-        const priced = tokens.filter((token) => tokenUsd(token) > 0);
-        const nonGas = priced.filter((token) => !isGasToken(token));
-        const gas = priced.filter((token) => isGasToken(token));
-
-        if (nonGas.length > 0) {
-          const ordered = sortForStrategy(nonGas, strategyId, preferredTokenId);
-          const primary = allocateFromOrderedTokens(ordered, usdAmount);
-          return allocateRemainderFromGas(gas, primary);
-        }
-
-        const ordered = sortForStrategy(gas, strategyId, preferredTokenId);
-        return allocateFromOrderedTokens(ordered, usdAmount);
-      }
+      default:
+        return allocateWithChainPriority(
+          allocatePrioritizeStablecoins,
+          tokens,
+          usdAmount,
+          preferredTokenId,
+        );
     }
   })();
 

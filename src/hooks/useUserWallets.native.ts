@@ -6,6 +6,7 @@ import {
 } from '@privy-io/expo';
 
 import {
+  sortWalletsByChainPriority,
   type UserWallet,
   type UserWalletsResult,
 } from '@/hooks/useUserWallets.shared';
@@ -43,5 +44,5 @@ export function useUserWallets(): UserWalletsResult {
     wallets.push({ chain: 'solana', label: 'Solana', address: solana });
   }
 
-  return { ready: true, wallets };
+  return { ready: true, wallets: sortWalletsByChainPriority(wallets) };
 }

@@ -6,6 +6,7 @@ import {
 import { useWallets as useSolanaWallets } from '@privy-io/react-auth/solana';
 
 import {
+  sortWalletsByChainPriority,
   type UserWallet,
   type UserWalletsResult,
 } from '@/hooks/useUserWallets.shared';
@@ -46,5 +47,5 @@ export function useUserWallets(): UserWalletsResult {
     return { ready: false, wallets: [] };
   }
 
-  return { ready: true, wallets };
+  return { ready: true, wallets: sortWalletsByChainPriority(wallets) };
 }
