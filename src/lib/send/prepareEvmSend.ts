@@ -21,9 +21,9 @@ const L2_MAX_FEE_PER_GAS_WEI = 2_000_000_000n; // 2 gwei
 
 /** Extra wei reserved on OP-stack / Arb for L1 data / posting. */
 const L2_L1_FEE_PAD_WEI: Record<string, bigint> = {
-  'base-mainnet': 40_000_000_000_000n, // 0.00004 ETH
-  'opt-mainnet': 40_000_000_000_000n,
-  'arb-mainnet': 40_000_000_000_000n,
+  'base-mainnet': 10_000_000_000_000n, // 0.00001 ETH
+  'opt-mainnet': 10_000_000_000_000n,
+  'arb-mainnet': 10_000_000_000_000n,
 };
 
 async function rpcCall(

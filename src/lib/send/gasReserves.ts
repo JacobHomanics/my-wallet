@@ -16,14 +16,14 @@ export const EVM_ERC20_TRANSFER_GAS = 65_000n;
 
 /**
  * Typical per-tx fee in USD. L2 execution gas is tiny; most cost is L1 data /
- * posting. Anchoring in USD keeps ~$0.20 of ETH on Base/Arb/OP mostly spendable
+ * posting. Anchoring in USD keeps dust ETH on Base/Arb/OP mostly spendable
  * while still leaving enough for a normal transfer.
  */
 export const TYPICAL_FEE_USD: Record<string, number> = {
   'eth-mainnet': 1.25,
-  'base-mainnet': 0.05,
-  'arb-mainnet': 0.05,
-  'opt-mainnet': 0.05,
+  'base-mainnet': 0.02,
+  'arb-mainnet': 0.02,
+  'opt-mainnet': 0.02,
   'polygon-mainnet': 0.02,
   // SPL sends may need ~0.002 SOL ATA rent for a new recipient token account.
   'solana-mainnet': 0.35,
@@ -36,9 +36,10 @@ export const TYPICAL_FEE_USD: Record<string, number> = {
  */
 export const FALLBACK_FEE_PER_TX_RAW: Record<string, bigint> = {
   'eth-mainnet': 400_000_000_000_000n, // 0.0004 ETH
-  'base-mainnet': 40_000_000_000_000n, // 0.00004 ETH
-  'arb-mainnet': 40_000_000_000_000n,
-  'opt-mainnet': 40_000_000_000_000n,
+  // ~$0.02–0.04 at typical ETH prices; real Base/OP/Arb transfers are often less.
+  'base-mainnet': 10_000_000_000_000n, // 0.00001 ETH
+  'arb-mainnet': 10_000_000_000_000n,
+  'opt-mainnet': 10_000_000_000_000n,
   'polygon-mainnet': 20_000_000_000_000_000n, // 0.02 POL
   'solana-mainnet': SOLANA_SPL_RESERVE_LAMPORTS,
 };
@@ -127,34 +128,42 @@ function feeReserveRawForNetwork(
   network: string,
   gasToken: OwnedToken | undefined,
   estimate: NetworkGasFeeEstimate | undefined,
-  forSplTransfer: boolean,
+  forTokenTransfer: boolean,
 ): bigint {
   const fromEstimate = estimate?.feePerTxRaw ?? 0n;
+  const fromFallback = fallbackFeePerTxRaw(network, forTokenTransfer);
 
-  // Solana fees are fixed in lamports (tx fee / ATA rent). Do not derive the
-  // reserve from USD — a small SOL balance priced at $0.20 can make a $0.35
-  // USD target exceed the whole balance even when rent (~0.002 SOL) is covered.
-  if (network === 'solana-mainnet') {
-    const solReserve = forSplTransfer
-      ? SOLANA_SPL_RESERVE_LAMPORTS
-      : SOLANA_TX_FEE_LAMPORTS;
-    return maxBigInt(fromEstimate, solReserve);
+  // Solana + L2 fees are anchored in native units (tx fee / ATA rent / L1 data
+  // pad). Do not derive the reserve from USD — a dust gas balance priced at
+  // $0.08 can make a $0.05 fee target exceed the whole balance and wrongly
+  // hide funded ERC-20s / SPLs from Available Balance.
+  if (
+    network === 'solana-mainnet' ||
+    network === 'base-mainnet' ||
+    network === 'opt-mainnet' ||
+    network === 'arb-mainnet' ||
+    network === 'polygon-mainnet'
+  ) {
+    return maxBigInt(fromEstimate, fromFallback);
   }
 
   const fromUsd = gasToken
-    ? usdFeeToRaw(gasToken, typicalFeeUsd(network, forSplTransfer))
+    ? usdFeeToRaw(gasToken, typicalFeeUsd(network, forTokenTransfer))
     : null;
-  const fromFallback = fallbackFeePerTxRaw(network, forSplTransfer);
 
-  if (fromUsd != null) {
-    return maxBigInt(fromEstimate, fromUsd);
+  if (
+    fromUsd != null &&
+    gasToken != null &&
+    fromUsd <= gasToken.rawBalance
+  ) {
+    return maxBigInt(fromEstimate, maxBigInt(fromUsd, fromFallback));
   }
   return maxBigInt(fromEstimate, fromFallback);
 }
 
 /**
- * Native fee reserve for emptying every positive balance on a network (one
- * transfer leg per token). Available Balance must never assume fewer legs.
+ * Native fee reserve for emptying every positive balance on a network that
+ * can actually be funded with on-hand gas.
  */
 export function networkFeeReserveRaw(
   network: string,
@@ -166,22 +175,84 @@ export function networkFeeReserveRaw(
     return 0n;
   }
 
+  if (network === 'solana-mainnet') {
+    const plan = planSolanaFeeReserve(withBalance);
+    return plan?.reserveLamports ?? 0n;
+  }
+
+  const plan = planEvmFeeReserve(network, withBalance, estimate);
+  return plan?.reserveWei ?? 0n;
+}
+
+/**
+ * Chooses how many EVM balances are actually sendable given current native gas.
+ * Prefer highest-USD ERC-20s first; leftover native above one transfer fee stays
+ * spendable. Avoids all-or-nothing so dust ETH does not hide a funded USDC.
+ */
+export function planEvmFeeReserve(
+  network: string,
+  onNetwork: OwnedToken[],
+  estimate: NetworkGasFeeEstimate | undefined,
+): {
+  reserveWei: bigint;
+  spendableTokenIds: Set<string>;
+} | null {
+  const withBalance = onNetwork.filter((token) => token.rawBalance > 0n);
+  if (withBalance.length === 0) {
+    return null;
+  }
+
   const gasToken = withBalance.find((token) => isGasToken(token));
-  const tokenLegs = withBalance.filter((token) => !isGasToken(token));
-  const forTokenTransfer = tokenLegs.length > 0;
-  const feePerTx = feeReserveRawForNetwork(
+  const gasRaw = gasToken?.rawBalance ?? 0n;
+  const erc20Tokens = [
+    ...withBalance.filter((token) => !isGasToken(token)),
+  ].sort((a, b) => (b.usdValue ?? 0) - (a.usdValue ?? 0));
+
+  const erc20Fee = feeReserveRawForNetwork(
     network,
     gasToken,
     estimate,
-    forTokenTransfer,
+    true,
+  );
+  const nativeFee = feeReserveRawForNetwork(
+    network,
+    gasToken,
+    estimate,
+    false,
   );
 
-  if (network === 'solana-mainnet') {
-    const plan = planSolanaFeeReserve(withBalance);
-    return plan?.reserveLamports ?? feePerTx;
+  const spendableTokenIds = new Set<string>();
+  let used = 0n;
+
+  for (const token of erc20Tokens) {
+    const next = used + erc20Fee;
+    if (gasRaw >= next) {
+      spendableTokenIds.add(token.id);
+      used = next;
+    }
   }
 
-  return feePerTx * BigInt(withBalance.length);
+  let reserveWei = used;
+  if (gasToken) {
+    const leftover = gasRaw - used;
+    if (leftover >= nativeFee) {
+      reserveWei = used + nativeFee;
+      spendableTokenIds.add(gasToken.id);
+    } else if (
+      spendableTokenIds.size === 0 &&
+      gasRaw >= nativeFee
+    ) {
+      reserveWei = nativeFee;
+      spendableTokenIds.add(gasToken.id);
+    }
+    // Else: ERC-20s funded; leftover dust stays locked in `used`.
+  }
+
+  if (spendableTokenIds.size === 0) {
+    return null;
+  }
+
+  return { reserveWei, spendableTokenIds };
 }
 
 /**
@@ -282,21 +353,18 @@ export function applyGasReserves(
       continue;
     }
 
-    const feeReserve = networkFeeReserveRaw(
+    const plan = planEvmFeeReserve(
       network,
       onNetwork,
       feeEstimates.get(network),
     );
-    reserveByNetwork.set(network, feeReserve);
-
-    const gasToken = onNetwork.find(
-      (token) => isGasToken(token) && token.rawBalance > 0n,
-    );
-    const gasRaw = gasToken?.rawBalance ?? 0n;
-    spendableIdsByNetwork.set(
-      network,
-      gasRaw >= feeReserve ? 'all' : 'none',
-    );
+    if (plan == null) {
+      reserveByNetwork.set(network, 0n);
+      spendableIdsByNetwork.set(network, 'none');
+    } else {
+      reserveByNetwork.set(network, plan.reserveWei);
+      spendableIdsByNetwork.set(network, plan.spendableTokenIds);
+    }
   }
 
   return tokens.map((token) => {
