@@ -7,6 +7,8 @@ import {
 import { Connection, VersionedTransaction } from '@solana/web3.js';
 
 import { buildSolanaTransferTransaction } from '@/lib/send/buildSolanaTransfer';
+import { clampNativeEvmSendValue } from '@/lib/send/clampNativeEvmSendValue';
+import { clampNativeSolSendValue } from '@/lib/send/clampNativeSolSendValue';
 import { encodeErc20Transfer } from '@/lib/send/encodeErc20Transfer';
 import {
   getEvmAddChainParams,
@@ -98,6 +100,13 @@ export function useSendTransaction(): SendTransactionResult {
 
           const network = params.token.network;
           const isNative = isNativeTokenAddress(params.token.tokenAddress);
+          const amountRaw = isNative
+            ? await clampNativeEvmSendValue({
+                network,
+                from,
+                amountRaw: params.amountRaw,
+              })
+            : params.amountRaw;
 
           const hash = await sendPrivyEvmTransaction({
             provider,
@@ -106,13 +115,13 @@ export function useSendTransaction(): SendTransactionResult {
             ...(isNative
               ? {
                   to: params.recipient.trim(),
-                  value: toHexQuantity(params.amountRaw),
+                  value: toHexQuantity(amountRaw),
                 }
               : {
                   to: params.token.tokenAddress!,
                   data: encodeErc20Transfer(
                     params.recipient.trim(),
-                    params.amountRaw,
+                    amountRaw,
                   ),
                 }),
           });
@@ -128,10 +137,18 @@ export function useSendTransaction(): SendTransactionResult {
         const provider = await wallet.getProvider();
         const connection = new Connection(getSolanaRpcUrl(), 'confirmed');
 
+        const isNative = isNativeTokenAddress(params.token.tokenAddress);
+        const amountRaw = isNative
+          ? await clampNativeSolSendValue({
+              fromAddress: wallet.address,
+              amountRaw: params.amountRaw,
+            })
+          : params.amountRaw;
+
         const serialized = await buildSolanaTransferTransaction({
           fromAddress: wallet.address,
           recipient: params.recipient.trim(),
-          amountRaw: params.amountRaw,
+          amountRaw,
           tokenAddress: params.token.tokenAddress,
           decimals: params.token.decimals,
         });

@@ -32,6 +32,7 @@ import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import { getNetworkChain } from '@/lib/alchemy/networks';
+import { formatSendError } from '@/lib/send/formatSendError';
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
@@ -156,9 +157,7 @@ export function ConfirmSendScreen() {
           })),
         });
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Transaction failed';
-        setError(message);
+        setError(formatSendError(err));
       }
     })();
   }, [

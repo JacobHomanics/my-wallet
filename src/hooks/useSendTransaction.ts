@@ -13,6 +13,8 @@ import {
   encodeSolanaSignature,
   buildSolanaTransferTransaction,
 } from '@/lib/send/buildSolanaTransfer';
+import { clampNativeEvmSendValue } from '@/lib/send/clampNativeEvmSendValue';
+import { clampNativeSolSendValue } from '@/lib/send/clampNativeSolSendValue';
 import { encodeErc20Transfer } from '@/lib/send/encodeErc20Transfer';
 import { getEvmChainId, toHexQuantity } from '@/lib/send/rpc';
 import { getNetworkChain } from '@/lib/alchemy/networks';
@@ -51,6 +53,13 @@ export function useSendTransaction(): SendTransactionResult {
 
           const chainId = getEvmChainId(params.token.network);
           const isNative = isNativeTokenAddress(params.token.tokenAddress);
+          const amountRaw = isNative
+            ? await clampNativeEvmSendValue({
+                network: params.token.network,
+                from: wallet.address,
+                amountRaw: params.amountRaw,
+              })
+            : params.amountRaw;
 
           // Headless: Privy's confirmation modal uses DOM/Headless UI and
           // crashes under react-native-web (hooks mismatch → white screen).
@@ -59,14 +68,14 @@ export function useSendTransaction(): SendTransactionResult {
             isNative
               ? {
                   to: params.recipient.trim(),
-                  value: toHexQuantity(params.amountRaw),
+                  value: toHexQuantity(amountRaw),
                   chainId,
                 }
               : {
                   to: params.token.tokenAddress!,
                   data: encodeErc20Transfer(
                     params.recipient.trim(),
-                    params.amountRaw,
+                    amountRaw,
                   ),
                   value: toHexQuantity(0n),
                   chainId,
@@ -85,10 +94,18 @@ export function useSendTransaction(): SendTransactionResult {
           throw new Error('No Solana wallet available');
         }
 
+        const isNative = isNativeTokenAddress(params.token.tokenAddress);
+        const amountRaw = isNative
+          ? await clampNativeSolSendValue({
+              fromAddress: wallet.address,
+              amountRaw: params.amountRaw,
+            })
+          : params.amountRaw;
+
         const transaction = await buildSolanaTransferTransaction({
           fromAddress: wallet.address,
           recipient: params.recipient.trim(),
-          amountRaw: params.amountRaw,
+          amountRaw,
           tokenAddress: params.token.tokenAddress,
           decimals: params.token.decimals,
         });

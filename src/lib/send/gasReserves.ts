@@ -15,22 +15,22 @@ export const EVM_ERC20_TRANSFER_GAS = 65_000n;
  */
 export const TYPICAL_FEE_USD: Record<string, number> = {
   'eth-mainnet': 1.25,
-  'base-mainnet': 0.04,
-  'arb-mainnet': 0.04,
-  'opt-mainnet': 0.04,
+  'base-mainnet': 0.06,
+  'arb-mainnet': 0.06,
+  'opt-mainnet': 0.06,
   'polygon-mainnet': 0.02,
   'solana-mainnet': 0.005,
 };
 
 /**
  * Raw fallbacks only when the gas token has no USD price to convert from.
- * Sized for one normal transfer — not worst-case spikes.
+ * Also used as a floor for send-time max-fee clamps (EIP-1559 balance checks).
  */
 export const FALLBACK_FEE_PER_TX_RAW: Record<string, bigint> = {
   'eth-mainnet': 400_000_000_000_000n, // 0.0004 ETH
-  'base-mainnet': 15_000_000_000_000n, // 0.000015 ETH (~$0.04–0.05)
-  'arb-mainnet': 15_000_000_000_000n,
-  'opt-mainnet': 15_000_000_000_000n,
+  'base-mainnet': 25_000_000_000_000n, // 0.000025 ETH
+  'arb-mainnet': 25_000_000_000_000n,
+  'opt-mainnet': 25_000_000_000_000n,
   'polygon-mainnet': 20_000_000_000_000_000n, // 0.02 POL
   'solana-mainnet': 50_000n, // 0.00005 SOL
 };
@@ -126,7 +126,7 @@ function feeReserveRawForNetwork(
  * Available Balance never treat gas money as spendable payment.
  *
  * Reserves **one** typical transfer per network (not one per token). Dust like
- * ~$0.20 of ETH on Base/Arb/OP stays mostly spendable after ~$0.04 for gas.
+ * ~$0.20 of ETH on Base/Arb/OP stays mostly spendable after ~$0.06 for gas.
  */
 export function applyGasReserves(
   tokens: OwnedToken[],
