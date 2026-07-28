@@ -78,39 +78,41 @@ export function ReceiveScreen() {
             keyboardShouldPersistTaps="handled"
             style={styles.flex}
           >
-            <Text style={styles.label}>Amount</Text>
-            <View
-              style={[
-                styles.fieldRow,
-                amountError ? styles.fieldRowError : null,
-              ]}
-            >
-              <Text style={styles.amountPrefix}>{currencySymbol}</Text>
-              <TextInput
-                keyboardType="decimal-pad"
-                onChangeText={setAmount}
-                placeholder="0"
-                placeholderTextColor="#94a3b8"
-                style={styles.fieldInput}
-                value={amount}
-              />
-            </View>
-            {amountError ? (
-              <Text style={styles.fieldError}>{amountError}</Text>
-            ) : null}
+            <View style={styles.formInner}>
+              <Text style={styles.label}>Amount</Text>
+              <View
+                style={[
+                  styles.fieldRow,
+                  amountError ? styles.fieldRowError : null,
+                ]}
+              >
+                <Text style={styles.amountPrefix}>{currencySymbol}</Text>
+                <TextInput
+                  keyboardType="decimal-pad"
+                  onChangeText={setAmount}
+                  placeholder="0"
+                  placeholderTextColor="#94a3b8"
+                  style={styles.fieldInput}
+                  value={amount}
+                />
+              </View>
+              {amountError ? (
+                <Text style={styles.fieldError}>{amountError}</Text>
+              ) : null}
 
-            <Pressable
-              accessibilityRole="button"
-              disabled={!canContinue}
-              onPress={onContinue}
-              style={({ pressed }) => [
-                styles.continueButton,
-                !canContinue && styles.continueButtonDisabled,
-                pressed && canContinue && styles.continueButtonPressed,
-              ]}
-            >
-              <Text style={styles.continueButtonText}>Continue</Text>
-            </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                disabled={!canContinue}
+                onPress={onContinue}
+                style={({ pressed }) => [
+                  styles.continueButton,
+                  !canContinue && styles.continueButtonDisabled,
+                  pressed && canContinue && styles.continueButtonPressed,
+                ]}
+              >
+                <Text style={styles.continueButtonText}>Continue</Text>
+              </Pressable>
+            </View>
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
@@ -161,14 +163,20 @@ const styles = StyleSheet.create({
     color: '#0f172a',
   },
   form: {
+    flexGrow: 1,
+    justifyContent: 'center',
     paddingHorizontal: 24,
     paddingTop: 24,
+  },
+  formInner: {
+    width: '100%',
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
     color: '#64748b',
     marginBottom: 8,
+    textAlign: 'center',
   },
   fieldRow: {
     flexDirection: 'row',
@@ -200,6 +208,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 13,
     color: '#b91c1c',
+    textAlign: 'center',
   },
   continueButton: {
     marginTop: 28,
