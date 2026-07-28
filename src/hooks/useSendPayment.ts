@@ -30,9 +30,10 @@ export type SendPaymentResult = {
 
 /**
  * Sends one or more token transfer legs sequentially (multi-token payments).
+ * Simulates every leg first; only broadcasts if all simulations succeed.
  */
 export function useSendPayment(): SendPaymentResult {
-  const { ready, send } = useSendTransaction();
+  const { ready, send, simulatePayment } = useSendTransaction();
   const [sending, setSending] = useState(false);
 
   const sendPayment = useCallback(
@@ -55,6 +56,16 @@ export function useSendPayment(): SendPaymentResult {
       });
 
       try {
+        // All-or-nothing preflight: do not broadcast anything unless every
+        // leg simulates successfully (including cumulative gas on shared nets).
+        await simulatePayment(
+          orderedLegs.map((leg) => ({
+            token: leg.token,
+            recipient: leg.recipient,
+            amountRaw: leg.amountRaw,
+          })),
+        );
+
         for (const leg of orderedLegs) {
           const result = await send({
             token: leg.token,
@@ -77,7 +88,7 @@ export function useSendPayment(): SendPaymentResult {
         setSending(false);
       }
     },
-    [send],
+    [send, simulatePayment],
   );
 
   return { ready, sending, sendPayment };

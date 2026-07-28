@@ -20,6 +20,7 @@ import {
   toHexQuantity,
 } from '@/lib/send/rpc';
 import { sendPrivyEvmTransaction } from '@/lib/send/sendPrivyEvmTransaction';
+import { simulatePaymentLegs } from '@/lib/send/simulatePaymentLegs';
 import { assertSolanaFeePayerFunds } from '@/lib/send/solanaFees';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { isNativeTokenAddress } from '@/lib/alchemy/tokenLogos';
@@ -80,6 +81,23 @@ export function useSendTransaction(): SendTransactionResult {
   const ready =
     ethereumWallets.length > 0 ||
     (isConnected(solanaWallet) && solanaWallet.wallets.length > 0);
+
+  const resolveAddresses = useCallback(() => {
+    const ethereum = ethereumWallets[0]?.address ?? null;
+    const solana =
+      isConnected(solanaWallet) && solanaWallet.wallets[0]
+        ? solanaWallet.wallets[0].address
+        : null;
+    return { ethereumFrom: ethereum, solanaFrom: solana };
+  }, [ethereumWallets, solanaWallet]);
+
+  const simulatePayment = useCallback(
+    async (legs: SendTokenParams[]): Promise<void> => {
+      const { ethereumFrom, solanaFrom } = resolveAddresses();
+      await simulatePaymentLegs({ legs, ethereumFrom, solanaFrom });
+    },
+    [resolveAddresses],
+  );
 
   const send = useCallback(
     async (params: SendTokenParams): Promise<SendTokenResult> => {
@@ -189,5 +207,5 @@ export function useSendTransaction(): SendTransactionResult {
     [ethereumWallets, solanaWallet],
   );
 
-  return { ready, sending, send };
+  return { ready, sending, send, simulatePayment };
 }

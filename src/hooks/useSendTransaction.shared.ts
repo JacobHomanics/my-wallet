@@ -15,4 +15,9 @@ export type SendTransactionResult = {
   ready: boolean;
   sending: boolean;
   send: (params: SendTokenParams) => Promise<SendTokenResult>;
+  /**
+   * Simulates every leg (non-gas first) and throws if any would fail.
+   * Does not broadcast.
+   */
+  simulatePayment: (legs: SendTokenParams[]) => Promise<void>;
 };
