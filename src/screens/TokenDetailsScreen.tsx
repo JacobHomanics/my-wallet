@@ -17,6 +17,7 @@ import { TokenChainSection } from '@/components/TokenChainSection';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useExpandedNetworks } from '@/hooks/useExpandedNetworks';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useTokensByChain } from '@/hooks/useTokensByChain';
@@ -29,6 +30,7 @@ export function TokenDetailsScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const {
+    ready,
     ethereumAddress,
     solanaAddress,
     tokens,
@@ -37,7 +39,13 @@ export function TokenDetailsScreen() {
     refreshing,
     error,
     refresh,
+    poll,
   } = useTokenBalances();
+
+  usePollTokenBalances(poll, {
+    enabled: ready && Boolean(ethereumAddress || solanaAddress),
+  });
+
   const { availableLabel } = useSpendableTokens(tokens);
   const chainGroups = useTokensByChain(tokens);
   const { expandedNetworks, isExpanded, toggleNetwork } = useExpandedNetworks();
