@@ -1,6 +1,7 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
+import type { PaymentStrategyId } from '@/lib/strategies';
 import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
 
@@ -19,6 +20,8 @@ export type SendDraft = {
   allocationInputs: Record<string, string>;
   allocationInputUnit: AllocationInputUnit;
   showAdvanced: boolean;
+  /** When set, overrides the default strategy for this send only. */
+  strategyId: PaymentStrategyId | null;
 };
 
 type DraftListener = () => void;
@@ -31,6 +34,7 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   allocationInputs: {},
   allocationInputUnit: 'token',
   showAdvanced: false,
+  strategyId: null,
 };
 
 let sendDraft: SendDraft = { ...DEFAULT_SEND_DRAFT };

@@ -24,6 +24,10 @@ function getSnapshot(): PaymentStrategyId {
   return selectedStrategyId;
 }
 
+export function getDefaultStrategyId(): PaymentStrategyId {
+  return getSnapshot();
+}
+
 function setSelectedStrategyId(id: PaymentStrategyId): void {
   if (id === selectedStrategyId) {
     return;
@@ -35,7 +39,7 @@ function setSelectedStrategyId(id: PaymentStrategyId): void {
 }
 
 /**
- * Selected payment strategy. Applied when allocating tokens to a USD amount.
+ * Default payment strategy (settings). Send flow may override without changing this.
  */
 export function usePaymentStrategy(): {
   strategies: readonly PaymentStrategy[];

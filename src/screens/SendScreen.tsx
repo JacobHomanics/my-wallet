@@ -23,7 +23,7 @@ import { TokenPickerModal } from '@/components/TokenPickerModal';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendDraftUi } from '@/hooks/useSendDraft';
 import { useSendForm } from '@/hooks/useSendForm';
-import { useStrategyPicker } from '@/hooks/useStrategyPicker';
+import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatUsdValue } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
@@ -46,7 +46,7 @@ export function SendScreen() {
     openPicker: openStrategyPicker,
     closePicker: closeStrategyPicker,
     onSelectStrategy,
-  } = useStrategyPicker();
+  } = useSendStrategyPicker();
   const [tokenPickerOpen, setTokenPickerOpen] = useState(false);
 
   const form = useSendForm(

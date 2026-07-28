@@ -1,14 +1,22 @@
 import { useCallback, useState } from 'react';
 
 import { usePaymentStrategy } from '@/hooks/usePaymentStrategy';
+import { useSendStrategy } from '@/hooks/useSendStrategy';
 import type { PaymentStrategy, PaymentStrategyId } from '@/lib/strategies';
 
-/**
- * Payment strategy selection plus open/close state for the strategy picker modal.
- */
-export function useStrategyPicker() {
-  const { strategies, selectedStrategy, selectedStrategyId, setStrategy } =
-    usePaymentStrategy();
+type StrategySource = {
+  strategies: readonly PaymentStrategy[];
+  selectedStrategy: PaymentStrategy;
+  selectedStrategyId: PaymentStrategyId;
+  setStrategy: (id: PaymentStrategyId) => void;
+};
+
+function useStrategyPickerState({
+  strategies,
+  selectedStrategy,
+  selectedStrategyId,
+  setStrategy,
+}: StrategySource) {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const openPicker = useCallback(() => {
@@ -44,4 +52,20 @@ export function useStrategyPicker() {
     selectStrategy,
     onSelectStrategy,
   };
+}
+
+/**
+ * Default strategy picker for settings (persists as the app default).
+ */
+export function useStrategyPicker() {
+  const strategy = usePaymentStrategy();
+  return useStrategyPickerState(strategy);
+}
+
+/**
+ * Send-flow strategy picker (starts from default, does not change settings).
+ */
+export function useSendStrategyPicker() {
+  const strategy = useSendStrategy();
+  return useStrategyPickerState(strategy);
 }

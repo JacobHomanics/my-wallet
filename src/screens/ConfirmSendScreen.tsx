@@ -23,7 +23,7 @@ import { resetSendDraft, useSendDraftUi } from '@/hooks/useSendDraft';
 import { useSendForm } from '@/hooks/useSendForm';
 import { useSendPayment } from '@/hooks/useSendPayment';
 import { useSendStatus } from '@/hooks/useSendStatus';
-import { useStrategyPicker } from '@/hooks/useStrategyPicker';
+import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import {
@@ -56,7 +56,7 @@ export function ConfirmSendScreen() {
     openPicker: openStrategyPicker,
     closePicker: closeStrategyPicker,
     onSelectStrategy,
-  } = useStrategyPicker();
+  } = useSendStrategyPicker();
   const [tokenPickerOpen, setTokenPickerOpen] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
 
