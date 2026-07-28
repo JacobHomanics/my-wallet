@@ -1,6 +1,11 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
+import {
+  estimateTokenAmountUsd,
+  formatUsdAmountInput,
+  parseTokenAmountToRaw,
+  type OwnedToken,
+} from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import {
   allocatePaymentUsd,
@@ -14,6 +19,8 @@ export type SendFormState = {
   /** USD amount the user is trying to send. */
   amount: string;
   allocations: PaymentAllocation[];
+  /** Per-token input strings shown in advanced (may be mid-edit). */
+  allocationInputs: Record<string, string>;
   /** Chain families that appear in the current allocation. */
   chains: Array<'ethereum' | 'solana'>;
   needsEthereumRecipient: boolean;
@@ -33,6 +40,7 @@ export type SendFormState = {
   setEthereumRecipient: (value: string) => void;
   setSolanaRecipient: (value: string) => void;
   setAmount: (value: string) => void;
+  setAllocationAmount: (tokenId: string, value: string) => void;
 };
 
 function sanitizeAmountInput(value: string): string {
@@ -47,6 +55,34 @@ function sanitizeAmountInput(value: string): string {
   );
 }
 
+function chainsFromAllocations(
+  allocations: PaymentAllocation[],
+): Array<'ethereum' | 'solana'> {
+  const set = new Set<'ethereum' | 'solana'>();
+  for (const leg of allocations) {
+    set.add(getNetworkChain(leg.token.network));
+  }
+  return [...set];
+}
+
+function refreshAllocationTokens(
+  allocations: PaymentAllocation[],
+  tokens: OwnedToken[],
+): PaymentAllocation[] {
+  return allocations.flatMap((leg) => {
+    const token = tokens.find((item) => item.id === leg.token.id);
+    if (!token) {
+      return [];
+    }
+    const usd =
+      estimateTokenAmountUsd(token, leg.amountRaw) ??
+      (token.usdValue != null && token.rawBalance > 0n
+        ? token.usdValue * (Number(leg.amountRaw) / Number(token.rawBalance))
+        : leg.usd);
+    return [{ ...leg, token, usd: usd ?? 0 }];
+  });
+}
+
 export function useSendForm(
   tokens: OwnedToken[],
   strategyId: PaymentStrategyId,
@@ -55,10 +91,16 @@ export function useSendForm(
   const [ethereumRecipient, setEthereumRecipientState] = useState('');
   const [solanaRecipient, setSolanaRecipientState] = useState('');
   const [amount, setAmountState] = useState('');
+  const [manualAllocations, setManualAllocations] = useState<
+    PaymentAllocation[] | null
+  >(null);
+  const [allocationInputs, setAllocationInputs] = useState<
+    Record<string, string>
+  >({});
 
   const usdAmount = useMemo(() => parseUsdInput(amount), [amount]);
 
-  const plan = useMemo(() => {
+  const strategyPlan = useMemo(() => {
     if (usdAmount == null || usdAmount <= 0) {
       return {
         allocations: [] as PaymentAllocation[],
@@ -77,8 +119,37 @@ export function useSendForm(
     });
   }, [preferredTokenId, strategyId, tokens, usdAmount]);
 
-  const allocations = plan.allocations;
-  const chains = plan.chains;
+  // Strategy / preferred-token changes discard manual leg edits.
+  useEffect(() => {
+    setManualAllocations(null);
+    setAllocationInputs({});
+  }, [strategyId, preferredTokenId]);
+
+  // Keep manual legs pointed at fresh token balances when prices refresh.
+  useEffect(() => {
+    setManualAllocations((current) => {
+      if (current == null) {
+        return current;
+      }
+      return refreshAllocationTokens(current, tokens);
+    });
+  }, [tokens]);
+
+  const allocations = useMemo(() => {
+    if (manualAllocations != null) {
+      return manualAllocations;
+    }
+    return strategyPlan.allocations;
+  }, [manualAllocations, strategyPlan.allocations]);
+
+  const chains = useMemo(
+    () =>
+      manualAllocations != null
+        ? chainsFromAllocations(manualAllocations)
+        : strategyPlan.chains,
+    [manualAllocations, strategyPlan.chains],
+  );
+
   const needsEthereumRecipient = chains.includes('ethereum');
   const needsSolanaRecipient = chains.includes('solana');
 
@@ -99,12 +170,35 @@ export function useSendForm(
   const recipientsValid = ethereumRecipientValid && solanaRecipientValid;
 
   const amountValid = usdAmount != null && usdAmount > 0;
-  const insufficientFunds = amountValid && !plan.canFulfill;
+
+  const legsWithinBalance = allocations.every(
+    (leg) => leg.amountRaw <= leg.token.rawBalance,
+  );
+  const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
+
+  const canFulfill =
+    manualAllocations != null
+      ? amountValid && hasPositiveLeg && legsWithinBalance
+      : strategyPlan.canFulfill;
+
+  const insufficientFunds =
+    amountValid &&
+    (manualAllocations != null ? !canFulfill : !strategyPlan.canFulfill);
+
+  const filledUsd =
+    manualAllocations != null
+      ? manualAllocations.reduce((sum, leg) => sum + leg.usd, 0)
+      : strategyPlan.filledUsd;
+
+  const remainingUsd =
+    manualAllocations != null
+      ? Math.max(0, (usdAmount ?? 0) - filledUsd)
+      : strategyPlan.remainingUsd;
 
   const canContinue =
     amountValid &&
-    plan.canFulfill &&
-    allocations.length > 0 &&
+    canFulfill &&
+    hasPositiveLeg &&
     recipientsValid &&
     (!needsEthereumRecipient || ethereumRecipient.trim().length > 0) &&
     (!needsSolanaRecipient || solanaRecipient.trim().length > 0);
@@ -119,17 +213,83 @@ export function useSendForm(
 
   const setAmount = useCallback((value: string) => {
     setAmountState(sanitizeAmountInput(value));
+    setManualAllocations(null);
+    setAllocationInputs({});
   }, []);
+
+  const setAllocationAmount = useCallback(
+    (tokenId: string, value: string) => {
+      const sanitized = sanitizeAmountInput(value);
+      setAllocationInputs((current) => ({
+        ...current,
+        [tokenId]: sanitized,
+      }));
+
+      const base =
+        manualAllocations ??
+        strategyPlan.allocations.map((leg) => ({ ...leg }));
+      const index = base.findIndex((leg) => leg.token.id === tokenId);
+      if (index < 0) {
+        return;
+      }
+
+      const token =
+        tokens.find((item) => item.id === tokenId) ?? base[index].token;
+
+      if (sanitized.trim() === '' || sanitized === '.') {
+        const next = [...base];
+        next[index] = {
+          token,
+          amountRaw: 0n,
+          amountFormatted: sanitized,
+          usd: 0,
+        };
+        setManualAllocations(next);
+        const totalUsd = next.reduce((sum, leg) => sum + leg.usd, 0);
+        setAmountState(totalUsd > 0 ? formatUsdAmountInput(totalUsd) : '');
+        return;
+      }
+
+      const amountRaw = parseTokenAmountToRaw(sanitized, token.decimals);
+      if (amountRaw == null) {
+        return;
+      }
+
+      const usd = estimateTokenAmountUsd(token, amountRaw) ?? 0;
+      const next = [...base];
+      next[index] = {
+        token,
+        amountRaw,
+        amountFormatted: sanitized,
+        usd,
+      };
+      setManualAllocations(next);
+      const totalUsd = next.reduce((sum, leg) => sum + leg.usd, 0);
+      setAmountState(totalUsd > 0 ? formatUsdAmountInput(totalUsd) : '');
+    },
+    [manualAllocations, strategyPlan.allocations, tokens],
+  );
+
+  const resolvedAllocationInputs = useMemo(() => {
+    const resolved: Record<string, string> = { ...allocationInputs };
+    for (const leg of allocations) {
+      if (resolved[leg.token.id] == null) {
+        resolved[leg.token.id] = leg.amountFormatted;
+      }
+    }
+    return resolved;
+  }, [allocationInputs, allocations]);
 
   return {
     amount,
     allocations,
+    allocationInputs: resolvedAllocationInputs,
     chains,
     needsEthereumRecipient,
     needsSolanaRecipient,
-    filledUsd: plan.filledUsd,
-    remainingUsd: plan.remainingUsd,
-    canFulfill: plan.canFulfill,
+    filledUsd,
+    remainingUsd,
+    canFulfill,
     ethereumRecipient,
     solanaRecipient,
     ethereumRecipientValid,
@@ -141,6 +301,7 @@ export function useSendForm(
     setEthereumRecipient,
     setSolanaRecipient,
     setAmount,
+    setAllocationAmount,
   };
 }
 
