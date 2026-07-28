@@ -9,7 +9,11 @@ import type { RootStackParamList, HomeStackParamList } from '@/navigation/types'
 /** Custom URL scheme registered in app.json / Info.plist (Privy OAuth redirects). */
 export const APP_SCHEME = 'mywallet';
 
-/** Production web origin for share / absolute links on native builds. */
+/**
+ * Public https origin for QR / share links (and native deep-link prefixes).
+ * Must be set in production builds — otherwise local `window.location` /
+ * Expo `createURL` yield localhost URLs that phones cannot open.
+ */
 export const APP_ORIGIN =
   process.env.EXPO_PUBLIC_APP_ORIGIN?.replace(/\/$/, '') ?? '';
 
@@ -23,12 +27,25 @@ export function getLinkingPrefixes(): string[] {
   return prefixes;
 }
 
+/** In-app origin (current web host, else configured public origin). */
 export function getAppOrigin(): string {
   if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin;
   }
 
   return APP_ORIGIN || Linking.createURL('/');
+}
+
+/**
+ * Origin baked into QR codes and copy-link. Prefers EXPO_PUBLIC_APP_ORIGIN so
+ * links stay on the public host even when the app is running on localhost.
+ */
+export function getShareableAppOrigin(): string {
+  if (APP_ORIGIN.startsWith('http://') || APP_ORIGIN.startsWith('https://')) {
+    return APP_ORIGIN;
+  }
+
+  return getAppOrigin();
 }
 
 export function createAppURL(
@@ -47,7 +64,7 @@ export function createShareableAppURL(
   path = '',
   queryParams?: Record<string, string | undefined>,
 ): string {
-  const origin = getAppOrigin();
+  const origin = getShareableAppOrigin();
   if (origin.startsWith('http://') || origin.startsWith('https://')) {
     const normalizedPath = path.replace(/^\//, '');
     const url = new URL(normalizedPath, `${origin.replace(/\/$/, '')}/`);
