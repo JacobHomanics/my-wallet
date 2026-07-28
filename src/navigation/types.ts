@@ -21,13 +21,14 @@ export type SentLeg = {
 export type HomeStackParamList = {
   index: undefined;
   tokenDetails: undefined;
+  receive: undefined;
   send: { tokenId?: string } | undefined;
   confirmSend: {
-    /** USD amount string the user entered. */
-    usdAmount: string;
+    /** USD amount string the user entered. Optional for receive deep links. */
+    usdAmount?: string;
     ethereumRecipient?: string;
     solanaRecipient?: string;
-    legs: ConfirmSendLeg[];
+    legs?: ConfirmSendLeg[];
   };
   sent: {
     usdLabel: string;

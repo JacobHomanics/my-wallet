@@ -246,71 +246,86 @@ export function ConfirmSendScreen() {
               {usdLabel ?? `${currencySymbol}${amount || '0'}`}
             </Text>
 
-            <View style={styles.toSection}>
-              <Text style={styles.toLabel}>To</Text>
-              {needsEthereumRecipient ? (
-                <View style={styles.toAddressRow}>
-                  <Text style={styles.toChainLabel}>EVM</Text>
-                  <Text style={styles.toAddress} selectable>
-                    {formatWalletAddress(trimmedEthereum)}
-                  </Text>
-                  <Pressable
-                    accessibilityLabel={
-                      isCopied('evm')
-                        ? 'EVM address copied'
-                        : 'Copy EVM address'
-                    }
-                    accessibilityRole="button"
-                    hitSlop={8}
-                    onPress={() => {
-                      void copy(trimmedEthereum, 'evm');
-                    }}
-                    style={({ pressed }) => [
-                      styles.copyButton,
-                      pressed && styles.copyButtonPressed,
-                    ]}
-                  >
-                    <Ionicons
-                      name={isCopied('evm') ? 'checkmark' : 'copy-outline'}
-                      size={18}
-                      color={isCopied('evm') ? '#15803d' : '#64748b'}
-                    />
-                  </Pressable>
-                </View>
-              ) : null}
-              {needsSolanaRecipient ? (
-                <View style={styles.toAddressRow}>
-                  <Text style={styles.toChainLabel}>Solana</Text>
-                  <Text style={styles.toAddress} selectable>
-                    {formatWalletAddress(trimmedSolana)}
-                  </Text>
-                  <Pressable
-                    accessibilityLabel={
-                      isCopied('solana')
-                        ? 'Solana address copied'
-                        : 'Copy Solana address'
-                    }
-                    accessibilityRole="button"
-                    hitSlop={8}
-                    onPress={() => {
-                      void copy(trimmedSolana, 'solana');
-                    }}
-                    style={({ pressed }) => [
-                      styles.copyButton,
-                      pressed && styles.copyButtonPressed,
-                    ]}
-                  >
-                    <Ionicons
-                      name={
-                        isCopied('solana') ? 'checkmark' : 'copy-outline'
-                      }
-                      size={18}
-                      color={isCopied('solana') ? '#15803d' : '#64748b'}
-                    />
-                  </Pressable>
-                </View>
-              ) : null}
-            </View>
+            {needsEthereumRecipient ||
+            needsSolanaRecipient ||
+            trimmedEthereum ||
+            trimmedSolana ? (
+              <View style={styles.toSection}>
+                <Text style={styles.toLabel}>To</Text>
+                {needsEthereumRecipient || trimmedEthereum ? (
+                  <View style={styles.toAddressRow}>
+                    <Text style={styles.toChainLabel}>EVM</Text>
+                    <Text style={styles.toAddress} selectable>
+                      {trimmedEthereum
+                        ? formatWalletAddress(trimmedEthereum)
+                        : '—'}
+                    </Text>
+                    {trimmedEthereum ? (
+                      <Pressable
+                        accessibilityLabel={
+                          isCopied('evm')
+                            ? 'EVM address copied'
+                            : 'Copy EVM address'
+                        }
+                        accessibilityRole="button"
+                        hitSlop={8}
+                        onPress={() => {
+                          void copy(trimmedEthereum, 'evm');
+                        }}
+                        style={({ pressed }) => [
+                          styles.copyButton,
+                          pressed && styles.copyButtonPressed,
+                        ]}
+                      >
+                        <Ionicons
+                          name={
+                            isCopied('evm') ? 'checkmark' : 'copy-outline'
+                          }
+                          size={18}
+                          color={isCopied('evm') ? '#15803d' : '#64748b'}
+                        />
+                      </Pressable>
+                    ) : null}
+                  </View>
+                ) : null}
+                {needsSolanaRecipient || trimmedSolana ? (
+                  <View style={styles.toAddressRow}>
+                    <Text style={styles.toChainLabel}>Solana</Text>
+                    <Text style={styles.toAddress} selectable>
+                      {trimmedSolana
+                        ? formatWalletAddress(trimmedSolana)
+                        : '—'}
+                    </Text>
+                    {trimmedSolana ? (
+                      <Pressable
+                        accessibilityLabel={
+                          isCopied('solana')
+                            ? 'Solana address copied'
+                            : 'Copy Solana address'
+                        }
+                        accessibilityRole="button"
+                        hitSlop={8}
+                        onPress={() => {
+                          void copy(trimmedSolana, 'solana');
+                        }}
+                        style={({ pressed }) => [
+                          styles.copyButton,
+                          pressed && styles.copyButtonPressed,
+                        ]}
+                      >
+                        <Ionicons
+                          name={
+                            isCopied('solana') ? 'checkmark' : 'copy-outline'
+                          }
+                          size={18}
+                          color={isCopied('solana') ? '#15803d' : '#64748b'}
+                        />
+                      </Pressable>
+                    ) : null}
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
 
             <Pressable
               accessibilityRole="button"

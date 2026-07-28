@@ -3,6 +3,7 @@ import { getStateFromPath as getStateFromPathDefault } from '@react-navigation/n
 import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
 
+import { hydrateSendDraftFromConfirmParams } from '@/hooks/useSendDraft';
 import type { RootStackParamList, HomeStackParamList } from '@/navigation/types';
 
 /** Custom URL scheme registered in app.json / Info.plist (Privy OAuth redirects). */
@@ -41,6 +42,28 @@ export function createAppURL(
   });
 }
 
+/** Prefer https share links when an origin is known so phone cameras can open them. */
+export function createShareableAppURL(
+  path = '',
+  queryParams?: Record<string, string | undefined>,
+): string {
+  const origin = getAppOrigin();
+  if (origin.startsWith('http://') || origin.startsWith('https://')) {
+    const normalizedPath = path.replace(/^\//, '');
+    const url = new URL(normalizedPath, `${origin.replace(/\/$/, '')}/`);
+    if (queryParams) {
+      for (const [key, value] of Object.entries(queryParams)) {
+        if (value != null && value !== '') {
+          url.searchParams.set(key, value);
+        }
+      }
+    }
+    return url.toString();
+  }
+
+  return createAppURL(path, queryParams);
+}
+
 export function parseAppURL(url: string) {
   return Linking.parse(url);
 }
@@ -49,9 +72,33 @@ type NavState = PartialState<NavigationState>;
 
 const HOME_STACK_HISTORY: Partial<Record<keyof HomeStackParamList, string[]>> =
   {
+    receive: ['index'],
     send: ['index'],
     confirmSend: ['index', 'send'],
   };
+
+function hydrateSendDraftFromNavState(state: NavState | undefined): void {
+  if (!state?.routes?.length) {
+    return;
+  }
+
+  for (const route of state.routes) {
+    if (route.name === 'confirmSend' && route.params) {
+      const params = route.params as {
+        usdAmount?: string;
+        ethereumRecipient?: string;
+        solanaRecipient?: string;
+      };
+      if (params.ethereumRecipient || params.solanaRecipient || params.usdAmount) {
+        hydrateSendDraftFromConfirmParams(params);
+      }
+    }
+
+    if (route.state) {
+      hydrateSendDraftFromNavState(route.state);
+    }
+  }
+}
 
 function ensureHomeStackHistory(state: NavState): NavState {
   const routes = state.routes ?? [];
@@ -120,6 +167,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
   prefixes: getLinkingPrefixes(),
   getStateFromPath(path, options) {
     const state = getStateFromPathDefault(path, options);
+    hydrateSendDraftFromNavState(state);
     return ensureHomeStackDeepLinkHistory(state);
   },
   config: {
@@ -144,6 +192,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               // Absolute so it stays /tokens (not /home/tokens) without
               // stealing splash's empty-path alias.
               tokenDetails: '/tokens',
+              receive: '/receive',
               send: {
                 path: '/send',
                 parse: {
@@ -153,7 +202,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               confirmSend: {
                 path: '/send/confirm',
                 parse: {
-                  usdAmount: (usdAmount: string) => usdAmount,
+                  usdAmount: (usdAmount: string) => usdAmount || undefined,
                   ethereumRecipient: (value: string) => value || undefined,
                   solanaRecipient: (value: string) => value || undefined,
                   legs: (legs: string) => {

@@ -63,6 +63,23 @@ export function resetSendDraft(): void {
   });
 }
 
+/** Apply confirm-send route params into the draft (e.g. receive QR deep links). */
+export function hydrateSendDraftFromConfirmParams(params: {
+  usdAmount?: string;
+  ethereumRecipient?: string;
+  solanaRecipient?: string;
+}): void {
+  sendDraft = {
+    ...DEFAULT_SEND_DRAFT,
+    ethereumRecipient: params.ethereumRecipient?.trim() ?? '',
+    solanaRecipient: params.solanaRecipient?.trim() ?? '',
+    amount: params.usdAmount?.trim() ?? '',
+  };
+  listeners.forEach((listener) => {
+    listener();
+  });
+}
+
 export function manualLegsFromAllocations(
   allocations: PaymentAllocation[] | null,
 ): SendDraftManualLeg[] | null {

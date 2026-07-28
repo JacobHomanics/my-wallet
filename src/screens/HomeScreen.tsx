@@ -82,17 +82,32 @@ export function HomeScreen() {
           {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
           {showActions ? (
             <>
-              <Pressable
-                accessibilityRole="button"
-                onPress={openFreshSend}
-                style={({ pressed }) => [
-                  styles.sendButton,
-                  pressed && styles.sendButtonPressed,
-                ]}
-              >
-                <Ionicons name="arrow-up" size={18} color="#f8fafc" />
-                <Text style={styles.sendButtonText}>Pay</Text>
-              </Pressable>
+              <View style={styles.actionsRow}>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={openFreshSend}
+                  style={({ pressed }) => [
+                    styles.actionButton,
+                    pressed && styles.actionButtonPressed,
+                  ]}
+                >
+                  <Ionicons name="arrow-up" size={18} color="#f8fafc" />
+                  <Text style={styles.actionButtonText}>Pay</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => {
+                    navigation.navigate('receive');
+                  }}
+                  style={({ pressed }) => [
+                    styles.actionButton,
+                    pressed && styles.actionButtonPressed,
+                  ]}
+                >
+                  <Ionicons name="arrow-down" size={18} color="#f8fafc" />
+                  <Text style={styles.actionButtonText}>Receive</Text>
+                </Pressable>
+              </View>
               <Pressable
                 accessibilityRole="link"
                 hitSlop={8}
@@ -169,8 +184,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-  sendButton: {
+  actionsRow: {
     marginTop: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -179,10 +199,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
   },
-  sendButtonPressed: {
+  actionButtonPressed: {
     opacity: 0.85,
   },
-  sendButtonText: {
+  actionButtonText: {
     color: '#f8fafc',
     fontSize: 16,
     fontWeight: '600',

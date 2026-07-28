@@ -32,6 +32,7 @@ export function HomeStack() {
         name="tokenDetails"
         component={homeStackScreens.tokenDetails}
       />
+      <WebStack.Screen name="receive" component={homeStackScreens.receive} />
       <WebStack.Screen name="send" component={homeStackScreens.send} />
       <WebStack.Screen
         name="confirmSend"
