@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 
+import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatUsdValue } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
@@ -30,6 +31,8 @@ export function HomeScreen() {
     error,
     refresh,
   } = useTokenBalances();
+
+  const openFreshSend = useOpenFreshSend();
 
   const onRefresh = useCallback(() => {
     refresh();
@@ -80,9 +83,7 @@ export function HomeScreen() {
             <>
               <Pressable
                 accessibilityRole="button"
-                onPress={() => {
-                  navigation.navigate('send');
-                }}
+                onPress={openFreshSend}
                 style={({ pressed }) => [
                   styles.sendButton,
                   pressed && styles.sendButtonPressed,
