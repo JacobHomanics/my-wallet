@@ -28,6 +28,7 @@ import { useSendPayment } from '@/hooks/useSendPayment';
 import { useSendStatus } from '@/hooks/useSendStatus';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
+import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import { getNetworkChain } from '@/lib/alchemy/networks';
@@ -42,6 +43,7 @@ export function ConfirmSendScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const { tokens, loading, ready, refresh } = useTokenBalances();
+  const { spendableTokens } = useSpendableTokens(tokens);
   const { sendPayment, sending } = useSendPayment();
   const { error, clearStatus, setError } = useSendStatus();
   const { copy, isCopied } = useCopyToClipboard();
@@ -68,7 +70,7 @@ export function ConfirmSendScreen() {
   } = useFiatDisplay();
 
   const form = useSendForm(
-    tokens,
+    spendableTokens,
     selectedStrategyId,
     undefined,
     allocationInputUnit,
@@ -204,7 +206,7 @@ export function ConfirmSendScreen() {
   );
 
   const allocatedTokenIds = allocations.map((leg) => leg.token.id);
-  const canAddToken = tokens.some(
+  const canAddToken = spendableTokens.some(
     (token) =>
       token.rawBalance > 0n && !allocatedTokenIds.includes(token.id),
   );
@@ -418,7 +420,7 @@ export function ConfirmSendScreen() {
           setTokenPickerOpen(false);
         }}
         onSelect={onAddToken}
-        tokens={tokens}
+        tokens={spendableTokens}
         visible={tokenPickerOpen}
       />
 

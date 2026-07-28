@@ -1,3 +1,7 @@
+import {
+  EVM_ERC20_TRANSFER_GAS,
+  EVM_NATIVE_TRANSFER_GAS,
+} from '@/lib/send/gasReserves';
 import { getAlchemyRpcUrl, toHexQuantity } from '@/lib/send/rpc';
 
 export type EstimateEvmGasParams = {
@@ -18,25 +22,24 @@ type JsonRpcResponse = {
   error?: JsonRpcError;
 };
 
-/**
- * Estimates gas via Alchemy `eth_estimateGas` for Privy Expo sends.
- * Privy fee fields stay auto-populated; we only supply a non-zero gas limit.
- */
-export async function estimateEvmGas(
-  params: EstimateEvmGasParams,
-): Promise<`0x${string}`> {
-  const call: Record<string, string> = {
-    from: params.from,
-    to: params.to,
-  };
-  if (params.data != null) {
-    call.data = params.data;
-  }
-  if (params.value != null) {
-    call.value = params.value;
-  }
+const GAS_LIMIT_BUFFER_NUMERATOR = 130n;
+const GAS_LIMIT_BUFFER_DENOMINATOR = 100n;
 
-  const response = await fetch(getAlchemyRpcUrl(params.network), {
+function isBalanceRelatedEstimateError(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes('gas required exceeds allowance') ||
+    lower.includes('insufficient funds') ||
+    lower.includes('insufficient balance') ||
+    lower.includes('exceeds the balance')
+  );
+}
+
+async function ethEstimateGas(
+  network: string,
+  call: Record<string, string>,
+): Promise<bigint> {
+  const response = await fetch(getAlchemyRpcUrl(network), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -67,6 +70,61 @@ export async function estimateEvmGas(
   if (gas <= 0n) {
     throw new Error('Gas estimate returned zero');
   }
+  return gas;
+}
 
-  return toHexQuantity(gas);
+function withGasBuffer(gas: bigint): `0x${string}` {
+  const buffered =
+    (gas * GAS_LIMIT_BUFFER_NUMERATOR) / GAS_LIMIT_BUFFER_DENOMINATOR;
+  return toHexQuantity(buffered > 0n ? buffered : gas);
+}
+
+/**
+ * Estimates gas via Alchemy `eth_estimateGas` for Privy Expo sends.
+ * Privy fee fields stay auto-populated; we only supply a non-zero gas limit.
+ *
+ * Near-max native sends often fail estimate with "gas required exceeds
+ * allowance" because value + fees exceed balance — retry without `value`
+ * (gas units don't depend on it for a plain transfer) or use defaults.
+ */
+export async function estimateEvmGas(
+  params: EstimateEvmGasParams,
+): Promise<`0x${string}`> {
+  const call: Record<string, string> = {
+    from: params.from,
+    to: params.to,
+  };
+  if (params.data != null) {
+    call.data = params.data;
+  }
+  if (params.value != null) {
+    call.value = params.value;
+  }
+
+  try {
+    return withGasBuffer(await ethEstimateGas(params.network, call));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!isBalanceRelatedEstimateError(message)) {
+      throw error;
+    }
+
+    // Native transfer: gas is independent of value — estimate with value 0.
+    if (params.data == null && params.value != null) {
+      try {
+        const { value: _ignored, ...withoutValue } = call;
+        return withGasBuffer(
+          await ethEstimateGas(params.network, {
+            ...withoutValue,
+            value: '0x0',
+          }),
+        );
+      } catch {
+        return withGasBuffer(EVM_NATIVE_TRANSFER_GAS);
+      }
+    }
+
+    // ERC-20 / contract call: fall back to a typical transfer limit.
+    return withGasBuffer(EVM_ERC20_TRANSFER_GAS);
+  }
 }

@@ -27,6 +27,7 @@ import { useSendDraftUi } from '@/hooks/useSendDraft';
 import { useSendForm } from '@/hooks/useSendForm';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
+import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import type { HomeStackParamList } from '@/navigation/types';
 
@@ -36,8 +37,9 @@ export function SendScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'send'>>();
-  const { tokens, totalUsd, loading, ready, ethereumAddress, solanaAddress } =
+  const { tokens, loading, ready, ethereumAddress, solanaAddress } =
     useTokenBalances();
+  const { spendableTokens, availableUsd } = useSpendableTokens(tokens);
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const { allocationInputUnit, setAllocationInputUnit } = useSendDraftUi();
   const {
@@ -53,7 +55,7 @@ export function SendScreen() {
   const { formatFromUsd, defaultFormattedZero, currencySymbol } = useFiatDisplay();
 
   const form = useSendForm(
-    tokens,
+    spendableTokens,
     selectedStrategyId,
     route.params?.tokenId,
     allocationInputUnit,
@@ -78,7 +80,7 @@ export function SendScreen() {
     addAllocation,
   } = form;
 
-  const totalLabel = formatFromUsd(totalUsd) ?? defaultFormattedZero;
+  const totalLabel = formatFromUsd(availableUsd) ?? defaultFormattedZero;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
 
   const amountError =
@@ -140,7 +142,7 @@ export function SendScreen() {
   );
 
   const allocatedTokenIds = allocations.map((leg) => leg.token.id);
-  const canAddToken = tokens.some(
+  const canAddToken = spendableTokens.some(
     (token) =>
       token.rawBalance > 0n && !allocatedTokenIds.includes(token.id),
   );
@@ -396,7 +398,7 @@ export function SendScreen() {
           setTokenPickerOpen(false);
         }}
         onSelect={onAddToken}
-        tokens={tokens}
+        tokens={spendableTokens}
         visible={tokenPickerOpen}
       />
     </View>
