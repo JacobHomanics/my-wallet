@@ -21,6 +21,7 @@ export type SentLeg = {
 export type HomeStackParamList = {
   index: undefined;
   tokenDetails: undefined;
+  transactions: undefined;
   receive: undefined;
   receiveQr: {
     /** Display-currency amount string entered on the receive screen. */

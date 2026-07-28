@@ -72,6 +72,8 @@ type NavState = PartialState<NavigationState>;
 
 const HOME_STACK_HISTORY: Partial<Record<keyof HomeStackParamList, string[]>> =
   {
+    tokenDetails: ['index'],
+    transactions: ['index'],
     receive: ['index'],
     receiveQr: ['index', 'receive'],
     send: ['index'],
@@ -193,6 +195,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               // Absolute so it stays /tokens (not /home/tokens) without
               // stealing splash's empty-path alias.
               tokenDetails: '/tokens',
+              transactions: '/transactions',
               receive: '/receive',
               receiveQr: {
                 path: '/receive/qr',

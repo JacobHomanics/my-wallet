@@ -121,6 +121,19 @@ export function HomeScreen() {
               >
                 <Text style={styles.detailsLinkText}>Show advanced details</Text>
               </Pressable>
+              <Pressable
+                accessibilityRole="link"
+                hitSlop={8}
+                onPress={() => {
+                  navigation.navigate('transactions');
+                }}
+                style={({ pressed }) => [
+                  styles.detailsLink,
+                  pressed && styles.detailsLinkPressed,
+                ]}
+              >
+                <Text style={styles.detailsLinkText}>Transactions</Text>
+              </Pressable>
             </>
           ) : null}
         </>
