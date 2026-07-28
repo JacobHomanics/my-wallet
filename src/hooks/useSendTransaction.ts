@@ -13,10 +13,14 @@ import {
   encodeSolanaSignature,
   buildSolanaTransferTransaction,
 } from '@/lib/send/buildSolanaTransfer';
-import { clampNativeEvmSendValue } from '@/lib/send/clampNativeEvmSendValue';
 import { clampNativeSolSendValue } from '@/lib/send/clampNativeSolSendValue';
 import { encodeErc20Transfer } from '@/lib/send/encodeErc20Transfer';
+import {
+  prepareErc20EvmSend,
+  prepareNativeEvmSend,
+} from '@/lib/send/prepareEvmSend';
 import { getEvmChainId, toHexQuantity } from '@/lib/send/rpc';
+import { assertSolanaFeePayerFunds } from '@/lib/send/solanaFees';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { isNativeTokenAddress } from '@/lib/alchemy/tokenLogos';
 import type {
@@ -53,38 +57,44 @@ export function useSendTransaction(): SendTransactionResult {
 
           const chainId = getEvmChainId(params.token.network);
           const isNative = isNativeTokenAddress(params.token.tokenAddress);
-          const amountRaw = isNative
-            ? await clampNativeEvmSendValue({
-                network: params.token.network,
-                from: wallet.address,
-                amountRaw: params.amountRaw,
-              })
-            : params.amountRaw;
 
           // Headless: Privy's confirmation modal uses DOM/Headless UI and
           // crashes under react-native-web (hooks mismatch → white screen).
           // The Send screen is already the confirmation UI.
-          const { hash } = await sendTransaction(
-            isNative
-              ? {
+          const request = isNative
+            ? await (async () => {
+                const prepared = await prepareNativeEvmSend({
+                  network: params.token.network,
+                  from: wallet.address,
+                  amountRaw: params.amountRaw,
+                });
+                return {
                   to: params.recipient.trim(),
-                  value: toHexQuantity(amountRaw),
+                  value: prepared.value,
+                  gas: prepared.gas,
+                  maxFeePerGas: prepared.maxFeePerGas,
+                  maxPriorityFeePerGas: prepared.maxPriorityFeePerGas,
                   chainId,
-                }
-              : {
-                  to: params.token.tokenAddress!,
-                  data: encodeErc20Transfer(
-                    params.recipient.trim(),
-                    amountRaw,
-                  ),
-                  value: toHexQuantity(0n),
-                  chainId,
-                },
-            {
-              address: wallet.address,
-              uiOptions: { showWalletUIs: false },
-            },
-          );
+                };
+              })()
+            : {
+                ...(await prepareErc20EvmSend({
+                  network: params.token.network,
+                  from: wallet.address,
+                })),
+                to: params.token.tokenAddress!,
+                data: encodeErc20Transfer(
+                  params.recipient.trim(),
+                  params.amountRaw,
+                ),
+                value: toHexQuantity(0n),
+                chainId,
+              };
+
+          const { hash } = await sendTransaction(request, {
+            address: wallet.address,
+            uiOptions: { showWalletUIs: false },
+          });
 
           return { hash, chain: 'ethereum' };
         }
@@ -95,6 +105,12 @@ export function useSendTransaction(): SendTransactionResult {
         }
 
         const isNative = isNativeTokenAddress(params.token.tokenAddress);
+        await assertSolanaFeePayerFunds({
+          fromAddress: wallet.address,
+          recipient: params.recipient.trim(),
+          mint: params.token.tokenAddress,
+          isNative,
+        });
         const amountRaw = isNative
           ? await clampNativeSolSendValue({
               fromAddress: wallet.address,

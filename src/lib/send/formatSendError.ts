@@ -14,7 +14,18 @@ export function formatSendError(error: unknown): string {
     lower.includes('gas required exceeds allowance') ||
     lower.includes('exceeds the balance')
   ) {
-    return 'Insufficient funds for this transfer after network fees. Try a slightly smaller amount.';
+    // Prefer our preflight messages when present.
+    const specific = parts.find(
+      (part) =>
+        /not enough sol/i.test(part) ||
+        /token account/i.test(part) ||
+        /not enough eth/i.test(part) ||
+        /not enough native/i.test(part),
+    );
+    if (specific) {
+      return specific;
+    }
+    return 'Insufficient funds for this transfer after network fees.';
   }
 
   if (
@@ -29,7 +40,7 @@ export function formatSendError(error: unknown): string {
     if (detail) {
       return `Transaction simulation failed: ${detail}`;
     }
-    return 'Transaction simulation failed. Try a slightly smaller amount so fees can be covered.';
+    return 'Transaction simulation failed.';
   }
 
   return parts[0] || 'Transaction failed';

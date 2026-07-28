@@ -6,6 +6,7 @@ import type {
   SendTransactionResult,
 } from '@/hooks/useSendTransaction.shared';
 import { useSendTransaction } from '@/hooks/useSendTransaction';
+import { isGasToken } from '@/lib/strategies/gasTokens';
 
 export type SendPaymentLegResult = SendTokenResult & {
   tokenId: string;
@@ -45,8 +46,16 @@ export function useSendPayment(): SendPaymentResult {
       setSending(true);
       const results: SendPaymentLegResult[] = [];
 
+      // Non-gas first so native fee reserves stay in the wallet until SPLs /
+      // ERC-20s that need them have been sent.
+      const orderedLegs = [...legs].sort((a, b) => {
+        const aGas = isGasToken(a.token) ? 1 : 0;
+        const bGas = isGasToken(b.token) ? 1 : 0;
+        return aGas - bGas;
+      });
+
       try {
-        for (const leg of legs) {
+        for (const leg of orderedLegs) {
           const result = await send({
             token: leg.token,
             recipient: leg.recipient,

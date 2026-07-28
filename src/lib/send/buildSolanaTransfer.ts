@@ -3,7 +3,6 @@ import {
   appendTransactionMessageInstructions,
   compileTransaction,
   createNoopSigner,
-  createSolanaRpc,
   createTransactionMessage,
   getBase58Decoder,
   getTransactionEncoder,
@@ -21,7 +20,10 @@ import {
 } from '@solana-program/token';
 
 import { isNativeTokenAddress } from '@/lib/alchemy/tokenLogos';
-import { getSolanaRpcUrl } from '@/lib/send/rpc';
+import {
+  getSolanaRpc,
+  solanaAccountExists,
+} from '@/lib/send/solanaFees';
 
 export type BuildSolanaTransferParams = {
   fromAddress: string;
@@ -35,7 +37,7 @@ export type BuildSolanaTransferParams = {
 export async function buildSolanaTransferTransaction(
   params: BuildSolanaTransferParams,
 ): Promise<Uint8Array> {
-  const rpc = createSolanaRpc(getSolanaRpcUrl());
+  const rpc = getSolanaRpc();
   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 
   const source = address(params.fromAddress);
@@ -69,13 +71,23 @@ export async function buildSolanaTransferTransaction(
       tokenProgram: TOKEN_PROGRAM_ADDRESS,
     });
 
-    instructions = [
-      getCreateAssociatedTokenIdempotentInstruction({
-        payer,
-        ata: destinationAta,
-        owner: destination,
-        mint,
-      }),
+    instructions = [];
+
+    // Only create when missing — idempotent create still reserves rent in
+    // simulation paths if the payer can't cover it.
+    const ataExists = await solanaAccountExists(destinationAta);
+    if (!ataExists) {
+      instructions.push(
+        getCreateAssociatedTokenIdempotentInstruction({
+          payer,
+          ata: destinationAta,
+          owner: destination,
+          mint,
+        }),
+      );
+    }
+
+    instructions.push(
       getTransferCheckedInstruction({
         source: sourceAta,
         mint,
@@ -84,7 +96,7 @@ export async function buildSolanaTransferTransaction(
         amount: params.amountRaw,
         decimals: params.decimals,
       }),
-    ];
+    );
   }
 
   const transaction = pipe(

@@ -7,9 +7,12 @@ import {
 import { Connection, VersionedTransaction } from '@solana/web3.js';
 
 import { buildSolanaTransferTransaction } from '@/lib/send/buildSolanaTransfer';
-import { clampNativeEvmSendValue } from '@/lib/send/clampNativeEvmSendValue';
 import { clampNativeSolSendValue } from '@/lib/send/clampNativeSolSendValue';
 import { encodeErc20Transfer } from '@/lib/send/encodeErc20Transfer';
+import {
+  prepareErc20EvmSend,
+  prepareNativeEvmSend,
+} from '@/lib/send/prepareEvmSend';
 import {
   getEvmAddChainParams,
   getEvmChainId,
@@ -17,6 +20,7 @@ import {
   toHexQuantity,
 } from '@/lib/send/rpc';
 import { sendPrivyEvmTransaction } from '@/lib/send/sendPrivyEvmTransaction';
+import { assertSolanaFeePayerFunds } from '@/lib/send/solanaFees';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { isNativeTokenAddress } from '@/lib/alchemy/tokenLogos';
 import type {
@@ -100,30 +104,39 @@ export function useSendTransaction(): SendTransactionResult {
 
           const network = params.token.network;
           const isNative = isNativeTokenAddress(params.token.tokenAddress);
-          const amountRaw = isNative
-            ? await clampNativeEvmSendValue({
-                network,
-                from,
-                amountRaw: params.amountRaw,
-              })
-            : params.amountRaw;
 
+          if (isNative) {
+            const prepared = await prepareNativeEvmSend({
+              network,
+              from,
+              amountRaw: params.amountRaw,
+            });
+            const hash = await sendPrivyEvmTransaction({
+              provider,
+              network,
+              from,
+              to: params.recipient.trim(),
+              value: prepared.value,
+              gas: prepared.gas,
+              maxFeePerGas: prepared.maxFeePerGas,
+              maxPriorityFeePerGas: prepared.maxPriorityFeePerGas,
+            });
+            return { hash, chain: 'ethereum' };
+          }
+
+          const fees = await prepareErc20EvmSend({ network, from });
           const hash = await sendPrivyEvmTransaction({
             provider,
             network,
             from,
-            ...(isNative
-              ? {
-                  to: params.recipient.trim(),
-                  value: toHexQuantity(amountRaw),
-                }
-              : {
-                  to: params.token.tokenAddress!,
-                  data: encodeErc20Transfer(
-                    params.recipient.trim(),
-                    amountRaw,
-                  ),
-                }),
+            to: params.token.tokenAddress!,
+            data: encodeErc20Transfer(
+              params.recipient.trim(),
+              params.amountRaw,
+            ),
+            gas: fees.gas,
+            maxFeePerGas: fees.maxFeePerGas,
+            maxPriorityFeePerGas: fees.maxPriorityFeePerGas,
           });
 
           return { hash, chain: 'ethereum' };
@@ -138,6 +151,12 @@ export function useSendTransaction(): SendTransactionResult {
         const connection = new Connection(getSolanaRpcUrl(), 'confirmed');
 
         const isNative = isNativeTokenAddress(params.token.tokenAddress);
+        await assertSolanaFeePayerFunds({
+          fromAddress: wallet.address,
+          recipient: params.recipient.trim(),
+          mint: params.token.tokenAddress,
+          isNative,
+        });
         const amountRaw = isNative
           ? await clampNativeSolSendValue({
               fromAddress: wallet.address,

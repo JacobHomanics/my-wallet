@@ -7,18 +7,54 @@ export function formatFiatValue(
     return null;
   }
 
-  const fractionDigits =
-    currencyCode === 'JPY' || currencyCode === 'KRW' ? 0 : value >= 1000 ? 0 : 2;
+  const fractionDigits = fiatFractionDigits(currencyCode, value);
 
   try {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currencyCode,
       maximumFractionDigits: fractionDigits,
+      minimumFractionDigits: fractionDigits === 0 ? 0 : undefined,
     }).format(value);
   } catch {
     return null;
   }
+}
+
+function fiatFractionDigits(currencyCode: string, value: number): number {
+  return currencyCode === 'JPY' || currencyCode === 'KRW'
+    ? 0
+    : value >= 1000
+      ? 0
+      : 2;
+}
+
+/**
+ * Floors a USD balance to a display-currency amount the user can type and send.
+ * Prevents Available Balance from rounding up (e.g. $0.137 → "$0.14") and then
+ * failing when that displayed max is entered.
+ */
+export function floorUsdToSendableCap(
+  usd: number,
+  usdToFiatRate: number,
+  currencyCode: string,
+): { sendableUsd: number; displayFiat: number } {
+  if (!(usd > 0) || !Number.isFinite(usd) || !(usdToFiatRate > 0)) {
+    return { sendableUsd: 0, displayFiat: 0 };
+  }
+
+  const fiat = convertUsdToFiat(usd, usdToFiatRate);
+  const digits = fiatFractionDigits(currencyCode, fiat);
+  const factor = 10 ** digits;
+  const displayFiat = Math.floor(fiat * factor + 1e-10) / factor;
+  if (displayFiat <= 0) {
+    return { sendableUsd: 0, displayFiat: 0 };
+  }
+
+  return {
+    displayFiat,
+    sendableUsd: convertFiatToUsd(displayFiat, usdToFiatRate),
+  };
 }
 
 /** Formats a fiat number for amount inputs (no currency symbol). */

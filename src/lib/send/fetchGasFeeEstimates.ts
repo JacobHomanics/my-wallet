@@ -63,7 +63,7 @@ export async function fetchGasFeeEstimates(options: {
       try {
         if (getNetworkChain(network) === 'solana') {
           estimates.set(network, {
-            feePerTxRaw: fallbackFeePerTxRaw(network),
+            feePerTxRaw: fallbackFeePerTxRaw(network, forTokenTransfer),
           });
           return;
         }
@@ -77,7 +77,7 @@ export async function fetchGasFeeEstimates(options: {
         });
       } catch {
         estimates.set(network, {
-          feePerTxRaw: fallbackFeePerTxRaw(network),
+          feePerTxRaw: fallbackFeePerTxRaw(network, forTokenTransfer),
         });
       }
     }),

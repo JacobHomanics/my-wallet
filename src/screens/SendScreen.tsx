@@ -39,7 +39,8 @@ export function SendScreen() {
   const route = useRoute<RouteProp<HomeStackParamList, 'send'>>();
   const { tokens, loading, ready, ethereumAddress, solanaAddress } =
     useTokenBalances();
-  const { spendableTokens, availableUsd } = useSpendableTokens(tokens);
+  const { spendableTokens, availableUsd, availableLabel } =
+    useSpendableTokens(tokens);
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const { allocationInputUnit, setAllocationInputUnit } = useSendDraftUi();
   const {
@@ -52,13 +53,14 @@ export function SendScreen() {
     onSelectStrategy,
   } = useSendStrategyPicker();
   const [tokenPickerOpen, setTokenPickerOpen] = useState(false);
-  const { formatFromUsd, defaultFormattedZero, currencySymbol } = useFiatDisplay();
+  const { currencySymbol } = useFiatDisplay();
 
   const form = useSendForm(
     spendableTokens,
     selectedStrategyId,
     route.params?.tokenId,
     allocationInputUnit,
+    availableUsd,
   );
   const {
     amount,
@@ -80,7 +82,7 @@ export function SendScreen() {
     addAllocation,
   } = form;
 
-  const totalLabel = formatFromUsd(availableUsd) ?? defaultFormattedZero;
+  const totalLabel = availableLabel;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
 
   const amountError =

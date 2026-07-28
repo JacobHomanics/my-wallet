@@ -44,7 +44,7 @@ export function ConfirmSendScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const { tokens, loading, ready, refresh } = useTokenBalances();
-  const { spendableTokens } = useSpendableTokens(tokens);
+  const { spendableTokens, availableUsd } = useSpendableTokens(tokens);
   const { sendPayment, sending } = useSendPayment();
   const { error, clearStatus, setError } = useSendStatus();
   const { copy, isCopied } = useCopyToClipboard();
@@ -75,6 +75,7 @@ export function ConfirmSendScreen() {
     selectedStrategyId,
     undefined,
     allocationInputUnit,
+    availableUsd,
   );
   const {
     amount,

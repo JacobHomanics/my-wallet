@@ -15,6 +15,10 @@ export type SendPrivyEvmTransactionParams = {
   to: string;
   data?: `0x${string}`;
   value?: `0x${string}`;
+  /** When set, skips Alchemy estimate and uses these EIP-1559 fields. */
+  gas?: `0x${string}`;
+  maxFeePerGas?: `0x${string}`;
+  maxPriorityFeePerGas?: `0x${string}`;
 };
 
 type PopulatedTx = Record<string, unknown>;
@@ -44,13 +48,15 @@ export async function sendPrivyEvmTransaction(
 ): Promise<string> {
   const chainId = toHexQuantity(BigInt(getEvmChainId(params.network)));
 
-  const estimatedGas = await estimateEvmGas({
-    network: params.network,
-    from: params.from,
-    to: params.to,
-    data: params.data,
-    value: params.value,
-  });
+  const estimatedGas =
+    params.gas ??
+    (await estimateEvmGas({
+      network: params.network,
+      from: params.from,
+      to: params.to,
+      data: params.data,
+      value: params.value,
+    }));
 
   const request: PopulatedTx = {
     from: params.from,
@@ -65,6 +71,12 @@ export async function sendPrivyEvmTransaction(
   if (params.value != null) {
     request.value = params.value;
   }
+  if (params.maxFeePerGas != null) {
+    request.maxFeePerGas = params.maxFeePerGas;
+  }
+  if (params.maxPriorityFeePerGas != null) {
+    request.maxPriorityFeePerGas = params.maxPriorityFeePerGas;
+  }
 
   const populated = (await params.provider.request({
     method: 'eth_populateTransactionRequest',
@@ -72,6 +84,7 @@ export async function sendPrivyEvmTransaction(
   })) as PopulatedTx;
 
   const gasLimit =
+    toHexField(params.gas) ??
     toHexField(populated.gasLimit) ??
     toHexField(populated.gas) ??
     estimatedGas;
@@ -83,6 +96,15 @@ export async function sendPrivyEvmTransaction(
     // Wallet API `toWalletApiUnsignedEthTransaction` only reads `gasLimit`.
     gasLimit,
   };
+  if (params.maxFeePerGas != null) {
+    toSign.maxFeePerGas = params.maxFeePerGas;
+  }
+  if (params.maxPriorityFeePerGas != null) {
+    toSign.maxPriorityFeePerGas = params.maxPriorityFeePerGas;
+  }
+  if (params.value != null) {
+    toSign.value = params.value;
+  }
 
   const signedRaw = await params.provider.request({
     method: 'eth_signTransaction',

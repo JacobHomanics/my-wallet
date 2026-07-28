@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
+import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
+import { floorUsdToSendableCap, formatFiatValue } from '@/lib/fiat';
 import { fetchGasFeeEstimates } from '@/lib/send/fetchGasFeeEstimates';
 import {
   applyGasReserves,
@@ -14,12 +16,19 @@ const EMPTY_ESTIMATES = new Map<string, NetworkGasFeeEstimate>();
 /**
  * Token balances with native gas reserved so Available Balance and allocation
  * reflect what can actually be sent (fees left on-chain for each potential leg).
+ *
+ * `availableUsd` / `availableLabel` are floored to display units so the number
+ * shown is always a sendable amount (no round-up quirks).
  */
 export function useSpendableTokens(tokens: OwnedToken[]): {
   spendableTokens: OwnedToken[];
+  /** Max USD the user can send — matches the floored Available Balance label. */
   availableUsd: number | null;
+  availableLabel: string;
   gasEstimatesReady: boolean;
 } {
+  const { rate, currencyCode, defaultFormattedZero } = useFiatDisplay();
+
   const networksKey = useMemo(() => {
     const networks = [
       ...new Set(
@@ -84,14 +93,41 @@ export function useSpendableTokens(tokens: OwnedToken[]): {
     [feeEstimates, tokens],
   );
 
-  const availableUsd = useMemo(
+  const rawAvailableUsd = useMemo(
     () => totalSpendableUsd(spendableTokens),
     [spendableTokens],
   );
 
+  const { availableUsd, availableLabel } = useMemo(() => {
+    if (rawAvailableUsd == null) {
+      return {
+        availableUsd: null as number | null,
+        availableLabel: defaultFormattedZero,
+      };
+    }
+    if (!(rawAvailableUsd > 0)) {
+      return {
+        availableUsd: 0,
+        availableLabel: defaultFormattedZero,
+      };
+    }
+
+    const { sendableUsd, displayFiat } = floorUsdToSendableCap(
+      rawAvailableUsd,
+      rate,
+      currencyCode,
+    );
+    return {
+      availableUsd: sendableUsd,
+      availableLabel:
+        formatFiatValue(displayFiat, currencyCode) ?? defaultFormattedZero,
+    };
+  }, [currencyCode, defaultFormattedZero, rate, rawAvailableUsd]);
+
   return {
     spendableTokens,
     availableUsd,
+    availableLabel,
     gasEstimatesReady,
   };
 }

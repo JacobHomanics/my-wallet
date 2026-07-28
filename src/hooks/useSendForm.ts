@@ -104,6 +104,8 @@ export function useSendForm(
   strategyId: PaymentStrategyId,
   preferredTokenId?: string | null,
   allocationInputUnit: AllocationInputUnit = 'token',
+  /** Floored Available Balance cap — amounts at/above this send the full cap. */
+  maxAvailableUsd?: number | null,
 ): SendFormState {
   const { selectedChainPriorityId } = useChainPriority();
   const {
@@ -137,8 +139,26 @@ export function useSendForm(
 
   const usdAmount = amountUsd ?? parseDisplayInputToUsd(amount);
 
+  /** Cap at Available Balance so typing the displayed max always succeeds. */
+  const targetUsd = (() => {
+    if (usdAmount == null || !(usdAmount > 0)) {
+      return usdAmount;
+    }
+    if (maxAvailableUsd == null || !(maxAvailableUsd >= 0)) {
+      return usdAmount;
+    }
+    if (usdAmount <= maxAvailableUsd + 0.000001) {
+      return Math.min(usdAmount, maxAvailableUsd);
+    }
+    // User typed the rounded display max (or slightly over) — send the cap.
+    if (usdAmount <= maxAvailableUsd + 0.015) {
+      return maxAvailableUsd;
+    }
+    return usdAmount;
+  })();
+
   const strategyPlan = useMemo(() => {
-    if (usdAmount == null || usdAmount <= 0) {
+    if (targetUsd == null || targetUsd <= 0) {
       return {
         allocations: [] as PaymentAllocation[],
         filledUsd: 0,
@@ -150,12 +170,12 @@ export function useSendForm(
 
     return allocatePaymentUsd({
       tokens,
-      usdAmount,
+      usdAmount: targetUsd,
       strategyId,
       chainPriorityId: selectedChainPriorityId,
       preferredTokenId,
     });
-  }, [preferredTokenId, selectedChainPriorityId, strategyId, tokens, usdAmount]);
+  }, [preferredTokenId, selectedChainPriorityId, strategyId, targetUsd, tokens]);
 
   // Strategy / preferred-token changes discard manual leg edits.
   useEffect(() => {
@@ -271,11 +291,11 @@ export function useSendForm(
 
   const remainingUsd =
     resolvedManualBase != null
-      ? Math.max(0, (usdAmount ?? 0) - filledUsd)
+      ? Math.max(0, (targetUsd ?? 0) - filledUsd)
       : strategyPlan.remainingUsd;
 
   const coversRequestedAmount =
-    usdAmount != null && filledUsd + 0.005 >= usdAmount;
+    targetUsd != null && filledUsd + 0.005 >= targetUsd;
 
   const canFulfill =
     resolvedManualBase != null
@@ -287,7 +307,13 @@ export function useSendForm(
 
   const insufficientFunds =
     amountValid &&
-    (resolvedManualBase != null ? !canFulfill : !strategyPlan.canFulfill);
+    (maxAvailableUsd != null &&
+    usdAmount != null &&
+    usdAmount > maxAvailableUsd + 0.015
+      ? true
+      : resolvedManualBase != null
+        ? !canFulfill
+        : !strategyPlan.canFulfill);
 
   const canContinue =
     amountValid &&
