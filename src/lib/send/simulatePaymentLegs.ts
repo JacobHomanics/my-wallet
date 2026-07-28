@@ -7,7 +7,7 @@ import { fetchSolBalanceLamports } from '@/lib/send/solanaFees';
 import { isGasToken } from '@/lib/strategies/gasTokens';
 
 export type SimulatePaymentLegsParams = {
-  legs: ReadonlyArray<SendTokenParams>;
+  legs: readonly SendTokenParams[];
   ethereumFrom: string | null;
   solanaFrom: string | null;
 };
