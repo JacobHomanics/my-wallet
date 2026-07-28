@@ -189,12 +189,13 @@ export function SendScreen() {
               keyboardShouldPersistTaps="handled"
               style={styles.flex}
             >
-              <Text
-                accessibilityLabel={`Balance ${totalLabel}`}
-                style={styles.totalBalance}
+              <View
+                accessibilityLabel={`Available Balance: ${totalLabel}`}
+                style={[styles.fieldRow, styles.fieldRowDisabled, styles.balanceRow]}
               >
-                {totalLabel}
-              </Text>
+                <Text style={styles.balanceLabel}>Available Balance:</Text>
+                <Text style={styles.balanceValue}>{totalLabel}</Text>
+              </View>
 
               <Text style={styles.label}>Amount</Text>
               <View
@@ -457,15 +458,23 @@ const styles = StyleSheet.create({
   form: {
     paddingHorizontal: 24,
   },
-  totalBalance: {
+  balanceRow: {
     marginTop: 12,
-    marginBottom: 8,
-    fontSize: 40,
-    fontWeight: '700',
+    paddingRight: 16,
+  },
+  balanceLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#64748b',
+    marginRight: 8,
+  },
+  balanceValue: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
     color: '#0f172a',
-    letterSpacing: -1,
     fontVariant: ['tabular-nums'],
-    textAlign: 'center',
+    textAlign: 'right',
   },
   label: {
     marginTop: 20,
