@@ -344,6 +344,7 @@ export function useSendForm(
         setManualAllocations(next);
         const totalUsd = next.reduce((sum, leg) => sum + leg.usd, 0);
         setAmountState(totalUsd > 0 ? formatAmountInputFromUsd(totalUsd) : '');
+        setAmountUsd(totalUsd > 0 ? totalUsd : null);
         return;
       }
 
@@ -381,6 +382,7 @@ export function useSendForm(
       setManualAllocations(next);
       const totalUsd = next.reduce((sum, leg) => sum + leg.usd, 0);
       setAmountState(totalUsd > 0 ? formatAmountInputFromUsd(totalUsd) : '');
+      setAmountUsd(totalUsd > 0 ? totalUsd : null);
     },
     [
       allocationInputUnit,
@@ -405,6 +407,7 @@ export function useSendForm(
       });
       const totalUsd = next.reduce((sum, leg) => sum + leg.usd, 0);
       setAmountState(totalUsd > 0 ? formatAmountInputFromUsd(totalUsd) : '');
+      setAmountUsd(totalUsd > 0 ? totalUsd : null);
     },
     [formatAmountInputFromUsd, manualAllocations, strategyPlan.allocations],
   );
