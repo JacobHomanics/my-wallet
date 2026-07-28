@@ -41,6 +41,7 @@ export type SendFormState = {
   setSolanaRecipient: (value: string) => void;
   setAmount: (value: string) => void;
   setAllocationAmount: (tokenId: string, value: string) => void;
+  removeAllocation: (tokenId: string) => void;
 };
 
 function sanitizeAmountInput(value: string): string {
@@ -270,6 +271,23 @@ export function useSendForm(
     [manualAllocations, strategyPlan.allocations, tokens],
   );
 
+  const removeAllocation = useCallback(
+    (tokenId: string) => {
+      const base =
+        manualAllocations ??
+        strategyPlan.allocations.map((leg) => ({ ...leg }));
+      const next = base.filter((leg) => leg.token.id !== tokenId);
+      setManualAllocations(next);
+      setAllocationInputs((current) => {
+        const { [tokenId]: _removed, ...rest } = current;
+        return rest;
+      });
+      const totalUsd = next.reduce((sum, leg) => sum + leg.usd, 0);
+      setAmountState(totalUsd > 0 ? formatUsdAmountInput(totalUsd) : '');
+    },
+    [manualAllocations, strategyPlan.allocations],
+  );
+
   const resolvedAllocationInputs = useMemo(() => {
     const resolved: Record<string, string> = { ...allocationInputs };
     for (const leg of allocations) {
@@ -302,6 +320,7 @@ export function useSendForm(
     setSolanaRecipient,
     setAmount,
     setAllocationAmount,
+    removeAllocation,
   };
 }
 

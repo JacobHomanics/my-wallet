@@ -67,6 +67,7 @@ export function SendScreen() {
     setSolanaRecipient,
     setAmount,
     setAllocationAmount,
+    removeAllocation,
   } = form;
 
   const totalLabel = formatUsdValue(totalUsd) ?? '$0.00';
@@ -401,6 +402,24 @@ export function SendScreen() {
                           >
                             {formatUsdValue(leg.usd) ?? '—'}
                           </Text>
+                          <Pressable
+                            accessibilityLabel={`Remove ${leg.token.symbol}`}
+                            accessibilityRole="button"
+                            hitSlop={8}
+                            onPress={() => {
+                              removeAllocation(leg.token.id);
+                            }}
+                            style={({ pressed }) => [
+                              styles.allocationRemove,
+                              pressed && styles.allocationRemovePressed,
+                            ]}
+                          >
+                            <Ionicons
+                              name="trash-outline"
+                              size={18}
+                              color="#b91c1c"
+                            />
+                          </Pressable>
                         </View>
                       );
                     })
@@ -676,6 +695,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#64748b',
     fontVariant: ['tabular-nums'],
+  },
+  allocationRemove: {
+    width: 32,
+    height: 32,
+    marginLeft: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexGrow: 0,
+    flexShrink: 0,
+  },
+  allocationRemovePressed: {
+    opacity: 0.6,
   },
   continueButton: {
     marginTop: 32,
