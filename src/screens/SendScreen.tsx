@@ -61,7 +61,6 @@ export function SendScreen() {
     ethereumRecipientValid,
     solanaRecipientValid,
     insufficientFunds,
-    tokenAmountHint,
     canContinue,
     setEthereumRecipient,
     setSolanaRecipient,
@@ -178,8 +177,6 @@ export function SendScreen() {
         </View>
         {amountError ? (
           <Text style={styles.fieldError}>{amountError}</Text>
-        ) : tokenAmountHint ? (
-          <Text style={styles.tokenAmountHint}>{tokenAmountHint}</Text>
         ) : null}
 
         {!needsEthereumRecipient && !needsSolanaRecipient ? (
@@ -697,12 +694,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#0f172a',
     marginRight: 4,
-  },
-  tokenAmountHint: {
-    marginTop: 8,
-    fontSize: 13,
-    color: '#94a3b8',
-    fontVariant: ['tabular-nums'],
   },
   fieldError: {
     marginTop: 8,

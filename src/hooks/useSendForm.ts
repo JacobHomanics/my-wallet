@@ -29,7 +29,6 @@ export type SendFormState = {
   amountValid: boolean;
   /** True when USD amount is set but holdings cannot cover it. */
   insufficientFunds: boolean;
-  tokenAmountHint: string | null;
   canContinue: boolean;
   setEthereumRecipient: (value: string) => void;
   setSolanaRecipient: (value: string) => void;
@@ -110,19 +109,6 @@ export function useSendForm(
     (!needsEthereumRecipient || ethereumRecipient.trim().length > 0) &&
     (!needsSolanaRecipient || solanaRecipient.trim().length > 0);
 
-  const tokenAmountHint = useMemo(() => {
-    if (!amountValid || allocations.length === 0) {
-      return null;
-    }
-    if (allocations.length === 1) {
-      const leg = allocations[0];
-      return `≈ ${leg.amountFormatted} ${leg.token.symbol}`;
-    }
-    return allocations
-      .map((leg) => `${leg.amountFormatted} ${leg.token.symbol}`)
-      .join(' + ');
-  }, [allocations, amountValid]);
-
   const setEthereumRecipient = useCallback((value: string) => {
     setEthereumRecipientState(value);
   }, []);
@@ -151,7 +137,6 @@ export function useSendForm(
     recipientsValid,
     amountValid,
     insufficientFunds,
-    tokenAmountHint,
     canContinue,
     setEthereumRecipient,
     setSolanaRecipient,
