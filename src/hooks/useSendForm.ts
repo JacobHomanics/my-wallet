@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useChainPriority } from '@/hooks/useChainPriority';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
+import { registerDisplayCurrencyChangeListener } from '@/hooks/useDisplayCurrency';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import {
   allocationsFromManualLegs,
@@ -106,7 +107,6 @@ export function useSendForm(
 ): SendFormState {
   const { selectedChainPriorityId } = useChainPriority();
   const {
-    selectedDisplayCurrencyId,
     formatAmountInputFromUsd,
     parseDisplayInputToUsd,
   } = useFiatDisplay();
@@ -118,6 +118,7 @@ export function useSendForm(
     initialDraft.solanaRecipient,
   );
   const [amount, setAmountState] = useState(initialDraft.amount);
+  const [amountUsd, setAmountUsd] = useState<number | null>(null);
   const [manualAllocations, setManualAllocations] = useState<
     PaymentAllocation[] | null
   >(() => allocationsFromManualLegs(initialDraft.manualLegs, tokens));
@@ -126,12 +127,19 @@ export function useSendForm(
   >(initialDraft.allocationInputs);
   const strategyKeyRef = useRef<string | null>(null);
   const allocationUnitRef = useRef<AllocationInputUnit | null>(null);
-  const currencyIdRef = useRef<string | null>(null);
 
-  const usdAmount = useMemo(
-    () => parseDisplayInputToUsd(amount),
-    [amount, parseDisplayInputToUsd],
-  );
+  useEffect(() => {
+    return registerDisplayCurrencyChangeListener(() => {
+      setAllocationInputs({});
+    });
+  }, []);
+
+  const usdAmount = amountUsd ?? parseDisplayInputToUsd(amount);
+
+  const displayAmount =
+    amountUsd != null && amountUsd > 0
+      ? formatAmountInputFromUsd(amountUsd)
+      : amount;
 
   const strategyPlan = useMemo(() => {
     if (usdAmount == null || usdAmount <= 0) {
@@ -200,45 +208,11 @@ export function useSendForm(
     return strategyPlan.allocations;
   }, [resolvedManualBase, strategyPlan.allocations, tokens]);
 
-  // Re-format fiat amounts when display currency changes.
-  useEffect(() => {
-    if (currencyIdRef.current === null) {
-      currencyIdRef.current = selectedDisplayCurrencyId;
-      return;
-    }
-    if (currencyIdRef.current === selectedDisplayCurrencyId) {
-      return;
-    }
-    currencyIdRef.current = selectedDisplayCurrencyId;
-
-    const usd = parseDisplayInputToUsd(amount);
-    if (usd != null && usd > 0) {
-      setAmountState(formatAmountInputFromUsd(usd));
-    }
-
-    if (allocationInputUnit === 'usd') {
-      setAllocationInputs((current) => {
-        const next: Record<string, string> = { ...current };
-        for (const leg of allocations) {
-          next[leg.token.id] = formatAmountInputFromUsd(leg.usd);
-        }
-        return next;
-      });
-    }
-  }, [
-    allocationInputUnit,
-    allocations,
-    amount,
-    formatAmountInputFromUsd,
-    parseDisplayInputToUsd,
-    selectedDisplayCurrencyId,
-  ]);
-
   useEffect(() => {
     updateSendDraft({
       ethereumRecipient,
       solanaRecipient,
-      amount,
+      amount: displayAmount,
       manualLegs: manualLegsFromAllocations(
         resolvedManualBase != null ? allocations : null,
       ),
@@ -247,7 +221,7 @@ export function useSendForm(
   }, [
     allocationInputs,
     allocations,
-    amount,
+    displayAmount,
     ethereumRecipient,
     resolvedManualBase,
     solanaRecipient,
@@ -328,10 +302,17 @@ export function useSendForm(
   }, []);
 
   const setAmount = useCallback((value: string) => {
-    setAmountState(sanitizeAmountInput(value));
+    const sanitized = sanitizeAmountInput(value);
+    setAmountState(sanitized);
+    const usd = parseDisplayInputToUsd(sanitized);
+    if (usd != null) {
+      setAmountUsd(usd);
+    } else if (!sanitized.trim() || sanitized === '.') {
+      setAmountUsd(null);
+    }
     setManualAllocations(null);
     setAllocationInputs({});
-  }, []);
+  }, [parseDisplayInputToUsd]);
 
   const setAllocationAmount = useCallback(
     (tokenId: string, value: string) => {
@@ -474,7 +455,7 @@ export function useSendForm(
   }, [allocationInputUnit, allocationInputs, allocations, formatAmountInputFromUsd]);
 
   return {
-    amount,
+    amount: displayAmount,
     allocations,
     allocationInputs: resolvedAllocationInputs,
     chains,

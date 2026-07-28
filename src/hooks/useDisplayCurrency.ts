@@ -9,9 +9,11 @@ import {
 } from '@/lib/displayCurrency';
 
 type DisplayCurrencyListener = () => void;
+type DisplayCurrencyChangeListener = () => void;
 
 let selectedDisplayCurrencyId: DisplayCurrencyId = DEFAULT_DISPLAY_CURRENCY_ID;
 const listeners = new Set<DisplayCurrencyListener>();
+const changeListeners = new Set<DisplayCurrencyChangeListener>();
 
 function subscribe(listener: DisplayCurrencyListener): () => void {
   listeners.add(listener);
@@ -28,12 +30,25 @@ export function getDisplayCurrencyId(): DisplayCurrencyId {
   return getSnapshot();
 }
 
+/** Notifies when the user picks a new display currency in settings. */
+export function registerDisplayCurrencyChangeListener(
+  listener: DisplayCurrencyChangeListener,
+): () => void {
+  changeListeners.add(listener);
+  return () => {
+    changeListeners.delete(listener);
+  };
+}
+
 function setSelectedDisplayCurrencyId(id: DisplayCurrencyId): void {
   if (id === selectedDisplayCurrencyId) {
     return;
   }
   selectedDisplayCurrencyId = id;
   listeners.forEach((listener) => {
+    listener();
+  });
+  changeListeners.forEach((listener) => {
     listener();
   });
 }

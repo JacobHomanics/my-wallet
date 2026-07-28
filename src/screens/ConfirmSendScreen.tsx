@@ -64,7 +64,6 @@ export function ConfirmSendScreen() {
     formatAmountInputFromUsd,
     parseDisplayInputToUsd,
     currencySymbol,
-    defaultFormattedZero,
   } = useFiatDisplay();
 
   const form = useSendForm(
@@ -169,7 +168,10 @@ export function ConfirmSendScreen() {
     amount,
     canSend,
     clearStatus,
+    currencySymbol,
+    formatAmountInputFromUsd,
     navigation,
+    parseDisplayInputToUsd,
     refresh,
     sendPayment,
     sending,
