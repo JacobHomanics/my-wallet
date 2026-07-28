@@ -29,6 +29,8 @@ import { isValidRecipientAddress } from '@/lib/validation';
 export type SendFormState = {
   /** USD amount the user is trying to send. */
   amount: string;
+  /** Base amount + optional tip, in USD (before Available Balance capping). */
+  requestedUsd: number | null;
   allocations: PaymentAllocation[];
   /** Per-token input strings shown in advanced (may be mid-edit). */
   allocationInputs: Record<string, string>;
@@ -119,6 +121,8 @@ export function useSendForm(
   allocationInputUnit: AllocationInputUnit = 'token',
   /** Floored Available Balance cap — amounts at/above this send the full cap. */
   maxAvailableUsd?: number | null,
+  /** Optional tip / additional USD added on top of the base amount. */
+  additionalUsd?: number | null,
 ): SendFormState {
   const { selectedChainPriorityId } = useChainPriority();
   const {
@@ -143,6 +147,7 @@ export function useSendForm(
   >(initialDraft.allocationInputs);
   const strategyKeyRef = useRef<string | null>(null);
   const allocationUnitRef = useRef<AllocationInputUnit | null>(null);
+  const additionalUsdRef = useRef<number | null>(null);
 
   useEffect(() => {
     return registerDisplayCurrencyChangeListener(() => {
@@ -150,24 +155,42 @@ export function useSendForm(
     });
   }, []);
 
+  const tipUsd =
+    additionalUsd != null && additionalUsd > 0 ? additionalUsd : 0;
   const usdAmount = amountUsd ?? parseDisplayInputToUsd(amount);
+  const requestedUsd =
+    usdAmount != null && usdAmount > 0 ? usdAmount + tipUsd : usdAmount;
+
+  // Tip changes need a fresh strategy allocation (manual legs stay at base).
+  useEffect(() => {
+    if (additionalUsdRef.current === null) {
+      additionalUsdRef.current = tipUsd;
+      return;
+    }
+    if (additionalUsdRef.current === tipUsd) {
+      return;
+    }
+    additionalUsdRef.current = tipUsd;
+    setManualAllocations(null);
+    setAllocationInputs({});
+  }, [tipUsd]);
 
   /** Cap at Available Balance so typing the displayed max always succeeds. */
   const targetUsd = (() => {
-    if (usdAmount == null || !(usdAmount > 0)) {
-      return usdAmount;
+    if (requestedUsd == null || !(requestedUsd > 0)) {
+      return requestedUsd;
     }
     if (maxAvailableUsd == null || !(maxAvailableUsd >= 0)) {
-      return usdAmount;
+      return requestedUsd;
     }
-    if (usdAmount <= maxAvailableUsd + 0.000001) {
-      return Math.min(usdAmount, maxAvailableUsd);
+    if (requestedUsd <= maxAvailableUsd + 0.000001) {
+      return Math.min(requestedUsd, maxAvailableUsd);
     }
     // User typed the rounded display max (or slightly over) — send the cap.
-    if (usdAmount <= maxAvailableUsd + 0.015) {
+    if (requestedUsd <= maxAvailableUsd + 0.015) {
       return maxAvailableUsd;
     }
-    return usdAmount;
+    return requestedUsd;
   })();
 
   const strategyPlan = useMemo(() => {
@@ -309,8 +332,8 @@ export function useSendForm(
   const insufficientFunds =
     amountValid &&
     (maxAvailableUsd != null &&
-    usdAmount != null &&
-    usdAmount > maxAvailableUsd + 0.015
+    requestedUsd != null &&
+    requestedUsd > maxAvailableUsd + 0.015
       ? true
       : resolvedManualBase != null
         ? !canFulfill
@@ -348,14 +371,16 @@ export function useSendForm(
 
   const syncAmountFromLegs = useCallback(
     (next: PaymentAllocation[]) => {
-      if (amountLocked) {
+      // Keep the base amount stable when a tip is applied, otherwise leg edits
+      // would fold the tip into the draft amount and double-count it.
+      if (amountLocked || tipUsd > 0) {
         return;
       }
       const totalUsd = next.reduce((sum, leg) => sum + leg.usd, 0);
       setAmountState(totalUsd > 0 ? formatAmountInputFromUsd(totalUsd) : '');
       setAmountUsd(totalUsd > 0 ? totalUsd : null);
     },
-    [amountLocked, formatAmountInputFromUsd],
+    [amountLocked, formatAmountInputFromUsd, tipUsd],
   );
 
   const setAllocationAmount = useCallback(
@@ -503,6 +528,7 @@ export function useSendForm(
 
   return {
     amount,
+    requestedUsd,
     allocations,
     allocationInputs: resolvedAllocationInputs,
     chains,

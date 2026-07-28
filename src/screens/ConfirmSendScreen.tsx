@@ -9,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,6 +28,7 @@ import { useSendForm } from '@/hooks/useSendForm';
 import { useSendPayment } from '@/hooks/useSendPayment';
 import { useSendStatus } from '@/hooks/useSendStatus';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
+import { useSendTip } from '@/hooks/useSendTip';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
@@ -49,6 +51,7 @@ export function ConfirmSendScreen() {
   const { error, clearStatus, setError } = useSendStatus();
   const { copy, isCopied } = useCopyToClipboard();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const { tip, tipUsd, setTip, setTipPercent } = useSendTip();
   const { allocationInputUnit, setAllocationInputUnit } = useSendDraftUi();
   const {
     strategies,
@@ -66,7 +69,6 @@ export function ConfirmSendScreen() {
   const {
     formatFromUsd,
     formatAmountInputFromUsd,
-    parseDisplayInputToUsd,
     currencySymbol,
   } = useFiatDisplay();
 
@@ -76,9 +78,11 @@ export function ConfirmSendScreen() {
     undefined,
     allocationInputUnit,
     availableUsd,
+    tipUsd,
   );
   const {
     amount,
+    requestedUsd,
     allocations,
     allocationInputs,
     needsEthereumRecipient,
@@ -98,13 +102,24 @@ export function ConfirmSendScreen() {
   const trimmedEthereum = ethereumRecipient.trim();
   const trimmedSolana = solanaRecipient.trim();
 
-  const requiredUsd = parseDisplayInputToUsd(amount);
+  const baseUsd =
+    requestedUsd != null ? Math.max(0, requestedUsd - tipUsd) : null;
   const requiredLabel =
-    requiredUsd != null
-      ? formatFromUsd(requiredUsd)
+    requestedUsd != null
+      ? formatFromUsd(requestedUsd)
       : `${currencySymbol}${amount || '0'}`;
   const availableLabel =
     insufficientFunds ? formatFromUsd(filledUsd) : null;
+
+  const onTipPercent = useCallback(
+    (percent: number) => {
+      if (baseUsd == null || !(baseUsd > 0)) {
+        return;
+      }
+      setTipPercent(baseUsd, percent);
+    },
+    [baseUsd, setTipPercent],
+  );
 
   const canSend = canContinue && allocations.length > 0;
 
@@ -145,9 +160,7 @@ export function ConfirmSendScreen() {
         navigation.navigate('sent', {
           usdLabel:
             requiredLabel ??
-            `${currencySymbol}${formatAmountInputFromUsd(
-              parseDisplayInputToUsd(amount) ?? 0,
-            )}`,
+            `${currencySymbol}${formatAmountInputFromUsd(requestedUsd ?? 0)}`,
           legs: results.map((result) => ({
             hash: result.hash,
             amount: result.amount,
@@ -165,14 +178,13 @@ export function ConfirmSendScreen() {
     })();
   }, [
     allocations,
-    amount,
     canSend,
     clearStatus,
     currencySymbol,
     formatAmountInputFromUsd,
     navigation,
-    parseDisplayInputToUsd,
     refresh,
+    requestedUsd,
     requiredLabel,
     sendPayment,
     sending,
@@ -245,6 +257,50 @@ export function ConfirmSendScreen() {
             {availableLabel ? (
               <Text style={styles.availableUsd}>({availableLabel})</Text>
             ) : null}
+
+            <View style={styles.tipSection}>
+              <View style={styles.tipLabelRow}>
+                <Text style={styles.tipLabel}>Additional amount</Text>
+                <View style={styles.tipPercentRow}>
+                  {([10, 15, 20] as const).map((percent) => (
+                    <Pressable
+                      key={percent}
+                      accessibilityLabel={`Add ${percent} percent tip`}
+                      accessibilityRole="button"
+                      disabled={baseUsd == null || !(baseUsd > 0)}
+                      onPress={() => {
+                        onTipPercent(percent);
+                      }}
+                      style={({ pressed }) => [
+                        styles.tipPercentButton,
+                        (baseUsd == null || !(baseUsd > 0)) &&
+                          styles.tipPercentButtonDisabled,
+                        pressed &&
+                          baseUsd != null &&
+                          baseUsd > 0 &&
+                          styles.tipPercentButtonPressed,
+                      ]}
+                    >
+                      <Text style={styles.tipPercentButtonText}>
+                        {percent}%
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+              <View style={styles.tipFieldRow}>
+                <Text style={styles.tipPrefix}>{currencySymbol}</Text>
+                <TextInput
+                  accessibilityLabel="Additional amount"
+                  keyboardType="decimal-pad"
+                  onChangeText={setTip}
+                  placeholder="0"
+                  placeholderTextColor="#94a3b8"
+                  style={styles.tipInput}
+                  value={tip}
+                />
+              </View>
+            </View>
 
             {needsEthereumRecipient ||
               needsSolanaRecipient ||
@@ -537,6 +593,72 @@ const styles = StyleSheet.create({
     color: '#15803d',
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
+  },
+  tipSection: {
+    marginTop: 28,
+    alignSelf: 'stretch',
+  },
+  tipLabelRow: {
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  tipPercentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  tipLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  tipPercentButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    backgroundColor: '#fff',
+  },
+  tipPercentButtonDisabled: {
+    opacity: 0.45,
+  },
+  tipPercentButtonPressed: {
+    opacity: 0.85,
+  },
+  tipPercentButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#0f172a',
+  },
+  tipFieldRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 12,
+    paddingLeft: 16,
+    paddingRight: 8,
+    backgroundColor: '#fff',
+    minHeight: 52,
+  },
+  tipPrefix: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0f172a',
+    marginRight: 4,
+  },
+  tipInput: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingRight: 8,
+    fontSize: 16,
+    color: '#0f172a',
   },
   toSection: {
     marginTop: 36,
