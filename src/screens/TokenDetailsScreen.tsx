@@ -14,14 +14,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { TokenChainSection } from '@/components/TokenChainSection';
+import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useExpandedNetworks } from '@/hooks/useExpandedNetworks';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useTokensByChain } from '@/hooks/useTokensByChain';
-import {
-  formatUsdValue,
-  type TokenChainGroup,
-} from '@/lib/alchemy/fetchTokensByAddress';
+import type { TokenChainGroup } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
 
 export function TokenDetailsScreen() {
@@ -41,6 +39,7 @@ export function TokenDetailsScreen() {
   } = useTokenBalances();
   const chainGroups = useTokensByChain(tokens);
   const { expandedNetworks, isExpanded, toggleNetwork } = useExpandedNetworks();
+  const { formatFromUsd } = useFiatDisplay();
 
   const onRefresh = useCallback(() => {
     refresh();
@@ -69,7 +68,7 @@ export function TokenDetailsScreen() {
     [expandedNetworks, isExpanded, onTokenPress, toggleNetwork],
   );
 
-  const totalLabel = formatUsdValue(totalUsd);
+  const totalLabel = formatFromUsd(totalUsd);
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
 
   return (

@@ -12,9 +12,9 @@ import {
   View,
 } from 'react-native';
 
+import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
-import { formatUsdValue } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
 
 export function HomeScreen() {
@@ -33,12 +33,13 @@ export function HomeScreen() {
   } = useTokenBalances();
 
   const openFreshSend = useOpenFreshSend();
+  const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
 
   const onRefresh = useCallback(() => {
     refresh();
   }, [refresh]);
 
-  const totalLabel = formatUsdValue(totalUsd) ?? '$0.00';
+  const totalLabel = formatFromUsd(totalUsd) ?? defaultFormattedZero;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
   const showActions =
     ready && hasWallet && !(loading && tokens.length === 0);

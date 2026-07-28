@@ -8,8 +8,10 @@ import {
 } from 'react-native';
 
 import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
+import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
+import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useSignOut } from '@/hooks/useSignOut';
@@ -40,6 +42,15 @@ export function SettingsScreen() {
     closePicker: closeChainPriorityPicker,
     onSelectOption: onSelectChainPriority,
   } = useChainPriorityPicker();
+  const {
+    options: displayCurrencyOptions,
+    selectedCurrency,
+    selectedDisplayCurrencyId,
+    pickerOpen: displayCurrencyPickerOpen,
+    openPicker: openDisplayCurrencyPicker,
+    closePicker: closeDisplayCurrencyPicker,
+    onSelectOption: onSelectDisplayCurrency,
+  } = useDisplayCurrencyPicker();
 
   return (
     <View style={styles.container}>
@@ -61,6 +72,29 @@ export function SettingsScreen() {
             <Text style={styles.strategyLabel}>{selectedStrategy.label}</Text>
             <Text style={styles.strategyDescription}>
               {selectedStrategy.description}
+            </Text>
+          </View>
+          <Ionicons name="chevron-down" size={18} color="#94a3b8" />
+        </Pressable>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Display currency</Text>
+        <Pressable
+          accessibilityLabel={`Display currency ${selectedCurrency.label}`}
+          accessibilityRole="button"
+          onPress={openDisplayCurrencyPicker}
+          style={({ pressed }) => [
+            styles.strategyRow,
+            pressed && styles.strategyRowPressed,
+          ]}
+        >
+          <View style={styles.strategyRowText}>
+            <Text style={styles.strategyLabel}>
+              {selectedCurrency.label} ({selectedCurrency.code})
+            </Text>
+            <Text style={styles.strategyDescription}>
+              {selectedCurrency.description}
             </Text>
           </View>
           <Ionicons name="chevron-down" size={18} color="#94a3b8" />
@@ -162,6 +196,14 @@ export function SettingsScreen() {
         options={chainPriorityOptions}
         selectedChainPriorityId={selectedChainPriorityId}
         visible={chainPriorityPickerOpen}
+      />
+
+      <DisplayCurrencyPickerModal
+        onClose={closeDisplayCurrencyPicker}
+        onSelect={onSelectDisplayCurrency}
+        options={displayCurrencyOptions}
+        selectedDisplayCurrencyId={selectedDisplayCurrencyId}
+        visible={displayCurrencyPickerOpen}
       />
     </View>
   );

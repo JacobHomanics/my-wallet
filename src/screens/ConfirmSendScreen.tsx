@@ -20,6 +20,7 @@ import { TokenPickerModal } from '@/components/TokenPickerModal';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { usePopToSend } from '@/hooks/usePopToSend';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
+import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { resetSendDraft, useSendDraftUi } from '@/hooks/useSendDraft';
 import { useSendForm } from '@/hooks/useSendForm';
@@ -28,12 +29,7 @@ import { useSendStatus } from '@/hooks/useSendStatus';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
-import {
-  formatUsdAmountInput,
-  formatUsdValue,
-} from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkChain } from '@/lib/alchemy/networks';
-import { parseUsdInput } from '@/lib/strategies/allocatePayment';
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
@@ -63,6 +59,13 @@ export function ConfirmSendScreen() {
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const popToSend = usePopToSend();
   const openFreshSend = useOpenFreshSend();
+  const {
+    formatFromUsd,
+    formatAmountInputFromUsd,
+    parseDisplayInputToUsd,
+    currencySymbol,
+    defaultFormattedZero,
+  } = useFiatDisplay();
 
   const form = useSendForm(
     tokens,
@@ -97,11 +100,11 @@ export function ConfirmSendScreen() {
       return (sum ?? 0) + leg.usd;
     }, null);
     if (fromLegs != null && fromLegs > 0) {
-      return formatUsdValue(fromLegs);
+      return formatFromUsd(fromLegs);
     }
-    const parsed = parseUsdInput(amount);
-    return parsed != null ? formatUsdValue(parsed) : null;
-  }, [allocations, amount]);
+    const parsed = parseDisplayInputToUsd(amount);
+    return parsed != null ? formatFromUsd(parsed) : null;
+  }, [allocations, amount, formatFromUsd, parseDisplayInputToUsd]);
 
   const canSend = canContinue && allocations.length > 0;
 
@@ -142,7 +145,9 @@ export function ConfirmSendScreen() {
         navigation.navigate('sent', {
           usdLabel:
             usdLabel ??
-            `$${formatUsdAmountInput(parseUsdInput(amount) ?? 0)}`,
+            `${currencySymbol}${formatAmountInputFromUsd(
+              parseDisplayInputToUsd(amount) ?? 0,
+            )}`,
           legs: results.map((result) => ({
             hash: result.hash,
             amount: result.amount,
@@ -235,7 +240,7 @@ export function ConfirmSendScreen() {
         ) : (
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
             <Text style={styles.heroUsd}>
-              {usdLabel ?? `$${amount || '0'}`}
+              {usdLabel ?? `${currencySymbol}${amount || '0'}`}
             </Text>
 
             <View style={styles.toSection}>

@@ -20,13 +20,13 @@ import { BackButton } from '@/components/BackButton';
 import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
+import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import { useSendDraftUi } from '@/hooks/useSendDraft';
 import { useSendForm } from '@/hooks/useSendForm';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
-import { formatUsdValue } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
 
 export function SendScreen() {
@@ -49,6 +49,7 @@ export function SendScreen() {
     onSelectStrategy,
   } = useSendStrategyPicker();
   const [tokenPickerOpen, setTokenPickerOpen] = useState(false);
+  const { formatFromUsd, defaultFormattedZero, currencySymbol } = useFiatDisplay();
 
   const form = useSendForm(
     tokens,
@@ -76,7 +77,7 @@ export function SendScreen() {
     addAllocation,
   } = form;
 
-  const totalLabel = formatUsdValue(totalUsd) ?? '$0.00';
+  const totalLabel = formatFromUsd(totalUsd) ?? defaultFormattedZero;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
 
   const amountError =
@@ -201,7 +202,7 @@ export function SendScreen() {
                   amountError ? styles.fieldRowError : null,
                 ]}
               >
-                <Text style={styles.amountPrefix}>$</Text>
+                <Text style={styles.amountPrefix}>{currencySymbol}</Text>
                 <TextInput
                   keyboardType="decimal-pad"
                   onChangeText={setAmount}

@@ -5,8 +5,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { TokenIcon } from '@/components/TokenIcon';
 import { isNetworkExpandedInState } from '@/hooks/useExpandedNetworks';
+import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import {
-  formatUsdValue,
   UNKNOWN_TOKEN_NETWORK,
   type OwnedToken,
   type TokenChainGroup,
@@ -25,7 +25,8 @@ const TokenRow = memo(function TokenRow({
   showNetworkMeta?: boolean;
   onPress: (tokenId: string) => void;
 }) {
-  const usdLabel = formatUsdValue(token.usdValue);
+  const { formatFromUsd } = useFiatDisplay();
+  const fiatLabel = formatFromUsd(token.usdValue);
   const meta = showNetworkMeta
     ? token.networkLabel
     : token.name && token.name !== token.symbol
@@ -67,9 +68,9 @@ const TokenRow = memo(function TokenRow({
         <Text style={styles.tokenBalance} numberOfLines={1}>
           {token.balanceFormatted}
         </Text>
-        {usdLabel ? (
+        {fiatLabel ? (
           <Text style={styles.tokenUsd} numberOfLines={1}>
-            {usdLabel}
+            {fiatLabel}
           </Text>
         ) : null}
       </View>
@@ -182,9 +183,10 @@ export const TokenChainSection = memo(function TokenChainSection({
   selectedTokenId?: string | null;
   showNetworkMeta?: boolean;
 }) {
+  const { formatFromUsd } = useFiatDisplay();
   const isUnknown = group.network === UNKNOWN_TOKEN_NETWORK;
   const subgroups = group.subgroups ?? [];
-  const chainUsd = formatUsdValue(group.totalUsd);
+  const chainFiatLabel = formatFromUsd(group.totalUsd);
   const tokenCountLabel =
     group.tokens.length === 1 ? '1 token' : `${group.tokens.length} tokens`;
 
@@ -193,7 +195,7 @@ export const TokenChainSection = memo(function TokenChainSection({
       <ChainHeader
         label={group.networkLabel}
         meta={tokenCountLabel}
-        usdLabel={chainUsd}
+        usdLabel={chainFiatLabel}
         iconUrl={isUnknown ? null : getNetworkIconUrl(group.network)}
         iconFallback={isUnknown ? '?' : group.networkLabel.slice(0, 1)}
         expanded={expanded}

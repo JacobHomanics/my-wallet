@@ -9,7 +9,7 @@ import {
 
 import { TokenIcon } from '@/components/TokenIcon';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
-import { formatUsdValue } from '@/lib/alchemy/fetchTokensByAddress';
+import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import type { PaymentStrategy } from '@/lib/strategies';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
 
@@ -38,6 +38,8 @@ export function SendAdvancedDetails({
   canAddToken,
   onAddToken,
 }: SendAdvancedDetailsProps) {
+  const { formatFromUsd, currencyCode, currencySymbol } = useFiatDisplay();
+
   return (
     <View style={styles.advanced}>
       <Pressable
@@ -88,7 +90,7 @@ export function SendAdvancedDetails({
             </Text>
           </Pressable>
           <Pressable
-            accessibilityLabel="Edit amounts in USD"
+            accessibilityLabel={`Edit amounts in ${currencyCode}`}
             accessibilityRole="button"
             accessibilityState={{
               selected: allocationInputUnit === 'usd',
@@ -108,7 +110,7 @@ export function SendAdvancedDetails({
                 allocationInputUnit === 'usd' && styles.unitToggleTextActive,
               ]}
             >
-              USD
+              {currencyCode}
             </Text>
           </Pressable>
         </View>
@@ -129,7 +131,7 @@ export function SendAdvancedDetails({
           const secondaryValue =
             allocationInputUnit === 'usd'
               ? leg.amountFormatted || '—'
-              : (formatUsdValue(leg.usd) ?? '—');
+              : (formatFromUsd(leg.usd) ?? '—');
 
           return (
             <View key={leg.token.id} style={styles.allocationRow}>
@@ -148,7 +150,7 @@ export function SendAdvancedDetails({
                     <Text style={styles.allocationBalance} numberOfLines={1}>
                       Balance:{' '}
                       {allocationInputUnit === 'usd'
-                        ? (formatUsdValue(leg.token.usdValue) ?? '—')
+                        ? (formatFromUsd(leg.token.usdValue) ?? '—')
                         : leg.token.balanceFormatted}
                     </Text>
                   </View>
@@ -159,12 +161,14 @@ export function SendAdvancedDetails({
               </View>
               <View style={styles.allocationControls}>
                 {allocationInputUnit === 'usd' ? (
-                  <Text style={styles.allocationInputPrefix}>$</Text>
+                  <Text style={styles.allocationInputPrefix}>
+                    {currencySymbol}
+                  </Text>
                 ) : null}
                 <TextInput
                   accessibilityLabel={
                     allocationInputUnit === 'usd'
-                      ? `${leg.token.symbol} USD amount`
+                      ? `${leg.token.symbol} ${currencyCode} amount`
                       : `${leg.token.symbol} amount`
                   }
                   keyboardType="decimal-pad"
