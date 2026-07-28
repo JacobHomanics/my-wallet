@@ -79,6 +79,23 @@ export function useFiatDisplay() {
   const defaultFormattedZero =
     formatFiatValue(0, currencyCode) ?? `${currencySymbol}0.00`;
 
+  const formatSignedFromUsd = useCallback(
+    (usd: number): string | null => {
+      if (!Number.isFinite(usd)) {
+        return null;
+      }
+      if (usd === 0) {
+        return defaultFormattedZero;
+      }
+      const absolute = formatFromUsd(Math.abs(usd));
+      if (!absolute) {
+        return null;
+      }
+      return usd > 0 ? `+${absolute}` : `-${absolute}`;
+    },
+    [defaultFormattedZero, formatFromUsd],
+  );
+
   return {
     selectedCurrency,
     selectedDisplayCurrencyId,
@@ -90,6 +107,7 @@ export function useFiatDisplay() {
     convertFromUsd,
     convertToUsd,
     formatFromUsd,
+    formatSignedFromUsd,
     formatAmountInputFromUsd,
     formatAmountInput: formatFiatAmountInput,
     parseDisplayInputToUsd,

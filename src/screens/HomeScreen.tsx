@@ -56,88 +56,95 @@ export function HomeScreen() {
       }
       style={styles.container}
     >
-      {!ready || loading ? (
-        <ActivityIndicator color="#0f172a" />
-      ) : !hasWallet ? (
-        <Text style={styles.empty}>Creating your wallets…</Text>
-      ) : error && tokens.length === 0 ? (
-        <View style={styles.errorBlock}>
-          <Text style={styles.errorText}>{error}</Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={onRefresh}
-            style={({ pressed }) => [
-              styles.retryButton,
-              pressed && styles.retryButtonPressed,
-            ]}
-          >
-            <Text style={styles.retryButtonText}>Try again</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <>
-          <Text style={styles.total} accessibilityRole="header">
-            {totalLabel}
-          </Text>
-          {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
-          {showActions ? (
-            <>
-              <View style={styles.actionsRow}>
+      <View style={styles.hero}>
+        {!ready || loading ? (
+          <ActivityIndicator color="#0f172a" />
+        ) : !hasWallet ? (
+          <Text style={styles.empty}>Creating your wallets…</Text>
+        ) : error && tokens.length === 0 ? (
+          <View style={styles.errorBlock}>
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onRefresh}
+              style={({ pressed }) => [
+                styles.retryButton,
+                pressed && styles.retryButtonPressed,
+              ]}
+            >
+              <Text style={styles.retryButtonText}>Try again</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <>
+            <Text style={styles.total} accessibilityRole="header">
+              {totalLabel}
+            </Text>
+            {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
+            {showActions ? (
+              <>
+                <View style={styles.actionsRow}>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={openFreshSend}
+                    style={({ pressed }) => [
+                      styles.actionButton,
+                      pressed && styles.actionButtonPressed,
+                    ]}
+                  >
+                    <Ionicons name="arrow-up" size={18} color="#f8fafc" />
+                    <Text style={styles.actionButtonText}>Pay</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => {
+                      navigation.navigate('receive');
+                    }}
+                    style={({ pressed }) => [
+                      styles.actionButton,
+                      pressed && styles.actionButtonPressed,
+                    ]}
+                  >
+                    <Ionicons name="arrow-down" size={18} color="#f8fafc" />
+                    <Text style={styles.actionButtonText}>Receive</Text>
+                  </Pressable>
+                </View>
                 <Pressable
-                  accessibilityRole="button"
-                  onPress={openFreshSend}
-                  style={({ pressed }) => [
-                    styles.actionButton,
-                    pressed && styles.actionButtonPressed,
-                  ]}
-                >
-                  <Ionicons name="arrow-up" size={18} color="#f8fafc" />
-                  <Text style={styles.actionButtonText}>Pay</Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
+                  accessibilityRole="link"
+                  hitSlop={8}
                   onPress={() => {
-                    navigation.navigate('receive');
+                    navigation.navigate('tokenDetails');
                   }}
                   style={({ pressed }) => [
-                    styles.actionButton,
-                    pressed && styles.actionButtonPressed,
+                    styles.detailsLink,
+                    pressed && styles.detailsLinkPressed,
                   ]}
                 >
-                  <Ionicons name="arrow-down" size={18} color="#f8fafc" />
-                  <Text style={styles.actionButtonText}>Receive</Text>
+                  <Text style={styles.detailsLinkText}>
+                    Show advanced details
+                  </Text>
                 </Pressable>
-              </View>
-              <Pressable
-                accessibilityRole="link"
-                hitSlop={8}
-                onPress={() => {
-                  navigation.navigate('tokenDetails');
-                }}
-                style={({ pressed }) => [
-                  styles.detailsLink,
-                  pressed && styles.detailsLinkPressed,
-                ]}
-              >
-                <Text style={styles.detailsLinkText}>Show advanced details</Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="link"
-                hitSlop={8}
-                onPress={() => {
-                  navigation.navigate('transactions');
-                }}
-                style={({ pressed }) => [
-                  styles.detailsLink,
-                  pressed && styles.detailsLinkPressed,
-                ]}
-              >
-                <Text style={styles.detailsLinkText}>Transactions</Text>
-              </Pressable>
-            </>
-          ) : null}
-        </>
-      )}
+              </>
+            ) : null}
+          </>
+        )}
+      </View>
+
+      {showActions ? (
+        <Pressable
+          accessibilityRole="link"
+          hitSlop={8}
+          onPress={() => {
+            navigation.navigate('transactions');
+          }}
+          style={({ pressed }) => [
+            styles.transactionsLink,
+            pressed && styles.detailsLinkPressed,
+          ]}
+        >
+          <Text style={styles.detailsLinkText}>Transactions</Text>
+        </Pressable>
+      ) : null}
     </ScrollView>
   );
 }
@@ -149,10 +156,14 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 48,
+    paddingBottom: 32,
+  },
+  hero: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 48,
   },
   total: {
     fontSize: 48,
@@ -232,5 +243,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#64748b',
     textDecorationLine: 'underline',
+  },
+  transactionsLink: {
+    alignSelf: 'center',
+    paddingVertical: 4,
   },
 });
