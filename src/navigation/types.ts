@@ -2,9 +2,44 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 
 import type { LoginMethod } from '@/lib/privy/context/AuthFlowContext.shared';
 
+export type ConfirmSendLeg = {
+  tokenId: string;
+  /** Token units to send for this leg. */
+  amount: string;
+};
+
+export type SentLeg = {
+  hash: string;
+  amount: string;
+  symbol: string;
+  network: string;
+  networkLabel: string;
+  tokenName: string;
+  logoUrl: string | null;
+};
+
 export type HomeStackParamList = {
   index: undefined;
   tokenDetails: undefined;
+  transactions: undefined;
+  contacts: undefined;
+  receive: undefined;
+  receiveQr: {
+    /** Display-currency amount string entered on the receive screen. */
+    usdAmount: string;
+  };
+  send: { tokenId?: string } | undefined;
+  confirmSend: {
+    /** USD amount string the user entered. Optional for receive deep links. */
+    usdAmount?: string;
+    ethereumRecipient?: string;
+    solanaRecipient?: string;
+    legs?: ConfirmSendLeg[];
+  };
+  sent: {
+    usdLabel: string;
+    legs: SentLeg[];
+  };
 };
 
 export type MainTabParamList = {

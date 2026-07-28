@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -19,8 +18,13 @@ export function HomeStack() {
       screenOptions={{
         headerShown: false,
         animation: isDesktopWeb ? 'none' : 'slide_from_right',
-        // Bounded card height so ScrollView/FlatList can scroll on web.
-        cardStyle: Platform.OS === 'web' ? { flex: 1 } : undefined,
+        cardStyle: {
+          flex: 1,
+          backgroundColor: '#f8fafc',
+          // Absolute-fill cards so nested ScrollViews get a bounded height
+          // (required for touch scrolling on iOS Safari).
+          height: '100%',
+        },
       }}
     >
       <WebStack.Screen name="index" component={homeStackScreens.index} />
@@ -28,6 +32,25 @@ export function HomeStack() {
         name="tokenDetails"
         component={homeStackScreens.tokenDetails}
       />
+      <WebStack.Screen
+        name="transactions"
+        component={homeStackScreens.transactions}
+      />
+      <WebStack.Screen
+        name="contacts"
+        component={homeStackScreens.contacts}
+      />
+      <WebStack.Screen name="receive" component={homeStackScreens.receive} />
+      <WebStack.Screen
+        name="receiveQr"
+        component={homeStackScreens.receiveQr}
+      />
+      <WebStack.Screen name="send" component={homeStackScreens.send} />
+      <WebStack.Screen
+        name="confirmSend"
+        component={homeStackScreens.confirmSend}
+      />
+      <WebStack.Screen name="sent" component={homeStackScreens.sent} />
     </WebStack.Navigator>
   );
 }

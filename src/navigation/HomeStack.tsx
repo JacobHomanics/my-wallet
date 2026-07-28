@@ -23,6 +23,25 @@ export function HomeStack() {
         name="tokenDetails"
         component={homeStackScreens.tokenDetails}
       />
+      <NativeStack.Screen
+        name="transactions"
+        component={homeStackScreens.transactions}
+      />
+      <NativeStack.Screen
+        name="contacts"
+        component={homeStackScreens.contacts}
+      />
+      <NativeStack.Screen name="receive" component={homeStackScreens.receive} />
+      <NativeStack.Screen
+        name="receiveQr"
+        component={homeStackScreens.receiveQr}
+      />
+      <NativeStack.Screen name="send" component={homeStackScreens.send} />
+      <NativeStack.Screen
+        name="confirmSend"
+        component={homeStackScreens.confirmSend}
+      />
+      <NativeStack.Screen name="sent" component={homeStackScreens.sent} />
     </NativeStack.Navigator>
   );
 }

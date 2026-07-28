@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { useChainPriority } from '@/hooks/useChainPriority';
 import { useUserWallets } from '@/hooks/useUserWallets';
 import { getAlchemyApiKey } from '@/lib/alchemy/alchemyCredentials';
 import {
@@ -23,6 +24,8 @@ export type TokenBalancesResult = {
   refreshing: boolean;
   error: string | null;
   refresh: () => void;
+  /** Silent background refetch — does not toggle the pull-to-refresh spinner. */
+  poll: () => void;
 };
 
 const CACHE_TTL_MS = 60_000;
@@ -69,6 +72,7 @@ function makeFetchId(key: string, reloadKey: number) {
  * Loads fungible token balances for Privy Ethereum + Solana addresses via Alchemy.
  */
 export function useTokenBalances(): TokenBalancesResult {
+  const { selectedChainPriorityId } = useChainPriority();
   const { ready: walletsReady, wallets } = useUserWallets();
   const ethereumAddress =
     wallets.find((wallet) => wallet.chain === 'ethereum')?.address ?? null;
@@ -163,7 +167,6 @@ export function useTokenBalances(): TokenBalancesResult {
           }
         }
 
-        sortOwnedTokens(nextTokens);
         const nextError =
           nextTokens.length === 0 && errors.length > 0
             ? (errors[0] ?? 'Failed to load tokens')
@@ -220,15 +223,26 @@ export function useTokenBalances(): TokenBalancesResult {
     walletsReady,
   ]);
 
-  const visibleTokens = !hasAddress
-    ? []
-    : snapshotMatches && snapshot
-      ? snapshot.tokens
-      : freshCache
-        ? freshCache.tokens
-        : isRefresh && snapshotForKey
-          ? snapshotForKey.tokens
-          : [];
+  const visibleTokens = useMemo(() => {
+    const unsorted = !hasAddress
+      ? []
+      : snapshotMatches && snapshot
+        ? snapshot.tokens
+        : freshCache
+          ? freshCache.tokens
+          : snapshotForKey
+            ? snapshotForKey.tokens
+            : [];
+
+    return sortOwnedTokens(unsorted, selectedChainPriorityId);
+  }, [
+    freshCache,
+    hasAddress,
+    selectedChainPriorityId,
+    snapshot,
+    snapshotForKey,
+    snapshotMatches,
+  ]);
 
   const visibleError = missingApiKey
     ? 'Missing EXPO_PUBLIC_ALCHEMY_API_KEY'
@@ -238,7 +252,7 @@ export function useTokenBalances(): TokenBalancesResult {
         ? snapshot.error
         : freshCache
           ? freshCache.error
-          : isRefresh && snapshotForKey
+          : snapshotForKey
             ? snapshotForKey.error
             : null;
 
@@ -263,6 +277,18 @@ export function useTokenBalances(): TokenBalancesResult {
     setReloadKey(nextReloadKey);
   }, [key, reloadKey]);
 
+  const poll = useCallback(() => {
+    // Expire the shared cache so the next fetch isn't skipped, without
+    // marking this as a user-driven refresh (no spinner).
+    if (tokenBalancesCache?.key === key) {
+      tokenBalancesCache = {
+        ...tokenBalancesCache,
+        fetchedAt: 0,
+      };
+    }
+    setReloadKey((current) => current + 1);
+  }, [key]);
+
   return {
     ready: walletsReady,
     ethereumAddress,
@@ -273,5 +299,6 @@ export function useTokenBalances(): TokenBalancesResult {
     refreshing,
     error: visibleError,
     refresh,
+    poll,
   };
 }

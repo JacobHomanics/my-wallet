@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -11,8 +12,10 @@ import {
   View,
 } from 'react-native';
 
+import { useFiatDisplay } from '@/hooks/useFiatDisplay';
+import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
+import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
-import { formatUsdValue } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
 
 export function HomeScreen() {
@@ -28,15 +31,23 @@ export function HomeScreen() {
     refreshing,
     error,
     refresh,
+    poll,
   } = useTokenBalances();
+
+  usePollTokenBalances(poll, {
+    enabled: ready && Boolean(ethereumAddress || solanaAddress),
+  });
+
+  const openFreshSend = useOpenFreshSend();
+  const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
 
   const onRefresh = useCallback(() => {
     refresh();
   }, [refresh]);
 
-  const totalLabel = formatUsdValue(totalUsd) ?? '$0.00';
+  const totalLabel = formatFromUsd(totalUsd) ?? defaultFormattedZero;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
-  const showDetailsButton =
+  const showActions =
     ready && hasWallet && !(loading && tokens.length === 0);
 
   return (
@@ -51,47 +62,110 @@ export function HomeScreen() {
       }
       style={styles.container}
     >
-      {!ready || loading ? (
-        <ActivityIndicator color="#0f172a" />
-      ) : !hasWallet ? (
-        <Text style={styles.empty}>Creating your wallets…</Text>
-      ) : error && tokens.length === 0 ? (
-        <View style={styles.errorBlock}>
-          <Text style={styles.errorText}>{error}</Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={onRefresh}
-            style={({ pressed }) => [
-              styles.retryButton,
-              pressed && styles.retryButtonPressed,
-            ]}
-          >
-            <Text style={styles.retryButtonText}>Try again</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <>
-          <Text style={styles.total} accessibilityRole="header">
-            {totalLabel}
-          </Text>
-          {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
-          {showDetailsButton ? (
+      <View style={styles.hero}>
+        {!ready || loading ? (
+          <ActivityIndicator color="#0f172a" />
+        ) : !hasWallet ? (
+          <Text style={styles.empty}>Creating your wallets…</Text>
+        ) : error && tokens.length === 0 ? (
+          <View style={styles.errorBlock}>
+            <Text style={styles.errorText}>{error}</Text>
             <Pressable
-              accessibilityRole="link"
-              hitSlop={8}
-              onPress={() => {
-                navigation.navigate('tokenDetails');
-              }}
+              accessibilityRole="button"
+              onPress={onRefresh}
               style={({ pressed }) => [
-                styles.detailsLink,
-                pressed && styles.detailsLinkPressed,
+                styles.retryButton,
+                pressed && styles.retryButtonPressed,
               ]}
             >
-              <Text style={styles.detailsLinkText}>Show advanced details</Text>
+              <Text style={styles.retryButtonText}>Try again</Text>
             </Pressable>
-          ) : null}
-        </>
-      )}
+          </View>
+        ) : (
+          <>
+            <Text style={styles.total} accessibilityRole="header">
+              {totalLabel}
+            </Text>
+            {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
+            {showActions ? (
+              <>
+                <View style={styles.actionsRow}>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={openFreshSend}
+                    style={({ pressed }) => [
+                      styles.actionButton,
+                      pressed && styles.actionButtonPressed,
+                    ]}
+                  >
+                    <Ionicons name="arrow-up" size={18} color="#f8fafc" />
+                    <Text style={styles.actionButtonText}>Pay</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => {
+                      navigation.navigate('receive');
+                    }}
+                    style={({ pressed }) => [
+                      styles.actionButton,
+                      pressed && styles.actionButtonPressed,
+                    ]}
+                  >
+                    <Ionicons name="arrow-down" size={18} color="#f8fafc" />
+                    <Text style={styles.actionButtonText}>Receive</Text>
+                  </Pressable>
+                </View>
+                <Pressable
+                  accessibilityRole="link"
+                  hitSlop={8}
+                  onPress={() => {
+                    navigation.navigate('tokenDetails');
+                  }}
+                  style={({ pressed }) => [
+                    styles.detailsLink,
+                    pressed && styles.detailsLinkPressed,
+                  ]}
+                >
+                  <Text style={styles.detailsLinkText}>
+                    Show advanced details
+                  </Text>
+                </Pressable>
+              </>
+            ) : null}
+          </>
+        )}
+      </View>
+
+      {showActions ? (
+        <View style={styles.bottomLinks}>
+          <Pressable
+            accessibilityRole="link"
+            hitSlop={8}
+            onPress={() => {
+              navigation.navigate('transactions');
+            }}
+            style={({ pressed }) => [
+              styles.bottomLink,
+              pressed && styles.detailsLinkPressed,
+            ]}
+          >
+            <Text style={styles.detailsLinkText}>Transactions</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="link"
+            hitSlop={8}
+            onPress={() => {
+              navigation.navigate('contacts');
+            }}
+            style={({ pressed }) => [
+              styles.bottomLink,
+              pressed && styles.detailsLinkPressed,
+            ]}
+          >
+            <Text style={styles.detailsLinkText}>Contacts</Text>
+          </Pressable>
+        </View>
+      ) : null}
     </ScrollView>
   );
 }
@@ -103,10 +177,14 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 48,
+    paddingBottom: 32,
+  },
+  hero: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 48,
   },
   total: {
     fontSize: 48,
@@ -151,6 +229,29 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
+  actionsRow: {
+    marginTop: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#0f172a',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  actionButtonPressed: {
+    opacity: 0.85,
+  },
+  actionButtonText: {
+    color: '#f8fafc',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   detailsLink: {
     marginTop: 20,
     paddingVertical: 4,
@@ -163,5 +264,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#64748b',
     textDecorationLine: 'underline',
+  },
+  bottomLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 24,
+  },
+  bottomLink: {
+    paddingVertical: 4,
   },
 });

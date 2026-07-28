@@ -1,253 +1,28 @@
-import { memo, useCallback, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ActivityIndicator,
+  FlatList,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
-import { TokenIcon } from '@/components/TokenIcon';
+import { TokenChainSection } from '@/components/TokenChainSection';
+import { useFiatDisplay } from '@/hooks/useFiatDisplay';
+import { useExpandedNetworks } from '@/hooks/useExpandedNetworks';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
+import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useTokensByChain } from '@/hooks/useTokensByChain';
-import {
-  formatUsdValue,
-  UNKNOWN_TOKEN_NETWORK,
-  type OwnedToken,
-  type TokenChainGroup,
-} from '@/lib/alchemy/fetchTokensByAddress';
-import { getNetworkIconUrl } from '@/lib/alchemy/networkIcons';
+import type { TokenChainGroup } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
-
-/** Priced chains open by default; Unknown (+ its nested groups) stay closed. */
-function defaultNetworkExpanded(network: string) {
-  return (
-    network !== UNKNOWN_TOKEN_NETWORK &&
-    !network.startsWith(`${UNKNOWN_TOKEN_NETWORK}:`)
-  );
-}
-
-function isNetworkExpandedInState(
-  network: string,
-  expandedNetworks: Record<string, boolean>,
-) {
-  if (network in expandedNetworks) {
-    return Boolean(expandedNetworks[network]);
-  }
-  return defaultNetworkExpanded(network);
-}
-
-const TokenRow = memo(function TokenRow({ token }: { token: OwnedToken }) {
-  const usdLabel = formatUsdValue(token.usdValue);
-
-  return (
-    <View style={styles.tokenRow}>
-      <View style={styles.tokenLeft}>
-        <TokenIcon
-          logoUrl={token.logoUrl}
-          network={token.network}
-          showNetworkBadge={false}
-          symbol={token.symbol}
-        />
-        <View style={styles.tokenText}>
-          <Text style={styles.tokenSymbol} numberOfLines={1}>
-            {token.symbol}
-          </Text>
-          {token.name && token.name !== token.symbol ? (
-            <Text style={styles.tokenMeta} numberOfLines={1}>
-              {token.name}
-            </Text>
-          ) : null}
-        </View>
-      </View>
-      <View style={styles.tokenRight}>
-        <Text style={styles.tokenBalance} numberOfLines={1}>
-          {token.balanceFormatted}
-        </Text>
-        {usdLabel ? (
-          <Text style={styles.tokenUsd} numberOfLines={1}>
-            {usdLabel}
-          </Text>
-        ) : null}
-      </View>
-    </View>
-  );
-});
-
-const ChainHeader = memo(function ChainHeader({
-  label,
-  meta,
-  usdLabel,
-  iconUrl,
-  iconFallback,
-  expanded,
-  onToggle,
-  compact = false,
-}: {
-  label: string;
-  meta: string;
-  usdLabel: string | null;
-  iconUrl: string | null;
-  iconFallback: string;
-  expanded: boolean;
-  onToggle: () => void;
-  compact?: boolean;
-}) {
-  const [failedIconUrl, setFailedIconUrl] = useState<string | null>(null);
-  const showIcon = Boolean(iconUrl) && iconUrl !== failedIconUrl;
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ expanded }}
-      onPress={onToggle}
-      style={({ pressed }) => [
-        compact ? styles.nestedHeader : styles.chainHeader,
-        pressed && styles.chainHeaderPressed,
-      ]}
-    >
-      <View style={styles.chainHeaderLeft}>
-        {showIcon ? (
-          <View style={compact ? styles.nestedChainIcon : styles.chainIcon}>
-            <Image
-              accessibilityIgnoresInvertColors
-              cachePolicy="memory-disk"
-              onError={() => {
-                setFailedIconUrl(iconUrl);
-              }}
-              source={iconUrl}
-              style={
-                compact ? styles.nestedChainIconImage : styles.chainIconImage
-              }
-            />
-          </View>
-        ) : (
-          <View
-            style={
-              compact ? styles.nestedChainIconFallback : styles.chainIconFallback
-            }
-          >
-            <Text
-              style={
-                compact
-                  ? styles.nestedChainIconFallbackText
-                  : styles.chainIconFallbackText
-              }
-            >
-              {iconFallback}
-            </Text>
-          </View>
-        )}
-        <View style={styles.chainHeaderText}>
-          <Text style={compact ? styles.nestedLabel : styles.chainLabel}>
-            {label}
-          </Text>
-          <Text style={styles.chainMeta}>{meta}</Text>
-        </View>
-      </View>
-      <View style={styles.chainHeaderRight}>
-        {usdLabel ? <Text style={styles.chainUsd}>{usdLabel}</Text> : null}
-        <Ionicons
-          name={expanded ? 'chevron-down' : 'chevron-forward'}
-          size={compact ? 14 : 16}
-          color="#94a3b8"
-        />
-      </View>
-    </Pressable>
-  );
-});
-
-const ChainSection = memo(function ChainSection({
-  group,
-  expanded,
-  onToggle,
-  expandedNetworks,
-  onToggleNetwork,
-}: {
-  group: TokenChainGroup;
-  expanded: boolean;
-  onToggle: () => void;
-  expandedNetworks: Record<string, boolean>;
-  onToggleNetwork: (key: string) => void;
-}) {
-  const isUnknown = group.network === UNKNOWN_TOKEN_NETWORK;
-  const subgroups = group.subgroups ?? [];
-  const chainUsd = formatUsdValue(group.totalUsd);
-  const tokenCountLabel =
-    group.tokens.length === 1 ? '1 token' : `${group.tokens.length} tokens`;
-
-  return (
-    <View style={styles.chainSection}>
-      <ChainHeader
-        label={group.networkLabel}
-        meta={tokenCountLabel}
-        usdLabel={chainUsd}
-        iconUrl={isUnknown ? null : getNetworkIconUrl(group.network)}
-        iconFallback={isUnknown ? '?' : group.networkLabel.slice(0, 1)}
-        expanded={expanded}
-        onToggle={onToggle}
-      />
-
-      {expanded ? (
-        isUnknown && subgroups.length > 0 ? (
-          <View style={styles.unknownSubgroups}>
-            {subgroups.map((subgroup) => {
-              const subgroupKey = `${UNKNOWN_TOKEN_NETWORK}:${subgroup.network}`;
-              const subgroupExpanded = isNetworkExpandedInState(
-                subgroupKey,
-                expandedNetworks,
-              );
-              const subgroupCount =
-                subgroup.tokens.length === 1
-                  ? '1 token'
-                  : `${subgroup.tokens.length} tokens`;
-
-              return (
-                <View key={subgroup.network} style={styles.nestedSection}>
-                  <ChainHeader
-                    compact
-                    label={subgroup.networkLabel}
-                    meta={subgroupCount}
-                    usdLabel={null}
-                    iconUrl={getNetworkIconUrl(subgroup.network)}
-                    iconFallback={subgroup.networkLabel.slice(0, 1)}
-                    expanded={subgroupExpanded}
-                    onToggle={() => {
-                      onToggleNetwork(subgroupKey);
-                    }}
-                  />
-                  {subgroupExpanded ? (
-                    <View style={styles.chainTokens}>
-                      {subgroup.tokens.map((token) => (
-                        <TokenRow key={token.id} token={token} />
-                      ))}
-                    </View>
-                  ) : null}
-                </View>
-              );
-            })}
-          </View>
-        ) : (
-          <View style={styles.chainTokens}>
-            {group.tokens.map((token) => (
-              <TokenRow key={token.id} token={token} />
-            ))}
-          </View>
-        )
-      ) : null}
-      <View style={styles.chainDivider} />
-    </View>
-  );
-});
 
 export function TokenDetailsScreen() {
   const insets = useSafeAreaInsets();
@@ -255,6 +30,7 @@ export function TokenDetailsScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const {
+    ready,
     ethereumAddress,
     solanaAddress,
     tokens,
@@ -263,25 +39,46 @@ export function TokenDetailsScreen() {
     refreshing,
     error,
     refresh,
+    poll,
   } = useTokenBalances();
+
+  usePollTokenBalances(poll, {
+    enabled: ready && Boolean(ethereumAddress || solanaAddress),
+  });
+
+  const { availableLabel } = useSpendableTokens(tokens);
   const chainGroups = useTokensByChain(tokens);
-  // Priced chains start open; Unknown (often huge) starts collapsed for perf.
-  const [expandedNetworks, setExpandedNetworks] = useState<
-    Record<string, boolean>
-  >({});
+  const { expandedNetworks, isExpanded, toggleNetwork } = useExpandedNetworks();
+  const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
 
   const onRefresh = useCallback(() => {
     refresh();
   }, [refresh]);
 
-  const toggleNetwork = useCallback((network: string) => {
-    setExpandedNetworks((current) => ({
-      ...current,
-      [network]: !isNetworkExpandedInState(network, current),
-    }));
-  }, []);
+  const onTokenPress = useCallback(
+    (tokenId: string) => {
+      navigation.navigate('send', { tokenId });
+    },
+    [navigation],
+  );
 
-  const totalLabel = formatUsdValue(totalUsd);
+  const renderChainSection = useCallback(
+    ({ item }: { item: TokenChainGroup }) => (
+      <TokenChainSection
+        group={item}
+        expanded={isExpanded(item.network)}
+        expandedNetworks={expandedNetworks}
+        onToggle={() => {
+          toggleNetwork(item.network);
+        }}
+        onToggleNetwork={toggleNetwork}
+        onTokenPress={onTokenPress}
+      />
+    ),
+    [expandedNetworks, isExpanded, onTokenPress, toggleNetwork],
+  );
+
+  const ledgerLabel = formatFromUsd(totalUsd) ?? defaultFormattedZero;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
 
   return (
@@ -315,6 +112,23 @@ export function TokenDetailsScreen() {
           <View style={styles.topBarSpacer} />
         </View>
 
+        <View style={styles.summary}>
+          <View
+            accessibilityLabel={`Available Balance: ${availableLabel}`}
+            style={styles.balanceRow}
+          >
+            <Text style={styles.balanceLabel}>Available Balance:</Text>
+            <Text style={styles.balanceValue}>{availableLabel}</Text>
+          </View>
+          <View
+            accessibilityLabel={`Total Balance: ${ledgerLabel}`}
+            style={styles.balanceRow}
+          >
+            <Text style={styles.balanceLabel}>Total Balance:</Text>
+            <Text style={styles.balanceValue}>{ledgerLabel}</Text>
+          </View>
+        </View>
+
         {!hasWallet || loading ? (
           <ActivityIndicator color="#0f172a" style={styles.loader} />
         ) : error && tokens.length === 0 ? (
@@ -332,9 +146,19 @@ export function TokenDetailsScreen() {
             </Pressable>
           </View>
         ) : (
-          <ScrollView
+          <FlatList
             contentContainerStyle={
               chainGroups.length === 0 ? styles.listEmpty : styles.listContent
+            }
+            data={chainGroups}
+            keyExtractor={(item) => item.network}
+            ListEmptyComponent={
+              <Text style={styles.empty}>
+                No tokens found on Ethereum or Solana.
+              </Text>
+            }
+            ListHeaderComponent={
+              error ? <Text style={styles.errorBanner}>{error}</Text> : null
             }
             refreshControl={
               <RefreshControl
@@ -343,32 +167,9 @@ export function TokenDetailsScreen() {
                 tintColor="#0f172a"
               />
             }
+            renderItem={renderChainSection}
             style={styles.list}
-          >
-            {totalLabel ? <Text style={styles.total}>{totalLabel}</Text> : null}
-            {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
-            {chainGroups.length === 0 ? (
-              <Text style={styles.empty}>
-                No tokens found on Ethereum or Solana.
-              </Text>
-            ) : (
-              chainGroups.map((group) => (
-                <ChainSection
-                  key={group.network}
-                  group={group}
-                  expanded={isNetworkExpandedInState(
-                    group.network,
-                    expandedNetworks,
-                  )}
-                  expandedNetworks={expandedNetworks}
-                  onToggle={() => {
-                    toggleNetwork(group.network);
-                  }}
-                  onToggleNetwork={toggleNetwork}
-                />
-              ))
-            )}
-          </ScrollView>
+          />
         )}
       </View>
     </View>
@@ -419,12 +220,35 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#0f172a',
   },
-  total: {
+  summary: {
+    paddingHorizontal: 24,
     marginBottom: 12,
-    fontSize: 22,
+    gap: 8,
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    backgroundColor: '#ffffff',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  balanceLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  balanceValue: {
+    flexShrink: 1,
+    fontSize: 16,
     fontWeight: '600',
     color: '#0f172a',
     fontVariant: ['tabular-nums'],
+    textAlign: 'right',
   },
   loader: {
     marginTop: 48,
@@ -479,175 +303,6 @@ const styles = StyleSheet.create({
   },
   listEmpty: {
     flexGrow: 1,
-    justifyContent: 'center',
-  },
-  chainSection: {
-    gap: 4,
-  },
-  chainDivider: {
-    marginTop: 12,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#e2e8f0',
-  },
-  unknownSubgroups: {
-    gap: 8,
-    paddingTop: 4,
-    paddingLeft: 4,
-  },
-  nestedSection: {
-    gap: 2,
-  },
-  nestedHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingVertical: 4,
-  },
-  nestedLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  nestedChainIcon: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    overflow: 'hidden',
-    backgroundColor: '#e2e8f0',
-  },
-  nestedChainIconImage: {
-    width: 18,
-    height: 18,
-  },
-  nestedChainIconFallback: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    overflow: 'hidden',
-    backgroundColor: '#e2e8f0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nestedChainIconFallbackText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#475569',
-  },
-  chainHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingVertical: 6,
-  },
-  chainHeaderPressed: {
-    opacity: 0.65,
-  },
-  chainHeaderLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    minWidth: 0,
-  },
-  chainIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    overflow: 'hidden',
-    backgroundColor: '#e2e8f0',
-  },
-  chainIconImage: {
-    width: 22,
-    height: 22,
-  },
-  chainIconFallback: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    overflow: 'hidden',
-    backgroundColor: '#e2e8f0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chainIconFallbackText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#475569',
-  },
-  chainHeaderText: {
-    flex: 1,
-    minWidth: 0,
-    gap: 1,
-  },
-  chainLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#334155',
-  },
-  chainMeta: {
-    fontSize: 12,
-    color: '#94a3b8',
-  },
-  chainHeaderRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  chainUsd: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#64748b',
-    fontVariant: ['tabular-nums'],
-  },
-  chainTokens: {
-    gap: 6,
-    paddingLeft: 4,
-    paddingTop: 4,
-  },
-  tokenRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingVertical: 8,
-  },
-  tokenLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    minWidth: 0,
-  },
-  tokenText: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  tokenSymbol: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0f172a',
-  },
-  tokenMeta: {
-    fontSize: 13,
-    color: '#94a3b8',
-  },
-  tokenRight: {
-    alignItems: 'flex-end',
-    gap: 2,
-    maxWidth: '42%',
-  },
-  tokenBalance: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0f172a',
-    fontVariant: ['tabular-nums'],
-  },
-  tokenUsd: {
-    fontSize: 13,
-    color: '#64748b',
-    fontVariant: ['tabular-nums'],
+    paddingHorizontal: 24,
   },
 });

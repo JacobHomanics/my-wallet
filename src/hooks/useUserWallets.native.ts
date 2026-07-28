@@ -6,9 +6,11 @@ import {
 } from '@privy-io/expo';
 
 import {
+  sortWalletsByChainPriority,
   type UserWallet,
   type UserWalletsResult,
 } from '@/hooks/useUserWallets.shared';
+import { useChainPriority } from '@/hooks/useChainPriority';
 import { getPrivyEmbeddedWalletAddress } from '@/lib/privy/wallets/hasPrivyEmbeddedWallet';
 
 /**
@@ -16,6 +18,7 @@ import { getPrivyEmbeddedWalletAddress } from '@/lib/privy/wallets/hasPrivyEmbed
  * One address per chain (primary embedded / first linked).
  */
 export function useUserWallets(): UserWalletsResult {
+  const { selectedChainPriorityId } = useChainPriority();
   const { isReady, user } = usePrivy();
   const { wallets: ethereumWallets } = useEmbeddedEthereumWallet();
   const solanaWallet = useEmbeddedSolanaWallet();
@@ -43,5 +46,8 @@ export function useUserWallets(): UserWalletsResult {
     wallets.push({ chain: 'solana', label: 'Solana', address: solana });
   }
 
-  return { ready: true, wallets };
+  return {
+    ready: true,
+    wallets: sortWalletsByChainPriority(wallets, selectedChainPriorityId),
+  };
 }

@@ -1,8 +1,14 @@
 import {
   getDefaultTokenDecimals,
   getNativeTokenFallback,
+  getNetworkChain,
   getNetworkLabel,
 } from '@/lib/alchemy/networks';
+import {
+  compareChainFamilies,
+  DEFAULT_CHAIN_PRIORITY_ID,
+  type ChainPriorityId,
+} from '@/lib/chainPriority';
 import {
   isNativeTokenAddress,
   resolveTokenLogoUrl,
@@ -115,6 +121,40 @@ export function formatRawTokenBalance(
   return `${negative ? '-' : ''}${whole.toString()}.${fractionStr}`;
 }
 
+/**
+ * Parses a decimal amount string into raw token units.
+ * Returns null for empty, invalid, or over-precision input.
+ */
+export function parseTokenAmountToRaw(
+  amount: string,
+  decimals: number,
+): bigint | null {
+  const trimmed = amount.trim();
+  if (!trimmed || trimmed === '.' || trimmed.startsWith('-')) {
+    return null;
+  }
+
+  if (!/^\d+(\.\d*)?$/.test(trimmed) && !/^\.\d+$/.test(trimmed)) {
+    return null;
+  }
+
+  const safeDecimals = Math.max(0, Math.min(decimals, 36));
+  const [wholePart = '0', fractionPart = ''] = trimmed.split('.');
+
+  if (fractionPart.length > safeDecimals) {
+    return null;
+  }
+
+  const whole = wholePart === '' ? '0' : wholePart;
+  const paddedFraction = fractionPart.padEnd(safeDecimals, '0');
+
+  try {
+    return BigInt(whole) * 10n ** BigInt(safeDecimals) + BigInt(paddedFraction || '0');
+  } catch {
+    return null;
+  }
+}
+
 function formatUsd(value: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -128,6 +168,89 @@ export function formatUsdValue(value: number | null): string | null {
     return null;
   }
   return formatUsd(value);
+}
+
+/**
+ * Estimates USD for a send amount from the token's known balance USD value.
+ */
+export function estimateTokenAmountUsd(
+  token: OwnedToken,
+  amountRaw: bigint,
+): number | null {
+  if (token.usdValue == null || token.rawBalance <= 0n || amountRaw < 0n) {
+    return null;
+  }
+  if (amountRaw === 0n) {
+    return 0;
+  }
+
+  const full = Number(token.rawBalance);
+  const part = Number(amountRaw);
+  if (!Number.isFinite(full) || !Number.isFinite(part) || full === 0) {
+    return null;
+  }
+
+  const usd = token.usdValue * (part / full);
+  return Number.isFinite(usd) ? usd : null;
+}
+
+/**
+ * Converts a USD amount string into raw token units using the token's
+ * balance / USD value ratio. Clamps tiny float overshoot to full balance.
+ */
+export function parseUsdAmountToTokenRaw(
+  usdAmount: string,
+  token: OwnedToken,
+): bigint | null {
+  if (token.usdValue == null || token.usdValue <= 0 || token.rawBalance <= 0n) {
+    return null;
+  }
+
+  const trimmed = usdAmount.trim();
+  if (!trimmed || trimmed === '.' || trimmed.startsWith('-')) {
+    return null;
+  }
+  if (!/^\d+(\.\d*)?$/.test(trimmed) && !/^\.\d+$/.test(trimmed)) {
+    return null;
+  }
+
+  const usd = Number(trimmed);
+  if (!Number.isFinite(usd) || usd < 0) {
+    return null;
+  }
+  if (usd === 0) {
+    return 0n;
+  }
+
+  const full = Number(token.rawBalance);
+  if (!Number.isFinite(full) || full === 0) {
+    return null;
+  }
+
+  const rawNumber = Math.round((usd / token.usdValue) * full);
+  if (!Number.isFinite(rawNumber) || rawNumber < 0) {
+    return null;
+  }
+
+  let amountRaw = BigInt(rawNumber);
+  // Float rounding can nudge Max slightly over; clamp when within balance USD.
+  if (amountRaw > token.rawBalance && usd <= token.usdValue + 0.005) {
+    amountRaw = token.rawBalance;
+  }
+  return amountRaw;
+}
+
+/** Formats a USD number for amount input (no currency symbol). */
+export function formatUsdAmountInput(value: number): string {
+  if (!Number.isFinite(value) || value < 0) {
+    return '0';
+  }
+  if (value === 0) {
+    return '0';
+  }
+  // Keep enough precision for small balances while trimming trailing zeros.
+  const fixed = value.toFixed(6).replace(/\.?0+$/, '');
+  return fixed === '' ? '0' : fixed;
 }
 
 function usdPrice(prices: AlchemyTokenPrice[] | null | undefined): number | null {
@@ -209,9 +332,20 @@ function formatContractSymbol(tokenAddress: string | null | undefined) {
   return `${tokenAddress.slice(0, 6)}…`;
 }
 
-/** Sort by chain label (A–Z), then USD value (desc), then symbol. */
-export function sortOwnedTokens(tokens: OwnedToken[]): OwnedToken[] {
-  return tokens.sort((a, b) => {
+/** Sort by chain priority, then chain label (A–Z), then USD value (desc), then symbol. */
+export function sortOwnedTokens(
+  tokens: OwnedToken[],
+  chainPriorityId: ChainPriorityId = DEFAULT_CHAIN_PRIORITY_ID,
+): OwnedToken[] {
+  return [...tokens].sort((a, b) => {
+    const chainDelta = compareChainFamilies(
+      getNetworkChain(a.network),
+      getNetworkChain(b.network),
+      chainPriorityId,
+    );
+    if (chainDelta !== 0) {
+      return chainDelta;
+    }
     const networkDelta = a.networkLabel.localeCompare(b.networkLabel);
     if (networkDelta !== 0) {
       return networkDelta;
@@ -263,6 +397,7 @@ function groupTokensByNetwork(tokens: OwnedToken[]): TokenChainGroup[] {
 /** Groups priced tokens by chain; unpriced tokens go in a trailing "Unknown" section. */
 export function groupOwnedTokensByChain(
   tokens: OwnedToken[],
+  chainPriorityId: ChainPriorityId = DEFAULT_CHAIN_PRIORITY_ID,
 ): TokenChainGroup[] {
   const priced: OwnedToken[] = [];
   const unknownTokens: OwnedToken[] = [];
@@ -275,11 +410,19 @@ export function groupOwnedTokensByChain(
     }
   }
 
-  sortOwnedTokens(priced);
+  sortOwnedTokens(priced, chainPriorityId);
   const groups = groupTokensByNetwork(priced);
 
   if (unknownTokens.length > 0) {
     unknownTokens.sort((a, b) => {
+      const chainDelta = compareChainFamilies(
+        getNetworkChain(a.network),
+        getNetworkChain(b.network),
+        chainPriorityId,
+      );
+      if (chainDelta !== 0) {
+        return chainDelta;
+      }
       const networkDelta = a.networkLabel.localeCompare(b.networkLabel);
       if (networkDelta !== 0) {
         return networkDelta;
