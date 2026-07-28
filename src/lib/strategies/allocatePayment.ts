@@ -146,20 +146,60 @@ function allocateEvenSplit(
 
   if (nonGas.length > 0) {
     const primary = evenSplitAmong(nonGas, usdAmount);
-    if (primary.canFulfill || gas.length === 0) {
-      return primary;
+    return allocateRemainderFromGas(gas, primary);
+  }
+
+  return evenSplitAmong(gas, usdAmount);
+}
+
+function allocateRemainderFromGas(
+  gas: OwnedToken[],
+  prior: Omit<AllocatePaymentResult, 'chains'>,
+): Omit<AllocatePaymentResult, 'chains'> {
+  if (prior.canFulfill || gas.length === 0) {
+    return prior;
+  }
+
+  const gasFill = evenSplitAmong(gas, prior.remainingUsd);
+  if (gasFill.canFulfill) {
+    return mergeAllocationResults(prior, gasFill);
+  }
+
+  const greedyGas = allocateFromOrderedTokens(
+    [...gas].sort((a, b) => tokenUsd(b) - tokenUsd(a)),
+    prior.remainingUsd,
+  );
+  return mergeAllocationResults(prior, greedyGas);
+}
+
+/** Even split stables first, then other non-gas tokens, then gas. */
+function allocatePrioritizeStablecoinsThenEvenSplit(
+  tokens: OwnedToken[],
+  usdAmount: number,
+): Omit<AllocatePaymentResult, 'chains'> {
+  const priced = tokens.filter((token) => tokenUsd(token) > 0);
+  const nonGas = priced.filter((token) => !isGasToken(token));
+  const gas = priced.filter((token) => isGasToken(token));
+  const stables = nonGas.filter((token) => isStablecoin(token));
+  const nonStables = nonGas.filter((token) => !isStablecoin(token));
+
+  if (stables.length > 0) {
+    let result = evenSplitAmong(stables, usdAmount);
+    if (result.canFulfill) {
+      return result;
     }
 
-    const gasFill = evenSplitAmong(gas, primary.remainingUsd);
-    if (gasFill.canFulfill) {
-      return mergeAllocationResults(primary, gasFill);
+    if (nonStables.length > 0 && result.remainingUsd > FILL_TOLERANCE_USD) {
+      const secondary = evenSplitAmong(nonStables, result.remainingUsd);
+      result = mergeAllocationResults(result, secondary);
     }
 
-    const greedyGas = allocateFromOrderedTokens(
-      [...gas].sort((a, b) => tokenUsd(b) - tokenUsd(a)),
-      primary.remainingUsd,
-    );
-    return mergeAllocationResults(primary, greedyGas);
+    return allocateRemainderFromGas(gas, result);
+  }
+
+  if (nonStables.length > 0) {
+    const primary = evenSplitAmong(nonStables, usdAmount);
+    return allocateRemainderFromGas(gas, primary);
   }
 
   return evenSplitAmong(gas, usdAmount);
@@ -262,14 +302,20 @@ export function allocatePaymentUsd(options: {
     };
   }
 
-  const result =
-    strategyId === 'even-split'
-      ? allocateEvenSplit(tokens, usdAmount)
-      : (() => {
-          const priced = tokens.filter((token) => tokenUsd(token) > 0);
-          const ordered = sortForStrategy(priced, strategyId, preferredTokenId);
-          return allocateFromOrderedTokens(ordered, usdAmount);
-        })();
+  const result = (() => {
+    switch (strategyId) {
+      case 'even-split':
+        return allocateEvenSplit(tokens, usdAmount);
+      case 'prioritize-stablecoins-even-split':
+        return allocatePrioritizeStablecoinsThenEvenSplit(tokens, usdAmount);
+      case 'prioritize-stablecoins':
+      default: {
+        const priced = tokens.filter((token) => tokenUsd(token) > 0);
+        const ordered = sortForStrategy(priced, strategyId, preferredTokenId);
+        return allocateFromOrderedTokens(ordered, usdAmount);
+      }
+    }
+  })();
 
   return {
     ...result,

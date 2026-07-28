@@ -1,4 +1,7 @@
-export type PaymentStrategyId = 'prioritize-stablecoins' | 'even-split';
+export type PaymentStrategyId =
+  | 'prioritize-stablecoins'
+  | 'even-split'
+  | 'prioritize-stablecoins-even-split';
 
 export type PaymentStrategy = {
   id: PaymentStrategyId;
@@ -7,6 +10,12 @@ export type PaymentStrategy = {
 };
 
 export const PAYMENT_STRATEGIES: readonly PaymentStrategy[] = [
+  {
+    id: 'prioritize-stablecoins-even-split',
+    label: 'Prioritize Stablecoins then Even Split',
+    description:
+      'Split evenly across stablecoins first, then other tokens. Gas tokens are last resort.',
+  },
   {
     id: 'prioritize-stablecoins',
     label: 'Prioritize Stablecoins',
@@ -22,7 +31,7 @@ export const PAYMENT_STRATEGIES: readonly PaymentStrategy[] = [
 ] as const;
 
 export const DEFAULT_PAYMENT_STRATEGY_ID: PaymentStrategyId =
-  'prioritize-stablecoins';
+  'prioritize-stablecoins-even-split';
 
 export function getPaymentStrategy(
   id: PaymentStrategyId,
