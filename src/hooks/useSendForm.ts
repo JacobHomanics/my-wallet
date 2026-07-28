@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
+import { getNetworkChain } from '@/lib/alchemy/networks';
 import {
   allocatePaymentUsd,
   parseUsdInput,
@@ -13,18 +14,25 @@ export type SendFormState = {
   /** USD amount the user is trying to send. */
   amount: string;
   allocations: PaymentAllocation[];
-  chain: 'ethereum' | 'solana' | null;
+  /** Chain families that appear in the current allocation. */
+  chains: Array<'ethereum' | 'solana'>;
+  needsEthereumRecipient: boolean;
+  needsSolanaRecipient: boolean;
   filledUsd: number;
   remainingUsd: number;
   canFulfill: boolean;
-  recipient: string;
-  recipientValid: boolean;
+  ethereumRecipient: string;
+  solanaRecipient: string;
+  ethereumRecipientValid: boolean;
+  solanaRecipientValid: boolean;
+  recipientsValid: boolean;
   amountValid: boolean;
   /** True when USD amount is set but holdings cannot cover it. */
   insufficientFunds: boolean;
   tokenAmountHint: string | null;
   canContinue: boolean;
-  setRecipient: (value: string) => void;
+  setEthereumRecipient: (value: string) => void;
+  setSolanaRecipient: (value: string) => void;
   setAmount: (value: string) => void;
 };
 
@@ -40,36 +48,16 @@ function sanitizeAmountInput(value: string): string {
   );
 }
 
-function recipientChainHint(
-  recipient: string,
-): 'ethereum' | 'solana' | null {
-  const trimmed = recipient.trim();
-  if (!trimmed) {
-    return null;
-  }
-  if (isValidRecipientAddress(trimmed, 'ethereum')) {
-    return 'ethereum';
-  }
-  if (isValidRecipientAddress(trimmed, 'solana')) {
-    return 'solana';
-  }
-  return null;
-}
-
 export function useSendForm(
   tokens: OwnedToken[],
   strategyId: PaymentStrategyId,
   preferredTokenId?: string | null,
 ): SendFormState {
-  const [recipient, setRecipientState] = useState('');
+  const [ethereumRecipient, setEthereumRecipientState] = useState('');
+  const [solanaRecipient, setSolanaRecipientState] = useState('');
   const [amount, setAmountState] = useState('');
 
   const usdAmount = useMemo(() => parseUsdInput(amount), [amount]);
-
-  const chainFromRecipient = useMemo(
-    () => recipientChainHint(recipient),
-    [recipient],
-  );
 
   const plan = useMemo(() => {
     if (usdAmount == null || usdAmount <= 0) {
@@ -78,7 +66,7 @@ export function useSendForm(
         filledUsd: 0,
         remainingUsd: 0,
         canFulfill: false,
-        chain: chainFromRecipient,
+        chains: [] as Array<'ethereum' | 'solana'>,
       };
     }
 
@@ -86,20 +74,30 @@ export function useSendForm(
       tokens,
       usdAmount,
       strategyId,
-      chain: chainFromRecipient,
       preferredTokenId,
     });
-  }, [chainFromRecipient, preferredTokenId, strategyId, tokens, usdAmount]);
+  }, [preferredTokenId, strategyId, tokens, usdAmount]);
 
-  const chain = plan.chain;
   const allocations = plan.allocations;
+  const chains = plan.chains;
+  const needsEthereumRecipient = chains.includes('ethereum');
+  const needsSolanaRecipient = chains.includes('solana');
 
-  const recipientValid = useMemo(() => {
-    if (!chain || !recipient.trim()) {
-      return false;
+  const ethereumRecipientValid = useMemo(() => {
+    if (!needsEthereumRecipient) {
+      return true;
     }
-    return isValidRecipientAddress(recipient, chain);
-  }, [chain, recipient]);
+    return isValidRecipientAddress(ethereumRecipient, 'ethereum');
+  }, [ethereumRecipient, needsEthereumRecipient]);
+
+  const solanaRecipientValid = useMemo(() => {
+    if (!needsSolanaRecipient) {
+      return true;
+    }
+    return isValidRecipientAddress(solanaRecipient, 'solana');
+  }, [needsSolanaRecipient, solanaRecipient]);
+
+  const recipientsValid = ethereumRecipientValid && solanaRecipientValid;
 
   const amountValid = usdAmount != null && usdAmount > 0;
   const insufficientFunds = amountValid && !plan.canFulfill;
@@ -108,7 +106,9 @@ export function useSendForm(
     amountValid &&
     plan.canFulfill &&
     allocations.length > 0 &&
-    recipientValid;
+    recipientsValid &&
+    (!needsEthereumRecipient || ethereumRecipient.trim().length > 0) &&
+    (!needsSolanaRecipient || solanaRecipient.trim().length > 0);
 
   const tokenAmountHint = useMemo(() => {
     if (!amountValid || allocations.length === 0) {
@@ -123,8 +123,12 @@ export function useSendForm(
       .join(' + ');
   }, [allocations, amountValid]);
 
-  const setRecipient = useCallback((value: string) => {
-    setRecipientState(value);
+  const setEthereumRecipient = useCallback((value: string) => {
+    setEthereumRecipientState(value);
+  }, []);
+
+  const setSolanaRecipient = useCallback((value: string) => {
+    setSolanaRecipientState(value);
   }, []);
 
   const setAmount = useCallback((value: string) => {
@@ -134,17 +138,34 @@ export function useSendForm(
   return {
     amount,
     allocations,
-    chain,
+    chains,
+    needsEthereumRecipient,
+    needsSolanaRecipient,
     filledUsd: plan.filledUsd,
     remainingUsd: plan.remainingUsd,
     canFulfill: plan.canFulfill,
-    recipient,
-    recipientValid,
+    ethereumRecipient,
+    solanaRecipient,
+    ethereumRecipientValid,
+    solanaRecipientValid,
+    recipientsValid,
     amountValid,
     insufficientFunds,
     tokenAmountHint,
     canContinue,
-    setRecipient,
+    setEthereumRecipient,
+    setSolanaRecipient,
     setAmount,
   };
+}
+
+/** Recipient address for a payment leg based on its token chain. */
+export function recipientForAllocation(
+  allocation: PaymentAllocation,
+  ethereumRecipient: string,
+  solanaRecipient: string,
+): string {
+  return getNetworkChain(allocation.token.network) === 'solana'
+    ? solanaRecipient.trim()
+    : ethereumRecipient.trim();
 }

@@ -52,26 +52,24 @@ export function SendScreen() {
     route.params?.tokenId,
   );
   const {
-    recipient,
     amount,
     allocations,
-    chain,
-    recipientValid,
+    needsEthereumRecipient,
+    needsSolanaRecipient,
+    ethereumRecipient,
+    solanaRecipient,
+    ethereumRecipientValid,
+    solanaRecipientValid,
     insufficientFunds,
     tokenAmountHint,
     canContinue,
-    setRecipient,
+    setEthereumRecipient,
+    setSolanaRecipient,
     setAmount,
   } = form;
 
   const totalLabel = formatUsdValue(totalUsd) ?? '$0.00';
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
-  const recipientHint =
-    chain === 'solana'
-      ? 'Solana address'
-      : chain === 'ethereum'
-        ? '0x… Ethereum address'
-        : 'Wallet address';
 
   const amountError =
     amount.trim() && insufficientFunds
@@ -80,13 +78,16 @@ export function SendScreen() {
         ? 'Enter a valid amount'
         : null;
 
-  const recipientError =
-    recipient.trim() && !recipientValid
-      ? chain === 'solana'
-        ? 'Enter a valid Solana address'
-        : chain === 'ethereum'
-          ? 'Enter a valid Ethereum address'
-          : 'Enter a valid address'
+  const ethereumRecipientError =
+    needsEthereumRecipient &&
+    ethereumRecipient.trim() &&
+    !ethereumRecipientValid
+      ? 'Enter a valid Ethereum address'
+      : null;
+
+  const solanaRecipientError =
+    needsSolanaRecipient && solanaRecipient.trim() && !solanaRecipientValid
+      ? 'Enter a valid Solana address'
       : null;
 
   const onContinue = useCallback(() => {
@@ -95,14 +96,28 @@ export function SendScreen() {
     }
 
     navigation.navigate('confirmSend', {
-      recipient: recipient.trim(),
       usdAmount: amount,
+      ethereumRecipient: needsEthereumRecipient
+        ? ethereumRecipient.trim()
+        : undefined,
+      solanaRecipient: needsSolanaRecipient
+        ? solanaRecipient.trim()
+        : undefined,
       legs: allocations.map((leg) => ({
         tokenId: leg.token.id,
         amount: leg.amountFormatted,
       })),
     });
-  }, [allocations, amount, canContinue, navigation, recipient]);
+  }, [
+    allocations,
+    amount,
+    canContinue,
+    ethereumRecipient,
+    navigation,
+    needsEthereumRecipient,
+    needsSolanaRecipient,
+    solanaRecipient,
+  ]);
 
   const goHome = useCallback(() => {
     navigation.navigate('index');
@@ -156,43 +171,6 @@ export function SendScreen() {
                 {totalLabel}
               </Text>
 
-              <Text style={styles.label}>To</Text>
-              <View
-                style={[
-                  styles.recipientRow,
-                  recipientError ? styles.inputError : null,
-                ]}
-              >
-                <TextInput
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  onChangeText={setRecipient}
-                  placeholder={recipientHint}
-                  placeholderTextColor="#94a3b8"
-                  style={styles.recipientInput}
-                  value={recipient}
-                />
-                {recipient.trim() ? (
-                  <Pressable
-                    accessibilityLabel="Clear recipient"
-                    accessibilityRole="button"
-                    hitSlop={8}
-                    onPress={() => {
-                      setRecipient('');
-                    }}
-                    style={({ pressed }) => [
-                      styles.clearButton,
-                      pressed && styles.clearButtonPressed,
-                    ]}
-                  >
-                    <Ionicons name="close-circle" size={20} color="#94a3b8" />
-                  </Pressable>
-                ) : null}
-              </View>
-              {recipientError ? (
-                <Text style={styles.fieldError}>{recipientError}</Text>
-              ) : null}
-
               <View style={styles.amountHeader}>
                 <Text style={styles.labelInline}>Amount</Text>
               </View>
@@ -217,6 +195,117 @@ export function SendScreen() {
               ) : tokenAmountHint ? (
                 <Text style={styles.tokenAmountHint}>{tokenAmountHint}</Text>
               ) : null}
+
+              {!needsEthereumRecipient && !needsSolanaRecipient ? (
+                <>
+                  <Text style={styles.label}>To</Text>
+                  <View style={[styles.recipientRow, styles.inputDisabled]}>
+                    <Text style={styles.recipientPlaceholder}>
+                      Enter an amount first
+                    </Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  {needsEthereumRecipient ? (
+                    <>
+                      <Text style={styles.label}>
+                        {needsSolanaRecipient ? 'Ethereum recipient' : 'To'}
+                      </Text>
+                      <View
+                        style={[
+                          styles.recipientRow,
+                          ethereumRecipientError ? styles.inputError : null,
+                        ]}
+                      >
+                        <TextInput
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          onChangeText={setEthereumRecipient}
+                          placeholder="0x… Ethereum address"
+                          placeholderTextColor="#94a3b8"
+                          style={styles.recipientInput}
+                          value={ethereumRecipient}
+                        />
+                        {ethereumRecipient.trim() ? (
+                          <Pressable
+                            accessibilityLabel="Clear Ethereum recipient"
+                            accessibilityRole="button"
+                            hitSlop={8}
+                            onPress={() => {
+                              setEthereumRecipient('');
+                            }}
+                            style={({ pressed }) => [
+                              styles.clearButton,
+                              pressed && styles.clearButtonPressed,
+                            ]}
+                          >
+                            <Ionicons
+                              name="close-circle"
+                              size={20}
+                              color="#94a3b8"
+                            />
+                          </Pressable>
+                        ) : null}
+                      </View>
+                      {ethereumRecipientError ? (
+                        <Text style={styles.fieldError}>
+                          {ethereumRecipientError}
+                        </Text>
+                      ) : null}
+                    </>
+                  ) : null}
+
+                  {needsSolanaRecipient ? (
+                    <>
+                      <Text style={styles.label}>
+                        {needsEthereumRecipient ? 'Solana recipient' : 'To'}
+                      </Text>
+                      <View
+                        style={[
+                          styles.recipientRow,
+                          solanaRecipientError ? styles.inputError : null,
+                        ]}
+                      >
+                        <TextInput
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          onChangeText={setSolanaRecipient}
+                          placeholder="Solana address"
+                          placeholderTextColor="#94a3b8"
+                          style={styles.recipientInput}
+                          value={solanaRecipient}
+                        />
+                        {solanaRecipient.trim() ? (
+                          <Pressable
+                            accessibilityLabel="Clear Solana recipient"
+                            accessibilityRole="button"
+                            hitSlop={8}
+                            onPress={() => {
+                              setSolanaRecipient('');
+                            }}
+                            style={({ pressed }) => [
+                              styles.clearButton,
+                              pressed && styles.clearButtonPressed,
+                            ]}
+                          >
+                            <Ionicons
+                              name="close-circle"
+                              size={20}
+                              color="#94a3b8"
+                            />
+                          </Pressable>
+                        ) : null}
+                      </View>
+                      {solanaRecipientError ? (
+                        <Text style={styles.fieldError}>
+                          {solanaRecipientError}
+                        </Text>
+                      ) : null}
+                    </>
+                  ) : null}
+                </>
+              )}
 
               <Pressable
                 accessibilityRole="button"
@@ -513,6 +602,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#0f172a',
   },
+  recipientPlaceholder: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#94a3b8',
+  },
   clearButton: {
     width: 36,
     height: 36,
@@ -522,11 +617,14 @@ const styles = StyleSheet.create({
   clearButtonPressed: {
     opacity: 0.6,
   },
+  inputDisabled: {
+    backgroundColor: '#f1f5f9',
+  },
   inputError: {
     borderColor: '#fca5a5',
   },
   amountHeader: {
-    marginTop: 20,
+    marginTop: 8,
     marginBottom: 8,
   },
   amountRow: {

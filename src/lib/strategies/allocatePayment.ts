@@ -20,7 +20,8 @@ export type AllocatePaymentResult = {
   filledUsd: number;
   remainingUsd: number;
   canFulfill: boolean;
-  chain: 'ethereum' | 'solana' | null;
+  /** Chain families used by the allocations. */
+  chains: Array<'ethereum' | 'solana'>;
 };
 
 function tokenUsd(token: OwnedToken): number {
@@ -59,7 +60,7 @@ function sortForStrategy(
 function allocateFromOrderedTokens(
   ordered: OwnedToken[],
   usdAmount: number,
-): Omit<AllocatePaymentResult, 'chain'> {
+): Omit<AllocatePaymentResult, 'chains'> {
   const allocations: PaymentAllocation[] = [];
   let remaining = usdAmount;
 
@@ -73,10 +74,7 @@ function allocateFromOrderedTokens(
     }
 
     const takeUsd = Math.min(remaining, available);
-    const amountRaw = parseUsdAmountToTokenRaw(
-      takeUsd.toFixed(8),
-      token,
-    );
+    const amountRaw = parseUsdAmountToTokenRaw(takeUsd.toFixed(8), token);
     if (amountRaw == null || amountRaw <= 0n) {
       continue;
     }
@@ -111,19 +109,28 @@ function allocateFromOrderedTokens(
   };
 }
 
+function chainsFromAllocations(
+  allocations: PaymentAllocation[],
+): Array<'ethereum' | 'solana'> {
+  const set = new Set<'ethereum' | 'solana'>();
+  for (const leg of allocations) {
+    set.add(getNetworkChain(leg.token.network));
+  }
+  return [...set];
+}
+
 /**
- * Picks one or more tokens to fulfill a USD payment using the active strategy.
- * All legs share a single chain family so one recipient address works.
+ * Picks one or more tokens across any chain to fulfill a USD payment.
+ * Strategy only affects ordering (e.g. stables first), not which chains
+ * are eligible — every priced balance can contribute.
  */
 export function allocatePaymentUsd(options: {
   tokens: OwnedToken[];
   usdAmount: number;
   strategyId: PaymentStrategyId;
-  /** When set, only use tokens on this chain. */
-  chain?: 'ethereum' | 'solana' | null;
   preferredTokenId?: string | null;
 }): AllocatePaymentResult {
-  const { tokens, usdAmount, strategyId, chain, preferredTokenId } = options;
+  const { tokens, usdAmount, strategyId, preferredTokenId } = options;
 
   if (!(usdAmount > 0) || !Number.isFinite(usdAmount)) {
     return {
@@ -131,49 +138,18 @@ export function allocatePaymentUsd(options: {
       filledUsd: 0,
       remainingUsd: 0,
       canFulfill: false,
-      chain: chain ?? null,
+      chains: [],
     };
   }
 
   const priced = tokens.filter((token) => tokenUsd(token) > 0);
+  const ordered = sortForStrategy(priced, strategyId, preferredTokenId);
+  const result = allocateFromOrderedTokens(ordered, usdAmount);
 
-  const tryChain = (
-    chainFilter: 'ethereum' | 'solana',
-  ): AllocatePaymentResult => {
-    const scoped = priced.filter(
-      (token) => getNetworkChain(token.network) === chainFilter,
-    );
-    const ordered = sortForStrategy(scoped, strategyId, preferredTokenId);
-    const result = allocateFromOrderedTokens(ordered, usdAmount);
-    return { ...result, chain: chainFilter };
+  return {
+    ...result,
+    chains: chainsFromAllocations(result.allocations),
   };
-
-  if (chain === 'ethereum' || chain === 'solana') {
-    return tryChain(chain);
-  }
-
-  const ethereum = tryChain('ethereum');
-  const solana = tryChain('solana');
-
-  // Prefer a plan that fully covers; then higher fill; then more stables.
-  const score = (plan: AllocatePaymentResult) => {
-    const stableUsd = plan.allocations.reduce(
-      (sum, leg) => sum + (isStablecoin(leg.token) ? leg.usd : 0),
-      0,
-    );
-    return (
-      (plan.canFulfill ? 1_000_000_000 : 0) +
-      plan.filledUsd * 1_000 +
-      stableUsd
-    );
-  };
-
-  if (score(ethereum) >= score(solana)) {
-    return ethereum.allocations.length > 0 || solana.allocations.length === 0
-      ? ethereum
-      : solana;
-  }
-  return solana;
 }
 
 /** Parses a USD amount input string into a finite number, or null. */

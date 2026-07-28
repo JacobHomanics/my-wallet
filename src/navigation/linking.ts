@@ -77,8 +77,9 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               confirmSend: {
                 path: '/send/confirm',
                 parse: {
-                  recipient: (recipient: string) => recipient,
                   usdAmount: (usdAmount: string) => usdAmount,
+                  ethereumRecipient: (value: string) => value || undefined,
+                  solanaRecipient: (value: string) => value || undefined,
                   legs: (legs: string) => {
                     try {
                       return JSON.parse(legs) as unknown;

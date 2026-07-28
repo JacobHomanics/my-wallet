@@ -47,7 +47,12 @@ export function ConfirmSendScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'confirmSend'>>();
-  const { recipient, usdAmount, legs: legParams } = route.params;
+  const {
+    usdAmount,
+    ethereumRecipient,
+    solanaRecipient,
+    legs: legParams,
+  } = route.params;
   const { tokens, loading, ready, refresh } = useTokenBalances();
   const { sendPayment, sending } = useSendPayment();
   const { error, clearStatus, setError } = useSendStatus();
@@ -89,20 +94,32 @@ export function ConfirmSendScreen() {
     return Number.isFinite(parsed) ? formatUsdValue(parsed) : `$${usdAmount}`;
   }, [legs, usdAmount]);
 
-  const chain = legs[0] ? getNetworkChain(legs[0].token.network) : null;
-  const trimmedRecipient = recipient.trim();
-  const recipientValid = chain
-    ? isValidRecipientAddress(trimmedRecipient, chain)
-    : false;
-
-  const amountsValid = legs.length > 0 && legs.every(
-    (leg) => leg.amountRaw > 0n && leg.amountRaw <= leg.token.rawBalance,
+  const needsEthereum = legs.some(
+    (leg) => getNetworkChain(leg.token.network) === 'ethereum',
   );
+  const needsSolana = legs.some(
+    (leg) => getNetworkChain(leg.token.network) === 'solana',
+  );
+  const trimmedEthereum = ethereumRecipient?.trim() ?? '';
+  const trimmedSolana = solanaRecipient?.trim() ?? '';
+  const ethereumRecipientValid = needsEthereum
+    ? isValidRecipientAddress(trimmedEthereum, 'ethereum')
+    : true;
+  const solanaRecipientValid = needsSolana
+    ? isValidRecipientAddress(trimmedSolana, 'solana')
+    : true;
+  const recipientsValid = ethereumRecipientValid && solanaRecipientValid;
+
+  const amountsValid =
+    legs.length > 0 &&
+    legs.every(
+      (leg) => leg.amountRaw > 0n && leg.amountRaw <= leg.token.rawBalance,
+    );
 
   const canSend =
     legs.length > 0 &&
     legs.length === (legParams?.length ?? 0) &&
-    recipientValid &&
+    recipientsValid &&
     amountsValid;
 
   const invalidReason =
@@ -110,7 +127,7 @@ export function ConfirmSendScreen() {
       ? 'Nothing to send. Go back and enter an amount.'
       : legs.length !== (legParams?.length ?? 0)
         ? 'One or more tokens are unavailable. Go back and try again.'
-        : !recipientValid
+        : !recipientsValid
           ? 'Recipient address is invalid.'
           : !amountsValid
             ? 'Insufficient funds for this payment.'
@@ -126,16 +143,21 @@ export function ConfirmSendScreen() {
     void (async () => {
       try {
         const results = await sendPayment(
-          legs.map((leg) => ({
-            token: leg.token,
-            recipient: trimmedRecipient,
-            amountRaw: leg.amountRaw,
-            amountFormatted: leg.amount,
-          })),
+          legs.map((leg) => {
+            const chain = getNetworkChain(leg.token.network);
+            return {
+              token: leg.token,
+              recipient:
+                chain === 'solana' ? trimmedSolana : trimmedEthereum,
+              amountRaw: leg.amountRaw,
+              amountFormatted: leg.amount,
+            };
+          }),
         );
         refresh();
         navigation.navigate('sent', {
-          usdLabel: usdLabel ?? `$${formatUsdAmountInput(Number(usdAmount) || 0)}`,
+          usdLabel:
+            usdLabel ?? `$${formatUsdAmountInput(Number(usdAmount) || 0)}`,
           legs: results.map((result) => ({
             hash: result.hash,
             amount: result.amount,
@@ -161,7 +183,8 @@ export function ConfirmSendScreen() {
     sendPayment,
     sending,
     setError,
-    trimmedRecipient,
+    trimmedEthereum,
+    trimmedSolana,
     usdAmount,
     usdLabel,
   ]);
@@ -214,10 +237,26 @@ export function ConfirmSendScreen() {
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
             <Text style={styles.heroUsd}>{usdLabel ?? `$${usdAmount}`}</Text>
 
-            <Text style={styles.toLabel}>To</Text>
-            <Text style={styles.toAddress} selectable>
-              {trimmedRecipient}
-            </Text>
+            {needsEthereum ? (
+              <>
+                <Text style={styles.toLabel}>
+                  {needsSolana ? 'Ethereum' : 'To'}
+                </Text>
+                <Text style={styles.toAddress} selectable>
+                  {trimmedEthereum}
+                </Text>
+              </>
+            ) : null}
+            {needsSolana ? (
+              <>
+                <Text style={styles.toLabel}>
+                  {needsEthereum ? 'Solana' : 'To'}
+                </Text>
+                <Text style={styles.toAddress} selectable>
+                  {trimmedSolana}
+                </Text>
+              </>
+            ) : null}
 
             <Pressable
               accessibilityRole="button"
@@ -266,8 +305,26 @@ export function ConfirmSendScreen() {
                     </View>
                   </View>
                 ))}
-                <View style={styles.divider} />
-                <SummaryRow label="Recipient" value={trimmedRecipient} mono />
+                {needsEthereum ? (
+                  <>
+                    <View style={styles.divider} />
+                    <SummaryRow
+                      label={needsSolana ? 'Ethereum recipient' : 'Recipient'}
+                      value={trimmedEthereum}
+                      mono
+                    />
+                  </>
+                ) : null}
+                {needsSolana ? (
+                  <>
+                    <View style={styles.divider} />
+                    <SummaryRow
+                      label={needsEthereum ? 'Solana recipient' : 'Recipient'}
+                      value={trimmedSolana}
+                      mono
+                    />
+                  </>
+                ) : null}
               </View>
             ) : null}
 

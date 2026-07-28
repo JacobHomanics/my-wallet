@@ -23,9 +23,10 @@ export type HomeStackParamList = {
   tokenDetails: undefined;
   send: { tokenId?: string } | undefined;
   confirmSend: {
-    recipient: string;
     /** USD amount string the user entered. */
     usdAmount: string;
+    ethereumRecipient?: string;
+    solanaRecipient?: string;
     legs: ConfirmSendLeg[];
   };
   sent: {
