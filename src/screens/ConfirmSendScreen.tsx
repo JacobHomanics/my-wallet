@@ -363,9 +363,7 @@ export function ConfirmSendScreen() {
                 {sending ? (
                   <ActivityIndicator color="#f8fafc" />
                 ) : (
-                  <Text style={styles.primaryButtonText}>
-                    {legs.length > 1 ? `Submit (${legs.length})` : 'Submit'}
-                  </Text>
+                  <Text style={styles.primaryButtonText}>Submit</Text>
                 )}
               </Pressable>
             </View>
