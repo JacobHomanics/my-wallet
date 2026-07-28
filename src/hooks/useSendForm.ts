@@ -42,6 +42,7 @@ export type SendFormState = {
   setAmount: (value: string) => void;
   setAllocationAmount: (tokenId: string, value: string) => void;
   removeAllocation: (tokenId: string) => void;
+  addAllocation: (tokenId: string) => void;
 };
 
 function sanitizeAmountInput(value: string): string {
@@ -288,6 +289,38 @@ export function useSendForm(
     [manualAllocations, strategyPlan.allocations],
   );
 
+  const addAllocation = useCallback(
+    (tokenId: string) => {
+      const token = tokens.find((item) => item.id === tokenId);
+      if (!token) {
+        return;
+      }
+
+      const base =
+        manualAllocations ??
+        strategyPlan.allocations.map((leg) => ({ ...leg }));
+      if (base.some((leg) => leg.token.id === tokenId)) {
+        return;
+      }
+
+      const next: PaymentAllocation[] = [
+        ...base,
+        {
+          token,
+          amountRaw: 0n,
+          amountFormatted: '',
+          usd: 0,
+        },
+      ];
+      setManualAllocations(next);
+      setAllocationInputs((current) => ({
+        ...current,
+        [tokenId]: '',
+      }));
+    },
+    [manualAllocations, strategyPlan.allocations, tokens],
+  );
+
   const resolvedAllocationInputs = useMemo(() => {
     const resolved: Record<string, string> = { ...allocationInputs };
     for (const leg of allocations) {
@@ -321,6 +354,7 @@ export function useSendForm(
     setAmount,
     setAllocationAmount,
     removeAllocation,
+    addAllocation,
   };
 }
 

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton } from '@/components/BackButton';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TokenIcon } from '@/components/TokenIcon';
+import { TokenPickerModal } from '@/components/TokenPickerModal';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendForm } from '@/hooks/useSendForm';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
@@ -45,6 +46,7 @@ export function SendScreen() {
     closePicker: closeStrategyPicker,
     onSelectStrategy,
   } = useStrategyPicker();
+  const [tokenPickerOpen, setTokenPickerOpen] = useState(false);
 
   const form = useSendForm(
     tokens,
@@ -68,6 +70,7 @@ export function SendScreen() {
     setAmount,
     setAllocationAmount,
     removeAllocation,
+    addAllocation,
   } = form;
 
   const totalLabel = formatUsdValue(totalUsd) ?? '$0.00';
@@ -124,6 +127,20 @@ export function SendScreen() {
   const goHome = useCallback(() => {
     navigation.navigate('index');
   }, [navigation]);
+
+  const onAddToken = useCallback(
+    (tokenId: string) => {
+      addAllocation(tokenId);
+      setTokenPickerOpen(false);
+    },
+    [addAllocation],
+  );
+
+  const allocatedTokenIds = allocations.map((leg) => leg.token.id);
+  const canAddToken = tokens.some(
+    (token) =>
+      token.rawBalance > 0n && !allocatedTokenIds.includes(token.id),
+  );
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -348,7 +365,7 @@ export function SendScreen() {
                   <Text style={styles.advancedLabel}>Tokens</Text>
                   {allocations.length === 0 ? (
                     <Text style={styles.allocationEmpty}>
-                      Enter an amount to see which tokens will be used.
+                      Enter an amount or add a token to get started.
                     </Text>
                   ) : (
                     allocations.map((leg) => {
@@ -362,68 +379,97 @@ export function SendScreen() {
                           key={leg.token.id}
                           style={styles.allocationRow}
                         >
-                          <TokenIcon
-                            logoUrl={leg.token.logoUrl}
-                            network={leg.token.network}
-                            size={32}
-                            symbol={leg.token.symbol}
-                          />
-                          <View style={styles.allocationText}>
-                            <Text
-                              style={styles.allocationSymbol}
-                              numberOfLines={1}
-                            >
-                              {leg.token.symbol}
-                            </Text>
-                            <Text
-                              style={styles.allocationMeta}
-                              numberOfLines={1}
-                            >
-                              {leg.token.networkLabel}
-                            </Text>
-                          </View>
-                          <TextInput
-                            accessibilityLabel={`${leg.token.symbol} amount`}
-                            keyboardType="decimal-pad"
-                            onChangeText={(value) => {
-                              setAllocationAmount(leg.token.id, value);
-                            }}
-                            placeholder="0"
-                            placeholderTextColor="#94a3b8"
-                            style={[
-                              styles.allocationInput,
-                              exceeds ? styles.allocationInputError : null,
-                            ]}
-                            value={inputValue}
-                          />
-                          <Text
-                            style={styles.allocationUsd}
-                            numberOfLines={1}
-                          >
-                            {formatUsdValue(leg.usd) ?? '—'}
-                          </Text>
-                          <Pressable
-                            accessibilityLabel={`Remove ${leg.token.symbol}`}
-                            accessibilityRole="button"
-                            hitSlop={8}
-                            onPress={() => {
-                              removeAllocation(leg.token.id);
-                            }}
-                            style={({ pressed }) => [
-                              styles.allocationRemove,
-                              pressed && styles.allocationRemovePressed,
-                            ]}
-                          >
-                            <Ionicons
-                              name="trash-outline"
-                              size={18}
-                              color="#b91c1c"
+                          <View style={styles.allocationHeader}>
+                            <TokenIcon
+                              logoUrl={leg.token.logoUrl}
+                              network={leg.token.network}
+                              size={32}
+                              symbol={leg.token.symbol}
                             />
-                          </Pressable>
+                            <View style={styles.allocationText}>
+                              <View style={styles.allocationTitleRow}>
+                                <Text
+                                  style={styles.allocationSymbol}
+                                  numberOfLines={1}
+                                >
+                                  {leg.token.symbol}
+                                </Text>
+                                <Text
+                                  style={styles.allocationBalance}
+                                  numberOfLines={1}
+                                >
+                                  Balance: {leg.token.balanceFormatted}
+                                </Text>
+                              </View>
+                              <Text
+                                style={styles.allocationMeta}
+                                numberOfLines={1}
+                              >
+                                {leg.token.networkLabel}
+                              </Text>
+                            </View>
+                          </View>
+                          <View style={styles.allocationControls}>
+                            <TextInput
+                              accessibilityLabel={`${leg.token.symbol} amount`}
+                              keyboardType="decimal-pad"
+                              onChangeText={(value) => {
+                                setAllocationAmount(leg.token.id, value);
+                              }}
+                              placeholder="0"
+                              placeholderTextColor="#94a3b8"
+                              style={[
+                                styles.allocationInput,
+                                exceeds ? styles.allocationInputError : null,
+                              ]}
+                              value={inputValue}
+                            />
+                            <Text
+                              style={styles.allocationUsd}
+                              numberOfLines={1}
+                            >
+                              {formatUsdValue(leg.usd) ?? '—'}
+                            </Text>
+                            <Pressable
+                              accessibilityLabel={`Remove ${leg.token.symbol}`}
+                              accessibilityRole="button"
+                              hitSlop={8}
+                              onPress={() => {
+                                removeAllocation(leg.token.id);
+                              }}
+                              style={({ pressed }) => [
+                                styles.allocationRemove,
+                                pressed && styles.allocationRemovePressed,
+                              ]}
+                            >
+                              <Ionicons
+                                name="trash-outline"
+                                size={18}
+                                color="#b91c1c"
+                              />
+                            </Pressable>
+                          </View>
                         </View>
                       );
                     })
                   )}
+
+                  {canAddToken ? (
+                    <Pressable
+                      accessibilityLabel="Add token"
+                      accessibilityRole="button"
+                      onPress={() => {
+                        setTokenPickerOpen(true);
+                      }}
+                      style={({ pressed }) => [
+                        styles.addTokenButton,
+                        pressed && styles.addTokenButtonPressed,
+                      ]}
+                    >
+                      <Ionicons name="add" size={18} color="#0f172a" />
+                      <Text style={styles.addTokenButtonText}>Add token</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               ) : null}
 
@@ -450,6 +496,16 @@ export function SendScreen() {
         selectedStrategyId={selectedStrategyId}
         strategies={strategies}
         visible={strategyPickerOpen}
+      />
+
+      <TokenPickerModal
+        excludeTokenIds={allocatedTokenIds}
+        onClose={() => {
+          setTokenPickerOpen(false);
+        }}
+        onSelect={onAddToken}
+        tokens={tokens}
+        visible={tokenPickerOpen}
       />
     </View>
   );
@@ -645,18 +701,26 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   allocationRow: {
+    paddingVertical: 10,
+    gap: 8,
+  },
+  allocationHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    gap: 10,
   },
   allocationText: {
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: 0,
-    marginLeft: 10,
-    marginRight: 8,
+    flex: 1,
+    minWidth: 0,
+  },
+  allocationTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+    minWidth: 0,
   },
   allocationSymbol: {
+    flexShrink: 1,
     fontSize: 15,
     fontWeight: '600',
     color: '#0f172a',
@@ -666,15 +730,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#94a3b8',
   },
+  allocationBalance: {
+    flexShrink: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0f172a',
+    fontVariant: ['tabular-nums'],
+  },
+  allocationControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   allocationInput: {
-    width: 88,
-    flexGrow: 0,
-    flexShrink: 0,
+    flex: 1,
+    minWidth: 0,
+    height: 40,
     borderWidth: 1,
     borderColor: '#cbd5e1',
     borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 0,
     fontSize: 15,
     fontWeight: '600',
     color: '#0f172a',
@@ -686,10 +762,7 @@ const styles = StyleSheet.create({
     borderColor: '#fca5a5',
   },
   allocationUsd: {
-    width: 58,
-    flexGrow: 0,
-    flexShrink: 0,
-    marginLeft: 8,
+    width: 64,
     textAlign: 'right',
     fontSize: 13,
     fontWeight: '600',
@@ -698,15 +771,33 @@ const styles = StyleSheet.create({
   },
   allocationRemove: {
     width: 32,
-    height: 32,
-    marginLeft: 4,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    flexGrow: 0,
-    flexShrink: 0,
   },
   allocationRemovePressed: {
     opacity: 0.6,
+  },
+  addTokenButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderStyle: 'dashed',
+    borderRadius: 10,
+    backgroundColor: '#f8fafc',
+  },
+  addTokenButtonPressed: {
+    opacity: 0.7,
+  },
+  addTokenButtonText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0f172a',
   },
   continueButton: {
     marginTop: 32,
