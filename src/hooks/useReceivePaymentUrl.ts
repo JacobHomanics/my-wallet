@@ -10,21 +10,24 @@ export type ReceivePaymentUrlResult = {
   solanaAddress: string | null;
 };
 
-/** Shareable confirm-send deep link that prefills this user's wallet addresses. */
-export function useReceivePaymentUrl(): ReceivePaymentUrlResult {
+/** Shareable confirm-send deep link with amount + this user's wallet addresses. */
+export function useReceivePaymentUrl(
+  usdAmount: string,
+): ReceivePaymentUrlResult {
   const { ready, ethereumAddress, solanaAddress } = useTokenBalances();
 
   const url = useMemo(() => {
-    if (!ready || (!ethereumAddress && !solanaAddress)) {
+    if (!ready || (!ethereumAddress && !solanaAddress) || !usdAmount.trim()) {
       return null;
     }
 
     return createShareableAppURL('send/confirm', {
+      usdAmount: usdAmount.trim(),
       ethereumRecipient: ethereumAddress ?? undefined,
       solanaRecipient: solanaAddress ?? undefined,
       legs: '[]',
     });
-  }, [ethereumAddress, ready, solanaAddress]);
+  }, [ethereumAddress, ready, solanaAddress, usdAmount]);
 
   return {
     ready,

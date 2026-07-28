@@ -48,6 +48,7 @@ export function MainTabs() {
             !isDesktopWeb &&
             (focusedRoute === 'tokenDetails' ||
               focusedRoute === 'receive' ||
+              focusedRoute === 'receiveQr' ||
               focusedRoute === 'send' ||
               focusedRoute === 'confirmSend' ||
               focusedRoute === 'sent');

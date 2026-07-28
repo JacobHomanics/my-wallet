@@ -33,6 +33,10 @@ export function HomeStack() {
         component={homeStackScreens.tokenDetails}
       />
       <WebStack.Screen name="receive" component={homeStackScreens.receive} />
+      <WebStack.Screen
+        name="receiveQr"
+        component={homeStackScreens.receiveQr}
+      />
       <WebStack.Screen name="send" component={homeStackScreens.send} />
       <WebStack.Screen
         name="confirmSend"

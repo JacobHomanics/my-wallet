@@ -1,22 +1,23 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useCallback } from 'react';
 import {
-  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
-import QRCodeStyled from 'react-native-qrcode-styled';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
-import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
+import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
-import { useReceivePaymentUrl } from '@/hooks/useReceivePaymentUrl';
-import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
+import { usePopToHome } from '@/hooks/usePopToHome';
+import { useReceiveAmount } from '@/hooks/useReceiveAmount';
 import type { HomeStackParamList } from '@/navigation/types';
 
 export function ReceiveScreen() {
@@ -24,156 +25,95 @@ export function ReceiveScreen() {
   const isDesktopWeb = useIsDesktopWeb();
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const { ready, url, ethereumAddress, solanaAddress } = useReceivePaymentUrl();
-  const { copy, isCopied } = useCopyToClipboard();
+  const goHome = usePopToHome();
+  const { currencySymbol } = useFiatDisplay();
+  const { amount, amountValid, canContinue, setAmount } = useReceiveAmount();
+
+  const amountError =
+    amount.trim() && !amountValid ? 'Enter a valid amount' : null;
+
+  const onContinue = useCallback(() => {
+    if (!canContinue) {
+      return;
+    }
+    navigation.navigate('receiveQr', { usdAmount: amount.trim() });
+  }, [amount, canContinue, navigation]);
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-      <View style={styles.content}>
-        <View style={styles.topBar}>
-          {isDesktopWeb ? (
-            <Pressable
-              accessibilityLabel="Back to home"
-              accessibilityRole="button"
-              hitSlop={8}
-              onPress={() => {
-                navigation.navigate('index');
-              }}
-              style={({ pressed }) => [
-                styles.webBack,
-                pressed && styles.webBackPressed,
-              ]}
-            >
-              <Text style={styles.webBackText}>Back</Text>
-            </Pressable>
-          ) : (
-            <BackButton accessibilityLabel="Back to home" />
-          )}
-          <Text style={styles.topBarTitle}>Receive</Text>
-          <View style={styles.topBarSpacer} />
-        </View>
-
-        <ScrollView
-          contentContainerStyle={styles.body}
-          style={styles.flex}
-        >
-          {!ready || !url ? (
-            <ActivityIndicator color="#0f172a" style={styles.loader} />
-          ) : (
-            <>
-              <Text style={styles.subtitle}>
-                Scan to pay — opens Confirm with your addresses filled in.
-              </Text>
-
-              <View style={styles.qrWrap}>
-                <QRCodeStyled
-                  data={url}
-                  padding={16}
-                  size={220}
-                  color="#0f172a"
-                  style={styles.qr}
-                />
-              </View>
-
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.flex}
+      >
+        <View style={styles.shell}>
+          <View style={styles.topBar}>
+            {isDesktopWeb ? (
               <Pressable
-                accessibilityLabel={
-                  isCopied('url') ? 'Link copied' : 'Copy receive link'
-                }
+                accessibilityLabel="Back to home"
                 accessibilityRole="button"
-                onPress={() => {
-                  void copy(url, 'url');
-                }}
+                hitSlop={8}
+                onPress={goHome}
                 style={({ pressed }) => [
-                  styles.copyLinkButton,
-                  pressed && styles.copyLinkButtonPressed,
+                  styles.webBack,
+                  pressed && styles.webBackPressed,
                 ]}
               >
-                <Ionicons
-                  name={isCopied('url') ? 'checkmark' : 'link-outline'}
-                  size={18}
-                  color={isCopied('url') ? '#15803d' : '#0f172a'}
-                />
-                <Text
-                  style={[
-                    styles.copyLinkText,
-                    isCopied('url') && styles.copyLinkTextCopied,
-                  ]}
-                >
-                  {isCopied('url') ? 'Link copied' : 'Copy link'}
-                </Text>
+                <Text style={styles.webBackText}>Back</Text>
               </Pressable>
+            ) : (
+              <BackButton
+                accessibilityLabel="Back to home"
+                onPress={goHome}
+              />
+            )}
+            <Text style={styles.topBarTitle}>Receive</Text>
+            <View style={styles.topBarSpacer} />
+          </View>
 
-              {ethereumAddress ? (
-                <View style={styles.addressBlock}>
-                  <View style={styles.addressHeader}>
-                    <Text style={styles.addressLabel}>EVM</Text>
-                    <Pressable
-                      accessibilityLabel={
-                        isCopied('evm')
-                          ? 'EVM address copied'
-                          : 'Copy EVM address'
-                      }
-                      accessibilityRole="button"
-                      hitSlop={8}
-                      onPress={() => {
-                        void copy(ethereumAddress, 'evm');
-                      }}
-                      style={({ pressed }) => [
-                        styles.copyButton,
-                        pressed && styles.copyButtonPressed,
-                      ]}
-                    >
-                      <Ionicons
-                        name={isCopied('evm') ? 'checkmark' : 'copy-outline'}
-                        size={18}
-                        color={isCopied('evm') ? '#15803d' : '#64748b'}
-                      />
-                    </Pressable>
-                  </View>
-                  <Text style={styles.addressValue} selectable>
-                    {formatWalletAddress(ethereumAddress)}
-                  </Text>
-                </View>
-              ) : null}
+          <ScrollView
+            contentContainerStyle={[
+              styles.form,
+              { paddingBottom: Math.max(insets.bottom, 16) + 40 },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            style={styles.flex}
+          >
+            <Text style={styles.label}>Amount</Text>
+            <View
+              style={[
+                styles.fieldRow,
+                amountError ? styles.fieldRowError : null,
+              ]}
+            >
+              <Text style={styles.amountPrefix}>{currencySymbol}</Text>
+              <TextInput
+                keyboardType="decimal-pad"
+                onChangeText={setAmount}
+                placeholder="0"
+                placeholderTextColor="#94a3b8"
+                style={styles.fieldInput}
+                value={amount}
+              />
+            </View>
+            {amountError ? (
+              <Text style={styles.fieldError}>{amountError}</Text>
+            ) : null}
 
-              {solanaAddress ? (
-                <View style={styles.addressBlock}>
-                  <View style={styles.addressHeader}>
-                    <Text style={styles.addressLabel}>Solana</Text>
-                    <Pressable
-                      accessibilityLabel={
-                        isCopied('solana')
-                          ? 'Solana address copied'
-                          : 'Copy Solana address'
-                      }
-                      accessibilityRole="button"
-                      hitSlop={8}
-                      onPress={() => {
-                        void copy(solanaAddress, 'solana');
-                      }}
-                      style={({ pressed }) => [
-                        styles.copyButton,
-                        pressed && styles.copyButtonPressed,
-                      ]}
-                    >
-                      <Ionicons
-                        name={
-                          isCopied('solana') ? 'checkmark' : 'copy-outline'
-                        }
-                        size={18}
-                        color={isCopied('solana') ? '#15803d' : '#64748b'}
-                      />
-                    </Pressable>
-                  </View>
-                  <Text style={styles.addressValue} selectable>
-                    {formatWalletAddress(solanaAddress)}
-                  </Text>
-                </View>
-              ) : null}
-            </>
-          )}
-        </ScrollView>
-      </View>
+            <Pressable
+              accessibilityRole="button"
+              disabled={!canContinue}
+              onPress={onContinue}
+              style={({ pressed }) => [
+                styles.continueButton,
+                !canContinue && styles.continueButtonDisabled,
+                pressed && canContinue && styles.continueButtonPressed,
+              ]}
+            >
+              <Text style={styles.continueButtonText}>Continue</Text>
+            </Pressable>
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -183,14 +123,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
-  content: {
+  flex: {
+    flex: 1,
+  },
+  shell: {
     flex: 1,
     width: '100%',
     maxWidth: 560,
     alignSelf: 'center',
-  },
-  flex: {
-    flex: 1,
   },
   topBar: {
     flexDirection: 'row',
@@ -220,78 +160,63 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#0f172a',
   },
-  body: {
-    alignItems: 'center',
+  form: {
     paddingHorizontal: 24,
     paddingTop: 24,
-    paddingBottom: 48,
   },
-  loader: {
-    marginTop: 48,
-  },
-  subtitle: {
-    fontSize: 15,
-    lineHeight: 22,
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#64748b',
-    textAlign: 'center',
-    marginBottom: 28,
+    marginBottom: 8,
   },
-  qrWrap: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 8,
-  },
-  qr: {
-    backgroundColor: '#ffffff',
-  },
-  copyLinkButton: {
-    marginTop: 20,
+  fieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: '#e2e8f0',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 14,
+    minHeight: 52,
   },
-  copyLinkButtonPressed: {
+  fieldRowError: {
+    borderColor: '#f87171',
+  },
+  amountPrefix: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#0f172a',
+    marginRight: 4,
+  },
+  fieldInput: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#0f172a',
+    paddingVertical: 12,
+  },
+  fieldError: {
+    marginTop: 8,
+    fontSize: 13,
+    color: '#b91c1c',
+  },
+  continueButton: {
+    marginTop: 28,
+    backgroundColor: '#0f172a',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  continueButtonDisabled: {
+    opacity: 0.4,
+  },
+  continueButtonPressed: {
     opacity: 0.85,
   },
-  copyLinkText: {
-    fontSize: 15,
+  continueButtonText: {
+    color: '#f8fafc',
+    fontSize: 16,
     fontWeight: '600',
-    color: '#0f172a',
-  },
-  copyLinkTextCopied: {
-    color: '#15803d',
-  },
-  addressBlock: {
-    width: '100%',
-    marginTop: 24,
-    gap: 6,
-  },
-  addressHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  addressLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  copyButton: {
-    padding: 4,
-  },
-  copyButtonPressed: {
-    opacity: 0.6,
-  },
-  addressValue: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#0f172a',
-    fontVariant: ['tabular-nums'],
   },
 });

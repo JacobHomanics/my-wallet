@@ -73,6 +73,7 @@ type NavState = PartialState<NavigationState>;
 const HOME_STACK_HISTORY: Partial<Record<keyof HomeStackParamList, string[]>> =
   {
     receive: ['index'],
+    receiveQr: ['index', 'receive'],
     send: ['index'],
     confirmSend: ['index', 'send'],
   };
@@ -193,6 +194,12 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               // stealing splash's empty-path alias.
               tokenDetails: '/tokens',
               receive: '/receive',
+              receiveQr: {
+                path: '/receive/qr',
+                parse: {
+                  usdAmount: (usdAmount: string) => usdAmount,
+                },
+              },
               send: {
                 path: '/send',
                 parse: {

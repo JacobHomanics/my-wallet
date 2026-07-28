@@ -22,6 +22,10 @@ export type HomeStackParamList = {
   index: undefined;
   tokenDetails: undefined;
   receive: undefined;
+  receiveQr: {
+    /** Display-currency amount string entered on the receive screen. */
+    usdAmount: string;
+  };
   send: { tokenId?: string } | undefined;
   confirmSend: {
     /** USD amount string the user entered. Optional for receive deep links. */

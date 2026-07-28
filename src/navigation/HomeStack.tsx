@@ -24,6 +24,10 @@ export function HomeStack() {
         component={homeStackScreens.tokenDetails}
       />
       <NativeStack.Screen name="receive" component={homeStackScreens.receive} />
+      <NativeStack.Screen
+        name="receiveQr"
+        component={homeStackScreens.receiveQr}
+      />
       <NativeStack.Screen name="send" component={homeStackScreens.send} />
       <NativeStack.Screen
         name="confirmSend"
