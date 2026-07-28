@@ -20,6 +20,7 @@ import { BackButton } from '@/components/BackButton';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TokenIcon } from '@/components/TokenIcon';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
+import { useAllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendForm } from '@/hooks/useSendForm';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
@@ -37,6 +38,8 @@ export function SendScreen() {
   const { tokens, totalUsd, loading, ready, ethereumAddress, solanaAddress } =
     useTokenBalances();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const { allocationInputUnit, setAllocationInputUnit } =
+    useAllocationInputUnit();
   const {
     strategies,
     selectedStrategy,
@@ -52,6 +55,7 @@ export function SendScreen() {
     tokens,
     selectedStrategyId,
     route.params?.tokenId,
+    allocationInputUnit,
   );
   const {
     amount,
@@ -362,7 +366,65 @@ export function SendScreen() {
 
                   <View style={styles.advancedDivider} />
 
-                  <Text style={styles.advancedLabel}>Tokens</Text>
+                  <View style={styles.tokensHeader}>
+                    <Text style={[styles.advancedLabel, styles.tokensHeaderLabel]}>
+                      Tokens
+                    </Text>
+                    <View style={styles.unitToggle}>
+                      <Pressable
+                        accessibilityLabel="Edit amounts in tokens"
+                        accessibilityRole="button"
+                        accessibilityState={{
+                          selected: allocationInputUnit === 'token',
+                        }}
+                        onPress={() => {
+                          setAllocationInputUnit('token');
+                        }}
+                        style={({ pressed }) => [
+                          styles.unitToggleOption,
+                          allocationInputUnit === 'token' &&
+                            styles.unitToggleOptionActive,
+                          pressed && styles.unitToggleOptionPressed,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.unitToggleText,
+                            allocationInputUnit === 'token' &&
+                              styles.unitToggleTextActive,
+                          ]}
+                        >
+                          Token
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityLabel="Edit amounts in USD"
+                        accessibilityRole="button"
+                        accessibilityState={{
+                          selected: allocationInputUnit === 'usd',
+                        }}
+                        onPress={() => {
+                          setAllocationInputUnit('usd');
+                        }}
+                        style={({ pressed }) => [
+                          styles.unitToggleOption,
+                          allocationInputUnit === 'usd' &&
+                            styles.unitToggleOptionActive,
+                          pressed && styles.unitToggleOptionPressed,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.unitToggleText,
+                            allocationInputUnit === 'usd' &&
+                              styles.unitToggleTextActive,
+                          ]}
+                        >
+                          USD
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
                   {allocations.length === 0 ? (
                     <Text style={styles.allocationEmpty}>
                       Enter an amount or add a token to get started.
@@ -371,9 +433,15 @@ export function SendScreen() {
                     allocations.map((leg) => {
                       const inputValue =
                         allocationInputs[leg.token.id] ??
-                        leg.amountFormatted;
+                        (allocationInputUnit === 'usd'
+                          ? String(leg.usd)
+                          : leg.amountFormatted);
                       const exceeds =
                         leg.amountRaw > leg.token.rawBalance;
+                      const secondaryValue =
+                        allocationInputUnit === 'usd'
+                          ? leg.amountFormatted || '—'
+                          : (formatUsdValue(leg.usd) ?? '—');
                       return (
                         <View
                           key={leg.token.id}
@@ -398,7 +466,11 @@ export function SendScreen() {
                                   style={styles.allocationBalance}
                                   numberOfLines={1}
                                 >
-                                  Balance: {leg.token.balanceFormatted}
+                                  Balance:{' '}
+                                  {allocationInputUnit === 'usd'
+                                    ? (formatUsdValue(leg.token.usdValue) ??
+                                      '—')
+                                    : leg.token.balanceFormatted}
                                 </Text>
                               </View>
                               <Text
@@ -410,8 +482,17 @@ export function SendScreen() {
                             </View>
                           </View>
                           <View style={styles.allocationControls}>
+                            {allocationInputUnit === 'usd' ? (
+                              <Text style={styles.allocationInputPrefix}>
+                                $
+                              </Text>
+                            ) : null}
                             <TextInput
-                              accessibilityLabel={`${leg.token.symbol} amount`}
+                              accessibilityLabel={
+                                allocationInputUnit === 'usd'
+                                  ? `${leg.token.symbol} USD amount`
+                                  : `${leg.token.symbol} amount`
+                              }
                               keyboardType="decimal-pad"
                               onChangeText={(value) => {
                                 setAllocationAmount(leg.token.id, value);
@@ -425,10 +506,10 @@ export function SendScreen() {
                               value={inputValue}
                             />
                             <Text
-                              style={styles.allocationUsd}
+                              style={styles.allocationSecondary}
                               numberOfLines={1}
                             >
-                              {formatUsdValue(leg.usd) ?? '—'}
+                              {secondaryValue}
                             </Text>
                             <Pressable
                               accessibilityLabel={`Remove ${leg.token.symbol}`}
@@ -669,6 +750,44 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
+  tokensHeader: {
+    marginTop: 12,
+    marginBottom: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  tokensHeaderLabel: {
+    marginTop: 0,
+    marginBottom: 0,
+  },
+  unitToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f1f5f9',
+    borderRadius: 8,
+    padding: 2,
+  },
+  unitToggleOption: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  unitToggleOptionActive: {
+    backgroundColor: '#fff',
+  },
+  unitToggleOptionPressed: {
+    opacity: 0.7,
+  },
+  unitToggleText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  unitToggleTextActive: {
+    color: '#0f172a',
+  },
   advancedDivider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: '#e2e8f0',
@@ -742,6 +861,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  allocationInputPrefix: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0f172a',
+  },
   allocationInput: {
     flex: 1,
     minWidth: 0,
@@ -761,8 +885,9 @@ const styles = StyleSheet.create({
   allocationInputError: {
     borderColor: '#fca5a5',
   },
-  allocationUsd: {
-    width: 64,
+  allocationSecondary: {
+    minWidth: 64,
+    maxWidth: 96,
     textAlign: 'right',
     fontSize: 13,
     fontWeight: '600',

@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import {
   estimateTokenAmountUsd,
+  formatRawTokenBalance,
   formatUsdAmountInput,
   parseTokenAmountToRaw,
+  parseUsdAmountToTokenRaw,
   type OwnedToken,
 } from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkChain } from '@/lib/alchemy/networks';
@@ -89,6 +92,7 @@ export function useSendForm(
   tokens: OwnedToken[],
   strategyId: PaymentStrategyId,
   preferredTokenId?: string | null,
+  allocationInputUnit: AllocationInputUnit = 'token',
 ): SendFormState {
   const [ethereumRecipient, setEthereumRecipientState] = useState('');
   const [solanaRecipient, setSolanaRecipientState] = useState('');
@@ -126,6 +130,11 @@ export function useSendForm(
     setManualAllocations(null);
     setAllocationInputs({});
   }, [strategyId, preferredTokenId]);
+
+  // Switching token ↔ USD input remaps display from resolved legs.
+  useEffect(() => {
+    setAllocationInputs({});
+  }, [allocationInputUnit]);
 
   // Keep manual legs pointed at fresh token balances when prices refresh.
   useEffect(() => {
@@ -252,24 +261,43 @@ export function useSendForm(
         return;
       }
 
-      const amountRaw = parseTokenAmountToRaw(sanitized, token.decimals);
+      const amountRaw =
+        allocationInputUnit === 'usd'
+          ? parseUsdAmountToTokenRaw(sanitized, token)
+          : parseTokenAmountToRaw(sanitized, token.decimals);
       if (amountRaw == null) {
         return;
       }
 
-      const usd = estimateTokenAmountUsd(token, amountRaw) ?? 0;
+      const amountFormatted =
+        allocationInputUnit === 'usd'
+          ? formatRawTokenBalance(amountRaw, token.decimals)
+          : sanitized;
+      const estimatedUsd = estimateTokenAmountUsd(token, amountRaw);
+      const parsedUsd = Number(sanitized);
+      const usd =
+        estimatedUsd ??
+        (allocationInputUnit === 'usd' && Number.isFinite(parsedUsd)
+          ? parsedUsd
+          : 0);
+
       const next = [...base];
       next[index] = {
         token,
         amountRaw,
-        amountFormatted: sanitized,
+        amountFormatted,
         usd,
       };
       setManualAllocations(next);
       const totalUsd = next.reduce((sum, leg) => sum + leg.usd, 0);
       setAmountState(totalUsd > 0 ? formatUsdAmountInput(totalUsd) : '');
     },
-    [manualAllocations, strategyPlan.allocations, tokens],
+    [
+      allocationInputUnit,
+      manualAllocations,
+      strategyPlan.allocations,
+      tokens,
+    ],
   );
 
   const removeAllocation = useCallback(
@@ -325,11 +353,14 @@ export function useSendForm(
     const resolved: Record<string, string> = { ...allocationInputs };
     for (const leg of allocations) {
       if (resolved[leg.token.id] == null) {
-        resolved[leg.token.id] = leg.amountFormatted;
+        resolved[leg.token.id] =
+          allocationInputUnit === 'usd'
+            ? formatUsdAmountInput(leg.usd)
+            : leg.amountFormatted;
       }
     }
     return resolved;
-  }, [allocationInputs, allocations]);
+  }, [allocationInputUnit, allocationInputs, allocations]);
 
   return {
     amount,
