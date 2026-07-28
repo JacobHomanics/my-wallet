@@ -18,7 +18,6 @@ import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useReceivePaymentUrl } from '@/hooks/useReceivePaymentUrl';
-import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import type { HomeStackParamList } from '@/navigation/types';
 
 export function ReceiveQrScreen() {
@@ -28,8 +27,7 @@ export function ReceiveQrScreen() {
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'receiveQr'>>();
   const usdAmount = route.params.usdAmount;
-  const { ready, url, ethereumAddress, solanaAddress } =
-    useReceivePaymentUrl(usdAmount);
+  const { ready, url } = useReceivePaymentUrl(usdAmount);
   const { copy, isCopied } = useCopyToClipboard();
   const { formatFromUsd, parseDisplayInputToUsd, currencySymbol } =
     useFiatDisplay();
@@ -72,9 +70,6 @@ export function ReceiveQrScreen() {
               <Text style={styles.amount} accessibilityRole="header">
                 {amountLabel}
               </Text>
-              <Text style={styles.subtitle}>
-                Scan to open Confirm with this amount and your addresses.
-              </Text>
 
               <View style={styles.qrWrap}>
                 <QRCodeStyled
@@ -113,74 +108,6 @@ export function ReceiveQrScreen() {
                   {isCopied('url') ? 'Link copied' : 'Copy link'}
                 </Text>
               </Pressable>
-
-              {ethereumAddress ? (
-                <View style={styles.addressBlock}>
-                  <View style={styles.addressHeader}>
-                    <Text style={styles.addressLabel}>EVM</Text>
-                    <Pressable
-                      accessibilityLabel={
-                        isCopied('evm')
-                          ? 'EVM address copied'
-                          : 'Copy EVM address'
-                      }
-                      accessibilityRole="button"
-                      hitSlop={8}
-                      onPress={() => {
-                        void copy(ethereumAddress, 'evm');
-                      }}
-                      style={({ pressed }) => [
-                        styles.copyButton,
-                        pressed && styles.copyButtonPressed,
-                      ]}
-                    >
-                      <Ionicons
-                        name={isCopied('evm') ? 'checkmark' : 'copy-outline'}
-                        size={18}
-                        color={isCopied('evm') ? '#15803d' : '#64748b'}
-                      />
-                    </Pressable>
-                  </View>
-                  <Text style={styles.addressValue} selectable>
-                    {formatWalletAddress(ethereumAddress)}
-                  </Text>
-                </View>
-              ) : null}
-
-              {solanaAddress ? (
-                <View style={styles.addressBlock}>
-                  <View style={styles.addressHeader}>
-                    <Text style={styles.addressLabel}>Solana</Text>
-                    <Pressable
-                      accessibilityLabel={
-                        isCopied('solana')
-                          ? 'Solana address copied'
-                          : 'Copy Solana address'
-                      }
-                      accessibilityRole="button"
-                      hitSlop={8}
-                      onPress={() => {
-                        void copy(solanaAddress, 'solana');
-                      }}
-                      style={({ pressed }) => [
-                        styles.copyButton,
-                        pressed && styles.copyButtonPressed,
-                      ]}
-                    >
-                      <Ionicons
-                        name={
-                          isCopied('solana') ? 'checkmark' : 'copy-outline'
-                        }
-                        size={18}
-                        color={isCopied('solana') ? '#15803d' : '#64748b'}
-                      />
-                    </Pressable>
-                  </View>
-                  <Text style={styles.addressValue} selectable>
-                    {formatWalletAddress(solanaAddress)}
-                  </Text>
-                </View>
-              ) : null}
             </>
           )}
         </ScrollView>
@@ -247,13 +174,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
-  },
-  subtitle: {
-    marginTop: 12,
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#64748b',
-    textAlign: 'center',
     marginBottom: 28,
   },
   qrWrap: {
@@ -284,34 +204,5 @@ const styles = StyleSheet.create({
   },
   copyLinkTextCopied: {
     color: '#15803d',
-  },
-  addressBlock: {
-    width: '100%',
-    marginTop: 24,
-    gap: 6,
-  },
-  addressHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  addressLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  copyButton: {
-    padding: 4,
-  },
-  copyButtonPressed: {
-    opacity: 0.6,
-  },
-  addressValue: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#0f172a',
-    fontVariant: ['tabular-nums'],
   },
 });
