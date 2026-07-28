@@ -18,6 +18,7 @@ import { BackButton } from '@/components/BackButton';
 import { TokenIcon } from '@/components/TokenIcon';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { resetSendDraft } from '@/hooks/useSendDraft';
 import { useSendPayment } from '@/hooks/useSendPayment';
 import { useSendStatus } from '@/hooks/useSendStatus';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
@@ -157,6 +158,7 @@ export function ConfirmSendScreen() {
             };
           }),
         );
+        resetSendDraft();
         refresh();
         navigation.navigate('sent', {
           usdLabel:
@@ -205,6 +207,7 @@ export function ConfirmSendScreen() {
 
   const onConfirmExit = useCallback(() => {
     setCancelConfirmOpen(false);
+    resetSendDraft();
     navigation.navigate('send');
   }, [navigation]);
 

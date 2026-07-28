@@ -1,6 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
+import {
+  allocationsFromManualLegs,
+  getSendDraftSnapshot,
+  manualLegsFromAllocations,
+  updateSendDraft,
+} from '@/hooks/useSendDraft';
 import {
   estimateTokenAmountUsd,
   formatRawTokenBalance,
@@ -94,15 +100,22 @@ export function useSendForm(
   preferredTokenId?: string | null,
   allocationInputUnit: AllocationInputUnit = 'token',
 ): SendFormState {
-  const [ethereumRecipient, setEthereumRecipientState] = useState('');
-  const [solanaRecipient, setSolanaRecipientState] = useState('');
-  const [amount, setAmountState] = useState('');
+  const initialDraft = getSendDraftSnapshot();
+  const [ethereumRecipient, setEthereumRecipientState] = useState(
+    initialDraft.ethereumRecipient,
+  );
+  const [solanaRecipient, setSolanaRecipientState] = useState(
+    initialDraft.solanaRecipient,
+  );
+  const [amount, setAmountState] = useState(initialDraft.amount);
   const [manualAllocations, setManualAllocations] = useState<
     PaymentAllocation[] | null
-  >(null);
+  >(() => allocationsFromManualLegs(initialDraft.manualLegs, tokens));
   const [allocationInputs, setAllocationInputs] = useState<
     Record<string, string>
-  >({});
+  >(initialDraft.allocationInputs);
+  const strategyKeyRef = useRef<string | null>(null);
+  const allocationUnitRef = useRef<AllocationInputUnit | null>(null);
 
   const usdAmount = useMemo(() => parseUsdInput(amount), [amount]);
 
@@ -127,14 +140,61 @@ export function useSendForm(
 
   // Strategy / preferred-token changes discard manual leg edits.
   useEffect(() => {
+    const key = `${strategyId}:${preferredTokenId ?? ''}`;
+    if (strategyKeyRef.current === null) {
+      strategyKeyRef.current = key;
+      return;
+    }
+    if (strategyKeyRef.current === key) {
+      return;
+    }
+    strategyKeyRef.current = key;
     setManualAllocations(null);
     setAllocationInputs({});
   }, [strategyId, preferredTokenId]);
 
   // Switching token ↔ USD input remaps display from resolved legs.
   useEffect(() => {
+    if (allocationUnitRef.current === null) {
+      allocationUnitRef.current = allocationInputUnit;
+      return;
+    }
+    if (allocationUnitRef.current === allocationInputUnit) {
+      return;
+    }
+    allocationUnitRef.current = allocationInputUnit;
     setAllocationInputs({});
   }, [allocationInputUnit]);
+
+  // Restore manual legs once token balances are available after remount.
+  useEffect(() => {
+    if (manualAllocations != null || tokens.length === 0) {
+      return;
+    }
+    const hydrated = allocationsFromManualLegs(
+      getSendDraftSnapshot().manualLegs,
+      tokens,
+    );
+    if (hydrated != null) {
+      setManualAllocations(hydrated);
+    }
+  }, [manualAllocations, tokens]);
+
+  useEffect(() => {
+    updateSendDraft({
+      ethereumRecipient,
+      solanaRecipient,
+      amount,
+      manualLegs: manualLegsFromAllocations(manualAllocations),
+      allocationInputs,
+    });
+  }, [
+    allocationInputs,
+    amount,
+    ethereumRecipient,
+    manualAllocations,
+    solanaRecipient,
+  ]);
 
   // Keep manual legs pointed at fresh token balances when prices refresh.
   useEffect(() => {

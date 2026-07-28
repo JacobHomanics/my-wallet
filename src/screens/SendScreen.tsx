@@ -20,10 +20,9 @@ import { BackButton } from '@/components/BackButton';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TokenIcon } from '@/components/TokenIcon';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
-import { useAllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useSendDraftUi } from '@/hooks/useSendDraft';
 import { useSendForm } from '@/hooks/useSendForm';
-import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatUsdValue } from '@/lib/alchemy/fetchTokensByAddress';
@@ -37,9 +36,8 @@ export function SendScreen() {
   const route = useRoute<RouteProp<HomeStackParamList, 'send'>>();
   const { tokens, totalUsd, loading, ready, ethereumAddress, solanaAddress } =
     useTokenBalances();
-  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
-  const { allocationInputUnit, setAllocationInputUnit } =
-    useAllocationInputUnit();
+  const { showAdvanced, toggleAdvanced, allocationInputUnit, setAllocationInputUnit } =
+    useSendDraftUi();
   const {
     strategies,
     selectedStrategy,
