@@ -14,6 +14,7 @@ import {
 
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
+import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import type { HomeStackParamList } from '@/navigation/types';
 
@@ -30,7 +31,12 @@ export function HomeScreen() {
     refreshing,
     error,
     refresh,
+    poll,
   } = useTokenBalances();
+
+  usePollTokenBalances(poll, {
+    enabled: ready && Boolean(ethereumAddress || solanaAddress),
+  });
 
   const openFreshSend = useOpenFreshSend();
   const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();

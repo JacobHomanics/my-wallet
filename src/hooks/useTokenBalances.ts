@@ -24,6 +24,8 @@ export type TokenBalancesResult = {
   refreshing: boolean;
   error: string | null;
   refresh: () => void;
+  /** Silent background refetch — does not toggle the pull-to-refresh spinner. */
+  poll: () => void;
 };
 
 const CACHE_TTL_MS = 60_000;
@@ -228,7 +230,7 @@ export function useTokenBalances(): TokenBalancesResult {
         ? snapshot.tokens
         : freshCache
           ? freshCache.tokens
-          : isRefresh && snapshotForKey
+          : snapshotForKey
             ? snapshotForKey.tokens
             : [];
 
@@ -236,7 +238,6 @@ export function useTokenBalances(): TokenBalancesResult {
   }, [
     freshCache,
     hasAddress,
-    isRefresh,
     selectedChainPriorityId,
     snapshot,
     snapshotForKey,
@@ -251,7 +252,7 @@ export function useTokenBalances(): TokenBalancesResult {
         ? snapshot.error
         : freshCache
           ? freshCache.error
-          : isRefresh && snapshotForKey
+          : snapshotForKey
             ? snapshotForKey.error
             : null;
 
@@ -276,6 +277,18 @@ export function useTokenBalances(): TokenBalancesResult {
     setReloadKey(nextReloadKey);
   }, [key, reloadKey]);
 
+  const poll = useCallback(() => {
+    // Expire the shared cache so the next fetch isn't skipped, without
+    // marking this as a user-driven refresh (no spinner).
+    if (tokenBalancesCache?.key === key) {
+      tokenBalancesCache = {
+        ...tokenBalancesCache,
+        fetchedAt: 0,
+      };
+    }
+    setReloadKey((current) => current + 1);
+  }, [key]);
+
   return {
     ready: walletsReady,
     ethereumAddress,
@@ -286,5 +299,6 @@ export function useTokenBalances(): TokenBalancesResult {
     refreshing,
     error: visibleError,
     refresh,
+    poll,
   };
 }
