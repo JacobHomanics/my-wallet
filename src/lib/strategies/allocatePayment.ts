@@ -7,7 +7,8 @@ import { getNetworkChain } from '@/lib/alchemy/networks';
 import {
   compareChainFamilies,
   partitionTokensByChainPriority,
-} from '@/lib/config/chainPriority';
+  type ChainPriorityId,
+} from '@/lib/chainPriority';
 import { isGasToken } from '@/lib/strategies/gasTokens';
 import { isStablecoin } from '@/lib/strategies/stablecoins';
 import type { PaymentStrategyId } from '@/lib/strategies';
@@ -160,6 +161,7 @@ function allocateEvenSplit(
 function allocatePrioritizeStablecoins(
   tokens: OwnedToken[],
   usdAmount: number,
+  chainPriorityId: ChainPriorityId,
   preferredTokenId?: string | null,
 ): Omit<AllocatePaymentResult, 'chains'> {
   const priced = tokens.filter((token) => tokenUsd(token) > 0);
@@ -167,12 +169,22 @@ function allocatePrioritizeStablecoins(
   const gas = priced.filter((token) => isGasToken(token));
 
   if (nonGas.length > 0) {
-    const ordered = sortForStrategy(nonGas, 'prioritize-stablecoins', preferredTokenId);
+    const ordered = sortForStrategy(
+      nonGas,
+      'prioritize-stablecoins',
+      chainPriorityId,
+      preferredTokenId,
+    );
     const primary = allocateFromOrderedTokens(ordered, usdAmount);
     return allocateRemainderFromGas(gas, primary);
   }
 
-  const ordered = sortForStrategy(gas, 'prioritize-stablecoins', preferredTokenId);
+  const ordered = sortForStrategy(
+    gas,
+    'prioritize-stablecoins',
+    chainPriorityId,
+    preferredTokenId,
+  );
   return allocateFromOrderedTokens(ordered, usdAmount);
 }
 
@@ -188,13 +200,17 @@ function allocateWithChainPriority(
   ) => Omit<AllocatePaymentResult, 'chains'>,
   tokens: OwnedToken[],
   usdAmount: number,
+  chainPriorityId: ChainPriorityId,
   preferredTokenId?: string | null,
 ): Omit<AllocatePaymentResult, 'chains'> {
   if (preferredTokenId) {
     return allocate(tokens, usdAmount, preferredTokenId);
   }
 
-  const { preferred, fallback } = partitionTokensByChainPriority(tokens);
+  const { preferred, fallback } = partitionTokensByChainPriority(
+    tokens,
+    chainPriorityId,
+  );
   if (fallback.length === 0) {
     return allocate(preferred, usdAmount, preferredTokenId);
   }
@@ -235,6 +251,7 @@ function allocateRemainderFromGas(
 function allocatePrioritizeStablecoinsThenEvenSplit(
   tokens: OwnedToken[],
   usdAmount: number,
+  chainPriorityId: ChainPriorityId,
   preferredTokenId?: string | null,
 ): Omit<AllocatePaymentResult, 'chains'> {
   const priced = tokens.filter((token) => tokenUsd(token) > 0);
@@ -258,6 +275,7 @@ function allocatePrioritizeStablecoinsThenEvenSplit(
     const ordered = sortForStrategy(
       stables,
       'prioritize-stablecoins',
+      chainPriorityId,
       preferredTokenId,
     );
     result = allocateFromOrderedTokens(ordered, usdAmount);
@@ -282,6 +300,7 @@ function allocatePrioritizeStablecoinsThenEvenSplit(
 function sortForStrategy(
   tokens: OwnedToken[],
   strategyId: PaymentStrategyId,
+  chainPriorityId: ChainPriorityId,
   preferredTokenId?: string | null,
 ): OwnedToken[] {
   const ranked = [...tokens];
@@ -306,6 +325,7 @@ function sortForStrategy(
     const chainDelta = compareChainFamilies(
       getNetworkChain(a.network),
       getNetworkChain(b.network),
+      chainPriorityId,
     );
     if (chainDelta !== 0) {
       return chainDelta;
@@ -355,12 +375,13 @@ function allocateFromOrderedTokens(
 
 function chainsFromAllocations(
   allocations: PaymentAllocation[],
+  chainPriorityId: ChainPriorityId,
 ): ('ethereum' | 'solana')[] {
   const set = new Set<'ethereum' | 'solana'>();
   for (const leg of allocations) {
     set.add(getNetworkChain(leg.token.network));
   }
-  return [...set].sort(compareChainFamilies);
+  return [...set].sort((a, b) => compareChainFamilies(a, b, chainPriorityId));
 }
 
 /**
@@ -370,9 +391,11 @@ export function allocatePaymentUsd(options: {
   tokens: OwnedToken[];
   usdAmount: number;
   strategyId: PaymentStrategyId;
+  chainPriorityId: ChainPriorityId;
   preferredTokenId?: string | null;
 }): AllocatePaymentResult {
-  const { tokens, usdAmount, strategyId, preferredTokenId } = options;
+  const { tokens, usdAmount, strategyId, chainPriorityId, preferredTokenId } =
+    options;
 
   if (!(usdAmount > 0) || !Number.isFinite(usdAmount)) {
     return {
@@ -391,21 +414,36 @@ export function allocatePaymentUsd(options: {
           allocateEvenSplit,
           tokens,
           usdAmount,
+          chainPriorityId,
           preferredTokenId,
         );
       case 'prioritize-stablecoins-even-split':
         return allocateWithChainPriority(
-          allocatePrioritizeStablecoinsThenEvenSplit,
+          (chainTokens, amount, preferred) =>
+            allocatePrioritizeStablecoinsThenEvenSplit(
+              chainTokens,
+              amount,
+              chainPriorityId,
+              preferred,
+            ),
           tokens,
           usdAmount,
+          chainPriorityId,
           preferredTokenId,
         );
       case 'prioritize-stablecoins':
       default:
         return allocateWithChainPriority(
-          allocatePrioritizeStablecoins,
+          (chainTokens, amount, preferred) =>
+            allocatePrioritizeStablecoins(
+              chainTokens,
+              amount,
+              chainPriorityId,
+              preferred,
+            ),
           tokens,
           usdAmount,
+          chainPriorityId,
           preferredTokenId,
         );
     }
@@ -413,7 +451,7 @@ export function allocatePaymentUsd(options: {
 
   return {
     ...result,
-    chains: chainsFromAllocations(result.allocations),
+    chains: chainsFromAllocations(result.allocations, chainPriorityId),
   };
 }
 

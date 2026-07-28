@@ -1,4 +1,4 @@
-import { compareChainFamilies } from '@/lib/config/chainPriority';
+import { compareChainFamilies, type ChainPriorityId } from '@/lib/chainPriority';
 
 export type UserWallet = {
   chain: 'ethereum' | 'solana';
@@ -11,8 +11,13 @@ export type UserWalletsResult = {
   wallets: UserWallet[];
 };
 
-export function sortWalletsByChainPriority(wallets: UserWallet[]): UserWallet[] {
-  return [...wallets].sort((a, b) => compareChainFamilies(a.chain, b.chain));
+export function sortWalletsByChainPriority(
+  wallets: UserWallet[],
+  chainPriorityId: ChainPriorityId,
+): UserWallet[] {
+  return [...wallets].sort((a, b) =>
+    compareChainFamilies(a.chain, b.chain, chainPriorityId),
+  );
 }
 
 export function formatWalletAddress(address: string, start = 10, end = 8) {

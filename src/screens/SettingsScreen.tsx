@@ -7,7 +7,9 @@ import {
   View,
 } from 'react-native';
 
+import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
+import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useSignOut } from '@/hooks/useSignOut';
@@ -29,6 +31,15 @@ export function SettingsScreen() {
     closePicker,
     onSelectStrategy,
   } = useStrategyPicker();
+  const {
+    options: chainPriorityOptions,
+    selectedOption: selectedChainPriority,
+    selectedChainPriorityId,
+    pickerOpen: chainPriorityPickerOpen,
+    openPicker: openChainPriorityPicker,
+    closePicker: closeChainPriorityPicker,
+    onSelectOption: onSelectChainPriority,
+  } = useChainPriorityPicker();
 
   return (
     <View style={styles.container}>
@@ -50,6 +61,29 @@ export function SettingsScreen() {
             <Text style={styles.strategyLabel}>{selectedStrategy.label}</Text>
             <Text style={styles.strategyDescription}>
               {selectedStrategy.description}
+            </Text>
+          </View>
+          <Ionicons name="chevron-down" size={18} color="#94a3b8" />
+        </Pressable>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Chain priority</Text>
+        <Pressable
+          accessibilityLabel={`Chain priority ${selectedChainPriority.label}`}
+          accessibilityRole="button"
+          onPress={openChainPriorityPicker}
+          style={({ pressed }) => [
+            styles.strategyRow,
+            pressed && styles.strategyRowPressed,
+          ]}
+        >
+          <View style={styles.strategyRowText}>
+            <Text style={styles.strategyLabel}>
+              {selectedChainPriority.label}
+            </Text>
+            <Text style={styles.strategyDescription}>
+              {selectedChainPriority.description}
             </Text>
           </View>
           <Ionicons name="chevron-down" size={18} color="#94a3b8" />
@@ -120,6 +154,14 @@ export function SettingsScreen() {
         selectedStrategyId={selectedStrategyId}
         strategies={strategies}
         visible={pickerOpen}
+      />
+
+      <ChainPriorityPickerModal
+        onClose={closeChainPriorityPicker}
+        onSelect={onSelectChainPriority}
+        options={chainPriorityOptions}
+        selectedChainPriorityId={selectedChainPriorityId}
+        visible={chainPriorityPickerOpen}
       />
     </View>
   );

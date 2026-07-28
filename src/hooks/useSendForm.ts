@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useChainPriority } from '@/hooks/useChainPriority';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import {
   allocationsFromManualLegs,
@@ -16,6 +17,7 @@ import {
   type OwnedToken,
 } from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkChain } from '@/lib/alchemy/networks';
+import { compareChainFamilies, type ChainPriorityId } from '@/lib/chainPriority';
 import {
   allocatePaymentUsd,
   parseUsdInput,
@@ -68,12 +70,15 @@ function sanitizeAmountInput(value: string): string {
 
 function chainsFromAllocations(
   allocations: PaymentAllocation[],
+  chainPriorityId: ChainPriorityId,
 ): ('ethereum' | 'solana')[] {
   const set = new Set<'ethereum' | 'solana'>();
   for (const leg of allocations) {
     set.add(getNetworkChain(leg.token.network));
   }
-  return [...set];
+  return [...set].sort((a, b) =>
+    compareChainFamilies(a, b, chainPriorityId),
+  );
 }
 
 function refreshAllocationTokens(
@@ -100,6 +105,7 @@ export function useSendForm(
   preferredTokenId?: string | null,
   allocationInputUnit: AllocationInputUnit = 'token',
 ): SendFormState {
+  const { selectedChainPriorityId } = useChainPriority();
   const initialDraft = getSendDraftSnapshot();
   const [ethereumRecipient, setEthereumRecipientState] = useState(
     initialDraft.ethereumRecipient,
@@ -134,9 +140,10 @@ export function useSendForm(
       tokens,
       usdAmount,
       strategyId,
+      chainPriorityId: selectedChainPriorityId,
       preferredTokenId,
     });
-  }, [preferredTokenId, strategyId, tokens, usdAmount]);
+  }, [preferredTokenId, selectedChainPriorityId, strategyId, tokens, usdAmount]);
 
   // Strategy / preferred-token changes discard manual leg edits.
   useEffect(() => {
@@ -207,9 +214,14 @@ export function useSendForm(
   const chains = useMemo(
     () =>
       resolvedManualBase != null
-        ? chainsFromAllocations(allocations)
+        ? chainsFromAllocations(allocations, selectedChainPriorityId)
         : strategyPlan.chains,
-    [allocations, resolvedManualBase, strategyPlan.chains],
+    [
+      allocations,
+      resolvedManualBase,
+      selectedChainPriorityId,
+      strategyPlan.chains,
+    ],
   );
 
   const needsEthereumRecipient = chains.includes('ethereum');

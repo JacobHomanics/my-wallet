@@ -4,7 +4,11 @@ import {
   getNetworkChain,
   getNetworkLabel,
 } from '@/lib/alchemy/networks';
-import { compareChainFamilies } from '@/lib/config/chainPriority';
+import {
+  compareChainFamilies,
+  DEFAULT_CHAIN_PRIORITY_ID,
+  type ChainPriorityId,
+} from '@/lib/chainPriority';
 import {
   isNativeTokenAddress,
   resolveTokenLogoUrl,
@@ -329,11 +333,15 @@ function formatContractSymbol(tokenAddress: string | null | undefined) {
 }
 
 /** Sort by chain priority, then chain label (A–Z), then USD value (desc), then symbol. */
-export function sortOwnedTokens(tokens: OwnedToken[]): OwnedToken[] {
-  return tokens.sort((a, b) => {
+export function sortOwnedTokens(
+  tokens: OwnedToken[],
+  chainPriorityId: ChainPriorityId = DEFAULT_CHAIN_PRIORITY_ID,
+): OwnedToken[] {
+  return [...tokens].sort((a, b) => {
     const chainDelta = compareChainFamilies(
       getNetworkChain(a.network),
       getNetworkChain(b.network),
+      chainPriorityId,
     );
     if (chainDelta !== 0) {
       return chainDelta;
@@ -389,6 +397,7 @@ function groupTokensByNetwork(tokens: OwnedToken[]): TokenChainGroup[] {
 /** Groups priced tokens by chain; unpriced tokens go in a trailing "Unknown" section. */
 export function groupOwnedTokensByChain(
   tokens: OwnedToken[],
+  chainPriorityId: ChainPriorityId = DEFAULT_CHAIN_PRIORITY_ID,
 ): TokenChainGroup[] {
   const priced: OwnedToken[] = [];
   const unknownTokens: OwnedToken[] = [];
@@ -401,7 +410,7 @@ export function groupOwnedTokensByChain(
     }
   }
 
-  sortOwnedTokens(priced);
+  sortOwnedTokens(priced, chainPriorityId);
   const groups = groupTokensByNetwork(priced);
 
   if (unknownTokens.length > 0) {
@@ -409,6 +418,7 @@ export function groupOwnedTokensByChain(
       const chainDelta = compareChainFamilies(
         getNetworkChain(a.network),
         getNetworkChain(b.network),
+        chainPriorityId,
       );
       if (chainDelta !== 0) {
         return chainDelta;

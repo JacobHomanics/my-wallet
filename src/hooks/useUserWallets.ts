@@ -10,6 +10,7 @@ import {
   type UserWallet,
   type UserWalletsResult,
 } from '@/hooks/useUserWallets.shared';
+import { useChainPriority } from '@/hooks/useChainPriority';
 import { getPrivyEmbeddedWalletAddress } from '@/lib/privy/wallets/hasPrivyEmbeddedWallet';
 
 /**
@@ -17,6 +18,7 @@ import { getPrivyEmbeddedWalletAddress } from '@/lib/privy/wallets/hasPrivyEmbed
  * One address per chain (primary embedded / first linked).
  */
 export function useUserWallets(): UserWalletsResult {
+  const { selectedChainPriorityId } = useChainPriority();
   const { ready, authenticated, user } = usePrivy();
   const { wallets: ethereumWallets, ready: ethereumReady } = useWallets();
   const { wallets: solanaWallets, ready: solanaReady } = useSolanaWallets();
@@ -47,5 +49,8 @@ export function useUserWallets(): UserWalletsResult {
     return { ready: false, wallets: [] };
   }
 
-  return { ready: true, wallets: sortWalletsByChainPriority(wallets) };
+  return {
+    ready: true,
+    wallets: sortWalletsByChainPriority(wallets, selectedChainPriorityId),
+  };
 }

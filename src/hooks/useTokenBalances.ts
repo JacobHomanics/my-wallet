@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { useChainPriority } from '@/hooks/useChainPriority';
 import { useUserWallets } from '@/hooks/useUserWallets';
 import { getAlchemyApiKey } from '@/lib/alchemy/alchemyCredentials';
 import {
@@ -69,6 +70,7 @@ function makeFetchId(key: string, reloadKey: number) {
  * Loads fungible token balances for Privy Ethereum + Solana addresses via Alchemy.
  */
 export function useTokenBalances(): TokenBalancesResult {
+  const { selectedChainPriorityId } = useChainPriority();
   const { ready: walletsReady, wallets } = useUserWallets();
   const ethereumAddress =
     wallets.find((wallet) => wallet.chain === 'ethereum')?.address ?? null;
@@ -163,7 +165,7 @@ export function useTokenBalances(): TokenBalancesResult {
           }
         }
 
-        sortOwnedTokens(nextTokens);
+        sortOwnedTokens(nextTokens, selectedChainPriorityId);
         const nextError =
           nextTokens.length === 0 && errors.length > 0
             ? (errors[0] ?? 'Failed to load tokens')
@@ -220,7 +222,7 @@ export function useTokenBalances(): TokenBalancesResult {
     walletsReady,
   ]);
 
-  const visibleTokens = !hasAddress
+  const visibleTokensUnsorted = !hasAddress
     ? []
     : snapshotMatches && snapshot
       ? snapshot.tokens
@@ -229,6 +231,11 @@ export function useTokenBalances(): TokenBalancesResult {
         : isRefresh && snapshotForKey
           ? snapshotForKey.tokens
           : [];
+
+  const visibleTokens = useMemo(
+    () => sortOwnedTokens(visibleTokensUnsorted, selectedChainPriorityId),
+    [selectedChainPriorityId, visibleTokensUnsorted],
+  );
 
   const visibleError = missingApiKey
     ? 'Missing EXPO_PUBLIC_ALCHEMY_API_KEY'

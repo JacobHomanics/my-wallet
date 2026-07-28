@@ -1,41 +1,39 @@
-/**
- * App-wide chain priority: exhaust tokens on the preferred chain family
- * (EVM or Solana) before using the other chain for payments, ordering, and
- * wallet display.
- *
- * Override at build time with `EXPO_PUBLIC_CHAIN_PRIORITY=evm` or `solana`.
- */
 import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkChain } from '@/lib/alchemy/networks';
-export type ChainPriority = 'evm' | 'solana';
 
-export type ChainPriorityConfig = {
-  priority: ChainPriority;
+export type ChainPriorityId = 'evm' | 'solana';
+
+export type ChainPriorityOption = {
+  id: ChainPriorityId;
+  label: string;
+  description: string;
 };
 
-const DEFAULT_CHAIN_PRIORITY: ChainPriority = 'evm';
+export const CHAIN_PRIORITY_OPTIONS: readonly ChainPriorityOption[] = [
+  {
+    id: 'evm',
+    label: 'Prioritize EVM',
+    description:
+      'Use Ethereum and other EVM tokens before Solana when sending and sorting balances.',
+  },
+  {
+    id: 'solana',
+    label: 'Prioritize Solana',
+    description:
+      'Use Solana tokens before EVM when sending and sorting balances.',
+  },
+] as const;
 
-function readChainPriority(): ChainPriority {
-  const raw = process.env.EXPO_PUBLIC_CHAIN_PRIORITY?.trim().toLowerCase();
-  if (raw === 'solana') {
-    return 'solana';
-  }
-  if (raw === 'evm' || raw === 'ethereum') {
-    return 'evm';
-  }
-  return DEFAULT_CHAIN_PRIORITY;
-}
+export const DEFAULT_CHAIN_PRIORITY_ID: ChainPriorityId = 'evm';
 
-export const CHAIN_PRIORITY_CONFIG: ChainPriorityConfig = {
-  priority: readChainPriority(),
-};
-
-export function getChainPriority(): ChainPriority {
-  return CHAIN_PRIORITY_CONFIG.priority;
+export function getChainPriorityOption(
+  id: ChainPriorityId,
+): ChainPriorityOption | undefined {
+  return CHAIN_PRIORITY_OPTIONS.find((option) => option.id === id);
 }
 
 export function getWalletChainForPriority(
-  priority: ChainPriority = getChainPriority(),
+  priority: ChainPriorityId,
 ): 'ethereum' | 'solana' {
   return priority === 'evm' ? 'ethereum' : 'solana';
 }
@@ -43,7 +41,7 @@ export function getWalletChainForPriority(
 /** Lower rank = higher priority. */
 export function getChainFamilyRank(
   chain: 'ethereum' | 'solana',
-  priority: ChainPriority = getChainPriority(),
+  priority: ChainPriorityId,
 ): number {
   return chain === getWalletChainForPriority(priority) ? 0 : 1;
 }
@@ -51,7 +49,7 @@ export function getChainFamilyRank(
 export function compareChainFamilies(
   a: 'ethereum' | 'solana',
   b: 'ethereum' | 'solana',
-  priority: ChainPriority = getChainPriority(),
+  priority: ChainPriorityId,
 ): number {
   const delta = getChainFamilyRank(a, priority) - getChainFamilyRank(b, priority);
   if (delta !== 0) {
@@ -62,7 +60,7 @@ export function compareChainFamilies(
 
 export function partitionTokensByChainPriority(
   tokens: OwnedToken[],
-  priority: ChainPriority = getChainPriority(),
+  priority: ChainPriorityId,
 ): {
   preferred: OwnedToken[];
   fallback: OwnedToken[];
