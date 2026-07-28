@@ -132,6 +132,10 @@ export function SendScreen() {
     });
   }, [amount, canContinue, navigation, recipient, selectedToken]);
 
+  const goHome = useCallback(() => {
+    navigation.navigate('index');
+  }, [navigation]);
+
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
       <KeyboardAvoidingView
@@ -142,12 +146,10 @@ export function SendScreen() {
           <View style={styles.topBar}>
             {isDesktopWeb ? (
               <Pressable
-                accessibilityLabel="Back"
+                accessibilityLabel="Back to home"
                 accessibilityRole="button"
                 hitSlop={8}
-                onPress={() => {
-                  navigation.goBack();
-                }}
+                onPress={goHome}
                 style={({ pressed }) => [
                   styles.webBack,
                   pressed && styles.webBackPressed,
@@ -156,7 +158,10 @@ export function SendScreen() {
                 <Text style={styles.webBackText}>Back</Text>
               </Pressable>
             ) : (
-              <BackButton accessibilityLabel="Back" />
+              <BackButton
+                accessibilityLabel="Back to home"
+                onPress={goHome}
+              />
             )}
             <Text style={styles.topBarTitle}>Send</Text>
             <View style={styles.topBarSpacer} />
