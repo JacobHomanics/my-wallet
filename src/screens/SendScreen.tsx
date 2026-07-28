@@ -25,6 +25,7 @@ import { useExpandedNetworks } from '@/hooks/useExpandedNetworks';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendForm } from '@/hooks/useSendForm';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
+import { usePaymentStrategy } from '@/hooks/usePaymentStrategy';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useTokensByChain } from '@/hooks/useTokensByChain';
 import {
@@ -44,6 +45,7 @@ export function SendScreen() {
   const chainGroups = useTokensByChain(tokens);
   const { expandedNetworks, isExpanded, toggleNetwork } = useExpandedNetworks();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const { selectedStrategy } = usePaymentStrategy();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const form = useSendForm(tokens, route.params?.tokenId);
@@ -286,6 +288,15 @@ export function SendScreen() {
 
               {showAdvanced ? (
                 <View style={styles.advanced}>
+                  <View style={styles.strategyRow}>
+                    <Text style={styles.strategyRowLabel}>Strategy</Text>
+                    <Text style={styles.strategyRowValue}>
+                      {selectedStrategy.label}
+                    </Text>
+                  </View>
+
+                  <View style={styles.advancedDivider} />
+
                   <Text style={styles.advancedLabel}>Token</Text>
                   <Pressable
                     accessibilityLabel={
@@ -503,16 +514,41 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#fff',
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 4,
     paddingBottom: 16,
   },
   advancedLabel: {
+    marginTop: 12,
     marginBottom: 8,
     fontSize: 13,
     fontWeight: '600',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
+  },
+  advancedDivider: {
+    marginBottom: 4,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#e2e8f0',
+  },
+  strategyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingVertical: 12,
+  },
+  strategyRowLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  strategyRowValue: {
+    flex: 1,
+    textAlign: 'right',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0f172a',
   },
   fieldButton: {
     flexDirection: 'row',
