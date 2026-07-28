@@ -360,6 +360,7 @@ export function ConfirmSendScreen() {
                 onOpenStrategyPicker={openStrategyPicker}
                 onRemoveAllocation={removeAllocation}
                 selectedStrategy={selectedStrategy}
+                spendableTokens={spendableTokens}
               />
             ) : null}
 

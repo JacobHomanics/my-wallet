@@ -10,6 +10,8 @@ import {
 import { TokenIcon } from '@/components/TokenIcon';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
+import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
+import { floorUsdToSendableCap, formatFiatValue } from '@/lib/fiat';
 import type { PaymentStrategy } from '@/lib/strategies';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
 
@@ -19,6 +21,8 @@ type SendAdvancedDetailsProps = {
   allocationInputUnit: AllocationInputUnit;
   onAllocationInputUnitChange: (unit: AllocationInputUnit) => void;
   allocations: PaymentAllocation[];
+  /** Fee-reserved balances — used for the Available line on each leg. */
+  spendableTokens: OwnedToken[];
   allocationInputs: Record<string, string>;
   onAllocationAmountChange: (tokenId: string, value: string) => void;
   onRemoveAllocation: (tokenId: string) => void;
@@ -32,13 +36,24 @@ export function SendAdvancedDetails({
   allocationInputUnit,
   onAllocationInputUnitChange,
   allocations,
+  spendableTokens,
   allocationInputs,
   onAllocationAmountChange,
   onRemoveAllocation,
   canAddToken,
   onAddToken,
 }: SendAdvancedDetailsProps) {
-  const { formatFromUsd, currencyCode, currencySymbol } = useFiatDisplay();
+  const {
+    formatFromUsd,
+    currencyCode,
+    currencySymbol,
+    rate,
+    defaultFormattedZero,
+  } = useFiatDisplay();
+
+  const spendableById = new Map(
+    spendableTokens.map((token) => [token.id, token]),
+  );
 
   return (
     <View style={styles.advanced}>
@@ -122,40 +137,59 @@ export function SendAdvancedDetails({
         </Text>
       ) : (
         allocations.map((leg) => {
+          const spendable = spendableById.get(leg.token.id) ?? leg.token;
           const inputValue =
             allocationInputs[leg.token.id] ??
             (allocationInputUnit === 'usd'
               ? String(leg.usd)
               : leg.amountFormatted);
-          const exceeds = leg.amountRaw > leg.token.rawBalance;
+          const exceeds = leg.amountRaw > spendable.rawBalance;
           const secondaryValue =
             allocationInputUnit === 'usd'
               ? leg.amountFormatted || '—'
               : (formatFromUsd(leg.usd) ?? '—');
 
+          const availableLabel =
+            allocationInputUnit === 'usd'
+              ? (() => {
+                  if (spendable.usdValue == null) {
+                    return '—';
+                  }
+                  if (!(spendable.usdValue > 0)) {
+                    return defaultFormattedZero;
+                  }
+                  const { displayFiat } = floorUsdToSendableCap(
+                    spendable.usdValue,
+                    rate,
+                    currencyCode,
+                  );
+                  return (
+                    formatFiatValue(displayFiat, currencyCode) ??
+                    defaultFormattedZero
+                  );
+                })()
+              : spendable.balanceFormatted;
+
           return (
             <View key={leg.token.id} style={styles.allocationRow}>
               <View style={styles.allocationHeader}>
                 <TokenIcon
-                  logoUrl={leg.token.logoUrl}
-                  network={leg.token.network}
+                  logoUrl={spendable.logoUrl}
+                  network={spendable.network}
                   size={32}
-                  symbol={leg.token.symbol}
+                  symbol={spendable.symbol}
                 />
                 <View style={styles.allocationText}>
                   <View style={styles.allocationTitleRow}>
                     <Text style={styles.allocationSymbol} numberOfLines={1}>
-                      {leg.token.symbol}
+                      {spendable.symbol}
                     </Text>
                     <Text style={styles.allocationBalance} numberOfLines={1}>
-                      Balance:{' '}
-                      {allocationInputUnit === 'usd'
-                        ? (formatFromUsd(leg.token.usdValue) ?? '—')
-                        : leg.token.balanceFormatted}
+                      Available: {availableLabel}
                     </Text>
                   </View>
                   <Text style={styles.allocationMeta} numberOfLines={1}>
-                    {leg.token.networkLabel}
+                    {spendable.networkLabel}
                   </Text>
                 </View>
               </View>

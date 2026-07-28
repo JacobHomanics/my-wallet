@@ -2,10 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
@@ -20,6 +22,7 @@ import { useUserWallets } from '@/hooks/useUserWallets';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 
 export function SettingsScreen() {
+  const insets = useSafeAreaInsets();
   const { displayName } = useProfileIdentity();
   const { ready, wallets } = useUserWallets();
   const { signOut } = useSignOut();
@@ -54,6 +57,15 @@ export function SettingsScreen() {
 
   return (
     <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: Math.max(insets.bottom, 24) + 24 },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        style={styles.scroll}
+      >
       <Text style={styles.title}>Settings</Text>
       <Text style={styles.subtitle}>Signed in as {displayName}.</Text>
 
@@ -181,6 +193,7 @@ export function SettingsScreen() {
       >
         <Text style={styles.buttonText}>Log out</Text>
       </Pressable>
+      </ScrollView>
 
       <StrategyPickerModal
         onClose={closePicker}
@@ -212,10 +225,15 @@ export function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#f8fafc',
+  },
+  scroll: {
+    flex: 1,
+  },
+  content: {
+    alignItems: 'center',
     paddingHorizontal: 24,
+    paddingTop: 24,
   },
   title: {
     fontSize: 28,

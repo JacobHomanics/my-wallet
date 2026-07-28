@@ -90,12 +90,25 @@ function refreshAllocationTokens(
     if (!token) {
       return [];
     }
+
+    // Clamp to spendable balance (fee reserves may shrink gas tokens after draft).
+    const amountRaw =
+      leg.amountRaw > token.rawBalance ? token.rawBalance : leg.amountRaw;
+
     const usd =
-      estimateTokenAmountUsd(token, leg.amountRaw) ??
-      (token.usdValue != null && token.rawBalance > 0n
-        ? token.usdValue * (Number(leg.amountRaw) / Number(token.rawBalance))
-        : leg.usd);
-    return [{ ...leg, token, usd: usd ?? 0 }];
+      amountRaw <= 0n
+        ? 0
+        : (estimateTokenAmountUsd(token, amountRaw) ??
+          (token.usdValue != null && token.rawBalance > 0n
+            ? token.usdValue * (Number(amountRaw) / Number(token.rawBalance))
+            : leg.usd));
+
+    const amountFormatted =
+      amountRaw !== leg.amountRaw || !leg.amountFormatted
+        ? formatRawTokenBalance(amountRaw, token.decimals)
+        : leg.amountFormatted;
+
+    return [{ token, amountRaw, amountFormatted, usd: usd ?? 0 }];
   });
 }
 
@@ -218,10 +231,11 @@ export function useSendForm(
   const resolvedManualBase = manualAllocations ?? draftManualFromTokens;
 
   const allocations = useMemo(() => {
-    if (resolvedManualBase != null) {
-      return refreshAllocationTokens(resolvedManualBase, tokens);
-    }
-    return strategyPlan.allocations;
+    const base =
+      resolvedManualBase != null
+        ? resolvedManualBase
+        : strategyPlan.allocations;
+    return refreshAllocationTokens(base, tokens);
   }, [resolvedManualBase, strategyPlan.allocations, tokens]);
 
   useEffect(() => {
@@ -246,16 +260,8 @@ export function useSendForm(
   ]);
 
   const chains = useMemo(
-    () =>
-      resolvedManualBase != null
-        ? chainsFromAllocations(allocations, selectedChainPriorityId)
-        : strategyPlan.chains,
-    [
-      allocations,
-      resolvedManualBase,
-      selectedChainPriorityId,
-      strategyPlan.chains,
-    ],
+    () => chainsFromAllocations(allocations, selectedChainPriorityId),
+    [allocations, selectedChainPriorityId],
   );
 
   const needsEthereumRecipient = chains.includes('ethereum');
@@ -284,15 +290,10 @@ export function useSendForm(
   );
   const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
 
-  const filledUsd =
-    resolvedManualBase != null
-      ? allocations.reduce((sum, leg) => sum + leg.usd, 0)
-      : strategyPlan.filledUsd;
+  const filledUsd = allocations.reduce((sum, leg) => sum + leg.usd, 0);
 
   const remainingUsd =
-    resolvedManualBase != null
-      ? Math.max(0, (targetUsd ?? 0) - filledUsd)
-      : strategyPlan.remainingUsd;
+    targetUsd != null ? Math.max(0, targetUsd - filledUsd) : strategyPlan.remainingUsd;
 
   const coversRequestedAmount =
     targetUsd != null && filledUsd + 0.005 >= targetUsd;
@@ -303,7 +304,7 @@ export function useSendForm(
         hasPositiveLeg &&
         legsWithinBalance &&
         (!amountLocked || coversRequestedAmount)
-      : strategyPlan.canFulfill;
+      : strategyPlan.canFulfill && legsWithinBalance;
 
   const insufficientFunds =
     amountValid &&
@@ -313,7 +314,7 @@ export function useSendForm(
       ? true
       : resolvedManualBase != null
         ? !canFulfill
-        : !strategyPlan.canFulfill);
+        : !(strategyPlan.canFulfill && legsWithinBalance));
 
   const canContinue =
     amountValid &&
@@ -389,15 +390,21 @@ export function useSendForm(
         return;
       }
 
-      const amountRaw =
-        allocationInputUnit === 'usd'
-          ? (() => {
-              const usdForToken = parseDisplayInputToUsd(sanitized);
-              return usdForToken != null
-                ? parseUsdAmountToTokenRaw(String(usdForToken), token)
-                : null;
-            })()
-          : parseTokenAmountToRaw(sanitized, token.decimals);
+      const amountRaw = (() => {
+        const parsed =
+          allocationInputUnit === 'usd'
+            ? (() => {
+                const usdForToken = parseDisplayInputToUsd(sanitized);
+                return usdForToken != null
+                  ? parseUsdAmountToTokenRaw(String(usdForToken), token)
+                  : null;
+              })()
+            : parseTokenAmountToRaw(sanitized, token.decimals);
+        if (parsed == null) {
+          return null;
+        }
+        return parsed > token.rawBalance ? token.rawBalance : parsed;
+      })();
       if (amountRaw == null) {
         return;
       }

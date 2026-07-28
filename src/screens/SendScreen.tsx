@@ -365,6 +365,7 @@ export function SendScreen() {
                   onOpenStrategyPicker={openStrategyPicker}
                   onRemoveAllocation={removeAllocation}
                   selectedStrategy={selectedStrategy}
+                  spendableTokens={spendableTokens}
                 />
               ) : null}
 
