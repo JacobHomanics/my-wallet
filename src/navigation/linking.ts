@@ -1,4 +1,5 @@
-import type { LinkingOptions } from '@react-navigation/native';
+import type { LinkingOptions, NavigationState, PartialState } from '@react-navigation/native';
+import { getStateFromPath as getStateFromPathDefault } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
 
@@ -44,8 +45,68 @@ export function parseAppURL(url: string) {
   return Linking.parse(url);
 }
 
+type NavState = PartialState<NavigationState>;
+
+/** Deep links to /send omit home; prepend it so back can pop with the right animation. */
+function ensureHomeIndexBeforeSend(
+  state: NavState | undefined,
+): NavState | undefined {
+  if (!state?.routes?.length) {
+    return state;
+  }
+
+  return {
+    ...state,
+    routes: state.routes.map((route) => {
+      if (!route.state) {
+        return route;
+      }
+
+      if (route.name === 'home') {
+        return {
+          ...route,
+          state: prependHomeIndexForSend(route.state),
+        };
+      }
+
+      return {
+        ...route,
+        state: ensureHomeIndexBeforeSend(route.state) ?? route.state,
+      };
+    }),
+  };
+}
+
+function prependHomeIndexForSend(state: NavState): NavState {
+  const routes = state.routes ?? [];
+  if (!routes.length) {
+    return state;
+  }
+
+  const currentIndex = state.index ?? routes.length - 1;
+  const currentRoute = routes[currentIndex];
+
+  if (currentRoute?.name !== 'send') {
+    return state;
+  }
+
+  if (routes.some((route) => route.name === 'index')) {
+    return state;
+  }
+
+  return {
+    ...state,
+    routes: [{ name: 'index' }, ...routes],
+    index: currentIndex + 1,
+  };
+}
+
 export const rootLinking: LinkingOptions<RootStackParamList> = {
   prefixes: getLinkingPrefixes(),
+  getStateFromPath(path, options) {
+    const state = getStateFromPathDefault(path, options);
+    return ensureHomeIndexBeforeSend(state);
+  },
   config: {
     screens: {
       splash: {

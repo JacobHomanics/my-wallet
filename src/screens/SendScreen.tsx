@@ -21,6 +21,7 @@ import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { usePopToHome } from '@/hooks/usePopToHome';
 import { useSendDraftUi } from '@/hooks/useSendDraft';
 import { useSendForm } from '@/hooks/useSendForm';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
@@ -126,17 +127,7 @@ export function SendScreen() {
     solanaRecipient,
   ]);
 
-  const goHome = useCallback(() => {
-    const state = navigation.getState();
-    const homeRouteIndex = state.routes.findIndex((route) => route.name === 'index');
-    if (homeRouteIndex >= 0 && state.index > homeRouteIndex) {
-      navigation.pop(state.index - homeRouteIndex);
-      return;
-    }
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    }
-  }, [navigation]);
+  const goHome = usePopToHome();
 
   const onAddToken = useCallback(
     (tokenId: string) => {
