@@ -18,6 +18,13 @@ export function HomeStack() {
       screenOptions={{
         headerShown: false,
         animation: isDesktopWeb ? 'none' : 'slide_from_right',
+        cardStyle: {
+          flex: 1,
+          backgroundColor: '#f8fafc',
+          // Absolute-fill cards so nested ScrollViews get a bounded height
+          // (required for touch scrolling on iOS Safari).
+          height: '100%',
+        },
       }}
     >
       <WebStack.Screen name="index" component={homeStackScreens.index} />

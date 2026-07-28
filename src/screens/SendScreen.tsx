@@ -123,278 +123,302 @@ export function SendScreen() {
     navigation.navigate('index');
   }, [navigation]);
 
-  return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.flex}
-      >
-        <View style={styles.content}>
-          <View style={styles.topBar}>
-            {isDesktopWeb ? (
-              <Pressable
-                accessibilityLabel="Back to home"
-                accessibilityRole="button"
-                hitSlop={8}
-                onPress={goHome}
-                style={({ pressed }) => [
-                  styles.webBack,
-                  pressed && styles.webBackPressed,
-                ]}
-              >
-                <Text style={styles.webBackText}>Back</Text>
-              </Pressable>
-            ) : (
-              <BackButton
-                accessibilityLabel="Back to home"
-                onPress={goHome}
-              />
-            )}
-            <Text style={styles.topBarTitle}>Send</Text>
-            <View style={styles.topBarSpacer} />
-          </View>
+  const topBar = (
+    <View style={styles.topBar}>
+      {isDesktopWeb ? (
+        <Pressable
+          accessibilityLabel="Back to home"
+          accessibilityRole="button"
+          hitSlop={8}
+          onPress={goHome}
+          style={({ pressed }) => [
+            styles.webBack,
+            pressed && styles.webBackPressed,
+          ]}
+        >
+          <Text style={styles.webBackText}>Back</Text>
+        </Pressable>
+      ) : (
+        <BackButton accessibilityLabel="Back to home" onPress={goHome} />
+      )}
+      <Text style={styles.topBarTitle}>Send</Text>
+      <View style={styles.topBarSpacer} />
+    </View>
+  );
 
-          {!ready || (loading && tokens.length === 0) ? (
-            <ActivityIndicator color="#0f172a" style={styles.loader} />
-          ) : !hasWallet ? (
-            <Text style={styles.empty}>Creating your wallets…</Text>
-          ) : (
-            <ScrollView
-              contentContainerStyle={styles.form}
-              keyboardShouldPersistTaps="handled"
-              style={styles.flex}
-            >
-              <Text
-                accessibilityLabel={`Balance ${totalLabel}`}
-                style={styles.totalBalance}
-              >
-                {totalLabel}
+  const formBody =
+    !ready || (loading && tokens.length === 0) ? (
+      <ActivityIndicator color="#0f172a" style={styles.loader} />
+    ) : !hasWallet ? (
+      <Text style={styles.empty}>Creating your wallets…</Text>
+    ) : (
+      <>
+        <Text
+          accessibilityLabel={`Balance ${totalLabel}`}
+          style={styles.totalBalance}
+        >
+          {totalLabel}
+        </Text>
+
+        <View style={styles.amountHeader}>
+          <Text style={styles.labelInline}>Amount</Text>
+        </View>
+        <View
+          style={[styles.amountRow, amountError ? styles.inputError : null]}
+        >
+          <Text style={styles.amountPrefix}>$</Text>
+          <TextInput
+            keyboardType="decimal-pad"
+            onChangeText={setAmount}
+            placeholder="0"
+            placeholderTextColor="#94a3b8"
+            style={styles.amountInput}
+            value={amount}
+          />
+        </View>
+        {amountError ? (
+          <Text style={styles.fieldError}>{amountError}</Text>
+        ) : tokenAmountHint ? (
+          <Text style={styles.tokenAmountHint}>{tokenAmountHint}</Text>
+        ) : null}
+
+        {!needsEthereumRecipient && !needsSolanaRecipient ? (
+          <>
+            <Text style={styles.label}>To</Text>
+            <View style={[styles.recipientRow, styles.inputDisabled]}>
+              <Text style={styles.recipientPlaceholder}>
+                Enter an amount first
               </Text>
+            </View>
+          </>
+        ) : (
+          <>
+            {needsEthereumRecipient ? (
+              <>
+                <Text style={styles.label}>
+                  {needsSolanaRecipient ? 'Ethereum recipient' : 'To'}
+                </Text>
+                <View
+                  style={[
+                    styles.recipientRow,
+                    ethereumRecipientError ? styles.inputError : null,
+                  ]}
+                >
+                  <TextInput
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    onChangeText={setEthereumRecipient}
+                    placeholder="0x… Ethereum address"
+                    placeholderTextColor="#94a3b8"
+                    style={styles.recipientInput}
+                    value={ethereumRecipient}
+                  />
+                  {ethereumRecipient.trim() ? (
+                    <Pressable
+                      accessibilityLabel="Clear Ethereum recipient"
+                      accessibilityRole="button"
+                      hitSlop={8}
+                      onPress={() => {
+                        setEthereumRecipient('');
+                      }}
+                      style={({ pressed }) => [
+                        styles.clearButton,
+                        pressed && styles.clearButtonPressed,
+                      ]}
+                    >
+                      <Ionicons
+                        name="close-circle"
+                        size={20}
+                        color="#94a3b8"
+                      />
+                    </Pressable>
+                  ) : null}
+                </View>
+                {ethereumRecipientError ? (
+                  <Text style={styles.fieldError}>
+                    {ethereumRecipientError}
+                  </Text>
+                ) : null}
+              </>
+            ) : null}
 
-              <View style={styles.amountHeader}>
-                <Text style={styles.labelInline}>Amount</Text>
-              </View>
-              <View
-                style={[
-                  styles.amountRow,
-                  amountError ? styles.inputError : null,
-                ]}
-              >
-                <Text style={styles.amountPrefix}>$</Text>
-                <TextInput
-                  keyboardType="decimal-pad"
-                  onChangeText={setAmount}
-                  placeholder="0"
-                  placeholderTextColor="#94a3b8"
-                  style={styles.amountInput}
-                  value={amount}
-                />
-              </View>
-              {amountError ? (
-                <Text style={styles.fieldError}>{amountError}</Text>
-              ) : tokenAmountHint ? (
-                <Text style={styles.tokenAmountHint}>{tokenAmountHint}</Text>
-              ) : null}
+            {needsSolanaRecipient ? (
+              <>
+                <Text style={styles.label}>
+                  {needsEthereumRecipient ? 'Solana recipient' : 'To'}
+                </Text>
+                <View
+                  style={[
+                    styles.recipientRow,
+                    solanaRecipientError ? styles.inputError : null,
+                  ]}
+                >
+                  <TextInput
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    onChangeText={setSolanaRecipient}
+                    placeholder="Solana address"
+                    placeholderTextColor="#94a3b8"
+                    style={styles.recipientInput}
+                    value={solanaRecipient}
+                  />
+                  {solanaRecipient.trim() ? (
+                    <Pressable
+                      accessibilityLabel="Clear Solana recipient"
+                      accessibilityRole="button"
+                      hitSlop={8}
+                      onPress={() => {
+                        setSolanaRecipient('');
+                      }}
+                      style={({ pressed }) => [
+                        styles.clearButton,
+                        pressed && styles.clearButtonPressed,
+                      ]}
+                    >
+                      <Ionicons
+                        name="close-circle"
+                        size={20}
+                        color="#94a3b8"
+                      />
+                    </Pressable>
+                  ) : null}
+                </View>
+                {solanaRecipientError ? (
+                  <Text style={styles.fieldError}>{solanaRecipientError}</Text>
+                ) : null}
+              </>
+            ) : null}
+          </>
+        )}
 
-              {!needsEthereumRecipient && !needsSolanaRecipient ? (
-                <>
-                  <Text style={styles.label}>To</Text>
-                  <View style={[styles.recipientRow, styles.inputDisabled]}>
-                    <Text style={styles.recipientPlaceholder}>
-                      Enter an amount first
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded: showAdvanced }}
+          onPress={toggleAdvanced}
+          style={({ pressed }) => [
+            styles.advancedToggle,
+            pressed && styles.advancedTogglePressed,
+          ]}
+        >
+          <Text style={styles.advancedToggleText}>
+            {showAdvanced ? 'Hide advanced details' : 'Show advanced details'}
+          </Text>
+          <Ionicons
+            name={showAdvanced ? 'chevron-up' : 'chevron-down'}
+            size={16}
+            color="#64748b"
+          />
+        </Pressable>
+
+        {showAdvanced ? (
+          <View style={styles.advanced}>
+            <Pressable
+              accessibilityLabel={`Payment strategy ${selectedStrategy.label}`}
+              accessibilityRole="button"
+              onPress={openStrategyPicker}
+              style={({ pressed }) => [
+                styles.strategyRow,
+                pressed && styles.strategyRowPressed,
+              ]}
+            >
+              <Text style={styles.strategyRowLabel}>Strategy</Text>
+              <Text style={styles.strategyRowValue}>
+                {selectedStrategy.label}
+              </Text>
+              <Ionicons name="chevron-down" size={18} color="#94a3b8" />
+            </Pressable>
+
+            <View style={styles.advancedDivider} />
+
+            <Text style={styles.advancedLabel}>Tokens</Text>
+            {allocations.length === 0 ? (
+              <Text style={styles.allocationEmpty}>
+                Enter an amount to see which tokens will be used.
+              </Text>
+            ) : (
+              allocations.map((leg) => (
+                <View key={leg.token.id} style={styles.allocationRow}>
+                  <TokenIcon
+                    logoUrl={leg.token.logoUrl}
+                    network={leg.token.network}
+                    size={36}
+                    symbol={leg.token.symbol}
+                  />
+                  <View style={styles.allocationText}>
+                    <Text style={styles.allocationSymbol}>
+                      {leg.token.symbol}
+                    </Text>
+                    <Text style={styles.allocationMeta}>
+                      {leg.amountFormatted} · {leg.token.networkLabel}
                     </Text>
                   </View>
-                </>
-              ) : (
-                <>
-                  {needsEthereumRecipient ? (
-                    <>
-                      <Text style={styles.label}>
-                        {needsSolanaRecipient ? 'Ethereum recipient' : 'To'}
-                      </Text>
-                      <View
-                        style={[
-                          styles.recipientRow,
-                          ethereumRecipientError ? styles.inputError : null,
-                        ]}
-                      >
-                        <TextInput
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                          onChangeText={setEthereumRecipient}
-                          placeholder="0x… Ethereum address"
-                          placeholderTextColor="#94a3b8"
-                          style={styles.recipientInput}
-                          value={ethereumRecipient}
-                        />
-                        {ethereumRecipient.trim() ? (
-                          <Pressable
-                            accessibilityLabel="Clear Ethereum recipient"
-                            accessibilityRole="button"
-                            hitSlop={8}
-                            onPress={() => {
-                              setEthereumRecipient('');
-                            }}
-                            style={({ pressed }) => [
-                              styles.clearButton,
-                              pressed && styles.clearButtonPressed,
-                            ]}
-                          >
-                            <Ionicons
-                              name="close-circle"
-                              size={20}
-                              color="#94a3b8"
-                            />
-                          </Pressable>
-                        ) : null}
-                      </View>
-                      {ethereumRecipientError ? (
-                        <Text style={styles.fieldError}>
-                          {ethereumRecipientError}
-                        </Text>
-                      ) : null}
-                    </>
-                  ) : null}
-
-                  {needsSolanaRecipient ? (
-                    <>
-                      <Text style={styles.label}>
-                        {needsEthereumRecipient ? 'Solana recipient' : 'To'}
-                      </Text>
-                      <View
-                        style={[
-                          styles.recipientRow,
-                          solanaRecipientError ? styles.inputError : null,
-                        ]}
-                      >
-                        <TextInput
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                          onChangeText={setSolanaRecipient}
-                          placeholder="Solana address"
-                          placeholderTextColor="#94a3b8"
-                          style={styles.recipientInput}
-                          value={solanaRecipient}
-                        />
-                        {solanaRecipient.trim() ? (
-                          <Pressable
-                            accessibilityLabel="Clear Solana recipient"
-                            accessibilityRole="button"
-                            hitSlop={8}
-                            onPress={() => {
-                              setSolanaRecipient('');
-                            }}
-                            style={({ pressed }) => [
-                              styles.clearButton,
-                              pressed && styles.clearButtonPressed,
-                            ]}
-                          >
-                            <Ionicons
-                              name="close-circle"
-                              size={20}
-                              color="#94a3b8"
-                            />
-                          </Pressable>
-                        ) : null}
-                      </View>
-                      {solanaRecipientError ? (
-                        <Text style={styles.fieldError}>
-                          {solanaRecipientError}
-                        </Text>
-                      ) : null}
-                    </>
-                  ) : null}
-                </>
-              )}
-
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ expanded: showAdvanced }}
-                onPress={toggleAdvanced}
-                style={({ pressed }) => [
-                  styles.advancedToggle,
-                  pressed && styles.advancedTogglePressed,
-                ]}
-              >
-                <Text style={styles.advancedToggleText}>
-                  {showAdvanced
-                    ? 'Hide advanced details'
-                    : 'Show advanced details'}
-                </Text>
-                <Ionicons
-                  name={showAdvanced ? 'chevron-up' : 'chevron-down'}
-                  size={16}
-                  color="#64748b"
-                />
-              </Pressable>
-
-              {showAdvanced ? (
-                <View style={styles.advanced}>
-                  <Pressable
-                    accessibilityLabel={`Payment strategy ${selectedStrategy.label}`}
-                    accessibilityRole="button"
-                    onPress={openStrategyPicker}
-                    style={({ pressed }) => [
-                      styles.strategyRow,
-                      pressed && styles.strategyRowPressed,
-                    ]}
-                  >
-                    <Text style={styles.strategyRowLabel}>Strategy</Text>
-                    <Text style={styles.strategyRowValue}>
-                      {selectedStrategy.label}
-                    </Text>
-                    <Ionicons name="chevron-down" size={18} color="#94a3b8" />
-                  </Pressable>
-
-                  <View style={styles.advancedDivider} />
-
-                  <Text style={styles.advancedLabel}>Tokens</Text>
-                  {allocations.length === 0 ? (
-                    <Text style={styles.allocationEmpty}>
-                      Enter an amount to see which tokens will be used.
-                    </Text>
-                  ) : (
-                    allocations.map((leg) => (
-                      <View key={leg.token.id} style={styles.allocationRow}>
-                        <TokenIcon
-                          logoUrl={leg.token.logoUrl}
-                          network={leg.token.network}
-                          size={36}
-                          symbol={leg.token.symbol}
-                        />
-                        <View style={styles.allocationText}>
-                          <Text style={styles.allocationSymbol}>
-                            {leg.token.symbol}
-                          </Text>
-                          <Text style={styles.allocationMeta}>
-                            {leg.amountFormatted} · {leg.token.networkLabel}
-                          </Text>
-                        </View>
-                        <Text style={styles.allocationUsd}>
-                          {formatUsdValue(leg.usd) ?? '—'}
-                        </Text>
-                      </View>
-                    ))
-                  )}
+                  <Text style={styles.allocationUsd}>
+                    {formatUsdValue(leg.usd) ?? '—'}
+                  </Text>
                 </View>
-              ) : null}
+              ))
+            )}
+          </View>
+        ) : null}
 
-              <Pressable
-                accessibilityRole="button"
-                disabled={!canContinue}
-                onPress={onContinue}
-                style={({ pressed }) => [
-                  styles.continueButton,
-                  !canContinue && styles.continueButtonDisabled,
-                  pressed && canContinue && styles.continueButtonPressed,
-                ]}
-              >
-                <Text style={styles.continueButtonText}>Continue</Text>
-              </Pressable>
-            </ScrollView>
-          )}
-        </View>
-      </KeyboardAvoidingView>
+        <Pressable
+          accessibilityRole="button"
+          disabled={!canContinue}
+          onPress={onContinue}
+          style={({ pressed }) => [
+            styles.continueButton,
+            !canContinue && styles.continueButtonDisabled,
+            pressed && canContinue && styles.continueButtonPressed,
+          ]}
+        >
+          <Text style={styles.continueButtonText}>Continue</Text>
+        </Pressable>
+      </>
+    );
+
+  const scroll = (
+    <ScrollView
+      bounces
+      contentContainerStyle={[
+        styles.scrollContent,
+        { paddingBottom: Math.max(insets.bottom, 12) + 48 },
+      ]}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator
+      style={[
+        styles.scroll,
+        Platform.OS === 'web'
+          ? ({
+              height: '100%',
+              overflow: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-y',
+            } as object)
+          : null,
+      ]}
+    >
+      {topBar}
+      <View style={styles.contentInner}>{formBody}</View>
+    </ScrollView>
+  );
+
+  return (
+    <View
+      style={[
+        styles.container,
+        { paddingTop: Math.max(insets.top, 12) },
+      ]}
+    >
+      {Platform.OS === 'web' ? (
+        scroll
+      ) : (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.flex}
+        >
+          {scroll}
+        </KeyboardAvoidingView>
+      )}
 
       <StrategyPickerModal
         onClose={closeStrategyPicker}
@@ -410,22 +434,47 @@ export function SendScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    height: '100%',
+    maxHeight: '100%',
     backgroundColor: '#f8fafc',
+    ...Platform.select({
+      web: {
+        // Bound the screen to the viewport so the inner ScrollView can scroll
+        // on iOS Safari (unbounded flex parents clip with no scroll).
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+      },
+      default: {},
+    }),
   },
   flex: {
     flex: 1,
+    minHeight: 0,
   },
-  content: {
+  scroll: {
     flex: 1,
+    minHeight: 0,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  contentInner: {
     width: '100%',
     maxWidth: 640,
     alignSelf: 'center',
+    paddingHorizontal: 24,
   },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
     marginBottom: 8,
+    width: '100%',
+    maxWidth: 640,
+    alignSelf: 'center',
   },
   topBarTitle: {
     flex: 1,
@@ -463,7 +512,7 @@ const styles = StyleSheet.create({
   },
   form: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
+    flexGrow: 1,
   },
   totalBalance: {
     marginTop: 12,
