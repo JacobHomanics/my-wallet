@@ -21,9 +21,9 @@ export type SendPaymentResult = {
   ready: boolean;
   sending: boolean;
   sendPayment: (
-    legs: Array<SendTokenParams & {
+    legs: (SendTokenParams & {
       amountFormatted: string;
-    }>,
+    })[],
   ) => Promise<SendPaymentLegResult[]>;
 };
 
@@ -36,7 +36,7 @@ export function useSendPayment(): SendPaymentResult {
 
   const sendPayment = useCallback(
     async (
-      legs: Array<SendTokenParams & { amountFormatted: string }>,
+      legs: (SendTokenParams & { amountFormatted: string })[],
     ): Promise<SendPaymentLegResult[]> => {
       if (legs.length === 0) {
         throw new Error('Nothing to send');

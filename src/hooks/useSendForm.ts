@@ -31,7 +31,7 @@ export type SendFormState = {
   /** Per-token input strings shown in advanced (may be mid-edit). */
   allocationInputs: Record<string, string>;
   /** Chain families that appear in the current allocation. */
-  chains: Array<'ethereum' | 'solana'>;
+  chains: ('ethereum' | 'solana')[];
   needsEthereumRecipient: boolean;
   needsSolanaRecipient: boolean;
   filledUsd: number;
@@ -68,7 +68,7 @@ function sanitizeAmountInput(value: string): string {
 
 function chainsFromAllocations(
   allocations: PaymentAllocation[],
-): Array<'ethereum' | 'solana'> {
+): ('ethereum' | 'solana')[] {
   const set = new Set<'ethereum' | 'solana'>();
   for (const leg of allocations) {
     set.add(getNetworkChain(leg.token.network));
@@ -126,7 +126,7 @@ export function useSendForm(
         filledUsd: 0,
         remainingUsd: 0,
         canFulfill: false,
-        chains: [] as Array<'ethereum' | 'solana'>,
+        chains: [] as ('ethereum' | 'solana')[],
       };
     }
 
@@ -166,59 +166,50 @@ export function useSendForm(
     setAllocationInputs({});
   }, [allocationInputUnit]);
 
-  // Restore manual legs once token balances are available after remount.
-  useEffect(() => {
-    if (manualAllocations != null || tokens.length === 0) {
-      return;
+  const draftManualFromTokens = useMemo(() => {
+    if (tokens.length === 0) {
+      return null;
     }
-    const hydrated = allocationsFromManualLegs(
+    return allocationsFromManualLegs(
       getSendDraftSnapshot().manualLegs,
       tokens,
     );
-    if (hydrated != null) {
-      setManualAllocations(hydrated);
+  }, [tokens]);
+
+  const resolvedManualBase = manualAllocations ?? draftManualFromTokens;
+
+  const allocations = useMemo(() => {
+    if (resolvedManualBase != null) {
+      return refreshAllocationTokens(resolvedManualBase, tokens);
     }
-  }, [manualAllocations, tokens]);
+    return strategyPlan.allocations;
+  }, [resolvedManualBase, strategyPlan.allocations, tokens]);
 
   useEffect(() => {
     updateSendDraft({
       ethereumRecipient,
       solanaRecipient,
       amount,
-      manualLegs: manualLegsFromAllocations(manualAllocations),
+      manualLegs: manualLegsFromAllocations(
+        resolvedManualBase != null ? allocations : null,
+      ),
       allocationInputs,
     });
   }, [
     allocationInputs,
+    allocations,
     amount,
     ethereumRecipient,
-    manualAllocations,
+    resolvedManualBase,
     solanaRecipient,
   ]);
 
-  // Keep manual legs pointed at fresh token balances when prices refresh.
-  useEffect(() => {
-    setManualAllocations((current) => {
-      if (current == null) {
-        return current;
-      }
-      return refreshAllocationTokens(current, tokens);
-    });
-  }, [tokens]);
-
-  const allocations = useMemo(() => {
-    if (manualAllocations != null) {
-      return manualAllocations;
-    }
-    return strategyPlan.allocations;
-  }, [manualAllocations, strategyPlan.allocations]);
-
   const chains = useMemo(
     () =>
-      manualAllocations != null
-        ? chainsFromAllocations(manualAllocations)
+      resolvedManualBase != null
+        ? chainsFromAllocations(allocations)
         : strategyPlan.chains,
-    [manualAllocations, strategyPlan.chains],
+    [allocations, resolvedManualBase, strategyPlan.chains],
   );
 
   const needsEthereumRecipient = chains.includes('ethereum');
@@ -248,21 +239,21 @@ export function useSendForm(
   const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
 
   const canFulfill =
-    manualAllocations != null
+    resolvedManualBase != null
       ? amountValid && hasPositiveLeg && legsWithinBalance
       : strategyPlan.canFulfill;
 
   const insufficientFunds =
     amountValid &&
-    (manualAllocations != null ? !canFulfill : !strategyPlan.canFulfill);
+    (resolvedManualBase != null ? !canFulfill : !strategyPlan.canFulfill);
 
   const filledUsd =
-    manualAllocations != null
-      ? manualAllocations.reduce((sum, leg) => sum + leg.usd, 0)
+    resolvedManualBase != null
+      ? allocations.reduce((sum, leg) => sum + leg.usd, 0)
       : strategyPlan.filledUsd;
 
   const remainingUsd =
-    manualAllocations != null
+    resolvedManualBase != null
       ? Math.max(0, (usdAmount ?? 0) - filledUsd)
       : strategyPlan.remainingUsd;
 

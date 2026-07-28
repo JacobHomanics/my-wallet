@@ -22,7 +22,7 @@ export type AllocatePaymentResult = {
   remainingUsd: number;
   canFulfill: boolean;
   /** Chain families used by the allocations. */
-  chains: Array<'ethereum' | 'solana'>;
+  chains: ('ethereum' | 'solana')[];
 };
 
 const FILL_TOLERANCE_USD = 0.005;
@@ -289,7 +289,7 @@ function allocateFromOrderedTokens(
 
 function chainsFromAllocations(
   allocations: PaymentAllocation[],
-): Array<'ethereum' | 'solana'> {
+): ('ethereum' | 'solana')[] {
   const set = new Set<'ethereum' | 'solana'>();
   for (const leg of allocations) {
     set.add(getNetworkChain(leg.token.network));
