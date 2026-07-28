@@ -137,11 +137,6 @@ export function useSendForm(
 
   const usdAmount = amountUsd ?? parseDisplayInputToUsd(amount);
 
-  const displayAmount =
-    amountUsd != null && amountUsd > 0
-      ? formatAmountInputFromUsd(amountUsd)
-      : amount;
-
   const strategyPlan = useMemo(() => {
     if (usdAmount == null || usdAmount <= 0) {
       return {
@@ -213,7 +208,7 @@ export function useSendForm(
     updateSendDraft({
       ethereumRecipient,
       solanaRecipient,
-      amount: displayAmount,
+      amount,
       amountLocked,
       manualLegs: manualLegsFromAllocations(
         resolvedManualBase != null ? allocations : null,
@@ -223,8 +218,8 @@ export function useSendForm(
   }, [
     allocationInputs,
     allocations,
+    amount,
     amountLocked,
-    displayAmount,
     ethereumRecipient,
     resolvedManualBase,
     solanaRecipient,
@@ -474,7 +469,7 @@ export function useSendForm(
   }, [allocationInputUnit, allocationInputs, allocations, formatAmountInputFromUsd]);
 
   return {
-    amount: displayAmount,
+    amount,
     allocations,
     allocationInputs: resolvedAllocationInputs,
     chains,
