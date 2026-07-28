@@ -205,6 +205,10 @@ export function ConfirmSendScreen() {
     navigation.navigate('send');
   }, [navigation]);
 
+  const goToSend = useCallback(() => {
+    navigation.navigate('send');
+  }, [navigation]);
+
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
       <View style={styles.content}>
@@ -214,9 +218,7 @@ export function ConfirmSendScreen() {
               accessibilityLabel="Back"
               accessibilityRole="button"
               hitSlop={8}
-              onPress={() => {
-                navigation.goBack();
-              }}
+              onPress={goToSend}
               style={({ pressed }) => [
                 styles.webBack,
                 pressed && styles.webBackPressed,
@@ -225,7 +227,7 @@ export function ConfirmSendScreen() {
               <Text style={styles.webBackText}>Back</Text>
             </Pressable>
           ) : (
-            <BackButton accessibilityLabel="Back" />
+            <BackButton accessibilityLabel="Back" onPress={goToSend} />
           )}
           <Text style={styles.topBarTitle}>Confirm</Text>
           <View style={styles.topBarSpacer} />
@@ -237,26 +239,29 @@ export function ConfirmSendScreen() {
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
             <Text style={styles.heroUsd}>{usdLabel ?? `$${usdAmount}`}</Text>
 
-            {needsEthereum ? (
-              <>
-                <Text style={styles.toLabel}>
-                  {needsSolana ? 'Ethereum' : 'To'}
-                </Text>
-                <Text style={styles.toAddress} selectable>
-                  {trimmedEthereum}
-                </Text>
-              </>
-            ) : null}
-            {needsSolana ? (
-              <>
-                <Text style={styles.toLabel}>
-                  {needsEthereum ? 'Solana' : 'To'}
-                </Text>
-                <Text style={styles.toAddress} selectable>
-                  {trimmedSolana}
-                </Text>
-              </>
-            ) : null}
+            <View style={styles.toSection}>
+              <Text style={styles.toLabel}>To</Text>
+              {needsEthereum ? (
+                <>
+                  {needsSolana ? (
+                    <Text style={styles.toChainLabel}>EVM</Text>
+                  ) : null}
+                  <Text style={styles.toAddress} selectable>
+                    {trimmedEthereum}
+                  </Text>
+                </>
+              ) : null}
+              {needsSolana ? (
+                <>
+                  {needsEthereum ? (
+                    <Text style={styles.toChainLabel}>Solana</Text>
+                  ) : null}
+                  <Text style={styles.toAddress} selectable>
+                    {trimmedSolana}
+                  </Text>
+                </>
+              ) : null}
+            </View>
 
             <Pressable
               accessibilityRole="button"
@@ -270,7 +275,9 @@ export function ConfirmSendScreen() {
               ]}
             >
               <Text style={styles.advancedToggleText}>
-                {showAdvanced ? 'Hide advanced details' : 'Show advanced details'}
+                {showAdvanced
+                  ? 'Hide advanced details'
+                  : 'Show advanced details'}
               </Text>
               <Ionicons
                 name={showAdvanced ? 'chevron-up' : 'chevron-down'}
@@ -305,26 +312,6 @@ export function ConfirmSendScreen() {
                     </View>
                   </View>
                 ))}
-                {needsEthereum ? (
-                  <>
-                    <View style={styles.divider} />
-                    <SummaryRow
-                      label={needsSolana ? 'Ethereum recipient' : 'Recipient'}
-                      value={trimmedEthereum}
-                      mono
-                    />
-                  </>
-                ) : null}
-                {needsSolana ? (
-                  <>
-                    <View style={styles.divider} />
-                    <SummaryRow
-                      label={needsEthereum ? 'Solana recipient' : 'Recipient'}
-                      value={trimmedSolana}
-                      mono
-                    />
-                  </>
-                ) : null}
               </View>
             ) : null}
 
@@ -413,29 +400,6 @@ export function ConfirmSendScreen() {
   );
 }
 
-function SummaryRow({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
-  return (
-    <View style={styles.summaryRow}>
-      <Text style={styles.summaryLabel}>{label}</Text>
-      <Text
-        style={[styles.summaryValue, mono && styles.summaryMono]}
-        numberOfLines={mono ? 4 : 2}
-        selectable
-      >
-        {value}
-      </Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -497,21 +461,30 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },
-  toLabel: {
+  toSection: {
     marginTop: 36,
+    alignSelf: 'stretch',
+  },
+  toLabel: {
     fontSize: 13,
     fontWeight: '600',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
-    alignSelf: 'stretch',
+  },
+  toChainLabel: {
+    marginTop: 16,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   toAddress: {
     marginTop: 8,
     fontSize: 16,
     fontWeight: '500',
     color: '#0f172a',
-    alignSelf: 'stretch',
     fontVariant: ['tabular-nums'],
   },
   advancedToggle: {
@@ -539,7 +512,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#fff',
     paddingHorizontal: 16,
-    paddingVertical: 4,
   },
   tokenRow: {
     flexDirection: 'row',
@@ -560,26 +532,6 @@ const styles = StyleSheet.create({
   tokenMeta: {
     fontSize: 13,
     color: '#94a3b8',
-  },
-  summaryRow: {
-    paddingVertical: 14,
-    gap: 6,
-  },
-  summaryLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  summaryValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0f172a',
-  },
-  summaryMono: {
-    fontVariant: ['tabular-nums'],
-    fontWeight: '500',
   },
   divider: {
     height: StyleSheet.hairlineWidth,

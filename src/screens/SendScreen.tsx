@@ -91,7 +91,7 @@ export function SendScreen() {
     needsEthereumRecipient &&
     ethereumRecipient.trim() &&
     !ethereumRecipientValid
-      ? 'Enter a valid Ethereum address'
+      ? 'Enter a valid EVM address'
       : null;
 
   const solanaRecipientError =
@@ -232,7 +232,7 @@ export function SendScreen() {
                   {needsEthereumRecipient ? (
                     <>
                       <Text style={styles.label}>
-                        {needsSolanaRecipient ? 'Ethereum recipient' : 'To'}
+                        {needsSolanaRecipient ? 'EVM recipient' : 'To'}
                       </Text>
                       <View
                         style={[
@@ -246,14 +246,14 @@ export function SendScreen() {
                           autoCapitalize="none"
                           autoCorrect={false}
                           onChangeText={setEthereumRecipient}
-                          placeholder="0x… Ethereum address"
+                          placeholder="0x… EVM address"
                           placeholderTextColor="#94a3b8"
                           style={styles.fieldInput}
                           value={ethereumRecipient}
                         />
                         {ethereumRecipient.trim() ? (
                           <Pressable
-                            accessibilityLabel="Clear Ethereum recipient"
+                            accessibilityLabel="Clear EVM recipient"
                             accessibilityRole="button"
                             hitSlop={8}
                             onPress={() => {
