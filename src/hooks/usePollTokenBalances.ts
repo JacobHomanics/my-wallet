@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 
@@ -18,8 +18,7 @@ export function usePollTokenBalances(
   const isFocused = useIsFocused();
   const enabled = options?.enabled ?? true;
   const intervalMs = options?.intervalMs ?? DEFAULT_POLL_INTERVAL_MS;
-  const pollRef = useRef(poll);
-  pollRef.current = poll;
+  const onPoll = useEffectEvent(poll);
 
   useEffect(() => {
     if (!enabled || !isFocused) {
@@ -30,7 +29,7 @@ export function usePollTokenBalances(
       if (AppState.currentState !== 'active') {
         return;
       }
-      pollRef.current();
+      onPoll();
     };
 
     const timer = setInterval(tick, intervalMs);
