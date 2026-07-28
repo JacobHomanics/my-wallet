@@ -127,6 +127,7 @@ export function useSendTransaction(): SendTransactionResult {
             const prepared = await prepareNativeEvmSend({
               network,
               from,
+              to: params.recipient.trim(),
               amountRaw: params.amountRaw,
             });
             const hash = await sendPrivyEvmTransaction({
@@ -142,16 +143,22 @@ export function useSendTransaction(): SendTransactionResult {
             return { hash, chain: 'ethereum' };
           }
 
-          const fees = await prepareErc20EvmSend({ network, from });
+          const data = encodeErc20Transfer(
+            params.recipient.trim(),
+            params.amountRaw,
+          );
+          const fees = await prepareErc20EvmSend({
+            network,
+            from,
+            to: params.token.tokenAddress!,
+            data,
+          });
           const hash = await sendPrivyEvmTransaction({
             provider,
             network,
             from,
             to: params.token.tokenAddress!,
-            data: encodeErc20Transfer(
-              params.recipient.trim(),
-              params.amountRaw,
-            ),
+            data,
             gas: fees.gas,
             maxFeePerGas: fees.maxFeePerGas,
             maxPriorityFeePerGas: fees.maxPriorityFeePerGas,

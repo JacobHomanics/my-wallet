@@ -151,7 +151,21 @@ export async function simulateEvmTransfer(
   }
 
   // eth_estimateGas catches additional revert paths eth_call can miss.
-  await rpcCall(params.network, 'eth_estimateGas', [call]);
+  // Ignore gas-funding failures: nodes often price gas above our capped
+  // EIP-1559 budget, and we already verified balance >= maxFeeWei.
+  try {
+    await rpcCall(params.network, 'eth_estimateGas', [call]);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const lower = message.toLowerCase();
+    if (
+      !lower.includes('insufficient funds') &&
+      !lower.includes('gas required exceeds') &&
+      !lower.includes('exceeds the balance')
+    ) {
+      throw error;
+    }
+  }
 
   return {
     amountRaw: params.amountRaw,

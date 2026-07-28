@@ -15,6 +15,41 @@ export const EVM_NATIVE_TRANSFER_GAS = 21_000n;
 export const EVM_ERC20_TRANSFER_GAS = 65_000n;
 
 /**
+ * Per-network gas floors. Arbitrum rejects plain 21k transfers with
+ * "intrinsic gas too low"; other L2s often need a little headroom too.
+ */
+export function evmTransferGasLimit(
+  network: string,
+  forTokenTransfer: boolean,
+): bigint {
+  if (forTokenTransfer) {
+    if (network === 'arb-mainnet') {
+      return 150_000n;
+    }
+    if (
+      network === 'base-mainnet' ||
+      network === 'opt-mainnet' ||
+      network === 'polygon-mainnet'
+    ) {
+      return 80_000n;
+    }
+    return EVM_ERC20_TRANSFER_GAS;
+  }
+
+  if (network === 'arb-mainnet') {
+    return 100_000n;
+  }
+  if (
+    network === 'base-mainnet' ||
+    network === 'opt-mainnet' ||
+    network === 'polygon-mainnet'
+  ) {
+    return 30_000n;
+  }
+  return EVM_NATIVE_TRANSFER_GAS;
+}
+
+/**
  * Typical per-tx fee in USD. L2 execution gas is tiny; most cost is L1 data /
  * posting. Anchoring in USD keeps dust ETH on Base/Arb/OP mostly spendable
  * while still leaving enough for a normal transfer.
@@ -84,10 +119,9 @@ export function fallbackFeePerTxRaw(
 export function evmFeePerTxRaw(
   gasPriceWei: bigint,
   forTokenTransfer: boolean,
+  network = 'eth-mainnet',
 ): bigint {
-  const gasLimit = forTokenTransfer
-    ? EVM_ERC20_TRANSFER_GAS
-    : EVM_NATIVE_TRANSFER_GAS;
+  const gasLimit = evmTransferGasLimit(network, forTokenTransfer);
   return (gasLimit * gasPriceWei * FEE_BUFFER_NUMERATOR) / FEE_BUFFER_DENOMINATOR;
 }
 

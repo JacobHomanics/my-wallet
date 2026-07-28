@@ -159,6 +159,7 @@ export function ConfirmSendScreen() {
           })),
         });
       } catch (err) {
+        console.error('Send failed', err);
         setError(formatSendError(err));
       }
     })();

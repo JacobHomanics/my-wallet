@@ -1,6 +1,5 @@
 import {
-  EVM_ERC20_TRANSFER_GAS,
-  EVM_NATIVE_TRANSFER_GAS,
+  evmTransferGasLimit,
 } from '@/lib/send/gasReserves';
 import { getAlchemyRpcUrl, toHexQuantity } from '@/lib/send/rpc';
 
@@ -101,8 +100,13 @@ export async function estimateEvmGas(
     call.value = params.value;
   }
 
+  const forTokenTransfer = params.data != null;
+  const floor = evmTransferGasLimit(params.network, forTokenTransfer);
+
   try {
-    return withGasBuffer(await ethEstimateGas(params.network, call));
+    const estimated = await ethEstimateGas(params.network, call);
+    const buffered = BigInt(withGasBuffer(estimated));
+    return toHexQuantity(buffered > floor ? buffered : floor);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (!isBalanceRelatedEstimateError(message)) {
@@ -113,18 +117,18 @@ export async function estimateEvmGas(
     if (params.data == null && params.value != null) {
       try {
         const { value: _ignored, ...withoutValue } = call;
-        return withGasBuffer(
-          await ethEstimateGas(params.network, {
-            ...withoutValue,
-            value: '0x0',
-          }),
-        );
+        const estimated = await ethEstimateGas(params.network, {
+          ...withoutValue,
+          value: '0x0',
+        });
+        const buffered = BigInt(withGasBuffer(estimated));
+        return toHexQuantity(buffered > floor ? buffered : floor);
       } catch {
-        return withGasBuffer(EVM_NATIVE_TRANSFER_GAS);
+        return toHexQuantity(floor);
       }
     }
 
-    // ERC-20 / contract call: fall back to a typical transfer limit.
-    return withGasBuffer(EVM_ERC20_TRANSFER_GAS);
+    // ERC-20 / contract call: fall back to network floor.
+    return toHexQuantity(floor);
   }
 }

@@ -85,6 +85,7 @@ export function useSendTransaction(): SendTransactionResult {
                 const prepared = await prepareNativeEvmSend({
                   network: params.token.network,
                   from: wallet.address,
+                  to: params.recipient.trim(),
                   amountRaw: params.amountRaw,
                 });
                 return {
@@ -96,19 +97,25 @@ export function useSendTransaction(): SendTransactionResult {
                   chainId,
                 };
               })()
-            : {
-                ...(await prepareErc20EvmSend({
-                  network: params.token.network,
-                  from: wallet.address,
-                })),
-                to: params.token.tokenAddress!,
-                data: encodeErc20Transfer(
+            : await (async () => {
+                const data = encodeErc20Transfer(
                   params.recipient.trim(),
                   params.amountRaw,
-                ),
-                value: toHexQuantity(0n),
-                chainId,
-              };
+                );
+                const fees = await prepareErc20EvmSend({
+                  network: params.token.network,
+                  from: wallet.address,
+                  to: params.token.tokenAddress!,
+                  data,
+                });
+                return {
+                  ...fees,
+                  to: params.token.tokenAddress!,
+                  data,
+                  value: toHexQuantity(0n),
+                  chainId,
+                };
+              })();
 
           const { hash } = await sendTransaction(request, {
             address: wallet.address,

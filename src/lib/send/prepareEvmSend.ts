@@ -1,6 +1,6 @@
+import { estimateEvmGas } from '@/lib/send/estimateEvmGas';
 import {
-  EVM_ERC20_TRANSFER_GAS,
-  EVM_NATIVE_TRANSFER_GAS,
+  evmTransferGasLimit,
   fallbackFeePerTxRaw,
 } from '@/lib/send/gasReserves';
 import { getAlchemyRpcUrl, toHexQuantity } from '@/lib/send/rpc';
@@ -69,6 +69,10 @@ function isL2Network(network: string): boolean {
   return OP_STACK_NETWORKS.has(network) || network === 'polygon-mainnet';
 }
 
+function maxBigInt(a: bigint, b: bigint): bigint {
+  return a > b ? a : b;
+}
+
 /**
  * Builds tight EIP-1559 fee fields so simulation's `value + gas*maxFee` check
  * matches what we leave behind (Privy's auto fees can over-reserve).
@@ -76,10 +80,15 @@ function isL2Network(network: string): boolean {
 export async function estimateEvmFeeFields(
   network: string,
   forTokenTransfer: boolean,
-): Promise<{ gas: bigint; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; maxFeeWei: bigint }> {
-  const gas = forTokenTransfer
-    ? EVM_ERC20_TRANSFER_GAS
-    : EVM_NATIVE_TRANSFER_GAS;
+  gasOverride?: bigint,
+): Promise<{
+  gas: bigint;
+  maxFeePerGas: bigint;
+  maxPriorityFeePerGas: bigint;
+  maxFeeWei: bigint;
+}> {
+  const gas =
+    gasOverride ?? evmTransferGasLimit(network, forTokenTransfer);
 
   let gasPrice = 1_000_000n; // 0.001 gwei fallback
   try {
@@ -129,6 +138,34 @@ export async function fetchNativeBalanceWei(
   return BigInt(hex);
 }
 
+async function resolveTransferGas(options: {
+  network: string;
+  from: string;
+  to: string;
+  forTokenTransfer: boolean;
+  data?: `0x${string}`;
+  value?: `0x${string}`;
+}): Promise<bigint> {
+  const floor = evmTransferGasLimit(
+    options.network,
+    options.forTokenTransfer,
+  );
+  try {
+    const estimated = BigInt(
+      await estimateEvmGas({
+        network: options.network,
+        from: options.from,
+        to: options.to,
+        data: options.data,
+        value: options.value,
+      }),
+    );
+    return maxBigInt(estimated, floor);
+  } catch {
+    return floor;
+  }
+}
+
 /**
  * Clamps a native send and returns explicit fee fields to pass through to Privy
  * so the balance check uses the same budget we reserved.
@@ -136,12 +173,22 @@ export async function fetchNativeBalanceWei(
 export async function prepareNativeEvmSend(options: {
   network: string;
   from: string;
+  to: string;
   amountRaw: bigint;
 }): Promise<PreparedNativeEvmSend> {
-  const [balance, fees] = await Promise.all([
-    fetchNativeBalanceWei(options.network, options.from),
-    estimateEvmFeeFields(options.network, false),
-  ]);
+  const recipient = options.to.trim();
+  const balance = await fetchNativeBalanceWei(options.network, options.from);
+
+  // Estimate gas with value 0 first so near-max sends don't fail estimate.
+  const gas = await resolveTransferGas({
+    network: options.network,
+    from: options.from,
+    to: recipient,
+    forTokenTransfer: false,
+    value: toHexQuantity(0n),
+  });
+
+  const fees = await estimateEvmFeeFields(options.network, false, gas);
 
   let amountRaw = options.amountRaw;
   if (amountRaw + fees.maxFeeWei > balance) {
@@ -169,10 +216,21 @@ export async function prepareNativeEvmSend(options: {
 export async function prepareErc20EvmSend(options: {
   network: string;
   from: string;
+  to: string;
+  data: `0x${string}`;
 }): Promise<EvmFeeFields> {
+  const gas = await resolveTransferGas({
+    network: options.network,
+    from: options.from,
+    to: options.to,
+    forTokenTransfer: true,
+    data: options.data,
+    value: toHexQuantity(0n),
+  });
+
   const [balance, fees] = await Promise.all([
     fetchNativeBalanceWei(options.network, options.from),
-    estimateEvmFeeFields(options.network, true),
+    estimateEvmFeeFields(options.network, true, gas),
   ]);
 
   if (balance < fees.maxFeeWei) {
