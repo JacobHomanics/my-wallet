@@ -127,7 +127,15 @@ export function SendScreen() {
   ]);
 
   const goHome = useCallback(() => {
-    navigation.navigate('index');
+    const state = navigation.getState();
+    const homeRouteIndex = state.routes.findIndex((route) => route.name === 'index');
+    if (homeRouteIndex >= 0 && state.index > homeRouteIndex) {
+      navigation.pop(state.index - homeRouteIndex);
+      return;
+    }
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    }
   }, [navigation]);
 
   const onAddToken = useCallback(

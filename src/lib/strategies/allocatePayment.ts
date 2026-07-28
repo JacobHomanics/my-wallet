@@ -173,10 +173,11 @@ function allocateRemainderFromGas(
   return mergeAllocationResults(prior, greedyGas);
 }
 
-/** Even split stables first, then other non-gas tokens, then gas. */
+/** Greedy stablecoins first, then even split other non-gas tokens, then gas. */
 function allocatePrioritizeStablecoinsThenEvenSplit(
   tokens: OwnedToken[],
   usdAmount: number,
+  preferredTokenId?: string | null,
 ): Omit<AllocatePaymentResult, 'chains'> {
   const priced = tokens.filter((token) => tokenUsd(token) > 0);
   const nonGas = priced.filter((token) => !isGasToken(token));
@@ -184,26 +185,40 @@ function allocatePrioritizeStablecoinsThenEvenSplit(
   const stables = nonGas.filter((token) => isStablecoin(token));
   const nonStables = nonGas.filter((token) => !isStablecoin(token));
 
+  if (nonGas.length === 0) {
+    return evenSplitAmong(gas, usdAmount);
+  }
+
+  let result: Omit<AllocatePaymentResult, 'chains'> = {
+    allocations: [],
+    filledUsd: 0,
+    remainingUsd: usdAmount,
+    canFulfill: false,
+  };
+
   if (stables.length > 0) {
-    let result = evenSplitAmong(stables, usdAmount);
+    const ordered = sortForStrategy(
+      stables,
+      'prioritize-stablecoins',
+      preferredTokenId,
+    );
+    result = allocateFromOrderedTokens(ordered, usdAmount);
     if (result.canFulfill) {
       return result;
     }
-
-    if (nonStables.length > 0 && result.remainingUsd > FILL_TOLERANCE_USD) {
-      const secondary = evenSplitAmong(nonStables, result.remainingUsd);
-      result = mergeAllocationResults(result, secondary);
-    }
-
-    return allocateRemainderFromGas(gas, result);
   }
 
-  if (nonStables.length > 0) {
-    const primary = evenSplitAmong(nonStables, usdAmount);
-    return allocateRemainderFromGas(gas, primary);
+  if (nonStables.length > 0 && result.remainingUsd > FILL_TOLERANCE_USD) {
+    const evenSplit = evenSplitAmong(nonStables, result.remainingUsd);
+    result =
+      stables.length > 0
+        ? mergeAllocationResults(result, evenSplit)
+        : evenSplit;
+  } else if (stables.length === 0 && nonStables.length > 0) {
+    result = evenSplitAmong(nonStables, usdAmount);
   }
 
-  return evenSplitAmong(gas, usdAmount);
+  return allocateRemainderFromGas(gas, result);
 }
 
 function sortForStrategy(
@@ -308,7 +323,11 @@ export function allocatePaymentUsd(options: {
       case 'even-split':
         return allocateEvenSplit(tokens, usdAmount);
       case 'prioritize-stablecoins-even-split':
-        return allocatePrioritizeStablecoinsThenEvenSplit(tokens, usdAmount);
+        return allocatePrioritizeStablecoinsThenEvenSplit(
+          tokens,
+          usdAmount,
+          preferredTokenId,
+        );
       case 'prioritize-stablecoins':
       default: {
         const priced = tokens.filter((token) => tokenUsd(token) > 0);
