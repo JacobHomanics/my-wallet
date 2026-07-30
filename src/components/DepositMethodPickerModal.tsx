@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import type { DepositMethodOption } from '@/lib/privy/onramp';
 
 type DepositMethodPickerModalProps = {
@@ -21,7 +22,7 @@ type DepositMethodPickerModalProps = {
 };
 
 /**
- * Page-sheet modal listing deposit flows (Stripe onramp vs Fund Wallet).
+ * Deposit method picker: centered dialog on desktop web, page sheet otherwise.
  */
 export function DepositMethodPickerModal({
   visible,
@@ -31,6 +32,7 @@ export function DepositMethodPickerModal({
   onSelect,
 }: DepositMethodPickerModalProps) {
   const insets = useSafeAreaInsets();
+  const isDesktopWeb = useIsDesktopWeb();
 
   const renderMethod = useCallback(
     ({ item }: { item: DepositMethodOption }) => (
@@ -59,6 +61,63 @@ export function DepositMethodPickerModal({
     [disabled, onSelect],
   );
 
+  const header = (
+    <View style={styles.modalTopBar}>
+      <Text style={styles.modalTitle}>Deposit</Text>
+      <Pressable
+        accessibilityLabel="Close"
+        accessibilityRole="button"
+        hitSlop={8}
+        onPress={onClose}
+        style={({ pressed }) => [
+          styles.modalClose,
+          pressed && styles.modalClosePressed,
+        ]}
+      >
+        <Ionicons name="close" size={22} color="#0f172a" />
+      </Pressable>
+    </View>
+  );
+
+  const body = (
+    <>
+      <Text style={styles.subtitle}>
+        Choose how to buy Base USDC into your wallet.
+      </Text>
+      <FlatList
+        contentContainerStyle={styles.optionList}
+        data={[...methods]}
+        keyExtractor={(item) => item.id}
+        renderItem={renderMethod}
+        scrollEnabled={!isDesktopWeb}
+      />
+    </>
+  );
+
+  if (isDesktopWeb) {
+    return (
+      <Modal
+        animationType="fade"
+        onRequestClose={onClose}
+        transparent
+        visible={visible}
+      >
+        <View style={styles.desktopBackdrop}>
+          <Pressable
+            accessibilityLabel="Dismiss deposit options"
+            accessibilityRole="button"
+            onPress={onClose}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View style={styles.desktopCard}>
+            {header}
+            {body}
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
   return (
     <Modal
       animationType="slide"
@@ -68,51 +127,46 @@ export function DepositMethodPickerModal({
     >
       <View
         style={[
-          styles.modalContainer,
+          styles.sheetContainer,
           { paddingTop: Math.max(insets.top, 12) },
         ]}
       >
-        <View style={styles.modalTopBar}>
-          <Text style={styles.modalTitle}>Deposit</Text>
-          <Pressable
-            accessibilityLabel="Close"
-            accessibilityRole="button"
-            hitSlop={8}
-            onPress={onClose}
-            style={({ pressed }) => [
-              styles.modalClose,
-              pressed && styles.modalClosePressed,
-            ]}
-          >
-            <Ionicons name="close" size={22} color="#0f172a" />
-          </Pressable>
-        </View>
-
-        <Text style={styles.subtitle}>
-          Choose how to buy Base USDC into your wallet.
-        </Text>
-
-        <FlatList
-          contentContainerStyle={styles.optionList}
-          data={[...methods]}
-          keyExtractor={(item) => item.id}
-          renderItem={renderMethod}
-        />
+        {header}
+        {body}
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  modalContainer: {
+  sheetContainer: {
     flex: 1,
     backgroundColor: '#f8fafc',
+  },
+  desktopBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  desktopCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#f8fafc',
+    borderRadius: 14,
+    overflow: 'hidden',
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
   },
   modalTopBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
+    paddingTop: 12,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#e2e8f0',
