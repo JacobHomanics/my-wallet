@@ -12,11 +12,14 @@ import {
   View,
 } from 'react-native';
 
+import { DepositMethodPickerModal } from '@/components/DepositMethodPickerModal';
+import { useDepositMethodPicker } from '@/hooks/useDepositMethodPicker';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useFiatOnrampDeposit } from '@/hooks/useFiatOnrampDeposit';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
+import type { DepositMethodOption } from '@/lib/privy/onramp';
 import type { HomeStackParamList } from '@/navigation/types';
 
 export function HomeScreen() {
@@ -46,18 +49,28 @@ export function HomeScreen() {
     error: depositError,
     deposit,
   } = useFiatOnrampDeposit();
+  const {
+    methods: depositMethods,
+    pickerOpen: depositPickerOpen,
+    openPicker: openDepositPicker,
+    closePicker: closeDepositPicker,
+  } = useDepositMethodPicker();
   const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
 
   const onRefresh = useCallback(() => {
     refresh();
   }, [refresh]);
 
-  const onDeposit = useCallback(async () => {
-    const status = await deposit();
-    if (status === 'confirmed' || status === 'submitted') {
-      refresh();
-    }
-  }, [deposit, refresh]);
+  const onSelectDepositMethod = useCallback(
+    async (option: DepositMethodOption) => {
+      closeDepositPicker();
+      const status = await deposit(option.id);
+      if (status === 'confirmed' || status === 'submitted') {
+        refresh();
+      }
+    },
+    [closeDepositPicker, deposit, refresh],
+  );
 
   const totalLabel = formatFromUsd(totalUsd) ?? defaultFormattedZero;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
@@ -135,7 +148,7 @@ export function HomeScreen() {
                     <Pressable
                       accessibilityRole="button"
                       disabled={depositLoading}
-                      onPress={onDeposit}
+                      onPress={openDepositPicker}
                       style={({ pressed }) => [
                         styles.actionButton,
                         pressed && styles.actionButtonPressed,
@@ -203,6 +216,16 @@ export function HomeScreen() {
             <Text style={styles.detailsLinkText}>Contacts</Text>
           </Pressable>
         </View>
+      ) : null}
+
+      {canDeposit ? (
+        <DepositMethodPickerModal
+          disabled={depositLoading}
+          methods={depositMethods}
+          onClose={closeDepositPicker}
+          onSelect={onSelectDepositMethod}
+          visible={depositPickerOpen}
+        />
       ) : null}
     </ScrollView>
   );

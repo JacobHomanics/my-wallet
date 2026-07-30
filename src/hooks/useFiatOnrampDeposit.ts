@@ -1,15 +1,19 @@
+import type { DepositMethodId } from '@/lib/privy/onramp';
+
 export type FiatOnrampDepositStatus = 'submitted' | 'confirmed';
 
 export type UseFiatOnrampDepositResult = {
   isAvailable: boolean;
   isLoading: boolean;
   error: string | null;
-  deposit: () => Promise<FiatOnrampDepositStatus | null>;
+  deposit: (
+    method: DepositMethodId,
+  ) => Promise<FiatOnrampDepositStatus | null>;
 };
 
 /**
- * Native stub — card onramp uses `@privy-io/react-auth` `useFiatOnramp` on web.
- * Mobile can later use `useFundWallet` from `@privy-io/expo/ui`.
+ * Native stub — web supports Stripe (`useFiatOnramp`) and Fund Wallet
+ * (`useFundWallet`). Mobile can later use `@privy-io/expo/ui`.
  */
 export function useFiatOnrampDeposit(): UseFiatOnrampDepositResult {
   return {
