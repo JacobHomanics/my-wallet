@@ -25,7 +25,7 @@ importers:
         version: 0.0.12(expo@57.0.8)(react-native@0.86.0(@babel/core@7.29.7)(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.3)(utf-8-validate@6.0.6))(react@19.2.3)
       '@privy-io/react-auth':
         specifier: ^3.35.2
-        version: 3.35.2(55c4f27cf123197cf7069e219d8246ee)
+        version: 3.35.2(6bc085894b56b058c84b122cd6a9d71a)
       '@react-navigation/bottom-tabs':
         specifier: ^7.18.14
         version: 7.18.14(@react-navigation/native@7.3.14(react-native@0.86.0(@babel/core@7.29.7)(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.3)(utf-8-validate@6.0.6))(react@19.2.3))(react-native-safe-area-context@5.7.0(react-native@0.86.0(@babel/core@7.29.7)(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.3)(utf-8-validate@6.0.6))(react@19.2.3))(react-native-screens@4.26.2(react-native@0.86.0(@babel/core@7.29.7)(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.3)(utf-8-validate@6.0.6))(react@19.2.3))(react-native@0.86.0(@babel/core@7.29.7)(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.3)(utf-8-validate@6.0.6))(react@19.2.3)
@@ -53,6 +53,9 @@ importers:
       '@solana/web3.js':
         specifier: ^1.98.4
         version: 1.98.4(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)
+      '@stripe/crypto':
+        specifier: ^1.1.2
+        version: 1.1.2(@stripe/stripe-js@1.54.2)
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
@@ -1893,6 +1896,14 @@ packages:
 
   '@solana/web3.js@1.98.4':
     resolution: {integrity: sha512-vv9lfnvjUsRiq//+j5pBdXig0IQdtzA0BRZ3bXEP4KaIyF1CcaydWqgyzQgfZMNIsWNWmG+AUHwPy4AHOD6gpw==}
+
+  '@stripe/crypto@1.1.2':
+    resolution: {integrity: sha512-0lV3xL2E7cC0hKDxi+72yRPzEB/pgkaeNTsyPTAouvsNB00cuQV5QfdqxtFx0RsTIUzXt4PCcIDcqNvQ5DzYwQ==}
+    peerDependencies:
+      '@stripe/stripe-js': ^1.46.0
+
+  '@stripe/stripe-js@1.54.2':
+    resolution: {integrity: sha512-R1PwtDvUfs99cAjfuQ/WpwJ3c92+DAMy9xGApjqlWQMj0FKQabUAys2swfTRNzuYAYJh7NqK2dzcYVNkKLEKUg==}
 
   '@swc/helpers@0.5.23':
     resolution: {integrity: sha512-5lSsMOTXURePglDfvuAQUqkGek9Hg2kksOYay2m0+XR++b2NWYL/4sWyuvVBIs8oKnJaxkdi9whaL/sqN13afw==}
@@ -8842,7 +8853,7 @@ snapshots:
 
   '@privy-io/popup@0.0.5': {}
 
-  '@privy-io/react-auth@3.35.2(55c4f27cf123197cf7069e219d8246ee)':
+  '@privy-io/react-auth@3.35.2(6bc085894b56b058c84b122cd6a9d71a)':
     dependencies:
       '@base-org/account': 1.1.1(@types/react@19.2.17)(bufferutil@4.1.0)(react@19.2.3)(typescript@6.0.3)(use-sync-external-store@1.4.0(react@19.2.3))(utf-8-validate@6.0.6)(zod@3.25.76)
       '@base-ui/react': 1.6.0(@types/react@19.2.17)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -8892,6 +8903,7 @@ snapshots:
       '@solana-program/system': 0.10.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6))
       '@solana-program/token': 0.9.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6))
       '@solana/kit': 5.5.1(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)
+      '@stripe/crypto': 1.1.2(@stripe/stripe-js@1.54.2)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -10208,6 +10220,12 @@ snapshots:
       - encoding
       - typescript
       - utf-8-validate
+
+  '@stripe/crypto@1.1.2(@stripe/stripe-js@1.54.2)':
+    dependencies:
+      '@stripe/stripe-js': 1.54.2
+
+  '@stripe/stripe-js@1.54.2': {}
 
   '@swc/helpers@0.5.23':
     dependencies:

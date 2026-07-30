@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
+import { useFiatOnrampDeposit } from '@/hooks/useFiatOnrampDeposit';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
@@ -39,11 +40,24 @@ export function HomeScreen() {
   });
 
   const openFreshSend = useOpenFreshSend();
+  const {
+    isAvailable: canDeposit,
+    isLoading: depositLoading,
+    error: depositError,
+    deposit,
+  } = useFiatOnrampDeposit();
   const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
 
   const onRefresh = useCallback(() => {
     refresh();
   }, [refresh]);
+
+  const onDeposit = useCallback(async () => {
+    const status = await deposit();
+    if (status === 'confirmed' || status === 'submitted') {
+      refresh();
+    }
+  }, [deposit, refresh]);
 
   const totalLabel = formatFromUsd(totalUsd) ?? defaultFormattedZero;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
@@ -87,6 +101,9 @@ export function HomeScreen() {
               {totalLabel}
             </Text>
             {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
+            {depositError ? (
+              <Text style={styles.errorBanner}>{depositError}</Text>
+            ) : null}
             {showActions ? (
               <>
                 <View style={styles.actionsRow}>
@@ -114,6 +131,27 @@ export function HomeScreen() {
                     <Ionicons name="arrow-down" size={18} color="#f8fafc" />
                     <Text style={styles.actionButtonText}>Receive</Text>
                   </Pressable>
+                  {canDeposit ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      disabled={depositLoading}
+                      onPress={onDeposit}
+                      style={({ pressed }) => [
+                        styles.actionButton,
+                        pressed && styles.actionButtonPressed,
+                        depositLoading && styles.actionButtonDisabled,
+                      ]}
+                    >
+                      {depositLoading ? (
+                        <ActivityIndicator color="#f8fafc" size="small" />
+                      ) : (
+                        <Ionicons name="card-outline" size={18} color="#f8fafc" />
+                      )}
+                      <Text style={styles.actionButtonText}>
+                        {depositLoading ? 'Deposit…' : 'Deposit'}
+                      </Text>
+                    </Pressable>
+                  ) : null}
                 </View>
                 <Pressable
                   accessibilityRole="link"
@@ -232,7 +270,9 @@ const styles = StyleSheet.create({
   actionsRow: {
     marginTop: 28,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 12,
   },
   actionButton: {
@@ -246,6 +286,9 @@ const styles = StyleSheet.create({
   },
   actionButtonPressed: {
     opacity: 0.85,
+  },
+  actionButtonDisabled: {
+    opacity: 0.6,
   },
   actionButtonText: {
     color: '#f8fafc',
