@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -158,7 +158,11 @@ export function HomeScreen() {
                       {depositLoading ? (
                         <ActivityIndicator color="#f8fafc" size="small" />
                       ) : (
-                        <Ionicons name="card-outline" size={18} color="#f8fafc" />
+                        <MaterialCommunityIcons
+                          name="archive-arrow-down-outline"
+                          size={18}
+                          color="#f8fafc"
+                        />
                       )}
                       <Text style={styles.actionButtonText}>
                         {depositLoading ? 'Deposit…' : 'Deposit'}
