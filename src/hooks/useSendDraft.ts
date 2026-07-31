@@ -69,7 +69,7 @@ export function resetSendDraft(): void {
   });
 }
 
-/** Apply confirm-send route params into the draft (e.g. receive QR deep links). */
+/** Apply send / confirm-send route params into the draft (e.g. receive QR deep links). */
 export function hydrateSendDraftFromConfirmParams(params: {
   usdAmount?: string;
   ethereumRecipient?: string;

@@ -104,13 +104,20 @@ function hydrateSendDraftFromNavState(state: NavState | undefined): void {
   }
 
   for (const route of state.routes) {
-    if (route.name === 'confirmSend' && route.params) {
+    if (
+      (route.name === 'confirmSend' || route.name === 'send') &&
+      route.params
+    ) {
       const params = route.params as {
         usdAmount?: string;
         ethereumRecipient?: string;
         solanaRecipient?: string;
       };
-      if (params.ethereumRecipient || params.solanaRecipient || params.usdAmount) {
+      if (
+        params.ethereumRecipient ||
+        params.solanaRecipient ||
+        params.usdAmount
+      ) {
         hydrateSendDraftFromConfirmParams(params);
       }
     }
@@ -225,7 +232,10 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               send: {
                 path: '/send',
                 parse: {
-                  tokenId: (tokenId: string) => tokenId,
+                  tokenId: (tokenId: string) => tokenId || undefined,
+                  usdAmount: (usdAmount: string) => usdAmount || undefined,
+                  ethereumRecipient: (value: string) => value || undefined,
+                  solanaRecipient: (value: string) => value || undefined,
                 },
               },
               confirmSend: {
