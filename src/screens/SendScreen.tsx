@@ -66,8 +66,6 @@ export function SendScreen() {
     amount,
     allocations,
     allocationInputs,
-    needsEthereumRecipient,
-    needsSolanaRecipient,
     ethereumRecipient,
     solanaRecipient,
     ethereumRecipientValid,
@@ -93,14 +91,12 @@ export function SendScreen() {
         : null;
 
   const ethereumRecipientError =
-    needsEthereumRecipient &&
-    ethereumRecipient.trim() &&
-    !ethereumRecipientValid
+    ethereumRecipient.trim() && !ethereumRecipientValid
       ? 'Enter a valid EVM address'
       : null;
 
   const solanaRecipientError =
-    needsSolanaRecipient && solanaRecipient.trim() && !solanaRecipientValid
+    solanaRecipient.trim() && !solanaRecipientValid
       ? 'Enter a valid Solana address'
       : null;
 
@@ -111,12 +107,8 @@ export function SendScreen() {
 
     navigation.navigate('confirmSend', {
       usdAmount: amount,
-      ethereumRecipient: needsEthereumRecipient
-        ? ethereumRecipient.trim()
-        : undefined,
-      solanaRecipient: needsSolanaRecipient
-        ? solanaRecipient.trim()
-        : undefined,
+      ethereumRecipient: ethereumRecipient.trim() || undefined,
+      solanaRecipient: solanaRecipient.trim() || undefined,
       legs: allocations.map((leg) => ({
         tokenId: leg.token.id,
         amount: leg.amountFormatted,
@@ -128,8 +120,6 @@ export function SendScreen() {
     canContinue,
     ethereumRecipient,
     navigation,
-    needsEthereumRecipient,
-    needsSolanaRecipient,
     solanaRecipient,
   ]);
 
@@ -223,112 +213,81 @@ export function SendScreen() {
                 <Text style={styles.fieldError}>{amountError}</Text>
               ) : null}
 
-              {!needsEthereumRecipient && !needsSolanaRecipient ? (
-                <>
-                  <Text style={styles.label}>To</Text>
-                  <View style={[styles.fieldRow, styles.fieldRowDisabled]}>
-                    <Text style={styles.fieldPlaceholder}>
-                      Enter an amount first
-                    </Text>
-                  </View>
-                </>
-              ) : (
-                <>
-                  {needsEthereumRecipient ? (
-                    <>
-                      <Text style={styles.label}>
-                        {needsSolanaRecipient ? 'EVM recipient' : 'To'}
-                      </Text>
-                      <View
-                        style={[
-                          styles.fieldRow,
-                          ethereumRecipientError
-                            ? styles.fieldRowError
-                            : null,
-                        ]}
-                      >
-                        <TextInput
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                          onChangeText={setEthereumRecipient}
-                          placeholder="0x… EVM address"
-                          placeholderTextColor="#94a3b8"
-                          style={styles.fieldInput}
-                          value={ethereumRecipient}
-                        />
-                        {ethereumRecipient.trim() ? (
-                          <Pressable
-                            accessibilityLabel="Clear EVM recipient"
-                            accessibilityRole="button"
-                            hitSlop={8}
-                            onPress={() => {
-                              setEthereumRecipient('');
-                            }}
-                            style={styles.clearButton}
-                          >
-                            <Ionicons
-                              name="close-circle"
-                              size={20}
-                              color="#94a3b8"
-                            />
-                          </Pressable>
-                        ) : null}
-                      </View>
-                      {ethereumRecipientError ? (
-                        <Text style={styles.fieldError}>
-                          {ethereumRecipientError}
-                        </Text>
-                      ) : null}
-                    </>
-                  ) : null}
+              <Text style={styles.label}>EVM recipient</Text>
+              <View
+                style={[
+                  styles.fieldRow,
+                  ethereumRecipientError ? styles.fieldRowError : null,
+                ]}
+              >
+                <TextInput
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  onChangeText={setEthereumRecipient}
+                  placeholder="0x… EVM address"
+                  placeholderTextColor="#94a3b8"
+                  style={styles.fieldInput}
+                  value={ethereumRecipient}
+                />
+                {ethereumRecipient.trim() ? (
+                  <Pressable
+                    accessibilityLabel="Clear EVM recipient"
+                    accessibilityRole="button"
+                    hitSlop={8}
+                    onPress={() => {
+                      setEthereumRecipient('');
+                    }}
+                    style={styles.clearButton}
+                  >
+                    <Ionicons
+                      name="close-circle"
+                      size={20}
+                      color="#94a3b8"
+                    />
+                  </Pressable>
+                ) : null}
+              </View>
+              {ethereumRecipientError ? (
+                <Text style={styles.fieldError}>{ethereumRecipientError}</Text>
+              ) : null}
 
-                  {needsSolanaRecipient ? (
-                    <>
-                      <Text style={styles.label}>
-                        {needsEthereumRecipient ? 'Solana recipient' : 'To'}
-                      </Text>
-                      <View
-                        style={[
-                          styles.fieldRow,
-                          solanaRecipientError ? styles.fieldRowError : null,
-                        ]}
-                      >
-                        <TextInput
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                          onChangeText={setSolanaRecipient}
-                          placeholder="Solana address"
-                          placeholderTextColor="#94a3b8"
-                          style={styles.fieldInput}
-                          value={solanaRecipient}
-                        />
-                        {solanaRecipient.trim() ? (
-                          <Pressable
-                            accessibilityLabel="Clear Solana recipient"
-                            accessibilityRole="button"
-                            hitSlop={8}
-                            onPress={() => {
-                              setSolanaRecipient('');
-                            }}
-                            style={styles.clearButton}
-                          >
-                            <Ionicons
-                              name="close-circle"
-                              size={20}
-                              color="#94a3b8"
-                            />
-                          </Pressable>
-                        ) : null}
-                      </View>
-                      {solanaRecipientError ? (
-                        <Text style={styles.fieldError}>
-                          {solanaRecipientError}
-                        </Text>
-                      ) : null}
-                    </>
-                  ) : null}
-                </>
-              )}
+              <Text style={styles.label}>Solana recipient</Text>
+              <View
+                style={[
+                  styles.fieldRow,
+                  solanaRecipientError ? styles.fieldRowError : null,
+                ]}
+              >
+                <TextInput
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  onChangeText={setSolanaRecipient}
+                  placeholder="Solana address"
+                  placeholderTextColor="#94a3b8"
+                  style={styles.fieldInput}
+                  value={solanaRecipient}
+                />
+                {solanaRecipient.trim() ? (
+                  <Pressable
+                    accessibilityLabel="Clear Solana recipient"
+                    accessibilityRole="button"
+                    hitSlop={8}
+                    onPress={() => {
+                      setSolanaRecipient('');
+                    }}
+                    style={styles.clearButton}
+                  >
+                    <Ionicons
+                      name="close-circle"
+                      size={20}
+                      color="#94a3b8"
+                    />
+                  </Pressable>
+                ) : null}
+              </View>
+              {solanaRecipientError ? (
+                <Text style={styles.fieldError}>{solanaRecipientError}</Text>
+              ) : null}
 
               <Pressable
                 accessibilityRole="button"
@@ -521,12 +480,6 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     fontSize: 16,
     color: '#0f172a',
-  },
-  fieldPlaceholder: {
-    flex: 1,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#94a3b8',
   },
   amountPrefix: {
     fontSize: 16,
