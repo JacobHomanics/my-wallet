@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
+import { WalletDebitCard } from '@/components/WalletDebitCard';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
@@ -19,7 +20,6 @@ import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useSignOut } from '@/hooks/useSignOut';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useUserWallets } from '@/hooks/useUserWallets';
-import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 
 export function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -142,48 +142,25 @@ export function SettingsScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Wallets</Text>
+        <Text style={styles.sectionTitle}>Wallet</Text>
         {!ready ? (
           <ActivityIndicator color="#0f172a" style={styles.loader} />
         ) : wallets.length === 0 ? (
-          <Text style={styles.empty}>Creating your wallets…</Text>
+          <Text style={styles.empty}>Creating your wallet…</Text>
         ) : (
           wallets.map((wallet) => {
             const walletKey = `${wallet.chain}-${wallet.address}`;
-            const copied = isCopied(walletKey);
 
             return (
-              <View key={walletKey} style={styles.walletRow}>
-                <View style={styles.walletHeader}>
-                  <Text style={styles.walletLabel}>{wallet.label}</Text>
-                  <Pressable
-                    accessibilityLabel={
-                      copied ? 'Address copied' : `Copy ${wallet.label} address`
-                    }
-                    accessibilityRole="button"
-                    hitSlop={8}
-                    onPress={() => {
-                      void copy(wallet.address, walletKey);
-                    }}
-                    style={({ pressed }) => [
-                      styles.copyButton,
-                      pressed && styles.copyButtonPressed,
-                    ]}
-                  >
-                    <Ionicons
-                      name={copied ? 'checkmark' : 'copy-outline'}
-                      size={18}
-                      color={copied ? '#15803d' : '#64748b'}
-                    />
-                  </Pressable>
-                </View>
-                <Text style={styles.walletAddress} selectable>
-                  {formatWalletAddress(wallet.address)}
-                </Text>
-                <Text style={styles.walletFull} selectable>
-                  {wallet.address}
-                </Text>
-              </View>
+              <WalletDebitCard
+                key={walletKey}
+                wallet={wallet}
+                accountLabel={displayName}
+                copied={isCopied(walletKey)}
+                onCopy={() => {
+                  void copy(wallet.address, walletKey);
+                }}
+              />
             );
           })
         )}
@@ -298,42 +275,6 @@ const styles = StyleSheet.create({
   },
   empty: {
     fontSize: 15,
-    color: '#94a3b8',
-  },
-  walletRow: {
-    backgroundColor: '#ffffff',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 4,
-  },
-  walletHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  walletLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#64748b',
-  },
-  copyButton: {
-    padding: 4,
-  },
-  copyButtonPressed: {
-    opacity: 0.7,
-  },
-  walletAddress: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0f172a',
-    fontVariant: ['tabular-nums'],
-  },
-  walletFull: {
-    fontSize: 12,
     color: '#94a3b8',
   },
   button: {
