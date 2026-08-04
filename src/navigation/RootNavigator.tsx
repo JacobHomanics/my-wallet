@@ -30,8 +30,11 @@ export function RootNavigator() {
       return;
     }
 
-    const currentRoute = navigationRef.getCurrentRoute();
-    if (!currentRoute || UNAUTHENTICATED_ROUTES.has(currentRoute.name)) {
+    const rootState = navigationRef.getRootState();
+    const activeRootRoute =
+      rootState.routes[rootState.index ?? rootState.routes.length - 1];
+
+    if (!activeRootRoute || UNAUTHENTICATED_ROUTES.has(activeRootRoute.name)) {
       return;
     }
 
