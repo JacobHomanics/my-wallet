@@ -107,7 +107,7 @@ export function DepositMethodPickerModal({
             accessibilityLabel="Dismiss deposit options"
             accessibilityRole="button"
             onPress={onClose}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
           <View style={styles.desktopCard}>
             {header}
