@@ -5,6 +5,7 @@ import {
 } from '@react-navigation/bottom-tabs';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { CashboxIcon } from '@/components/CashboxIcon';
 import { ProfileDropdown } from '@/components/ProfileDropdown';
 import { useAppBrand } from '@/hooks/useAppBrand';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -25,7 +26,13 @@ function WebTopNav({ state, descriptors, navigation }: BottomTabBarProps) {
   return (
     <View style={styles.header}>
       <View style={styles.brandBlock}>
-        <Ionicons name="wallet" size={28} color={theme.primary} />
+        <View style={styles.iconBadge}>
+          <CashboxIcon
+            size={22}
+            color={theme.primaryText}
+            detailColor={theme.primary}
+          />
+        </View>
         <View style={styles.brandText}>
           <Text style={styles.brand}>{name}</Text>
           <Text style={styles.tagline}>{tagline}</Text>
@@ -129,6 +136,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     flexShrink: 0,
+  },
+  iconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   brandText: {
     gap: 2,

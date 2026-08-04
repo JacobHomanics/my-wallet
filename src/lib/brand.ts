@@ -1,3 +1,3 @@
 export const APP_NAME = 'Cashbox';
 
-export const APP_TAGLINE = 'Your wallet, ready when you are.';
+export const APP_TAGLINE = 'Send. Receive. Request.';
