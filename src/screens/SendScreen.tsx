@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -24,7 +24,7 @@ import { TokenPickerModal } from '@/components/TokenPickerModal';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
-import { useSendDraftUi } from '@/hooks/useSendDraft';
+import { updateSendDraft, useSendDraftUi } from '@/hooks/useSendDraft';
 import { useSendForm } from '@/hooks/useSendForm';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
@@ -208,6 +208,10 @@ export function SendScreen() {
     },
     [ethereumRecipient, setSolanaRecipient, syncAccountNumberFromAddresses],
   );
+
+  useEffect(() => {
+    updateSendDraft({ accountNumber: accountNumber.trim() });
+  }, [accountNumber]);
 
   const onContinue = useCallback(() => {
     if (!canContinue || allocations.length === 0) {

@@ -25,7 +25,7 @@ import { usePopToSend } from '@/hooks/usePopToSend';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
-import { resetSendDraft, useSendDraftUi } from '@/hooks/useSendDraft';
+import { resetSendDraft, useSendDraft, useSendDraftUi } from '@/hooks/useSendDraft';
 import { useSendForm } from '@/hooks/useSendForm';
 import { useSendPayment } from '@/hooks/useSendPayment';
 import { useSendStatus } from '@/hooks/useSendStatus';
@@ -54,6 +54,11 @@ export function ConfirmSendScreen() {
   const { error, clearStatus, setError } = useSendStatus();
   const { copy, isCopied } = useCopyToClipboard();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const {
+    showAdvanced: showRecipientAdvanced,
+    toggleAdvanced: toggleRecipientAdvanced,
+  } = useShowAdvanced();
+  const { accountNumber } = useSendDraft();
   const { tip, tipUsd, setTip, setTipPercent } = useSendTip();
   const {
     evmAddress: taxEvmAddress,
@@ -111,6 +116,7 @@ export function ConfirmSendScreen() {
 
   const trimmedEthereum = ethereumRecipient.trim();
   const trimmedSolana = solanaRecipient.trim();
+  const trimmedAccountNumber = accountNumber.trim();
 
   const baseUsd =
     requestedUsd != null ? Math.max(0, requestedUsd - tipUsd) : null;
@@ -274,7 +280,244 @@ export function ConfirmSendScreen() {
           <ActivityIndicator color="#166534" style={styles.loader} />
         ) : (
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
-            <Text style={styles.heroUsd}>{totalLabel}</Text>
+            {trimmedAccountNumber ||
+              needsEthereumRecipient ||
+              needsSolanaRecipient ||
+              trimmedEthereum ||
+              trimmedSolana ? (
+              <View style={styles.toSection}>
+                {trimmedAccountNumber ? (
+                  <>
+                    <Text style={styles.recipientLabel}>To</Text>
+                    <View style={styles.recipientValueRow}>
+                      <Text style={styles.recipientValue} selectable>
+                        {formatWalletAddress(trimmedAccountNumber, 10, 8)}
+                      </Text>
+                      <Pressable
+                        accessibilityLabel={
+                          isCopied('account-number')
+                            ? 'Account number copied'
+                            : 'Copy account number'
+                        }
+                        accessibilityRole="button"
+                        hitSlop={8}
+                        onPress={() => {
+                          void copy(trimmedAccountNumber, 'account-number');
+                        }}
+                        style={({ pressed }) => [
+                          styles.copyButton,
+                          pressed && styles.copyButtonPressed,
+                        ]}
+                      >
+                        <Ionicons
+                          name={
+                            isCopied('account-number')
+                              ? 'checkmark'
+                              : 'copy-outline'
+                          }
+                          size={18}
+                          color={
+                            isCopied('account-number') ? '#15803d' : '#166534'
+                          }
+                        />
+                      </Pressable>
+                    </View>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: showRecipientAdvanced }}
+                      onPress={toggleRecipientAdvanced}
+                      style={({ pressed }) => [
+                        styles.recipientAdvancedToggle,
+                        pressed && styles.advancedTogglePressed,
+                      ]}
+                    >
+                      <Text style={styles.recipientAdvancedToggleText}>
+                        Advanced
+                      </Text>
+                      <Ionicons
+                        name={
+                          showRecipientAdvanced ? 'chevron-up' : 'chevron-down'
+                        }
+                        size={16}
+                        color="#5a7d6a"
+                      />
+                    </Pressable>
+                    {showRecipientAdvanced ? (
+                      <View style={styles.decodedCard}>
+                        {needsEthereumRecipient || trimmedEthereum ? (
+                          <View style={styles.decodedGroup}>
+                            <Text style={styles.decodedLabel}>EVM</Text>
+                            <View style={styles.decodedValueRow}>
+                              <Text style={styles.decodedValue} selectable>
+                                {trimmedEthereum || '—'}
+                              </Text>
+                              {trimmedEthereum ? (
+                                <Pressable
+                                  accessibilityLabel={
+                                    isCopied('evm')
+                                      ? 'EVM address copied'
+                                      : 'Copy EVM address'
+                                  }
+                                  accessibilityRole="button"
+                                  hitSlop={8}
+                                  onPress={() => {
+                                    void copy(trimmedEthereum, 'evm');
+                                  }}
+                                  style={({ pressed }) => [
+                                    styles.copyButton,
+                                    pressed && styles.copyButtonPressed,
+                                  ]}
+                                >
+                                  <Ionicons
+                                    name={
+                                      isCopied('evm')
+                                        ? 'checkmark'
+                                        : 'copy-outline'
+                                    }
+                                    size={18}
+                                    color={
+                                      isCopied('evm') ? '#15803d' : '#5a7d6a'
+                                    }
+                                  />
+                                </Pressable>
+                              ) : null}
+                            </View>
+                          </View>
+                        ) : null}
+                        {(needsEthereumRecipient || trimmedEthereum) &&
+                          (needsSolanaRecipient || trimmedSolana) ? (
+                          <View style={styles.decodedDivider} />
+                        ) : null}
+                        {needsSolanaRecipient || trimmedSolana ? (
+                          <View style={styles.decodedGroup}>
+                            <Text style={styles.decodedLabel}>Solana</Text>
+                            <View style={styles.decodedValueRow}>
+                              <Text style={styles.decodedValue} selectable>
+                                {trimmedSolana || '—'}
+                              </Text>
+                              {trimmedSolana ? (
+                                <Pressable
+                                  accessibilityLabel={
+                                    isCopied('solana')
+                                      ? 'Solana address copied'
+                                      : 'Copy Solana address'
+                                  }
+                                  accessibilityRole="button"
+                                  hitSlop={8}
+                                  onPress={() => {
+                                    void copy(trimmedSolana, 'solana');
+                                  }}
+                                  style={({ pressed }) => [
+                                    styles.copyButton,
+                                    pressed && styles.copyButtonPressed,
+                                  ]}
+                                >
+                                  <Ionicons
+                                    name={
+                                      isCopied('solana')
+                                        ? 'checkmark'
+                                        : 'copy-outline'
+                                    }
+                                    size={18}
+                                    color={
+                                      isCopied('solana') ? '#15803d' : '#5a7d6a'
+                                    }
+                                  />
+                                </Pressable>
+                              ) : null}
+                            </View>
+                          </View>
+                        ) : null}
+                      </View>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.toLabel}>To</Text>
+                    {needsEthereumRecipient || trimmedEthereum ? (
+                      <View style={styles.toAddressRow}>
+                        <Text style={styles.toChainLabel}>EVM</Text>
+                        <Text style={styles.toAddress} selectable>
+                          {trimmedEthereum
+                            ? formatWalletAddress(trimmedEthereum)
+                            : '—'}
+                        </Text>
+                        {trimmedEthereum ? (
+                          <Pressable
+                            accessibilityLabel={
+                              isCopied('evm')
+                                ? 'EVM address copied'
+                                : 'Copy EVM address'
+                            }
+                            accessibilityRole="button"
+                            hitSlop={8}
+                            onPress={() => {
+                              void copy(trimmedEthereum, 'evm');
+                            }}
+                            style={({ pressed }) => [
+                              styles.copyButton,
+                              pressed && styles.copyButtonPressed,
+                            ]}
+                          >
+                            <Ionicons
+                              name={
+                                isCopied('evm') ? 'checkmark' : 'copy-outline'
+                              }
+                              size={18}
+                              color={isCopied('evm') ? '#15803d' : '#5a7d6a'}
+                            />
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    ) : null}
+                    {!trimmedAccountNumber && (needsSolanaRecipient || trimmedSolana) ? (
+                      <View style={styles.toAddressRow}>
+                        <Text style={styles.toChainLabel}>Solana</Text>
+                        <Text style={styles.toAddress} selectable>
+                          {trimmedSolana
+                            ? formatWalletAddress(trimmedSolana)
+                            : '—'}
+                        </Text>
+                        {trimmedSolana ? (
+                          <Pressable
+                            accessibilityLabel={
+                              isCopied('solana')
+                                ? 'Solana address copied'
+                                : 'Copy Solana address'
+                            }
+                            accessibilityRole="button"
+                            hitSlop={8}
+                            onPress={() => {
+                              void copy(trimmedSolana, 'solana');
+                            }}
+                            style={({ pressed }) => [
+                              styles.copyButton,
+                              pressed && styles.copyButtonPressed,
+                            ]}
+                          >
+                            <Ionicons
+                              name={
+                                isCopied('solana') ? 'checkmark' : 'copy-outline'
+                              }
+                              size={18}
+                              color={isCopied('solana') ? '#15803d' : '#5a7d6a'}
+                            />
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    ) : null}
+                  </>
+                )}
+              </View>
+            ) : null}
+            {trimmedAccountNumber ||
+              needsEthereumRecipient ||
+              needsSolanaRecipient ||
+              trimmedEthereum ||
+              trimmedSolana ? (
+              <View style={styles.toDivider} />
+            ) : null}
+
             {availableLabel ? (
               <Text style={styles.availableUsd}>
                 Available Balance: {availableLabel}
@@ -297,11 +540,11 @@ export function ConfirmSendScreen() {
                       style={({ pressed }) => [
                         styles.tipPercentButton,
                         (baseUsd == null || !(baseUsd > 0)) &&
-                          styles.tipPercentButtonDisabled,
+                        styles.tipPercentButtonDisabled,
                         pressed &&
-                          baseUsd != null &&
-                          baseUsd > 0 &&
-                          styles.tipPercentButtonPressed,
+                        baseUsd != null &&
+                        baseUsd > 0 &&
+                        styles.tipPercentButtonPressed,
                       ]}
                     >
                       <Text style={styles.tipPercentButtonText}>
@@ -333,86 +576,7 @@ export function ConfirmSendScreen() {
               />
             ) : null}
 
-            {needsEthereumRecipient ||
-              needsSolanaRecipient ||
-              trimmedEthereum ||
-              trimmedSolana ? (
-              <View style={styles.toSection}>
-                <Text style={styles.toLabel}>To</Text>
-                {needsEthereumRecipient || trimmedEthereum ? (
-                  <View style={styles.toAddressRow}>
-                    <Text style={styles.toChainLabel}>EVM</Text>
-                    <Text style={styles.toAddress} selectable>
-                      {trimmedEthereum
-                        ? formatWalletAddress(trimmedEthereum)
-                        : '—'}
-                    </Text>
-                    {trimmedEthereum ? (
-                      <Pressable
-                        accessibilityLabel={
-                          isCopied('evm')
-                            ? 'EVM address copied'
-                            : 'Copy EVM address'
-                        }
-                        accessibilityRole="button"
-                        hitSlop={8}
-                        onPress={() => {
-                          void copy(trimmedEthereum, 'evm');
-                        }}
-                        style={({ pressed }) => [
-                          styles.copyButton,
-                          pressed && styles.copyButtonPressed,
-                        ]}
-                      >
-                        <Ionicons
-                          name={
-                            isCopied('evm') ? 'checkmark' : 'copy-outline'
-                          }
-                          size={18}
-                          color={isCopied('evm') ? '#15803d' : '#5a7d6a'}
-                        />
-                      </Pressable>
-                    ) : null}
-                  </View>
-                ) : null}
-                {needsSolanaRecipient || trimmedSolana ? (
-                  <View style={styles.toAddressRow}>
-                    <Text style={styles.toChainLabel}>Solana</Text>
-                    <Text style={styles.toAddress} selectable>
-                      {trimmedSolana
-                        ? formatWalletAddress(trimmedSolana)
-                        : '—'}
-                    </Text>
-                    {trimmedSolana ? (
-                      <Pressable
-                        accessibilityLabel={
-                          isCopied('solana')
-                            ? 'Solana address copied'
-                            : 'Copy Solana address'
-                        }
-                        accessibilityRole="button"
-                        hitSlop={8}
-                        onPress={() => {
-                          void copy(trimmedSolana, 'solana');
-                        }}
-                        style={({ pressed }) => [
-                          styles.copyButton,
-                          pressed && styles.copyButtonPressed,
-                        ]}
-                      >
-                        <Ionicons
-                          name={
-                            isCopied('solana') ? 'checkmark' : 'copy-outline'
-                          }
-                          size={18}
-                          color={isCopied('solana') ? '#15803d' : '#5a7d6a'}
-                        />
-                      </Pressable>
-                    ) : null}
-                  </View>
-                ) : null}
-              </View>
-            ) : null}
+            <Text style={styles.heroUsd}>{totalLabel}</Text>
 
             <Pressable
               accessibilityRole="button"
@@ -611,6 +775,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   heroUsd: {
+    marginTop: 24,
     fontSize: 36,
     fontWeight: '700',
     color: '#166534',
@@ -693,8 +858,91 @@ const styles = StyleSheet.create({
     color: '#166534',
   },
   toSection: {
-    marginTop: 36,
     alignSelf: 'stretch',
+  },
+  toDivider: {
+    alignSelf: 'stretch',
+    marginTop: 12,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#86d4a4',
+    marginBottom: 28,
+  },
+  recipientLabel: {
+    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  recipientValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  recipientValue: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#166534',
+    fontVariant: ['tabular-nums'],
+  },
+  recipientAdvancedToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+  },
+  recipientAdvancedToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    marginRight: 4,
+  },
+  decodedCard: {
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  decodedGroup: {
+    gap: 8,
+  },
+  decodedValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 52,
+    paddingLeft: 12,
+    paddingRight: 4,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+    borderRadius: 10,
+    backgroundColor: '#f8fffa',
+  },
+  decodedLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#86a894',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  decodedValue: {
+    flex: 1,
+    minWidth: 0,
+    paddingVertical: 12,
+    paddingRight: 8,
+    fontSize: 14,
+    color: '#166534',
+    fontVariant: ['tabular-nums'],
+  },
+  decodedDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#d1fae5',
+    marginVertical: 10,
   },
   toLabel: {
     fontSize: 13,
@@ -736,7 +984,6 @@ const styles = StyleSheet.create({
     opacity: 0.65,
   },
   advancedToggle: {
-    marginTop: 28,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,

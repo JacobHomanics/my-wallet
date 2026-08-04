@@ -14,6 +14,7 @@ export type SendDraftManualLeg = {
 };
 
 export type SendDraft = {
+  accountNumber: string;
   ethereumRecipient: string;
   solanaRecipient: string;
   amount: string;
@@ -32,6 +33,7 @@ export type SendDraft = {
 type DraftListener = () => void;
 
 const DEFAULT_SEND_DRAFT: SendDraft = {
+  accountNumber: '',
   ethereumRecipient: '',
   solanaRecipient: '',
   amount: '',
@@ -81,6 +83,7 @@ export function hydrateSendDraftFromConfirmParams(params: {
   const decoded = tryDecodeWalletIdentity(params.identity);
   sendDraft = {
     ...DEFAULT_SEND_DRAFT,
+    accountNumber: params.identity?.trim() ?? '',
     ethereumRecipient:
       decoded?.evmAddress ?? params.ethereumRecipient?.trim() ?? '',
     solanaRecipient:
