@@ -100,7 +100,7 @@ export function TransactionsScreen() {
         </View>
 
         {loading ? (
-          <ActivityIndicator color="#0f172a" style={styles.loader} />
+          <ActivityIndicator color="#166534" style={styles.loader} />
         ) : error && transactions.length === 0 ? (
           <View style={styles.errorBlock}>
             <Text style={styles.errorText}>{error}</Text>
@@ -134,7 +134,7 @@ export function TransactionsScreen() {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                tintColor="#0f172a"
+                tintColor="#166534"
               />
             }
             renderItem={({ item }) => (
@@ -154,7 +154,7 @@ export function TransactionsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
   },
   content: {
     flex: 1,
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   topBarSpacer: {
     width: 44,
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   filterRow: {
     flexDirection: 'row',
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     padding: 2,
     gap: 2,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#dcfce7',
     borderRadius: 10,
   },
   filterOption: {
@@ -218,10 +218,10 @@ const styles = StyleSheet.create({
   filterOptionText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#5a7d6a',
   },
   filterOptionTextSelected: {
-    color: '#0f172a',
+    color: '#166534',
   },
   loader: {
     marginTop: 48,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     marginTop: 48,
     paddingHorizontal: 24,
     fontSize: 15,
-    color: '#94a3b8',
+    color: '#86a894',
     textAlign: 'center',
   },
   errorBlock: {
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     color: '#b91c1c',
   },
   retryButton: {
-    backgroundColor: '#0f172a',
+    backgroundColor: '#166534',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   retryButtonText: {
-    color: '#f8fafc',
+    color: '#f0fdf4',
     fontSize: 15,
     fontWeight: '600',
   },

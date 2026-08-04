@@ -28,7 +28,13 @@ export type HomeStackParamList = {
     /** Display-currency amount string entered on the receive screen. */
     usdAmount: string;
   };
-  send: { tokenId?: string } | undefined;
+  send: {
+    tokenId?: string;
+    /** Optional when opened from a receive address deep link. */
+    usdAmount?: string;
+    ethereumRecipient?: string;
+    solanaRecipient?: string;
+  } | undefined;
   confirmSend: {
     /** USD amount string the user entered. Optional for receive deep links. */
     usdAmount?: string;

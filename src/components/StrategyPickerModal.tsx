@@ -55,7 +55,7 @@ export function StrategyPickerModal({
             </Text>
           </View>
           {selected ? (
-            <Ionicons name="checkmark-circle" size={22} color="#0f172a" />
+            <Ionicons name="checkmark-circle" size={22} color="#166534" />
           ) : (
             <View style={styles.strategyOptionSpacer} />
           )}
@@ -90,7 +90,7 @@ export function StrategyPickerModal({
               pressed && styles.modalClosePressed,
             ]}
           >
-            <Ionicons name="close" size={22} color="#0f172a" />
+            <Ionicons name="close" size={22} color="#166534" />
           </Pressable>
         </View>
 
@@ -108,7 +108,7 @@ export function StrategyPickerModal({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
   },
   modalTopBar: {
     flexDirection: 'row',
@@ -117,14 +117,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: '#d1fae5',
   },
   modalTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
     paddingLeft: 40,
   },
   modalClose: {
@@ -147,13 +147,13 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#d1fae5',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
   strategyOptionSelected: {
-    borderColor: '#0f172a',
+    borderColor: '#166534',
   },
   strategyOptionPressed: {
     opacity: 0.85,
@@ -166,12 +166,12 @@ const styles = StyleSheet.create({
   strategyOptionLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   strategyOptionDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#64748b',
+    color: '#5a7d6a',
   },
   strategyOptionSpacer: {
     width: 22,

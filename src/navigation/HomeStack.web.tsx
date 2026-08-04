@@ -20,7 +20,7 @@ export function HomeStack() {
         animation: isDesktopWeb ? 'none' : 'slide_from_right',
         cardStyle: {
           flex: 1,
-          backgroundColor: '#f8fafc',
+          backgroundColor: '#f0fdf4',
           // Absolute-fill cards so nested ScrollViews get a bounded height
           // (required for touch scrolling on iOS Safari).
           height: '100%',

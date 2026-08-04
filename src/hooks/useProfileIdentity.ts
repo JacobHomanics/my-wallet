@@ -85,6 +85,7 @@ export function getAvatarColor(seed: string) {
     hash = seed.charCodeAt(index) + ((hash << 5) - hash);
   }
 
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 48%, 42%)`;
+  // Keep avatars in a green/teal range to match Cashbox.
+  const hue = 120 + (Math.abs(hash) % 60);
+  return `hsl(${hue}, 42%, 38%)`;
 }

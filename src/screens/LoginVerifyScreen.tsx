@@ -77,7 +77,7 @@ export function LoginVerifyScreen() {
           autoComplete="one-time-code"
           keyboardType="number-pad"
           placeholder="123456"
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor="#86a894"
           style={styles.input}
           value={code}
           onChangeText={setCode}
@@ -100,7 +100,7 @@ export function LoginVerifyScreen() {
           ]}
         >
           {isPending ? (
-            <ActivityIndicator color="#f8fafc" />
+            <ActivityIndicator color="#f0fdf4" />
           ) : (
             <Text style={styles.buttonText}>Verify</Text>
           )}
@@ -113,7 +113,7 @@ export function LoginVerifyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
   },
   header: {
     paddingHorizontal: 8,
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#166534',
     letterSpacing: -0.5,
   },
   subtitle: {
@@ -137,19 +137,19 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     fontSize: 16,
     lineHeight: 24,
-    color: '#475569',
+    color: '#3f6b52',
     textAlign: 'center',
   },
   input: {
     width: '100%',
     maxWidth: 360,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#86d4a4',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#0f172a',
+    color: '#166534',
     backgroundColor: '#fff',
     textAlign: 'center',
     letterSpacing: 4,
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     minWidth: 160,
     alignItems: 'center',
-    backgroundColor: '#0f172a',
+    backgroundColor: '#166534',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   buttonText: {
-    color: '#f8fafc',
+    color: '#f0fdf4',
     fontSize: 16,
     fontWeight: '600',
   },

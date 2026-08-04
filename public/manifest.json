@@ -1,6 +1,6 @@
 {
-  "short_name": "My Wallet",
-  "name": "My Wallet",
+  "short_name": "Cashbox",
+  "name": "Cashbox",
   "icons": [
     {
       "src": "/favicon.png",
@@ -25,6 +25,6 @@
   "scope": "/",
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#f8fafc",
-  "background_color": "#f8fafc"
+  "theme_color": "#f0fdf4",
+  "background_color": "#f0fdf4"
 }

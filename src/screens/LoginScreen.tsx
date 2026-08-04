@@ -100,7 +100,7 @@ export function LoginScreen() {
           placeholder={
             method === 'email' ? 'you@example.com' : '+1 (555) 555-5555'
           }
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor="#86a894"
           style={styles.input}
           value={value}
           onChangeText={setValue}
@@ -122,7 +122,7 @@ export function LoginScreen() {
           ]}
         >
           {isPending ? (
-            <ActivityIndicator color="#f8fafc" />
+            <ActivityIndicator color="#f0fdf4" />
           ) : (
             <Text style={styles.buttonText}>Continue</Text>
           )}
@@ -157,7 +157,7 @@ function MethodChip({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
   },
   header: {
     paddingHorizontal: 8,
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#166534',
     letterSpacing: -0.5,
   },
   subtitle: {
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     fontSize: 16,
     lineHeight: 24,
-    color: '#475569',
+    color: '#3f6b52',
     textAlign: 'center',
   },
   methodRow: {
@@ -194,31 +194,31 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#86d4a4',
     backgroundColor: '#fff',
   },
   chipSelected: {
-    backgroundColor: '#0f172a',
-    borderColor: '#0f172a',
+    backgroundColor: '#166534',
+    borderColor: '#166534',
   },
   chipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#334155',
+    color: '#365c45',
   },
   chipTextSelected: {
-    color: '#f8fafc',
+    color: '#f0fdf4',
   },
   input: {
     width: '100%',
     maxWidth: 360,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#86d4a4',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#0f172a',
+    color: '#166534',
     backgroundColor: '#fff',
   },
   error: {
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     minWidth: 160,
     alignItems: 'center',
-    backgroundColor: '#0f172a',
+    backgroundColor: '#166534',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   buttonText: {
-    color: '#f8fafc',
+    color: '#f0fdf4',
     fontSize: 16,
     fontWeight: '600',
   },

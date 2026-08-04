@@ -1,5 +1,7 @@
 import { useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -11,12 +13,15 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import QRCodeStyled from 'react-native-qrcode-styled';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
+import { useReceiveAddressUrl } from '@/hooks/useReceiveAddressUrl';
 import { useReceiveAmount } from '@/hooks/useReceiveAmount';
 import type { HomeStackParamList } from '@/navigation/types';
 
@@ -28,6 +33,8 @@ export function ReceiveScreen() {
   const goHome = usePopToHome();
   const { currencySymbol } = useFiatDisplay();
   const { amount, amountValid, canContinue, setAmount } = useReceiveAmount();
+  const { ready, url } = useReceiveAddressUrl();
+  const { copy, isCopied } = useCopyToClipboard();
 
   const amountError =
     amount.trim() && !amountValid ? 'Enter a valid amount' : null;
@@ -79,6 +86,58 @@ export function ReceiveScreen() {
             style={styles.flex}
           >
             <View style={styles.formInner}>
+              <View style={styles.shareSection}>
+                {!ready || !url ? (
+                  <ActivityIndicator color="#166534" style={styles.loader} />
+                ) : (
+                  <>
+                    <View style={styles.qrWrap}>
+                      <QRCodeStyled
+                        data={url}
+                        padding={16}
+                        size={220}
+                        color="#166534"
+                        style={styles.qr}
+                      />
+                    </View>
+
+                    <Pressable
+                      accessibilityLabel={
+                        isCopied('url') ? 'Link copied' : 'Copy receive link'
+                      }
+                      accessibilityRole="button"
+                      onPress={() => {
+                        void copy(url, 'url');
+                      }}
+                      style={({ pressed }) => [
+                        styles.copyLinkButton,
+                        pressed && styles.copyLinkButtonPressed,
+                      ]}
+                    >
+                      <Ionicons
+                        name={isCopied('url') ? 'checkmark' : 'link-outline'}
+                        size={18}
+                        color={isCopied('url') ? '#15803d' : '#166534'}
+                      />
+                      <Text
+                        style={[
+                          styles.copyLinkText,
+                          isCopied('url') && styles.copyLinkTextCopied,
+                        ]}
+                      >
+                        {isCopied('url') ? 'Link copied' : 'Copy link'}
+                      </Text>
+                    </Pressable>
+                  </>
+                )}
+              </View>
+
+              <View style={styles.orDivider}>
+                <View style={styles.orDividerLine} />
+                <Text style={styles.orLabel}>or request an amount</Text>
+                <View style={styles.orDividerLine} />
+              </View>
+
               <Text style={styles.label}>Amount</Text>
               <View
                 style={[
@@ -91,7 +150,7 @@ export function ReceiveScreen() {
                   keyboardType="decimal-pad"
                   onChangeText={setAmount}
                   placeholder="0"
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor="#86a894"
                   style={styles.fieldInput}
                   value={amount}
                 />
@@ -123,7 +182,7 @@ export function ReceiveScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
   },
   flex: {
     flex: 1,
@@ -145,7 +204,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   topBarSpacer: {
     width: 44,
@@ -160,11 +219,10 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#0f172a',
+    color: '#166534',
   },
   form: {
     flexGrow: 1,
-    justifyContent: 'center',
     paddingHorizontal: 24,
     paddingTop: 24,
   },
@@ -174,7 +232,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#5a7d6a',
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -182,7 +240,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#86d4a4',
     borderRadius: 12,
     backgroundColor: '#ffffff',
     paddingHorizontal: 14,
@@ -194,14 +252,14 @@ const styles = StyleSheet.create({
   amountPrefix: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
     marginRight: 4,
   },
   fieldInput: {
     flex: 1,
     fontSize: 20,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
     paddingVertical: 12,
   },
   fieldError: {
@@ -212,7 +270,7 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     marginTop: 28,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#166534',
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
@@ -224,8 +282,61 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   continueButtonText: {
-    color: '#f8fafc',
+    color: '#f0fdf4',
     fontSize: 16,
     fontWeight: '600',
+  },
+  shareSection: {
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+  orDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 28,
+  },
+  orDividerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#86d4a4',
+  },
+  orLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#86a894',
+    flexShrink: 0,
+  },
+  loader: {
+    marginTop: 12,
+  },
+  qrWrap: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 8,
+  },
+  qr: {
+    backgroundColor: '#ffffff',
+  },
+  copyLinkButton: {
+    marginTop: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#d1fae5',
+  },
+  copyLinkButtonPressed: {
+    opacity: 0.85,
+  },
+  copyLinkText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#166534',
+  },
+  copyLinkTextCopied: {
+    color: '#15803d',
   },
 });

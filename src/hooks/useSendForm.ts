@@ -291,18 +291,20 @@ export function useSendForm(
   const needsSolanaRecipient = chains.includes('solana');
 
   const ethereumRecipientValid = useMemo(() => {
-    if (!needsEthereumRecipient) {
+    const trimmed = ethereumRecipient.trim();
+    if (!trimmed) {
       return true;
     }
-    return isValidRecipientAddress(ethereumRecipient, 'ethereum');
-  }, [ethereumRecipient, needsEthereumRecipient]);
+    return isValidRecipientAddress(trimmed, 'ethereum');
+  }, [ethereumRecipient]);
 
   const solanaRecipientValid = useMemo(() => {
-    if (!needsSolanaRecipient) {
+    const trimmed = solanaRecipient.trim();
+    if (!trimmed) {
       return true;
     }
-    return isValidRecipientAddress(solanaRecipient, 'solana');
-  }, [needsSolanaRecipient, solanaRecipient]);
+    return isValidRecipientAddress(trimmed, 'solana');
+  }, [solanaRecipient]);
 
   const recipientsValid = ethereumRecipientValid && solanaRecipientValid;
 
