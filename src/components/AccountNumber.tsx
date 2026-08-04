@@ -1,44 +1,88 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
+import { AccountNumberInfoModal } from '@/components/AccountNumberInfoModal';
+import { useAccountNumberInfoModal } from '@/hooks/useAccountNumberInfoModal';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 
 type AccountNumberProps = {
   identityId: string;
+  style?: StyleProp<ViewStyle>;
 };
 
 /**
- * Displays the reversible wallet identity as an “Account Number”, with copy.
+ * Account number with copy and help actions.
  */
-export function AccountNumber({ identityId }: AccountNumberProps) {
+export function AccountNumber({
+  identityId,
+  style,
+}: AccountNumberProps) {
   const { copy, isCopied } = useCopyToClipboard();
-  const copyKey = 'account-number';
-  const copied = isCopied(copyKey);
+  const { infoOpen, openInfo, closeInfo } = useAccountNumberInfoModal();
 
   return (
-    <View style={styles.wrap}>
-      <Text style={styles.label}>Account Number</Text>
-      <Pressable
-        accessibilityLabel={copied ? 'Account number copied' : 'Copy account number'}
-        accessibilityRole="button"
-        onPress={() => {
-          void copy(identityId, copyKey);
-        }}
-        style={({ pressed }) => [
-          styles.row,
-          pressed && styles.rowPressed,
-        ]}
-      >
-        <Text style={styles.value} selectable>
-          {formatWalletAddress(identityId, 10, 8)}
-        </Text>
-        <Ionicons
-          name={copied ? 'checkmark' : 'copy-outline'}
-          size={18}
-          color={copied ? '#15803d' : '#166534'}
-        />
-      </Pressable>
+    <View style={[styles.wrap, style]}>
+      <View style={styles.card}>
+        <View style={styles.header}>
+          <View style={styles.headerText}>
+            <Text style={styles.label}>Account Number</Text>
+            <Text style={styles.value} selectable>
+              {formatWalletAddress(identityId, 10, 8)}
+            </Text>
+          </View>
+          <Pressable
+            accessibilityLabel="About account number"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={openInfo}
+            style={({ pressed }) => [
+              styles.helpButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Ionicons
+              name="help-circle-outline"
+              size={20}
+              color="#5a7d6a"
+            />
+          </Pressable>
+          <Pressable
+            accessibilityLabel={
+              isCopied('account-number')
+                ? 'Account number copied'
+                : 'Copy account number'
+            }
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => {
+              void copy(identityId, 'account-number');
+            }}
+            style={({ pressed }) => [
+              styles.copyButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Ionicons
+              name={
+                isCopied('account-number') ? 'checkmark' : 'copy-outline'
+              }
+              size={18}
+              color={isCopied('account-number') ? '#15803d' : '#166534'}
+            />
+          </Pressable>
+        </View>
+
+      </View>
+
+      <AccountNumberInfoModal onClose={closeInfo} visible={infoOpen} />
     </View>
   );
 }
@@ -46,39 +90,57 @@ export function AccountNumber({ identityId }: AccountNumberProps) {
 const styles = StyleSheet.create({
   wrap: {
     width: '100%',
-    maxWidth: 320,
-    marginTop: 20,
-    alignItems: 'center',
-    gap: 8,
+    maxWidth: 360,
+    alignSelf: 'center',
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+  card: {
     width: '100%',
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#d1fae5',
     borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingLeft: 16,
+    paddingRight: 8,
+    paddingTop: 14,
+    paddingBottom: 14,
+    gap: 12,
   },
-  rowPressed: {
-    opacity: 0.85,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
-  value: {
+  headerText: {
     flex: 1,
     minWidth: 0,
+    gap: 4,
+  },
+  pressed: {
+    opacity: 0.75,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  helpButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  value: {
     fontSize: 15,
     fontWeight: '600',
     color: '#166534',
     fontVariant: ['tabular-nums'],
+  },
+  copyButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

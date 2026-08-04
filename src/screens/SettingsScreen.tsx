@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
 import { ExportPrivateKeyWebView } from '@/components/ExportPrivateKeyWebView';
+import { AccountNumber } from '@/components/AccountNumber';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { WalletDebitCard } from '@/components/WalletDebitCard';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
@@ -23,7 +24,6 @@ import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useSignOut } from '@/hooks/useSignOut';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useUserWallets } from '@/hooks/useUserWallets';
-import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import { useWalletIdentityId } from '@/hooks/useWalletIdentityId';
 
 export function SettingsScreen() {
@@ -34,7 +34,10 @@ export function SettingsScreen() {
   const { signOut } = useSignOut();
   const { copy, isCopied } = useCopyToClipboard();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
-  const identityIdKey = 'identity-id';
+  const ethereumAddress =
+    wallets.find((wallet) => wallet.chain === 'ethereum')?.address ?? null;
+  const solanaAddress =
+    wallets.find((wallet) => wallet.chain === 'solana')?.address ?? null;
   const {
     exportPrivateKey,
     exportWebViewUri,
@@ -112,35 +115,12 @@ export function SettingsScreen() {
 
       {identityId ? (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Number</Text>
-          <Pressable
-            accessibilityLabel={
-              isCopied(identityIdKey)
-                ? 'Account number copied'
-                : 'Copy account number'
-            }
-            accessibilityRole="button"
-            onPress={() => {
-              void copy(identityId, identityIdKey);
-            }}
-            style={({ pressed }) => [
-              styles.strategyRow,
-              pressed && styles.strategyRowPressed,
-            ]}
-          >
-            <View style={styles.strategyRowText}>
-              <Text style={styles.strategyLabel} selectable>
-                {formatWalletAddress(identityId, 10, 8)}
-              </Text>
-            </View>
-            <Ionicons
-              name={
-                isCopied(identityIdKey) ? 'checkmark' : 'copy-outline'
-              }
-              size={18}
-              color={isCopied(identityIdKey) ? '#166534' : '#86a894'}
-            />
-          </Pressable>
+          <AccountNumber
+            ethereumAddress={ethereumAddress}
+            identityId={identityId}
+            solanaAddress={solanaAddress}
+            style={styles.accountNumber}
+          />
         </View>
       ) : null}
 
@@ -315,6 +295,10 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     marginTop: 28,
     gap: 12,
+  },
+  accountNumber: {
+    maxWidth: '100%',
+    alignSelf: 'stretch',
   },
   sectionTitle: {
     fontSize: 14,

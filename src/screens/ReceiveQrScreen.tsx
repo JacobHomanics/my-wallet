@@ -101,7 +101,12 @@ export function ReceiveQrScreen() {
               </View>
 
               {identityId ? (
-                <AccountNumber identityId={identityId} />
+                <AccountNumber
+                  ethereumAddress={ethereumAddress}
+                  identityId={identityId}
+                  solanaAddress={solanaAddress}
+                  style={styles.accountNumber}
+                />
               ) : null}
 
               <Pressable
@@ -212,6 +217,9 @@ const styles = StyleSheet.create({
   },
   qr: {
     backgroundColor: '#ffffff',
+  },
+  accountNumber: {
+    marginTop: 20,
   },
   copyLinkButton: {
     marginTop: 20,
