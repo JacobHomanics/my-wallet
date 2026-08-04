@@ -6,6 +6,7 @@ import { ContactsScreen } from '@/screens/ContactsScreen';
 import { HomeScreen } from '@/screens/HomeScreen';
 import { ReceiveQrScreen } from '@/screens/ReceiveQrScreen';
 import { ReceiveScreen } from '@/screens/ReceiveScreen';
+import { RequestScreen } from '@/screens/RequestScreen';
 import { SendScreen } from '@/screens/SendScreen';
 import { SentScreen } from '@/screens/SentScreen';
 import { TokenDetailsScreen } from '@/screens/TokenDetailsScreen';
@@ -19,6 +20,7 @@ export const homeStackScreens = {
   transactions: TransactionsScreen,
   contacts: ContactsScreen,
   receive: ReceiveScreen,
+  request: RequestScreen,
   receiveQr: ReceiveQrScreen,
   send: SendScreen,
   confirmSend: ConfirmSendScreen,

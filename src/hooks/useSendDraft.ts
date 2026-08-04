@@ -4,6 +4,7 @@ import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import type { PaymentStrategyId } from '@/lib/strategies';
 import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
+import { tryDecodeWalletIdentity } from '@/lib/walletIdentity';
 
 export type SendDraftManualLeg = {
   tokenId: string;
@@ -13,6 +14,7 @@ export type SendDraftManualLeg = {
 };
 
 export type SendDraft = {
+  accountNumber: string;
   ethereumRecipient: string;
   solanaRecipient: string;
   amount: string;
@@ -31,6 +33,7 @@ export type SendDraft = {
 type DraftListener = () => void;
 
 const DEFAULT_SEND_DRAFT: SendDraft = {
+  accountNumber: '',
   ethereumRecipient: '',
   solanaRecipient: '',
   amount: '',
@@ -72,14 +75,19 @@ export function resetSendDraft(): void {
 /** Apply send / confirm-send route params into the draft (e.g. receive QR deep links). */
 export function hydrateSendDraftFromConfirmParams(params: {
   usdAmount?: string;
+  identity?: string;
   ethereumRecipient?: string;
   solanaRecipient?: string;
 }): void {
   const amount = params.usdAmount?.trim() ?? '';
+  const decoded = tryDecodeWalletIdentity(params.identity);
   sendDraft = {
     ...DEFAULT_SEND_DRAFT,
-    ethereumRecipient: params.ethereumRecipient?.trim() ?? '',
-    solanaRecipient: params.solanaRecipient?.trim() ?? '',
+    accountNumber: params.identity?.trim() ?? '',
+    ethereumRecipient:
+      decoded?.evmAddress ?? params.ethereumRecipient?.trim() ?? '',
+    solanaRecipient:
+      decoded?.solanaAddress ?? params.solanaRecipient?.trim() ?? '',
     amount,
     amountLocked: amount.length > 0,
   };

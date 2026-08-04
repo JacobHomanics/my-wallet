@@ -144,6 +144,19 @@ export function HomeScreen() {
                     <Ionicons name="arrow-down" size={18} color="#f0fdf4" />
                     <Text style={styles.actionButtonText}>Receive</Text>
                   </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => {
+                      navigation.navigate('request');
+                    }}
+                    style={({ pressed }) => [
+                      styles.actionButton,
+                      pressed && styles.actionButtonPressed,
+                    ]}
+                  >
+                    <Ionicons name="cash-outline" size={18} color="#f0fdf4" />
+                    <Text style={styles.actionButtonText}>Request</Text>
+                  </Pressable>
                   {canDeposit ? (
                     <Pressable
                       accessibilityRole="button"
@@ -307,7 +320,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     backgroundColor: '#166534',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 10,
   },
