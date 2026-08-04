@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
 import { ExportPrivateKeyWebView } from '@/components/ExportPrivateKeyWebView';
+import { AccountNumber } from '@/components/AccountNumber';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { WalletDebitCard } from '@/components/WalletDebitCard';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
@@ -23,11 +24,13 @@ import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useSignOut } from '@/hooks/useSignOut';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useUserWallets } from '@/hooks/useUserWallets';
+import { useWalletIdentityId } from '@/hooks/useWalletIdentityId';
 
 export function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { displayName } = useProfileIdentity();
   const { ready, wallets } = useUserWallets();
+  const { identityId } = useWalletIdentityId();
   const { signOut } = useSignOut();
   const { copy, isCopied } = useCopyToClipboard();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
@@ -105,6 +108,15 @@ export function SettingsScreen() {
           <Ionicons name="chevron-down" size={18} color="#86a894" />
         </Pressable>
       </View>
+
+      {identityId ? (
+        <View style={styles.section}>
+          <AccountNumber
+            identityId={identityId}
+            style={styles.accountNumber}
+          />
+        </View>
+      ) : null}
 
       <Pressable
         accessibilityRole="button"
@@ -277,6 +289,10 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     marginTop: 28,
     gap: 12,
+  },
+  accountNumber: {
+    maxWidth: '100%',
+    alignSelf: 'stretch',
   },
   sectionTitle: {
     fontSize: 14,

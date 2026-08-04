@@ -93,7 +93,8 @@ const HOME_STACK_HISTORY: Partial<Record<keyof HomeStackParamList, string[]>> =
     transactions: ['index'],
     contacts: ['index'],
     receive: ['index'],
-    receiveQr: ['index', 'receive'],
+    request: ['index'],
+    receiveQr: ['index', 'request'],
     send: ['index'],
     confirmSend: ['index', 'send'],
   };
@@ -110,10 +111,12 @@ function hydrateSendDraftFromNavState(state: NavState | undefined): void {
     ) {
       const params = route.params as {
         usdAmount?: string;
+        identity?: string;
         ethereumRecipient?: string;
         solanaRecipient?: string;
       };
       if (
+        params.identity ||
         params.ethereumRecipient ||
         params.solanaRecipient ||
         params.usdAmount
@@ -246,6 +249,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               transactions: '/transactions',
               contacts: '/contacts',
               receive: '/receive',
+              request: '/request',
               receiveQr: {
                 path: '/receive/qr',
                 parse: {
@@ -257,6 +261,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
                 parse: {
                   tokenId: (tokenId: string) => tokenId || undefined,
                   usdAmount: (usdAmount: string) => usdAmount || undefined,
+                  identity: (value: string) => value || undefined,
                   ethereumRecipient: (value: string) => value || undefined,
                   solanaRecipient: (value: string) => value || undefined,
                 },
@@ -265,6 +270,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
                 path: '/send/confirm',
                 parse: {
                   usdAmount: (usdAmount: string) => usdAmount || undefined,
+                  identity: (value: string) => value || undefined,
                   ethereumRecipient: (value: string) => value || undefined,
                   solanaRecipient: (value: string) => value || undefined,
                   legs: (legs: string) => {

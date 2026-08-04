@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -24,13 +24,18 @@ import { TokenPickerModal } from '@/components/TokenPickerModal';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
-import { useSendDraftUi } from '@/hooks/useSendDraft';
+import { updateSendDraft, useSendDraftUi } from '@/hooks/useSendDraft';
 import { useSendForm } from '@/hooks/useSendForm';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { getNetworkChain } from '@/lib/alchemy/networks';
+import {
+  encodeWalletIdentity,
+  tryDecodeWalletIdentity,
+} from '@/lib/walletIdentity';
+import { isValidRecipientAddress } from '@/lib/validation';
 import type { HomeStackParamList } from '@/navigation/types';
 
 export function SendScreen() {
@@ -55,7 +60,9 @@ export function SendScreen() {
     onSelectStrategy,
   } = useSendStrategyPicker();
   const [tokenPickerOpen, setTokenPickerOpen] = useState(false);
-  const { currencySymbol, formatFromUsd } = useFiatDisplay();
+  const [showDecodedAddresses, setShowDecodedAddresses] = useState(false);
+  const { currencySymbol, formatFromUsd, defaultFormattedZero } =
+    useFiatDisplay();
 
   const form = useSendForm(
     spendableTokens,
@@ -75,8 +82,6 @@ export function SendScreen() {
     needsSolanaRecipient,
     ethereumRecipient,
     solanaRecipient,
-    ethereumRecipientValid,
-    solanaRecipientValid,
     insufficientFunds,
     canContinue,
     setEthereumRecipient,
@@ -86,13 +91,28 @@ export function SendScreen() {
     removeAllocation,
     addAllocation,
   } = form;
+  const [accountNumber, setAccountNumberState] = useState(() => {
+    if (!ethereumRecipient.trim() || !solanaRecipient.trim()) {
+      return '';
+    }
+
+    try {
+      return encodeWalletIdentity(
+        ethereumRecipient.trim(),
+        solanaRecipient.trim(),
+      );
+    } catch {
+      return '';
+    }
+  });
 
   const totalLabel = availableLabel;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
 
-  const taxLabel = taxUsd > 0 ? formatFromUsd(taxUsd) : null;
+  const taxLabel = formatFromUsd(taxUsd) ?? defaultFormattedZero;
   const payerTotalLabel =
-    payerTotalUsd != null ? formatFromUsd(payerTotalUsd) : null;
+    (payerTotalUsd != null ? formatFromUsd(payerTotalUsd) : null) ??
+    defaultFormattedZero;
   const taxFundingChain = taxFunding
     ? getNetworkChain(taxFunding.token.network)
     : null;
@@ -112,15 +132,84 @@ export function SendScreen() {
         ? 'Enter a valid amount'
         : null;
 
-  const ethereumRecipientError =
-    ethereumRecipient.trim() && !ethereumRecipientValid
-      ? 'Enter a valid EVM address'
+  const decodedAccountNumber = useMemo(
+    () => tryDecodeWalletIdentity(accountNumber),
+    [accountNumber],
+  );
+
+  const accountNumberError =
+    accountNumber.trim() && !decodedAccountNumber
+      ? 'Enter a valid account number'
       : null;
 
-  const solanaRecipientError =
-    solanaRecipient.trim() && !solanaRecipientValid
-      ? 'Enter a valid Solana address'
-      : null;
+  const syncAccountNumberFromAddresses = useCallback(
+    (nextEvm: string, nextSolana: string) => {
+      const trimmedEvm = nextEvm.trim();
+      const trimmedSolana = nextSolana.trim();
+      const evmValid = isValidRecipientAddress(trimmedEvm, 'ethereum');
+      const solanaValid = isValidRecipientAddress(trimmedSolana, 'solana');
+
+      if (!trimmedEvm && !trimmedSolana) {
+        setAccountNumberState('');
+        return;
+      }
+
+      if (!evmValid || !solanaValid) {
+        setAccountNumberState('');
+        return;
+      }
+
+      try {
+        setAccountNumberState(encodeWalletIdentity(trimmedEvm, trimmedSolana));
+      } catch {
+        setAccountNumberState('');
+      }
+    },
+    [],
+  );
+
+  const setAccountNumber = useCallback(
+    (value: string) => {
+      setAccountNumberState(value);
+
+      const decoded = tryDecodeWalletIdentity(value);
+      if (!value.trim()) {
+        setEthereumRecipient('');
+        setSolanaRecipient('');
+        return;
+      }
+
+      if (!decoded) {
+        setEthereumRecipient('');
+        setSolanaRecipient('');
+        return;
+      }
+
+      setEthereumRecipient(decoded.evmAddress);
+      setSolanaRecipient(decoded.solanaAddress);
+    },
+    [setEthereumRecipient, setSolanaRecipient],
+  );
+
+  const setDecodedEthereumRecipient = useCallback(
+    (value: string) => {
+      setEthereumRecipient(value);
+      syncAccountNumberFromAddresses(value, solanaRecipient);
+    },
+    [setEthereumRecipient, solanaRecipient, syncAccountNumberFromAddresses],
+  );
+
+  const setDecodedSolanaRecipient = useCallback(
+    (value: string) => {
+      setSolanaRecipient(value);
+      syncAccountNumberFromAddresses(ethereumRecipient, value);
+    },
+    [ethereumRecipient, setSolanaRecipient, syncAccountNumberFromAddresses],
+  );
+
+  useEffect(() => {
+    updateSendDraft({ accountNumber: accountNumber.trim() });
+  }, [accountNumber]);
 
   const onContinue = useCallback(() => {
     if (!canContinue || allocations.length === 0) {
@@ -205,183 +294,230 @@ export function SendScreen() {
               keyboardShouldPersistTaps="handled"
               style={styles.flex}
             >
-              <View
-                accessibilityLabel={`Available Balance: ${totalLabel}`}
-                style={[styles.fieldRow, styles.fieldRowDisabled, styles.balanceRow]}
-              >
-                <Text style={styles.balanceLabel}>Available Balance:</Text>
-                <Text style={styles.balanceValue}>{totalLabel}</Text>
-              </View>
-
               <View style={styles.formBody}>
-              <Text style={styles.label}>Amount</Text>
-              <View
-                style={[
-                  styles.fieldRow,
-                  amountError ? styles.fieldRowError : null,
-                ]}
-              >
-                <Text style={styles.amountPrefix}>{currencySymbol}</Text>
-                <TextInput
-                  keyboardType="decimal-pad"
-                  onChangeText={setAmount}
-                  placeholder="0"
-                  placeholderTextColor="#86a894"
-                  style={styles.fieldInput}
-                  value={amount}
-                />
-              </View>
-              {amountError ? (
-                <Text style={styles.fieldError}>{amountError}</Text>
-              ) : null}
-
-              {taxLabel ? (
-                <>
-                  <TaxDetailsCollapsible
-                    showEvm={showTaxEvm}
-                    showSolana={showTaxSolana}
-                    style={styles.taxSection}
-                    taxLabel={taxLabel}
+                <Text style={styles.label}>Account Number</Text>
+                <View
+                  style={[
+                    styles.fieldRow,
+                    accountNumberError ? styles.fieldRowError : null,
+                  ]}
+                >
+                  <TextInput
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    onChangeText={setAccountNumber}
+                    placeholder="Paste account number"
+                    placeholderTextColor="#86a894"
+                    style={styles.fieldInput}
+                    value={accountNumber}
                   />
-                  {payerTotalLabel ? (
-                    <View style={styles.payerTotalRow}>
-                      <Text style={styles.payerTotalLabel}>Total</Text>
-                      <Text style={styles.payerTotalValue}>
-                        {payerTotalLabel}
-                      </Text>
-                    </View>
+                  {accountNumber.trim() ? (
+                    <Pressable
+                      accessibilityLabel="Clear account number"
+                      accessibilityRole="button"
+                      hitSlop={8}
+                      onPress={() => {
+                        setAccountNumber('');
+                      }}
+                      style={styles.clearButton}
+                    >
+                      <Ionicons
+                        name="close-circle"
+                        size={20}
+                        color="#86a894"
+                      />
+                    </Pressable>
                   ) : null}
-                </>
-              ) : null}
-
-              <Text style={styles.label}>EVM recipient</Text>
-              <View
-                style={[
-                  styles.fieldRow,
-                  ethereumRecipientError ? styles.fieldRowError : null,
-                ]}
-              >
-                <TextInput
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  onChangeText={setEthereumRecipient}
-                  placeholder="0x… EVM address"
-                  placeholderTextColor="#86a894"
-                  style={styles.fieldInput}
-                  value={ethereumRecipient}
-                />
-                {ethereumRecipient.trim() ? (
-                  <Pressable
-                    accessibilityLabel="Clear EVM recipient"
-                    accessibilityRole="button"
-                    hitSlop={8}
-                    onPress={() => {
-                      setEthereumRecipient('');
-                    }}
-                    style={styles.clearButton}
-                  >
-                    <Ionicons
-                      name="close-circle"
-                      size={20}
-                      color="#86a894"
-                    />
-                  </Pressable>
+                </View>
+                {accountNumberError ? (
+                  <Text style={styles.fieldError}>{accountNumberError}</Text>
                 ) : null}
-              </View>
-              {ethereumRecipientError ? (
-                <Text style={styles.fieldError}>{ethereumRecipientError}</Text>
-              ) : null}
-
-              <Text style={styles.label}>Solana recipient</Text>
-              <View
-                style={[
-                  styles.fieldRow,
-                  solanaRecipientError ? styles.fieldRowError : null,
-                ]}
-              >
-                <TextInput
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  onChangeText={setSolanaRecipient}
-                  placeholder="Solana address"
-                  placeholderTextColor="#86a894"
-                  style={styles.fieldInput}
-                  value={solanaRecipient}
-                />
-                {solanaRecipient.trim() ? (
-                  <Pressable
-                    accessibilityLabel="Clear Solana recipient"
-                    accessibilityRole="button"
-                    hitSlop={8}
-                    onPress={() => {
-                      setSolanaRecipient('');
-                    }}
-                    style={styles.clearButton}
-                  >
-                    <Ionicons
-                      name="close-circle"
-                      size={20}
-                      color="#86a894"
-                    />
-                  </Pressable>
-                ) : null}
-              </View>
-              {solanaRecipientError ? (
-                <Text style={styles.fieldError}>{solanaRecipientError}</Text>
-              ) : null}
-
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ expanded: showAdvanced }}
-                onPress={toggleAdvanced}
-                style={({ pressed }) => [
-                  styles.advancedToggle,
-                  pressed && styles.advancedTogglePressed,
-                ]}
-              >
-                <Text style={styles.advancedToggleText}>
-                  {showAdvanced
-                    ? 'Hide advanced details'
-                    : 'Show advanced details'}
-                </Text>
-                <Ionicons
-                  name={showAdvanced ? 'chevron-up' : 'chevron-down'}
-                  size={16}
-                  color="#5a7d6a"
-                />
-              </Pressable>
-
-              {showAdvanced ? (
-                <SendAdvancedDetails
-                  allocationInputUnit={allocationInputUnit}
-                  allocationInputs={allocationInputs}
-                  allocations={allocations}
-                  canAddToken={canAddToken}
-                  onAddToken={() => {
-                    setTokenPickerOpen(true);
+                <Pressable
+                  accessibilityLabel={
+                    showDecodedAddresses
+                      ? 'Hide advanced'
+                      : 'Show advanced'
+                  }
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: showDecodedAddresses }}
+                  onPress={() => {
+                    setShowDecodedAddresses((open) => !open);
                   }}
-                  onAllocationAmountChange={setAllocationAmount}
-                  onAllocationInputUnitChange={setAllocationInputUnit}
-                  onOpenStrategyPicker={openStrategyPicker}
-                  onRemoveAllocation={removeAllocation}
-                  selectedStrategy={selectedStrategy}
-                  spendableTokens={spendableTokens}
-                  taxFunding={taxFunding}
-                />
-              ) : null}
+                  style={({ pressed }) => [
+                    styles.decodedToggle,
+                    pressed && styles.advancedTogglePressed,
+                  ]}
+                >
+                  <Text style={styles.decodedToggleText}>Advanced</Text>
+                  <Ionicons
+                    name={showDecodedAddresses ? 'chevron-up' : 'chevron-down'}
+                    size={16}
+                    color="#5a7d6a"
+                  />
+                </Pressable>
+                {showDecodedAddresses ? (
+                  <View style={styles.decodedCard}>
+                    <View style={styles.decodedGroup}>
+                      <Text style={styles.decodedLabel}>EVM</Text>
+                      <View style={styles.decodedInputRow}>
+                        <TextInput
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          onChangeText={setDecodedEthereumRecipient}
+                          placeholder="Enter a valid account number"
+                          placeholderTextColor="#86a894"
+                          style={styles.decodedInput}
+                          value={ethereumRecipient}
+                        />
+                        {ethereumRecipient.trim() ? (
+                          <Pressable
+                            accessibilityLabel="Clear EVM address"
+                            accessibilityRole="button"
+                            hitSlop={8}
+                            onPress={() => {
+                              setDecodedEthereumRecipient('');
+                            }}
+                            style={styles.clearButton}
+                          >
+                            <Ionicons
+                              name="close-circle"
+                              size={20}
+                              color="#86a894"
+                            />
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    </View>
+                    <View style={styles.decodedDivider} />
+                    <View style={styles.decodedGroup}>
+                      <Text style={styles.decodedLabel}>Solana</Text>
+                      <View style={styles.decodedInputRow}>
+                        <TextInput
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          onChangeText={setDecodedSolanaRecipient}
+                          placeholder="Enter a valid account number"
+                          placeholderTextColor="#86a894"
+                          style={styles.decodedInput}
+                          value={solanaRecipient}
+                        />
+                        {solanaRecipient.trim() ? (
+                          <Pressable
+                            accessibilityLabel="Clear Solana address"
+                            accessibilityRole="button"
+                            hitSlop={8}
+                            onPress={() => {
+                              setDecodedSolanaRecipient('');
+                            }}
+                            style={styles.clearButton}
+                          >
+                            <Ionicons
+                              name="close-circle"
+                              size={20}
+                              color="#86a894"
+                            />
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    </View>
+                  </View>
+                ) : null}
 
-              <Pressable
-                accessibilityRole="button"
-                disabled={!canContinue}
-                onPress={onContinue}
-                style={({ pressed }) => [
-                  styles.continueButton,
-                  !canContinue && styles.continueButtonDisabled,
-                  pressed && canContinue && styles.continueButtonPressed,
-                ]}
-              >
-                <Text style={styles.continueButtonText}>Continue</Text>
-              </Pressable>
+                <View style={styles.balanceDivider} />
+                <View
+                  accessibilityLabel={`Available Balance: ${totalLabel}`}
+                  style={[styles.fieldRow, styles.fieldRowDisabled, styles.balanceRow]}
+                >
+                  <Text style={styles.balanceLabel}>Available Balance:</Text>
+                  <Text style={styles.balanceValue}>{totalLabel}</Text>
+                </View>
+
+                <Text style={styles.label}>Amount</Text>
+                <View
+                  style={[
+                    styles.fieldRow,
+                    amountError ? styles.fieldRowError : null,
+                  ]}
+                >
+                  <Text style={styles.amountPrefix}>{currencySymbol}</Text>
+                  <TextInput
+                    keyboardType="decimal-pad"
+                    onChangeText={setAmount}
+                    placeholder="0"
+                    placeholderTextColor="#86a894"
+                    style={styles.fieldInput}
+                    value={amount}
+                  />
+                </View>
+                {amountError ? (
+                  <Text style={styles.fieldError}>{amountError}</Text>
+                ) : null}
+
+                <TaxDetailsCollapsible
+                  showEvm={showTaxEvm}
+                  showSolana={showTaxSolana}
+                  style={styles.taxSection}
+                  taxLabel={taxLabel}
+                />
+                <View style={styles.payerTotalRow}>
+                  <Text style={styles.payerTotalLabel}>Total</Text>
+                  <Text style={styles.payerTotalValue}>
+                    {payerTotalLabel}
+                  </Text>
+                </View>
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: showAdvanced }}
+                  onPress={toggleAdvanced}
+                  style={({ pressed }) => [
+                    styles.advancedToggle,
+                    pressed && styles.advancedTogglePressed,
+                  ]}
+                >
+                  <Text style={styles.advancedToggleText}>
+                    {showAdvanced
+                      ? 'Hide advanced details'
+                      : 'Show advanced details'}
+                  </Text>
+                  <Ionicons
+                    name={showAdvanced ? 'chevron-up' : 'chevron-down'}
+                    size={16}
+                    color="#5a7d6a"
+                  />
+                </Pressable>
+
+                {showAdvanced ? (
+                  <SendAdvancedDetails
+                    allocationInputUnit={allocationInputUnit}
+                    allocationInputs={allocationInputs}
+                    allocations={allocations}
+                    canAddToken={canAddToken}
+                    onAddToken={() => {
+                      setTokenPickerOpen(true);
+                    }}
+                    onAllocationAmountChange={setAllocationAmount}
+                    onAllocationInputUnitChange={setAllocationInputUnit}
+                    onOpenStrategyPicker={openStrategyPicker}
+                    onRemoveAllocation={removeAllocation}
+                    selectedStrategy={selectedStrategy}
+                    spendableTokens={spendableTokens}
+                    taxFunding={taxFunding}
+                  />
+                ) : null}
+
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={!canContinue}
+                  onPress={onContinue}
+                  style={({ pressed }) => [
+                    styles.continueButton,
+                    !canContinue && styles.continueButtonDisabled,
+                    pressed && canContinue && styles.continueButtonPressed,
+                  ]}
+                >
+                  <Text style={styles.continueButtonText}>Continue</Text>
+                </Pressable>
               </View>
             </ScrollView>
           )}
@@ -471,6 +607,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingRight: 16,
   },
+  balanceDivider: {
+    marginTop: 10,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#86d4a4',
+  },
   balanceLabel: {
     fontSize: 16,
     fontWeight: '600',
@@ -542,12 +683,26 @@ const styles = StyleSheet.create({
   },
   taxSection: {
     marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#86d4a4',
+    borderRadius: 12,
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingVertical: 14,
+    backgroundColor: '#dcfce7',
   },
   payerTotalRow: {
     marginTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#86d4a4',
+    borderRadius: 12,
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingVertical: 14,
+    backgroundColor: '#dcfce7',
   },
   payerTotalLabel: {
     fontSize: 15,
@@ -561,7 +716,6 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   advancedToggle: {
-    marginTop: 28,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -575,6 +729,66 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#5a7d6a',
     marginRight: 4,
+  },
+  decodedToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+  },
+  decodedToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    marginRight: 4,
+  },
+  decodedCard: {
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  decodedGroup: {
+    gap: 8,
+  },
+  decodedInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 52,
+    paddingLeft: 12,
+    paddingRight: 4,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+    borderRadius: 10,
+    backgroundColor: '#f8fffa',
+  },
+  decodedLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#86a894',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  decodedValue: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 14,
+    color: '#166534',
+  },
+  decodedInput: {
+    flex: 1,
+    minWidth: 0,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#166534',
+  },
+  decodedDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#d1fae5',
+    marginVertical: 10,
   },
   continueButton: {
     marginTop: 32,

@@ -41,6 +41,7 @@ export function HomeStack() {
         component={homeStackScreens.contacts}
       />
       <WebStack.Screen name="receive" component={homeStackScreens.receive} />
+      <WebStack.Screen name="request" component={homeStackScreens.request} />
       <WebStack.Screen
         name="receiveQr"
         component={homeStackScreens.receiveQr}

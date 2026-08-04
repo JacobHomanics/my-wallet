@@ -32,6 +32,7 @@ export function HomeStack() {
         component={homeStackScreens.contacts}
       />
       <NativeStack.Screen name="receive" component={homeStackScreens.receive} />
+      <NativeStack.Screen name="request" component={homeStackScreens.request} />
       <NativeStack.Screen
         name="receiveQr"
         component={homeStackScreens.receiveQr}

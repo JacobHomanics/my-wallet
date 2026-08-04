@@ -14,6 +14,7 @@ import QRCodeStyled from 'react-native-qrcode-styled';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { AccountNumber } from '@/components/AccountNumber';
 import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { useAppTax } from '@/hooks/useAppTax';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
@@ -29,7 +30,7 @@ export function ReceiveQrScreen() {
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'receiveQr'>>();
   const usdAmount = route.params.usdAmount;
-  const { ready, url, ethereumAddress, solanaAddress } =
+  const { ready, url, identityId, ethereumAddress, solanaAddress } =
     useReceivePaymentUrl(usdAmount);
   const { copy, isCopied } = useCopyToClipboard();
   const { formatFromUsd, parseDisplayInputToUsd, currencySymbol } =
@@ -67,7 +68,7 @@ export function ReceiveQrScreen() {
           ) : (
             <BackButton accessibilityLabel="Back" />
           )}
-          <Text style={styles.topBarTitle}>Receive</Text>
+          <Text style={styles.topBarTitle}>Request</Text>
           <View style={styles.topBarSpacer} />
         </View>
 
@@ -98,6 +99,13 @@ export function ReceiveQrScreen() {
                   style={styles.qr}
                 />
               </View>
+
+              {identityId ? (
+                <AccountNumber
+                  identityId={identityId}
+                  style={styles.accountNumber}
+                />
+              ) : null}
 
               <Pressable
                 accessibilityLabel={
@@ -207,6 +215,9 @@ const styles = StyleSheet.create({
   },
   qr: {
     backgroundColor: '#ffffff',
+  },
+  accountNumber: {
+    marginTop: 20,
   },
   copyLinkButton: {
     marginTop: 20,
