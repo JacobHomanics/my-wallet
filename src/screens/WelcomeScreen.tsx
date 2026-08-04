@@ -2,18 +2,18 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useAppBrand } from '@/hooks/useAppBrand';
 import type { RootStackParamList } from '@/navigation/types';
 
 export function WelcomeScreen() {
+  const { name, tagline } = useAppBrand();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.brand}>My Wallet</Text>
-      <Text style={styles.subtitle}>
-        Your wallet, ready when you are.
-      </Text>
+      <Text style={styles.brand}>{name}</Text>
+      <Text style={styles.subtitle}>{tagline}</Text>
       <Pressable
         accessibilityRole="button"
         onPress={() => {

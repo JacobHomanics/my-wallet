@@ -1,1 +1,1 @@
-# my-wallet
+# Cashbox

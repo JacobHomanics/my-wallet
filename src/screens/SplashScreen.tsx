@@ -1,13 +1,15 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import { useAppBrand } from '@/hooks/useAppBrand';
 import { useSplashRedirect } from '@/hooks/useSplashRedirect';
 
 export function SplashScreen() {
+  const { name } = useAppBrand();
   useSplashRedirect();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.brand}>My Wallet</Text>
+      <Text style={styles.brand}>{name}</Text>
       <ActivityIndicator size="large" color="#0f172a" style={styles.spinner} />
     </View>
   );

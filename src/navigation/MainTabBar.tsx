@@ -6,6 +6,7 @@ import {
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ProfileDropdown } from '@/components/ProfileDropdown';
+import { useAppBrand } from '@/hooks/useAppBrand';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 
 const TAB_ICONS = {
@@ -16,13 +17,15 @@ const TAB_ICONS = {
 type TabRouteName = keyof typeof TAB_ICONS;
 
 function WebTopNav({ state, descriptors, navigation }: BottomTabBarProps) {
+  const { name, tagline } = useAppBrand();
+
   return (
     <View style={styles.header}>
       <View style={styles.brandBlock}>
         <Ionicons name="wallet" size={28} color="#0f172a" />
         <View style={styles.brandText}>
-          <Text style={styles.brand}>My Wallet</Text>
-          <Text style={styles.tagline}>Your wallet, ready when you are.</Text>
+          <Text style={styles.brand}>{name}</Text>
+          <Text style={styles.tagline}>{tagline}</Text>
         </View>
       </View>
 
