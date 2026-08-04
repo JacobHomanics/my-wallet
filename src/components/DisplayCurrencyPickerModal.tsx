@@ -143,7 +143,7 @@ export function DisplayCurrencyPickerModal({
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
             <Text style={styles.empty}>
-              No display currencies match "{query.trim()}".
+              No display currencies match <Text style={styles.emptyQuery}>{query.trim()}</Text>.
             </Text>
           }
           renderItem={renderOption}
@@ -257,5 +257,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#86a894',
     textAlign: 'center',
+  },
+  emptyQuery: {
+    fontWeight: '600',
   },
 });
