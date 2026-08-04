@@ -12,7 +12,7 @@ import { rootLinking } from '@/navigation/linking';
 import { RootStack } from '@/navigation/RootStack';
 import type { RootStackParamList } from '@/navigation/types';
 
-const UNAUTHENTICATED_ROUTES = new Set<keyof RootStackParamList>([
+const UNAUTHENTICATED_ROUTES = new Set<string>([
   'splash',
   'welcome',
   'login',
