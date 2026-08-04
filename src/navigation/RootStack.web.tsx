@@ -30,6 +30,10 @@ export function RootStack() {
         name="loginVerify"
         component={rootStackScreens.loginVerify}
       />
+      <WebStack.Screen
+        name="exportWallet"
+        component={rootStackScreens.exportWallet}
+      />
       <WebStack.Screen name="main" component={rootStackScreens.main} />
     </WebStack.Navigator>
   );

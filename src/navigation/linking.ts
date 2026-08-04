@@ -210,8 +210,31 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
         ],
       },
       welcome: 'welcome',
-      login: 'login',
-      loginVerify: 'login/verify',
+      login: {
+        path: 'login',
+        parse: {
+          returnTo: (value: string) => value || undefined,
+          address: (value: string) => value || undefined,
+          chain: (value: string) => value || undefined,
+        },
+      },
+      loginVerify: {
+        path: 'login/verify',
+        parse: {
+          method: (value: string) => value,
+          value: (value: string) => value,
+          returnTo: (value: string) => value || undefined,
+          address: (value: string) => value || undefined,
+          chain: (value: string) => value || undefined,
+        },
+      },
+      exportWallet: {
+        path: 'export',
+        parse: {
+          address: (address: string) => address,
+          chain: (chain: string) => chain as 'ethereum' | 'solana',
+        },
+      },
       main: {
         screens: {
           home: {

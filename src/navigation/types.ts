@@ -55,14 +55,27 @@ export type MainTabParamList = {
   settings: undefined;
 };
 
+export type ExportWalletParams = {
+  address: string;
+  chain: 'ethereum' | 'solana';
+};
+
 export type RootStackParamList = {
   splash: undefined;
   welcome: undefined;
-  login: undefined;
+  login:
+    | undefined
+    | ({
+        returnTo: 'exportWallet';
+      } & ExportWalletParams);
   loginVerify: {
     method: LoginMethod;
     value: string;
+    returnTo?: 'exportWallet';
+    address?: string;
+    chain?: 'ethereum' | 'solana';
   };
+  exportWallet: ExportWalletParams;
   main: NavigatorScreenParams<MainTabParamList> | undefined;
 };
 

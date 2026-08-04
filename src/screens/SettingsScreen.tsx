@@ -11,11 +11,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
+import { ExportPrivateKeyWebView } from '@/components/ExportPrivateKeyWebView';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { WalletDebitCard } from '@/components/WalletDebitCard';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
-import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
+import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
+import { useExportPrivateKey } from '@/hooks/useExportPrivateKey';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useSignOut } from '@/hooks/useSignOut';
@@ -29,6 +31,11 @@ export function SettingsScreen() {
   const { signOut } = useSignOut();
   const { copy, isCopied } = useCopyToClipboard();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const {
+    exportPrivateKey,
+    exportWebViewUri,
+    closeExportWebView,
+  } = useExportPrivateKey();
   const {
     strategies,
     selectedStrategy,
@@ -177,15 +184,38 @@ export function SettingsScreen() {
                 const walletKey = `${wallet.chain}-${wallet.address}`;
 
                 return (
-                  <WalletDebitCard
-                    key={walletKey}
-                    wallet={wallet}
-                    accountLabel={displayName}
-                    copied={isCopied(walletKey)}
-                    onCopy={() => {
-                      void copy(wallet.address, walletKey);
-                    }}
-                  />
+                  <View key={walletKey} style={styles.walletBlock}>
+                    <WalletDebitCard
+                      wallet={wallet}
+                      accountLabel={displayName}
+                      copied={isCopied(walletKey)}
+                      onCopy={() => {
+                        void copy(wallet.address, walletKey);
+                      }}
+                    />
+                    <Pressable
+                      accessibilityLabel={`Export ${wallet.label} private key`}
+                      accessibilityRole="button"
+                      onPress={() => {
+                        void exportPrivateKey(wallet).catch((error) => {
+                          console.error(error);
+                        });
+                      }}
+                      style={({ pressed }) => [
+                        styles.exportButton,
+                        pressed && styles.exportButtonPressed,
+                      ]}
+                    >
+                      <Ionicons
+                        name="key-outline"
+                        size={16}
+                        color="#5a7d6a"
+                      />
+                      <Text style={styles.exportButtonText}>
+                        Export private key
+                      </Text>
+                    </Pressable>
+                  </View>
                 );
               })
             )}
@@ -203,6 +233,11 @@ export function SettingsScreen() {
         <Text style={styles.buttonText}>Log out</Text>
       </Pressable>
       </ScrollView>
+
+      <ExportPrivateKeyWebView
+        onClose={closeExportWebView}
+        uri={exportWebViewUri}
+      />
 
       <StrategyPickerModal
         onClose={closePicker}
@@ -320,6 +355,26 @@ const styles = StyleSheet.create({
   empty: {
     fontSize: 15,
     color: '#86a894',
+  },
+  walletBlock: {
+    gap: 10,
+  },
+  exportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  exportButtonPressed: {
+    opacity: 0.65,
+  },
+  exportButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5a7d6a',
   },
   button: {
     marginTop: 24,

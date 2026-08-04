@@ -25,6 +25,10 @@ export function RootStack() {
         name="loginVerify"
         component={rootStackScreens.loginVerify}
       />
+      <NativeStack.Screen
+        name="exportWallet"
+        component={rootStackScreens.exportWallet}
+      />
       <NativeStack.Screen name="main" component={rootStackScreens.main} />
     </NativeStack.Navigator>
   );
