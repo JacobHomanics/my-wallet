@@ -21,7 +21,7 @@ export type ReceiveAmountState = {
   setAmount: (value: string) => void;
 };
 
-/** Amount entry for the receive request flow. */
+/** Amount entry for the request payment flow. */
 export function useReceiveAmount(initialAmount = ''): ReceiveAmountState {
   const { parseDisplayInputToUsd } = useFiatDisplay();
   const [amount, setAmountState] = useState(initialAmount);

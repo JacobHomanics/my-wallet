@@ -26,20 +26,25 @@ export type HomeStackParamList = {
   transactions: undefined;
   contacts: undefined;
   receive: undefined;
+  request: undefined;
   receiveQr: {
-    /** Display-currency amount string entered on the receive screen. */
+    /** Display-currency amount string entered on the request screen. */
     usdAmount: string;
   };
   send: {
     tokenId?: string;
     /** Optional when opened from a receive address deep link. */
     usdAmount?: string;
+    /** Reversible EVM+Solana identity; decoded into recipients on hydrate. */
+    identity?: string;
     ethereumRecipient?: string;
     solanaRecipient?: string;
   } | undefined;
   confirmSend: {
     /** USD amount string the user entered. Optional for receive deep links. */
     usdAmount?: string;
+    /** Reversible EVM+Solana identity; decoded into recipients on hydrate. */
+    identity?: string;
     ethereumRecipient?: string;
     solanaRecipient?: string;
     legs?: ConfirmSendLeg[];
