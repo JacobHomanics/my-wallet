@@ -238,7 +238,6 @@ export function SendScreen() {
               {taxLabel ? (
                 <>
                   <TaxDetailsCollapsible
-                    fundingSymbol={taxFunding?.token.symbol}
                     showEvm={showTaxEvm}
                     showSolana={showTaxSolana}
                     style={styles.taxSection}

@@ -327,7 +327,6 @@ export function ConfirmSendScreen() {
 
             {taxLabel ? (
               <TaxDetailsCollapsible
-                fundingSymbol={taxFunding?.token.symbol}
                 showEvm={taxFundingChain === 'ethereum'}
                 showSolana={taxFundingChain === 'solana'}
                 taxLabel={taxLabel}

@@ -16,10 +16,8 @@ import { useTaxInfoModal } from '@/hooks/useTaxInfoModal';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 
 export type TaxDetailsCollapsibleProps = {
-  /** Formatted tax amount, e.g. "$0.05". */
+  /** Formatted service fee amount, e.g. "$0.05". */
   taxLabel: string;
-  /** When set, details header includes "Paid in {symbol}". */
-  fundingSymbol?: string | null;
   showEvm?: boolean;
   showSolana?: boolean;
   /** Optional style override for the outer section (e.g. margin). */
@@ -27,11 +25,10 @@ export type TaxDetailsCollapsibleProps = {
 };
 
 /**
- * Collapsible tax row with destination wallet addresses.
+ * Collapsible service fee row with destination wallet addresses.
  */
 export function TaxDetailsCollapsible({
   taxLabel,
-  fundingSymbol,
   showEvm = false,
   showSolana = false,
   style,
@@ -48,10 +45,6 @@ export function TaxDetailsCollapsible({
   if (!showEvm && !showSolana) {
     return null;
   }
-
-  const detailsLabel = fundingSymbol
-    ? `Paid in ${fundingSymbol} · Goes to`
-    : 'Goes to';
 
   return (
     <View style={[styles.taxSection, style]}>
@@ -110,7 +103,7 @@ export function TaxDetailsCollapsible({
 
       {showTaxDetails ? (
         <View style={styles.taxDetails}>
-          <Text style={styles.taxDetailsLabel}>{detailsLabel}</Text>
+          <Text style={styles.taxDetailsLabel}>Goes to</Text>
           {showEvm ? (
             <View style={styles.taxAddressRow}>
               <Text style={styles.toChainLabel}>EVM</Text>
