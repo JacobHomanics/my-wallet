@@ -17,7 +17,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton } from '@/components/BackButton';
 import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
+import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
+import { useAppTax } from '@/hooks/useAppTax';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { usePopToSend } from '@/hooks/usePopToSend';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
@@ -34,6 +36,7 @@ import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import { getNetworkChain } from '@/lib/alchemy/networks';
+import { buildPaymentLegsWithTax } from '@/lib/send/buildPaymentLegsWithTax';
 import { formatSendError } from '@/lib/send/formatSendError';
 import type { HomeStackParamList } from '@/navigation/types';
 
@@ -52,6 +55,11 @@ export function ConfirmSendScreen() {
   const { copy, isCopied } = useCopyToClipboard();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const { tip, tipUsd, setTip, setTipPercent } = useSendTip();
+  const {
+    evmAddress: taxEvmAddress,
+    solanaAddress: taxSolanaAddress,
+    rate: taxRate,
+  } = useAppTax();
   const { allocationInputUnit, setAllocationInputUnit } = useSendDraftUi();
   const {
     strategies,
@@ -68,7 +76,6 @@ export function ConfirmSendScreen() {
   const openFreshSend = useOpenFreshSend();
   const {
     formatFromUsd,
-    formatAmountInputFromUsd,
     currencySymbol,
   } = useFiatDisplay();
 
@@ -83,6 +90,9 @@ export function ConfirmSendScreen() {
   const {
     amount,
     requestedUsd,
+    taxUsd,
+    payerTotalUsd,
+    taxFunding,
     allocations,
     allocationInputs,
     needsEthereumRecipient,
@@ -104,16 +114,17 @@ export function ConfirmSendScreen() {
 
   const baseUsd =
     requestedUsd != null ? Math.max(0, requestedUsd - tipUsd) : null;
-  const requiredLabel =
-    baseUsd != null
-      ? formatFromUsd(baseUsd)
-      : `${currencySymbol}${amount || '0'}`;
+  const taxLabel = taxUsd > 0 ? formatFromUsd(taxUsd) : null;
   const totalLabel =
-    requestedUsd != null
-      ? formatFromUsd(requestedUsd)
-      : requiredLabel;
+    (payerTotalUsd != null ? formatFromUsd(payerTotalUsd) : null) ??
+    (requestedUsd != null ? formatFromUsd(requestedUsd) : null) ??
+    `${currencySymbol}${amount || '0'}`;
   const availableLabel =
     insufficientFunds ? formatFromUsd(filledUsd) : null;
+
+  const taxFundingChain = taxFunding
+    ? getNetworkChain(taxFunding.token.network)
+    : null;
 
   const onTipPercent = useCallback(
     (percent: number) => {
@@ -147,24 +158,28 @@ export function ConfirmSendScreen() {
 
     void (async () => {
       try {
+        const paymentLegs = buildPaymentLegsWithTax({
+          allocations,
+          ethereumRecipient: trimmedEthereum,
+          solanaRecipient: trimmedSolana,
+          spendableTokens,
+          taxEvmAddress,
+          taxSolanaAddress,
+          taxRate,
+        });
         const results = await sendPayment(
-          allocations.map((leg) => {
-            const chain = getNetworkChain(leg.token.network);
-            return {
-              token: leg.token,
-              recipient:
-                chain === 'solana' ? trimmedSolana : trimmedEthereum,
-              amountRaw: leg.amountRaw,
-              amountFormatted: leg.amountFormatted,
-            };
-          }),
+          paymentLegs.map((leg) => ({
+            token: leg.token,
+            recipient: leg.recipient,
+            amountRaw: leg.amountRaw,
+            amountFormatted: leg.amountFormatted,
+            isTax: leg.isTax,
+          })),
         );
         resetSendDraft();
         refresh();
         navigation.navigate('sent', {
-          usdLabel:
-            totalLabel ??
-            `${currencySymbol}${formatAmountInputFromUsd(requestedUsd ?? 0)}`,
+          usdLabel: totalLabel,
           legs: results.map((result) => ({
             hash: result.hash,
             amount: result.amount,
@@ -173,6 +188,7 @@ export function ConfirmSendScreen() {
             networkLabel: result.networkLabel,
             tokenName: result.tokenName,
             logoUrl: result.logoUrl,
+            isTax: result.isTax === true,
           })),
         });
       } catch (err) {
@@ -184,14 +200,15 @@ export function ConfirmSendScreen() {
     allocations,
     canSend,
     clearStatus,
-    currencySymbol,
-    formatAmountInputFromUsd,
     navigation,
     refresh,
-    requestedUsd,
     sendPayment,
     sending,
     setError,
+    spendableTokens,
+    taxEvmAddress,
+    taxRate,
+    taxSolanaAddress,
     totalLabel,
     trimmedEthereum,
     trimmedSolana,
@@ -257,7 +274,7 @@ export function ConfirmSendScreen() {
           <ActivityIndicator color="#166534" style={styles.loader} />
         ) : (
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
-            <Text style={styles.heroUsd}>{requiredLabel}</Text>
+            <Text style={styles.heroUsd}>{totalLabel}</Text>
             {availableLabel ? (
               <Text style={styles.availableUsd}>
                 Available Balance: {availableLabel}
@@ -307,6 +324,14 @@ export function ConfirmSendScreen() {
                 />
               </View>
             </View>
+
+            {taxLabel ? (
+              <TaxDetailsCollapsible
+                showEvm={taxFundingChain === 'ethereum'}
+                showSolana={taxFundingChain === 'solana'}
+                taxLabel={taxLabel}
+              />
+            ) : null}
 
             {needsEthereumRecipient ||
               needsSolanaRecipient ||
@@ -425,6 +450,7 @@ export function ConfirmSendScreen() {
                 onRemoveAllocation={removeAllocation}
                 selectedStrategy={selectedStrategy}
                 spendableTokens={spendableTokens}
+                taxFunding={taxFunding}
               />
             ) : null}
 

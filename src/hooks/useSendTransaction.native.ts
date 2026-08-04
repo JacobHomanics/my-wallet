@@ -139,6 +139,7 @@ export function useSendTransaction(): SendTransactionResult {
               gas: prepared.gas,
               maxFeePerGas: prepared.maxFeePerGas,
               maxPriorityFeePerGas: prepared.maxPriorityFeePerGas,
+              nonce: params.nonce,
             });
             return { hash, chain: 'ethereum' };
           }
@@ -162,6 +163,7 @@ export function useSendTransaction(): SendTransactionResult {
             gas: fees.gas,
             maxFeePerGas: fees.maxFeePerGas,
             maxPriorityFeePerGas: fees.maxPriorityFeePerGas,
+            nonce: params.nonce,
           });
 
           return { hash, chain: 'ethereum' };
