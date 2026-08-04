@@ -367,6 +367,7 @@ export function SendScreen() {
                   onRemoveAllocation={removeAllocation}
                   selectedStrategy={selectedStrategy}
                   spendableTokens={spendableTokens}
+                  taxFunding={taxFunding}
                 />
               ) : null}
 

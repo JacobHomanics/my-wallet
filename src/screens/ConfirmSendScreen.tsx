@@ -451,6 +451,7 @@ export function ConfirmSendScreen() {
                 onRemoveAllocation={removeAllocation}
                 selectedStrategy={selectedStrategy}
                 spendableTokens={spendableTokens}
+                taxFunding={taxFunding}
               />
             ) : null}
 

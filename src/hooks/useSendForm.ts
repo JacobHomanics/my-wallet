@@ -462,6 +462,10 @@ export function useSendForm(
 
       const token =
         tokens.find((item) => item.id === tokenId) ?? base[index].token;
+      // Cap merchant input so the preferred tax funding token keeps headroom.
+      const merchantCap =
+        tokensForMerchantAllocation.find((item) => item.id === tokenId) ??
+        token;
 
       if (sanitized.trim() === '' || sanitized === '.') {
         const next = [...base];
@@ -482,14 +486,16 @@ export function useSendForm(
             ? (() => {
                 const usdForToken = parseDisplayInputToUsd(sanitized);
                 return usdForToken != null
-                  ? parseUsdAmountToTokenRaw(String(usdForToken), token)
+                  ? parseUsdAmountToTokenRaw(String(usdForToken), merchantCap)
                   : null;
               })()
             : parseTokenAmountToRaw(sanitized, token.decimals);
         if (parsed == null) {
           return null;
         }
-        return parsed > token.rawBalance ? token.rawBalance : parsed;
+        return parsed > merchantCap.rawBalance
+          ? merchantCap.rawBalance
+          : parsed;
       })();
       if (amountRaw == null) {
         return;
@@ -523,6 +529,7 @@ export function useSendForm(
       strategyPlan.allocations,
       syncAmountFromLegs,
       tokens,
+      tokensForMerchantAllocation,
     ],
   );
 
