@@ -3,6 +3,8 @@ export type DisplayCurrencyId =
   | 'eur'
   | 'gbp'
   | 'jpy'
+  | 'php'
+  | 'thb'
   | 'cad'
   | 'aud'
   | 'chf'
@@ -51,6 +53,18 @@ export const DISPLAY_CURRENCY_OPTIONS: readonly DisplayCurrencyOption[] = [
     code: 'JPY',
     label: 'Japanese Yen',
     description: 'Show balances and amounts in Japanese yen.',
+  },
+  {
+    id: 'php',
+    code: 'PHP',
+    label: 'Philippine Peso',
+    description: 'Show balances and amounts in Philippine pesos.',
+  },
+  {
+    id: 'thb',
+    code: 'THB',
+    label: 'Thai Baht',
+    description: 'Show balances and amounts in Thai baht.',
   },
   {
     id: 'cad',
