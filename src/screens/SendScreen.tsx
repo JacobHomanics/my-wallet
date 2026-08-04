@@ -107,7 +107,7 @@ export function SendScreen() {
 
   const amountError =
     amount.trim() && insufficientFunds
-      ? 'Insufficient funds for this amount (including tax)'
+      ? 'Insufficient funds for this amount (including service fee)'
       : amount.trim() && !form.amountValid
         ? 'Enter a valid amount'
         : null;

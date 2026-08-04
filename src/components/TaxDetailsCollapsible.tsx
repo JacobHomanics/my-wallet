@@ -60,8 +60,8 @@ export function TaxDetailsCollapsible({
           <Pressable
             accessibilityLabel={
               showTaxDetails
-                ? 'Hide tax destination details'
-                : 'Show tax destination details'
+                ? 'Hide service fee destination details'
+                : 'Show service fee destination details'
             }
             accessibilityRole="button"
             accessibilityState={{ expanded: showTaxDetails }}
@@ -72,7 +72,9 @@ export function TaxDetailsCollapsible({
               pressed && styles.taxHeaderPressed,
             ]}
           >
-            <Text style={styles.taxLabel}>Tax ({ratePercentLabel}%)</Text>
+            <Text style={styles.taxLabel}>
+              Service fee ({ratePercentLabel}%)
+            </Text>
             <Ionicons
               name={showTaxDetails ? 'chevron-up' : 'chevron-down'}
               size={16}
@@ -80,7 +82,7 @@ export function TaxDetailsCollapsible({
             />
           </Pressable>
           <Pressable
-            accessibilityLabel="About tax"
+            accessibilityLabel="About service fee"
             accessibilityRole="button"
             hitSlop={8}
             onPress={openTaxInfo}
@@ -95,8 +97,8 @@ export function TaxDetailsCollapsible({
         <Pressable
           accessibilityLabel={
             showTaxDetails
-              ? 'Hide tax destination details'
-              : 'Show tax destination details'
+              ? 'Hide service fee destination details'
+              : 'Show service fee destination details'
           }
           accessibilityRole="button"
           onPress={toggleTaxDetails}
@@ -118,8 +120,8 @@ export function TaxDetailsCollapsible({
               <Pressable
                 accessibilityLabel={
                   isCopied('tax-evm')
-                    ? 'Tax EVM address copied'
-                    : 'Copy tax EVM address'
+                    ? 'Service fee EVM address copied'
+                    : 'Copy service fee EVM address'
                 }
                 accessibilityRole="button"
                 hitSlop={8}
@@ -148,8 +150,8 @@ export function TaxDetailsCollapsible({
               <Pressable
                 accessibilityLabel={
                   isCopied('tax-solana')
-                    ? 'Tax Solana address copied'
-                    : 'Copy tax Solana address'
+                    ? 'Service fee Solana address copied'
+                    : 'Copy service fee Solana address'
                 }
                 accessibilityRole="button"
                 hitSlop={8}

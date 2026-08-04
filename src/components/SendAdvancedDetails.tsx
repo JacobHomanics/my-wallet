@@ -304,7 +304,7 @@ export function SendAdvancedDetails({
                 <Text style={styles.allocationSymbol} numberOfLines={1}>
                   {taxFunding.token.symbol}
                 </Text>
-                <Text style={styles.taxBadge}>Tax</Text>
+                <Text style={styles.taxBadge}>Service fee</Text>
               </View>
               <Text style={styles.allocationMeta} numberOfLines={1}>
                 {taxFunding.token.networkLabel}

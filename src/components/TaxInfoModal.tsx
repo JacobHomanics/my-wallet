@@ -6,7 +6,7 @@ type TaxInfoModalProps = {
 };
 
 /**
- * Explains app tax — content TBD; shell only for now.
+ * Explains the app service fee.
  */
 export function TaxInfoModal({ visible, onClose }: TaxInfoModalProps) {
   return (
@@ -17,7 +17,7 @@ export function TaxInfoModal({ visible, onClose }: TaxInfoModalProps) {
       onRequestClose={onClose}
     >
       <Pressable
-        accessibilityLabel="Dismiss tax info"
+        accessibilityLabel="Dismiss service fee info"
         accessibilityRole="button"
         onPress={onClose}
         style={styles.backdrop}
@@ -29,7 +29,7 @@ export function TaxInfoModal({ visible, onClose }: TaxInfoModalProps) {
           }}
           style={styles.card}
         >
-          <Text style={styles.title}>Tax</Text>
+          <Text style={styles.title}>Service fee</Text>
           <View style={styles.body}>
             <Text style={styles.heading}>Why is there a service fee?</Text>
             <Text style={styles.paragraph}>
