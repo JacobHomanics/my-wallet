@@ -37,8 +37,9 @@ export function TaxInfoModal({ visible, onClose }: TaxInfoModalProps) {
               and improve the platform.
             </Text>
             <Text style={styles.paragraph}>
-              You'll always see the fees before you confirm your
-              transfer—no hidden charges.
+              {
+                "You'll always see the fees before you confirm your transfer—no hidden charges."
+              }
             </Text>
           </View>
           <Pressable
