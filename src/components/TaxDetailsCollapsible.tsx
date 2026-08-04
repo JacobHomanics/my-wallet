@@ -1,9 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
+import { TaxInfoModal } from '@/components/TaxInfoModal';
 import { useAppTax } from '@/hooks/useAppTax';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useShowTaxDetails } from '@/hooks/useShowTaxDetails';
+import { useTaxInfoModal } from '@/hooks/useTaxInfoModal';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 
 export type TaxDetailsCollapsibleProps = {
@@ -28,6 +37,7 @@ export function TaxDetailsCollapsible({
   style,
 }: TaxDetailsCollapsibleProps) {
   const { showTaxDetails, toggleTaxDetails } = useShowTaxDetails();
+  const { taxInfoOpen, openTaxInfo, closeTaxInfo } = useTaxInfoModal();
   const { copy, isCopied } = useCopyToClipboard();
   const {
     ratePercentLabel,
@@ -45,30 +55,56 @@ export function TaxDetailsCollapsible({
 
   return (
     <View style={[styles.taxSection, style]}>
-      <Pressable
-        accessibilityLabel={
-          showTaxDetails
-            ? 'Hide tax destination details'
-            : 'Show tax destination details'
-        }
-        accessibilityRole="button"
-        accessibilityState={{ expanded: showTaxDetails }}
-        onPress={toggleTaxDetails}
-        style={({ pressed }) => [
-          styles.taxHeader,
-          pressed && styles.taxHeaderPressed,
-        ]}
-      >
+      <View style={styles.taxHeader}>
         <View style={styles.taxHeaderLeft}>
-          <Text style={styles.taxLabel}>Tax ({ratePercentLabel}%)</Text>
-          <Ionicons
-            name={showTaxDetails ? 'chevron-up' : 'chevron-down'}
-            size={16}
-            color="#5a7d6a"
-          />
+          <Pressable
+            accessibilityLabel={
+              showTaxDetails
+                ? 'Hide tax destination details'
+                : 'Show tax destination details'
+            }
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showTaxDetails }}
+            hitSlop={6}
+            onPress={toggleTaxDetails}
+            style={({ pressed }) => [
+              styles.taxToggle,
+              pressed && styles.taxHeaderPressed,
+            ]}
+          >
+            <Text style={styles.taxLabel}>Tax ({ratePercentLabel}%)</Text>
+            <Ionicons
+              name={showTaxDetails ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color="#5a7d6a"
+            />
+          </Pressable>
+          <Pressable
+            accessibilityLabel="About tax"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={openTaxInfo}
+            style={({ pressed }) => [
+              styles.helpButton,
+              pressed && styles.helpButtonPressed,
+            ]}
+          >
+            <Ionicons name="help-circle-outline" size={18} color="#5a7d6a" />
+          </Pressable>
         </View>
-        <Text style={styles.taxValue}>{taxLabel}</Text>
-      </Pressable>
+        <Pressable
+          accessibilityLabel={
+            showTaxDetails
+              ? 'Hide tax destination details'
+              : 'Show tax destination details'
+          }
+          accessibilityRole="button"
+          onPress={toggleTaxDetails}
+          style={({ pressed }) => pressed && styles.taxHeaderPressed}
+        >
+          <Text style={styles.taxValue}>{taxLabel}</Text>
+        </Pressable>
+      </View>
 
       {showTaxDetails ? (
         <View style={styles.taxDetails}>
@@ -135,6 +171,8 @@ export function TaxDetailsCollapsible({
           ) : null}
         </View>
       ) : null}
+
+      <TaxInfoModal onClose={closeTaxInfo} visible={taxInfoOpen} />
     </View>
   );
 }
@@ -156,12 +194,26 @@ const styles = StyleSheet.create({
   taxHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
+  },
+  taxToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
   },
   taxLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: '#5a7d6a',
+  },
+  helpButton: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  helpButtonPressed: {
+    opacity: 0.7,
   },
   taxValue: {
     fontSize: 14,
