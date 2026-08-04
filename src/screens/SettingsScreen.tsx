@@ -116,9 +116,7 @@ export function SettingsScreen() {
       {identityId ? (
         <View style={styles.section}>
           <AccountNumber
-            ethereumAddress={ethereumAddress}
             identityId={identityId}
-            solanaAddress={solanaAddress}
             style={styles.accountNumber}
           />
         </View>

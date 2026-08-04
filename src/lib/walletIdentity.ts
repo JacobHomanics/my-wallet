@@ -72,7 +72,8 @@ export function encodeWalletIdentity(
 
 /** Decode a wallet identity id back to its EVM + Solana addresses. */
 export function decodeWalletIdentity(identityId: string): WalletIdentityAddresses {
-  const payload = fromBase64Url(identityId);
+  const canonicalInput = identityId.trim();
+  const payload = fromBase64Url(canonicalInput);
   if (payload.length !== PAYLOAD_LEN) {
     throw new Error('Invalid wallet identity length');
   }
@@ -84,6 +85,11 @@ export function decodeWalletIdentity(identityId: string): WalletIdentityAddresse
   const solanaAddress = new PublicKey(
     payload.subarray(1 + EVM_LEN, PAYLOAD_LEN),
   ).toBase58();
+
+  const canonicalEncoded = encodeWalletIdentity(evmAddress, solanaAddress);
+  if (canonicalEncoded !== canonicalInput) {
+    throw new Error('Non-canonical wallet identity encoding');
+  }
 
   return { evmAddress, solanaAddress };
 }

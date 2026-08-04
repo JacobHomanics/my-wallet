@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -31,6 +31,10 @@ import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { getNetworkChain } from '@/lib/alchemy/networks';
+import {
+  encodeWalletIdentity,
+  tryDecodeWalletIdentity,
+} from '@/lib/walletIdentity';
 import type { HomeStackParamList } from '@/navigation/types';
 
 export function SendScreen() {
@@ -55,6 +59,7 @@ export function SendScreen() {
     onSelectStrategy,
   } = useSendStrategyPicker();
   const [tokenPickerOpen, setTokenPickerOpen] = useState(false);
+  const [showDecodedAddresses, setShowDecodedAddresses] = useState(false);
   const { currencySymbol, formatFromUsd } = useFiatDisplay();
 
   const form = useSendForm(
@@ -86,6 +91,20 @@ export function SendScreen() {
     removeAllocation,
     addAllocation,
   } = form;
+  const [accountNumber, setAccountNumberState] = useState(() => {
+    if (!ethereumRecipient.trim() || !solanaRecipient.trim()) {
+      return '';
+    }
+
+    try {
+      return encodeWalletIdentity(
+        ethereumRecipient.trim(),
+        solanaRecipient.trim(),
+      );
+    } catch {
+      return '';
+    }
+  });
 
   const totalLabel = availableLabel;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
@@ -112,15 +131,40 @@ export function SendScreen() {
         ? 'Enter a valid amount'
         : null;
 
-  const ethereumRecipientError =
-    ethereumRecipient.trim() && !ethereumRecipientValid
-      ? 'Enter a valid EVM address'
+  const decodedAccountNumber = useMemo(
+    () => tryDecodeWalletIdentity(accountNumber),
+    [accountNumber],
+  );
+
+  const accountNumberError =
+    accountNumber.trim() && !decodedAccountNumber
+      ? 'Enter a valid account number'
       : null;
 
-  const solanaRecipientError =
-    solanaRecipient.trim() && !solanaRecipientValid
-      ? 'Enter a valid Solana address'
-      : null;
+  const setAccountNumber = useCallback(
+    (value: string) => {
+      setAccountNumberState(value);
+
+      const decoded = tryDecodeWalletIdentity(value);
+      if (!value.trim()) {
+        setShowDecodedAddresses(false);
+        setEthereumRecipient('');
+        setSolanaRecipient('');
+        return;
+      }
+
+      if (!decoded) {
+        setShowDecodedAddresses(false);
+        setEthereumRecipient('');
+        setSolanaRecipient('');
+        return;
+      }
+
+      setEthereumRecipient(decoded.evmAddress);
+      setSolanaRecipient(decoded.solanaAddress);
+    },
+    [setEthereumRecipient, setSolanaRecipient],
+  );
 
   const onContinue = useCallback(() => {
     if (!canContinue || allocations.length === 0) {
@@ -254,29 +298,29 @@ export function SendScreen() {
                 </>
               ) : null}
 
-              <Text style={styles.label}>EVM recipient</Text>
+              <Text style={styles.label}>Account Number</Text>
               <View
                 style={[
                   styles.fieldRow,
-                  ethereumRecipientError ? styles.fieldRowError : null,
+                  accountNumberError ? styles.fieldRowError : null,
                 ]}
               >
                 <TextInput
                   autoCapitalize="none"
                   autoCorrect={false}
-                  onChangeText={setEthereumRecipient}
-                  placeholder="0x… EVM address"
+                  onChangeText={setAccountNumber}
+                  placeholder="Paste account number"
                   placeholderTextColor="#86a894"
                   style={styles.fieldInput}
-                  value={ethereumRecipient}
+                  value={accountNumber}
                 />
-                {ethereumRecipient.trim() ? (
+                {accountNumber.trim() ? (
                   <Pressable
-                    accessibilityLabel="Clear EVM recipient"
+                    accessibilityLabel="Clear account number"
                     accessibilityRole="button"
                     hitSlop={8}
                     onPress={() => {
-                      setEthereumRecipient('');
+                      setAccountNumber('');
                     }}
                     style={styles.clearButton}
                   >
@@ -288,46 +332,56 @@ export function SendScreen() {
                   </Pressable>
                 ) : null}
               </View>
-              {ethereumRecipientError ? (
-                <Text style={styles.fieldError}>{ethereumRecipientError}</Text>
+              {accountNumberError ? (
+                <Text style={styles.fieldError}>{accountNumberError}</Text>
               ) : null}
-
-              <Text style={styles.label}>Solana recipient</Text>
-              <View
-                style={[
-                  styles.fieldRow,
-                  solanaRecipientError ? styles.fieldRowError : null,
-                ]}
-              >
-                <TextInput
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  onChangeText={setSolanaRecipient}
-                  placeholder="Solana address"
-                  placeholderTextColor="#86a894"
-                  style={styles.fieldInput}
-                  value={solanaRecipient}
-                />
-                {solanaRecipient.trim() ? (
+              {decodedAccountNumber ? (
+                <>
                   <Pressable
-                    accessibilityLabel="Clear Solana recipient"
+                    accessibilityLabel={
+                      showDecodedAddresses
+                        ? 'Hide decoded addresses'
+                        : 'Show decoded addresses'
+                    }
                     accessibilityRole="button"
-                    hitSlop={8}
+                    accessibilityState={{ expanded: showDecodedAddresses }}
                     onPress={() => {
-                      setSolanaRecipient('');
+                      setShowDecodedAddresses((open) => !open);
                     }}
-                    style={styles.clearButton}
+                    style={({ pressed }) => [
+                      styles.decodedToggle,
+                      pressed && styles.advancedTogglePressed,
+                    ]}
                   >
+                    <Text style={styles.decodedToggleText}>
+                      {showDecodedAddresses
+                        ? 'Hide decoded addresses'
+                        : 'Show decoded addresses'}
+                    </Text>
                     <Ionicons
-                      name="close-circle"
-                      size={20}
-                      color="#86a894"
+                      name={showDecodedAddresses ? 'chevron-up' : 'chevron-down'}
+                      size={16}
+                      color="#5a7d6a"
                     />
                   </Pressable>
-                ) : null}
-              </View>
-              {solanaRecipientError ? (
-                <Text style={styles.fieldError}>{solanaRecipientError}</Text>
+                  {showDecodedAddresses ? (
+                    <View style={styles.decodedCard}>
+                      <View style={styles.decodedRow}>
+                        <Text style={styles.decodedLabel}>EVM</Text>
+                        <Text style={styles.decodedValue} selectable>
+                          {decodedAccountNumber.evmAddress}
+                        </Text>
+                      </View>
+                      <View style={styles.decodedDivider} />
+                      <View style={styles.decodedRow}>
+                        <Text style={styles.decodedLabel}>Solana</Text>
+                        <Text style={styles.decodedValue} selectable>
+                          {decodedAccountNumber.solanaAddress}
+                        </Text>
+                      </View>
+                    </View>
+                  ) : null}
+                </>
               ) : null}
 
               <Pressable
@@ -575,6 +629,52 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#5a7d6a',
     marginRight: 4,
+  },
+  decodedToggle: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingVertical: 6,
+  },
+  decodedToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    marginRight: 4,
+  },
+  decodedCard: {
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  decodedRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  decodedLabel: {
+    width: 56,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#86a894',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  decodedValue: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 14,
+    color: '#166534',
+  },
+  decodedDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#d1fae5',
+    marginVertical: 10,
   },
   continueButton: {
     marginTop: 32,

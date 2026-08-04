@@ -102,9 +102,7 @@ export function ReceiveQrScreen() {
 
               {identityId ? (
                 <AccountNumber
-                  ethereumAddress={ethereumAddress}
                   identityId={identityId}
-                  solanaAddress={solanaAddress}
                   style={styles.accountNumber}
                 />
               ) : null}
