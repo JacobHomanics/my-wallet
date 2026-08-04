@@ -73,7 +73,7 @@ export function ProfileDropdown({
         <Ionicons
           name={isOpen ? 'chevron-up' : 'chevron-down'}
           size={16}
-          color="#475569"
+          color="#3f6b52"
         />
       </Pressable>
 
@@ -91,7 +91,7 @@ export function ProfileDropdown({
                 pressState.pressed && styles.menuItemPressed,
               ]}
             >
-              <Ionicons name="settings-outline" size={18} color="#0f172a" />
+              <Ionicons name="settings-outline" size={18} color="#166534" />
               <Text style={styles.menuItemLabel}>Settings</Text>
             </Pressable>
           ) : null}
@@ -134,13 +134,13 @@ const styles = StyleSheet.create({
     paddingRight: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#dcfce7',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#e2e8f0',
-    boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
+    borderColor: '#d1fae5',
+    boxShadow: '0 1px 2px rgba(22, 101, 52, 0.08)',
   },
   triggerActive: {
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#d1fae5',
   },
   avatar: {
     width: 28,
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   menu: {
     position: 'absolute',
@@ -170,8 +170,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#e2e8f0',
-    boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)',
+    borderColor: '#d1fae5',
+    boxShadow: '0 8px 24px rgba(22, 101, 52, 0.12)',
     zIndex: 30,
   },
   menuItem: {
@@ -182,19 +182,19 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   menuItemPressed: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
   },
   menuItemLabel: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#0f172a',
+    color: '#166534',
   },
   menuItemDanger: {
     color: '#b91c1c',
   },
   separator: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#d1fae5',
     marginVertical: 4,
     marginHorizontal: 10,
   },

@@ -2,18 +2,27 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { CashboxIcon } from '@/components/CashboxIcon';
+import { useAppBrand } from '@/hooks/useAppBrand';
 import type { RootStackParamList } from '@/navigation/types';
+import { colors } from '@/theme/colors';
 
 export function WelcomeScreen() {
+  const { name, tagline } = useAppBrand();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.brand}>My Wallet</Text>
-      <Text style={styles.subtitle}>
-        Your wallet, ready when you are.
-      </Text>
+      <Text style={styles.brand}>{name}</Text>
+      <View style={styles.iconBadge}>
+        <CashboxIcon
+          size={44}
+          color={colors.primaryText}
+          detailColor={colors.primary}
+        />
+      </View>
+      <Text style={styles.subtitle}>{tagline}</Text>
       <Pressable
         accessibilityRole="button"
         onPress={() => {
@@ -32,25 +41,34 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f8fafc',
+    backgroundColor: colors.bg,
     paddingHorizontal: 24,
+  },
+  iconBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: 20,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
   },
   brand: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#0f172a',
+    color: colors.primary,
     letterSpacing: -0.5,
   },
   subtitle: {
-    marginTop: 12,
+    marginTop: 20,
     fontSize: 16,
     lineHeight: 24,
-    color: '#475569',
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   button: {
     marginTop: 24,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.primary,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
@@ -59,7 +77,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   buttonText: {
-    color: '#f8fafc',
+    color: colors.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },

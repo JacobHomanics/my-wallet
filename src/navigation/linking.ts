@@ -7,7 +7,7 @@ import { hydrateSendDraftFromConfirmParams } from '@/hooks/useSendDraft';
 import type { RootStackParamList, HomeStackParamList } from '@/navigation/types';
 
 /** Custom URL scheme registered in app.json / Info.plist (Privy OAuth redirects). */
-export const APP_SCHEME = 'mywallet';
+export const APP_SCHEME = 'cashbox';
 
 /**
  * Public https origin for QR / share links (and native deep-link prefixes).

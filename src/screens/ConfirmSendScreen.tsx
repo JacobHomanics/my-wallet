@@ -254,7 +254,7 @@ export function ConfirmSendScreen() {
         </View>
 
         {!ready || (loading && tokens.length === 0) ? (
-          <ActivityIndicator color="#0f172a" style={styles.loader} />
+          <ActivityIndicator color="#166534" style={styles.loader} />
         ) : (
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
             <Text style={styles.heroUsd}>{requiredLabel}</Text>
@@ -301,7 +301,7 @@ export function ConfirmSendScreen() {
                   keyboardType="decimal-pad"
                   onChangeText={setTip}
                   placeholder="0"
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor="#86a894"
                   style={styles.tipInput}
                   value={tip}
                 />
@@ -344,7 +344,7 @@ export function ConfirmSendScreen() {
                             isCopied('evm') ? 'checkmark' : 'copy-outline'
                           }
                           size={18}
-                          color={isCopied('evm') ? '#15803d' : '#64748b'}
+                          color={isCopied('evm') ? '#15803d' : '#5a7d6a'}
                         />
                       </Pressable>
                     ) : null}
@@ -380,7 +380,7 @@ export function ConfirmSendScreen() {
                             isCopied('solana') ? 'checkmark' : 'copy-outline'
                           }
                           size={18}
-                          color={isCopied('solana') ? '#15803d' : '#64748b'}
+                          color={isCopied('solana') ? '#15803d' : '#5a7d6a'}
                         />
                       </Pressable>
                     ) : null}
@@ -406,7 +406,7 @@ export function ConfirmSendScreen() {
               <Ionicons
                 name={showAdvanced ? 'chevron-up' : 'chevron-down'}
                 size={16}
-                color="#64748b"
+                color="#5a7d6a"
               />
             </Pressable>
 
@@ -461,7 +461,7 @@ export function ConfirmSendScreen() {
                 ]}
               >
                 {sending ? (
-                  <ActivityIndicator color="#f8fafc" />
+                  <ActivityIndicator color="#f0fdf4" />
                 ) : (
                   <Text style={styles.primaryButtonText}>Submit</Text>
                 )}
@@ -534,7 +534,7 @@ export function ConfirmSendScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
   },
   flex: {
     flex: 1,
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   topBarSpacer: {
     width: 44,
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   loader: {
     marginTop: 48,
@@ -587,7 +587,7 @@ const styles = StyleSheet.create({
   heroUsd: {
     fontSize: 36,
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#166534',
     letterSpacing: -0.6,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
@@ -619,7 +619,7 @@ const styles = StyleSheet.create({
   tipLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#5a7d6a',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -628,7 +628,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#86d4a4',
     backgroundColor: '#fff',
   },
   tipPercentButtonDisabled: {
@@ -640,13 +640,13 @@ const styles = StyleSheet.create({
   tipPercentButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   tipFieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#86d4a4',
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 8,
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
   tipPrefix: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
     marginRight: 4,
   },
   tipInput: {
@@ -664,7 +664,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingRight: 8,
     fontSize: 16,
-    color: '#0f172a',
+    color: '#166534',
   },
   toSection: {
     marginTop: 36,
@@ -673,7 +673,7 @@ const styles = StyleSheet.create({
   toLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#5a7d6a',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -681,7 +681,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     fontSize: 13,
     fontWeight: '600',
-    color: '#94a3b8',
+    color: '#86a894',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -690,7 +690,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
     fontSize: 16,
     fontWeight: '500',
-    color: '#0f172a',
+    color: '#166534',
     fontVariant: ['tabular-nums'],
   },
   toAddressRow: {
@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
   advancedToggleText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#5a7d6a',
   },
   error: {
     marginTop: 16,
@@ -746,7 +746,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#86d4a4',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -758,14 +758,14 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   secondaryButtonText: {
-    color: '#0f172a',
+    color: '#166534',
     fontSize: 16,
     fontWeight: '600',
   },
   primaryButton: {
     alignItems: 'center',
     alignSelf: 'stretch',
-    backgroundColor: '#0f172a',
+    backgroundColor: '#166534',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -781,13 +781,13 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   primaryButtonText: {
-    color: '#f8fafc',
+    color: '#f0fdf4',
     fontSize: 16,
     fontWeight: '600',
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    backgroundColor: 'rgba(22, 101, 52, 0.45)',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
@@ -804,13 +804,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#166534',
     marginBottom: 8,
   },
   modalBody: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#475569',
+    color: '#3f6b52',
     marginBottom: 20,
   },
   modalActions: {
@@ -823,7 +823,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#86d4a4',
     backgroundColor: '#fff',
   },
   modalSecondaryButtonPressed: {
@@ -832,14 +832,14 @@ const styles = StyleSheet.create({
   modalSecondaryButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   modalPrimaryButton: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#166534',
   },
   modalPrimaryButtonPressed: {
     opacity: 0.85,
@@ -847,6 +847,6 @@ const styles = StyleSheet.create({
   modalPrimaryButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#f8fafc',
+    color: '#f0fdf4',
   },
 });

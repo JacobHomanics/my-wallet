@@ -1,20 +1,20 @@
 {
   "expo": {
-    "name": "my-wallet",
-    "slug": "my-wallet",
+    "name": "Cashbox",
+    "slug": "cashbox",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "mywallet",
+    "scheme": "cashbox",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jacobhomanics.mywallet"
+      "bundleIdentifier": "com.jacobhomanics.cashbox"
     },
     "android": {
-      "package": "com.jacobhomanics.mywallet",
+      "package": "com.jacobhomanics.cashbox",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#dcfce7",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -29,7 +29,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#f8fafc",
+          "backgroundColor": "#f0fdf4",
           "image": "./assets/splash-icon.png",
           "imageWidth": 200
         }

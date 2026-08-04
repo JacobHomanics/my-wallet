@@ -171,7 +171,7 @@ export function SendScreen() {
           </View>
 
           {!ready || (loading && tokens.length === 0) ? (
-            <ActivityIndicator color="#0f172a" style={styles.loader} />
+            <ActivityIndicator color="#166534" style={styles.loader} />
           ) : !hasWallet ? (
             <Text style={styles.empty}>Creating your wallets…</Text>
           ) : (
@@ -204,7 +204,7 @@ export function SendScreen() {
                   keyboardType="decimal-pad"
                   onChangeText={setAmount}
                   placeholder="0"
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor="#86a894"
                   style={styles.fieldInput}
                   value={amount}
                 />
@@ -225,7 +225,7 @@ export function SendScreen() {
                   autoCorrect={false}
                   onChangeText={setEthereumRecipient}
                   placeholder="0x… EVM address"
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor="#86a894"
                   style={styles.fieldInput}
                   value={ethereumRecipient}
                 />
@@ -242,7 +242,7 @@ export function SendScreen() {
                     <Ionicons
                       name="close-circle"
                       size={20}
-                      color="#94a3b8"
+                      color="#86a894"
                     />
                   </Pressable>
                 ) : null}
@@ -263,7 +263,7 @@ export function SendScreen() {
                   autoCorrect={false}
                   onChangeText={setSolanaRecipient}
                   placeholder="Solana address"
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor="#86a894"
                   style={styles.fieldInput}
                   value={solanaRecipient}
                 />
@@ -280,7 +280,7 @@ export function SendScreen() {
                     <Ionicons
                       name="close-circle"
                       size={20}
-                      color="#94a3b8"
+                      color="#86a894"
                     />
                   </Pressable>
                 ) : null}
@@ -306,7 +306,7 @@ export function SendScreen() {
                 <Ionicons
                   name={showAdvanced ? 'chevron-up' : 'chevron-down'}
                   size={16}
-                  color="#64748b"
+                  color="#5a7d6a"
                 />
               </Pressable>
 
@@ -370,7 +370,7 @@ export function SendScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
   },
   flex: {
     flex: 1,
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   topBarSpacer: {
     width: 44,
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   loader: {
     marginTop: 48,
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     marginTop: 48,
     paddingHorizontal: 24,
     fontSize: 15,
-    color: '#94a3b8',
+    color: '#86a894',
     textAlign: 'center',
   },
   form: {
@@ -432,14 +432,14 @@ const styles = StyleSheet.create({
   balanceLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#5a7d6a',
     marginRight: 8,
   },
   balanceValue: {
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
     fontVariant: ['tabular-nums'],
     textAlign: 'right',
   },
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 13,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#5a7d6a',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#86d4a4',
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 8,
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   fieldRowDisabled: {
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#dcfce7',
   },
   fieldRowError: {
     borderColor: '#fca5a5',
@@ -479,12 +479,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingRight: 8,
     fontSize: 16,
-    color: '#0f172a',
+    color: '#166534',
   },
   amountPrefix: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
     marginRight: 4,
   },
   clearButton: {
@@ -511,13 +511,13 @@ const styles = StyleSheet.create({
   advancedToggleText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#5a7d6a',
     marginRight: 4,
   },
   continueButton: {
     marginTop: 32,
     alignItems: 'center',
-    backgroundColor: '#0f172a',
+    backgroundColor: '#166534',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   continueButtonText: {
-    color: '#f8fafc',
+    color: '#f0fdf4',
     fontSize: 16,
     fontWeight: '600',
   },

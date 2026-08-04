@@ -70,7 +70,7 @@ export function SendAdvancedDetails({
         <Text style={styles.strategyRowValue} numberOfLines={1}>
           {selectedStrategy.label}
         </Text>
-        <Ionicons name="chevron-down" size={18} color="#94a3b8" />
+        <Ionicons name="chevron-down" size={18} color="#86a894" />
       </Pressable>
 
       <View style={styles.advancedDivider} />
@@ -210,7 +210,7 @@ export function SendAdvancedDetails({
                     onAllocationAmountChange(leg.token.id, value);
                   }}
                   placeholder="0"
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor="#86a894"
                   style={[
                     styles.allocationInput,
                     exceeds ? styles.allocationInputError : null,
@@ -250,7 +250,7 @@ export function SendAdvancedDetails({
             pressed && styles.addTokenButtonPressed,
           ]}
         >
-          <Ionicons name="add" size={18} color="#0f172a" />
+          <Ionicons name="add" size={18} color="#166534" />
           <Text style={styles.addTokenButtonText}>Add token</Text>
         </Pressable>
       ) : null}
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     alignSelf: 'stretch',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#d1fae5',
     borderRadius: 12,
     backgroundColor: '#fff',
     paddingHorizontal: 14,
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     fontSize: 13,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#5a7d6a',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
   unitToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#dcfce7',
     borderRadius: 8,
     padding: 2,
   },
@@ -312,14 +312,14 @@ const styles = StyleSheet.create({
   unitToggleText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#5a7d6a',
   },
   unitToggleTextActive: {
-    color: '#0f172a',
+    color: '#166534',
   },
   advancedDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#d1fae5',
   },
   strategyRow: {
     flexDirection: 'row',
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   strategyRowLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#5a7d6a',
     marginRight: 12,
   },
   strategyRowValue: {
@@ -340,12 +340,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     fontSize: 14,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
     marginRight: 8,
   },
   allocationEmpty: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: '#86a894',
     paddingVertical: 10,
   },
   allocationRow: {
@@ -371,18 +371,18 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   allocationMeta: {
     marginTop: 2,
     fontSize: 12,
-    color: '#94a3b8',
+    color: '#86a894',
   },
   allocationBalance: {
     flexShrink: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
     fontVariant: ['tabular-nums'],
   },
   allocationControls: {
@@ -393,22 +393,22 @@ const styles = StyleSheet.create({
   allocationInputPrefix: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   allocationInput: {
     flex: 1,
     minWidth: 0,
     height: 40,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#86d4a4',
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 0,
     fontSize: 15,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
     textAlign: 'right',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
     fontVariant: ['tabular-nums'],
   },
   allocationInputError: {
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     fontSize: 13,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#5a7d6a',
     fontVariant: ['tabular-nums'],
   },
   allocationRemove: {
@@ -439,10 +439,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#86d4a4',
     borderStyle: 'dashed',
     borderRadius: 10,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
   },
   addTokenButtonPressed: {
     opacity: 0.7,
@@ -451,6 +451,6 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontSize: 14,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
 });

@@ -91,7 +91,7 @@ export function SettingsScreen() {
               {selectedStrategy.description}
             </Text>
           </View>
-          <Ionicons name="chevron-down" size={18} color="#94a3b8" />
+          <Ionicons name="chevron-down" size={18} color="#86a894" />
         </Pressable>
       </View>
 
@@ -114,7 +114,7 @@ export function SettingsScreen() {
               {selectedCurrency.description}
             </Text>
           </View>
-          <Ionicons name="chevron-down" size={18} color="#94a3b8" />
+          <Ionicons name="chevron-down" size={18} color="#86a894" />
         </Pressable>
       </View>
 
@@ -137,14 +137,14 @@ export function SettingsScreen() {
               {selectedChainPriority.description}
             </Text>
           </View>
-          <Ionicons name="chevron-down" size={18} color="#94a3b8" />
+          <Ionicons name="chevron-down" size={18} color="#86a894" />
         </Pressable>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Wallet</Text>
         {!ready ? (
-          <ActivityIndicator color="#0f172a" style={styles.loader} />
+          <ActivityIndicator color="#166534" style={styles.loader} />
         ) : wallets.length === 0 ? (
           <Text style={styles.empty}>Creating your wallet…</Text>
         ) : (
@@ -207,7 +207,7 @@ export function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
   },
   scroll: {
     flex: 1,
@@ -218,14 +218,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#166534',
     letterSpacing: -0.5,
   },
   subtitle: {
     marginTop: 12,
     fontSize: 16,
     lineHeight: 24,
-    color: '#475569',
+    color: '#3f6b52',
     textAlign: 'center',
   },
   section: {
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#5a7d6a',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#e2e8f0',
+    borderColor: '#d1fae5',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -263,23 +263,23 @@ const styles = StyleSheet.create({
   strategyLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   strategyDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#94a3b8',
+    color: '#86a894',
   },
   loader: {
     marginTop: 8,
   },
   empty: {
     fontSize: 15,
-    color: '#94a3b8',
+    color: '#86a894',
   },
   button: {
     marginTop: 24,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#166534',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   buttonText: {
-    color: '#f8fafc',
+    color: '#f0fdf4',
     fontSize: 16,
     fontWeight: '600',
   },

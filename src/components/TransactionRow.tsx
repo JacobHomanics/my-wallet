@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: '#d1fae5',
   },
   rowText: {
     flex: 1,
@@ -90,18 +90,18 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 13,
     fontWeight: '400',
-    color: '#94a3b8',
+    color: '#86a894',
   },
   recipients: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#166534',
     fontVariant: ['tabular-nums'],
   },
   amount: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
     fontVariant: ['tabular-nums'],
   },
   amountIn: {
