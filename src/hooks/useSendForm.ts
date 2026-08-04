@@ -20,7 +20,11 @@ import {
 } from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { compareChainFamilies, type ChainPriorityId } from '@/lib/chainPriority';
-import { taxRawFromAmount } from '@/lib/tax';
+import {
+  reserveTaxHeadroomOnTokens,
+  resolveTaxFunding,
+  type TaxFundingPick,
+} from '@/lib/send/buildPaymentLegsWithTax';
 import {
   allocatePaymentUsd,
   type PaymentAllocation,
@@ -40,6 +44,8 @@ export type SendFormState = {
   taxUsd: number;
   /** Merchant + tax USD the payer must cover. */
   payerTotalUsd: number | null;
+  /** Single-token funding pick for the tax transfer, when available. */
+  taxFunding: TaxFundingPick | null;
   allocations: PaymentAllocation[];
   /** Per-token input strings shown in advanced (may be mid-edit). */
   allocationInputs: Record<string, string>;
@@ -134,8 +140,7 @@ export function useSendForm(
   additionalUsd?: number | null,
 ): SendFormState {
   const { selectedChainPriorityId } = useChainPriority();
-  const { rate: taxRate, taxUsdFor, payerTotalUsdFor, maxMerchantUsdFor } =
-    useAppTax();
+  const { taxUsdFor, payerTotalUsdFor, maxMerchantUsdFor } = useAppTax();
   const {
     formatAmountInputFromUsd,
     parseDisplayInputToUsd,
@@ -208,35 +213,17 @@ export function useSendForm(
     return requestedUsd;
   })();
 
-  /** Leave raw headroom so proportional tax fits on the same tokens. */
+  /** Leave headroom on one preferred token so a single tax transfer can fit. */
   const tokensForMerchantAllocation = useMemo(() => {
-    if (!(taxRate > 0)) {
+    if (targetUsd == null || !(targetUsd > 0)) {
       return tokens;
     }
-    return tokens.map((token) => {
-      if (token.rawBalance <= 0n) {
-        return token;
-      }
-      const taxIfFull = taxRawFromAmount(token.rawBalance, taxRate);
-      if (taxIfFull <= 0n) {
-        return token;
-      }
-      const merchantMax = token.rawBalance - taxIfFull;
-      if (merchantMax <= 0n || merchantMax === token.rawBalance) {
-        return token;
-      }
-      const usdScale =
-        token.usdValue != null && token.rawBalance > 0n
-          ? Number(merchantMax) / Number(token.rawBalance)
-          : 1;
-      return {
-        ...token,
-        rawBalance: merchantMax,
-        usdValue:
-          token.usdValue != null ? token.usdValue * usdScale : token.usdValue,
-      };
-    });
-  }, [taxRate, tokens]);
+    const taxUsdNeeded = taxUsdFor(targetUsd);
+    if (!(taxUsdNeeded > 0)) {
+      return tokens;
+    }
+    return reserveTaxHeadroomOnTokens(tokens, taxUsdNeeded);
+  }, [targetUsd, taxUsdFor, tokens]);
 
   const strategyPlan = useMemo(() => {
     if (targetUsd == null || targetUsd <= 0) {
@@ -370,11 +357,15 @@ export function useSendForm(
         ? payerTotalUsdFor(requestedUsd)
         : null;
 
-  // Merchant + proportional tax must fit each token's spendable balance.
-  const legsWithinBalance = allocations.every((leg) => {
-    const taxRaw = taxRawFromAmount(leg.amountRaw, taxRate);
-    return leg.amountRaw + taxRaw <= leg.token.rawBalance;
-  });
+  const taxFunding = useMemo(
+    () => resolveTaxFunding(allocations, tokens, taxUsd),
+    [allocations, taxUsd, tokens],
+  );
+
+  // Merchant legs must fit; tax must fit on a single leftover token.
+  const legsWithinBalance =
+    allocations.every((leg) => leg.amountRaw <= leg.token.rawBalance) &&
+    (taxUsd <= 0 || taxFunding != null);
   const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
 
   const filledUsd = allocations.reduce((sum, leg) => sum + leg.usd, 0);
@@ -599,6 +590,7 @@ export function useSendForm(
     requestedUsd,
     taxUsd,
     payerTotalUsd,
+    taxFunding,
     allocations,
     allocationInputs: resolvedAllocationInputs,
     chains,

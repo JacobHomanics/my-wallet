@@ -35,6 +35,7 @@ import { useShowTaxDetails } from '@/hooks/useShowTaxDetails';
 import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
+import { getNetworkChain } from '@/lib/alchemy/networks';
 import { buildPaymentLegsWithTax } from '@/lib/send/buildPaymentLegsWithTax';
 import { formatSendError } from '@/lib/send/formatSendError';
 import type { HomeStackParamList } from '@/navigation/types';
@@ -93,6 +94,7 @@ export function ConfirmSendScreen() {
     requestedUsd,
     taxUsd,
     payerTotalUsd,
+    taxFunding,
     allocations,
     allocationInputs,
     needsEthereumRecipient,
@@ -121,6 +123,12 @@ export function ConfirmSendScreen() {
     `${currencySymbol}${amount || '0'}`;
   const availableLabel =
     insufficientFunds ? formatFromUsd(filledUsd) : null;
+
+  const taxFundingChain = taxFunding
+    ? getNetworkChain(taxFunding.token.network)
+    : null;
+  const showTaxEvm = taxFundingChain === 'ethereum';
+  const showTaxSolana = taxFundingChain === 'solana';
 
   const onTipPercent = useCallback(
     (percent: number) => {
@@ -158,6 +166,7 @@ export function ConfirmSendScreen() {
           allocations,
           ethereumRecipient: trimmedEthereum,
           solanaRecipient: trimmedSolana,
+          spendableTokens,
           taxEvmAddress,
           taxSolanaAddress,
           taxRate,
@@ -200,6 +209,7 @@ export function ConfirmSendScreen() {
     sendPayment,
     sending,
     setError,
+    spendableTokens,
     taxEvmAddress,
     taxRate,
     taxSolanaAddress,
@@ -350,8 +360,10 @@ export function ConfirmSendScreen() {
 
                 {showTaxDetails ? (
                   <View style={styles.taxDetails}>
-                    <Text style={styles.taxDetailsLabel}>Goes to</Text>
-                    {needsEthereumRecipient ? (
+                    <Text style={styles.taxDetailsLabel}>
+                      Paid in {taxFunding?.token.symbol ?? 'token'} · Goes to
+                    </Text>
+                    {showTaxEvm ? (
                       <View style={styles.taxAddressRow}>
                         <Text style={styles.toChainLabel}>EVM</Text>
                         <Text style={styles.toAddress} selectable>
@@ -387,7 +399,7 @@ export function ConfirmSendScreen() {
                         </Pressable>
                       </View>
                     ) : null}
-                    {needsSolanaRecipient ? (
+                    {showTaxSolana ? (
                       <View style={styles.taxAddressRow}>
                         <Text style={styles.toChainLabel}>Solana</Text>
                         <Text style={styles.toAddress} selectable>

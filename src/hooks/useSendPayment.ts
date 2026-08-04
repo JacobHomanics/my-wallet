@@ -6,7 +6,9 @@ import type {
   SendTransactionResult,
 } from '@/hooks/useSendTransaction.shared';
 import { useSendTransaction } from '@/hooks/useSendTransaction';
+import { useUserWallets } from '@/hooks/useUserWallets';
 import { getNetworkChain } from '@/lib/alchemy/networks';
+import { createEvmNonceAllocator } from '@/lib/send/evmNonce';
 import { waitForEvmReceipt } from '@/lib/send/waitForEvmReceipt';
 import { isGasToken } from '@/lib/strategies/gasTokens';
 
@@ -36,13 +38,17 @@ export type SendPaymentResult = {
  * Sends one or more token transfer legs sequentially (multi-token payments).
  * Simulates every leg first; only broadcasts if all simulations succeed.
  *
- * On EVM, waits for each network's prior tx to confirm before the next leg on
- * that network so nonce collisions ("replacement transaction underpriced")
- * don't fire when merchant + tax share a chain.
+ * EVM legs get explicit sequential nonces from `pending` count, and we wait
+ * for prior same-network receipts so Privy can't reuse a mempool nonce
+ * ("replacement transaction underpriced").
  */
 export function useSendPayment(): SendPaymentResult {
   const { ready, send, simulatePayment } = useSendTransaction();
+  const { wallets } = useUserWallets();
   const [sending, setSending] = useState(false);
+
+  const ethereumFrom =
+    wallets.find((wallet) => wallet.chain === 'ethereum')?.address ?? null;
 
   const sendPayment = useCallback(
     async (
@@ -66,8 +72,11 @@ export function useSendPayment(): SendPaymentResult {
         return aGas - bGas;
       });
 
-      /** Last broadcast hash per EVM network — confirm before reuse. */
+      /** Last broadcast hash per EVM network — confirm before next on same net. */
       const lastEvmHashByNetwork = new Map<string, string>();
+      const nonceAllocator = ethereumFrom
+        ? createEvmNonceAllocator(ethereumFrom)
+        : null;
 
       try {
         // All-or-nothing preflight: do not broadcast anything unless every
@@ -82,10 +91,18 @@ export function useSendPayment(): SendPaymentResult {
 
         for (const leg of orderedLegs) {
           const chain = getNetworkChain(leg.token.network);
+          let nonce: `0x${string}` | undefined;
+
           if (chain === 'ethereum') {
             const previousHash = lastEvmHashByNetwork.get(leg.token.network);
             if (previousHash) {
               await waitForEvmReceipt(leg.token.network, previousHash);
+              // Re-read pending nonce after confirmation in case Privy ignored
+              // the nonce we passed on the prior leg.
+              nonceAllocator?.invalidate(leg.token.network);
+            }
+            if (nonceAllocator) {
+              nonce = await nonceAllocator.take(leg.token.network);
             }
           }
 
@@ -93,6 +110,7 @@ export function useSendPayment(): SendPaymentResult {
             token: leg.token,
             recipient: leg.recipient,
             amountRaw: leg.amountRaw,
+            nonce,
           });
 
           if (result.chain === 'ethereum') {
@@ -116,7 +134,7 @@ export function useSendPayment(): SendPaymentResult {
         setSending(false);
       }
     },
-    [send, simulatePayment],
+    [ethereumFrom, send, simulatePayment],
   );
 
   return { ready, sending, sendPayment };
