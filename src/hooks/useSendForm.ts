@@ -192,8 +192,10 @@ export function useSendForm(
   }, [tipUsd]);
 
   /**
-   * Merchant allocation target. Cap so merchant + tax still fit under Available
-   * Balance when the user types the displayed max.
+   * Merchant allocation target. Only soft-cap tiny display rounding past the
+   * max affordable merchant amount (available / (1 + tax)). Do not treat
+   * "typed available balance" as max merchant — that would hide insufficient
+   * funds when tax makes the grand total exceed holdings.
    */
   const targetUsd = (() => {
     if (requestedUsd == null || !(requestedUsd > 0)) {
@@ -206,8 +208,8 @@ export function useSendForm(
     if (requestedUsd <= maxMerchant + 0.000001) {
       return Math.min(requestedUsd, maxMerchant);
     }
-    // User typed the rounded display max (or slightly over) — send tax-aware cap.
-    if (requestedUsd <= maxAvailableUsd + 0.015) {
+    // Slight overshoot of max sendable merchant (display rounding).
+    if (requestedUsd <= maxMerchant + 0.015) {
       return maxMerchant;
     }
     return requestedUsd;

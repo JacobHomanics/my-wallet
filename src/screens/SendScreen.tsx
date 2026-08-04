@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton } from '@/components/BackButton';
 import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
+import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -29,6 +30,7 @@ import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
+import { getNetworkChain } from '@/lib/alchemy/networks';
 import type { HomeStackParamList } from '@/navigation/types';
 
 export function SendScreen() {
@@ -53,7 +55,7 @@ export function SendScreen() {
     onSelectStrategy,
   } = useSendStrategyPicker();
   const [tokenPickerOpen, setTokenPickerOpen] = useState(false);
-  const { currencySymbol } = useFiatDisplay();
+  const { currencySymbol, formatFromUsd } = useFiatDisplay();
 
   const form = useSendForm(
     spendableTokens,
@@ -64,8 +66,13 @@ export function SendScreen() {
   );
   const {
     amount,
+    taxUsd,
+    payerTotalUsd,
+    taxFunding,
     allocations,
     allocationInputs,
+    needsEthereumRecipient,
+    needsSolanaRecipient,
     ethereumRecipient,
     solanaRecipient,
     ethereumRecipientValid,
@@ -83,9 +90,24 @@ export function SendScreen() {
   const totalLabel = availableLabel;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
 
+  const taxLabel = taxUsd > 0 ? formatFromUsd(taxUsd) : null;
+  const payerTotalLabel =
+    payerTotalUsd != null ? formatFromUsd(payerTotalUsd) : null;
+  const taxFundingChain = taxFunding
+    ? getNetworkChain(taxFunding.token.network)
+    : null;
+  const showTaxEvm =
+    taxFundingChain != null
+      ? taxFundingChain === 'ethereum'
+      : needsEthereumRecipient || Boolean(ethereumAddress);
+  const showTaxSolana =
+    taxFundingChain != null
+      ? taxFundingChain === 'solana'
+      : needsSolanaRecipient || Boolean(solanaAddress);
+
   const amountError =
     amount.trim() && insufficientFunds
-      ? 'Insufficient funds for this amount'
+      ? 'Insufficient funds for this amount (including tax)'
       : amount.trim() && !form.amountValid
         ? 'Enter a valid amount'
         : null;
@@ -211,6 +233,26 @@ export function SendScreen() {
               </View>
               {amountError ? (
                 <Text style={styles.fieldError}>{amountError}</Text>
+              ) : null}
+
+              {taxLabel ? (
+                <>
+                  <TaxDetailsCollapsible
+                    fundingSymbol={taxFunding?.token.symbol}
+                    showEvm={showTaxEvm}
+                    showSolana={showTaxSolana}
+                    style={styles.taxSection}
+                    taxLabel={taxLabel}
+                  />
+                  {payerTotalLabel ? (
+                    <View style={styles.payerTotalRow}>
+                      <Text style={styles.payerTotalLabel}>Total</Text>
+                      <Text style={styles.payerTotalValue}>
+                        {payerTotalLabel}
+                      </Text>
+                    </View>
+                  ) : null}
+                </>
               ) : null}
 
               <Text style={styles.label}>EVM recipient</Text>
@@ -497,6 +539,26 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 13,
     color: '#b91c1c',
+  },
+  taxSection: {
+    marginTop: 16,
+  },
+  payerTotalRow: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  payerTotalLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#14532d',
+  },
+  payerTotalValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#14532d',
+    fontVariant: ['tabular-nums'],
   },
   advancedToggle: {
     marginTop: 28,
