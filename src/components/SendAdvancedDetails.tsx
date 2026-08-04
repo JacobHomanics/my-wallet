@@ -10,8 +10,12 @@ import {
 import { TokenIcon } from '@/components/TokenIcon';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
-import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
+import {
+  formatRawTokenBalance,
+  type OwnedToken,
+} from '@/lib/alchemy/fetchTokensByAddress';
 import { floorUsdToSendableCap, formatFiatValue } from '@/lib/fiat';
+import type { TaxFundingPick } from '@/lib/send/buildPaymentLegsWithTax';
 import type { PaymentStrategy } from '@/lib/strategies';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
 
@@ -23,12 +27,51 @@ type SendAdvancedDetailsProps = {
   allocations: PaymentAllocation[];
   /** Fee-reserved balances — used for the Available line on each leg. */
   spendableTokens: OwnedToken[];
+  /** Single-token tax funding pick; reserved from Available on that token. */
+  taxFunding?: TaxFundingPick | null;
   allocationInputs: Record<string, string>;
   onAllocationAmountChange: (tokenId: string, value: string) => void;
   onRemoveAllocation: (tokenId: string) => void;
   canAddToken: boolean;
   onAddToken: () => void;
 };
+
+function merchantAvailableToken(
+  spendable: OwnedToken,
+  taxFunding: TaxFundingPick | null | undefined,
+): OwnedToken {
+  if (
+    taxFunding == null ||
+    taxFunding.token.id !== spendable.id ||
+    taxFunding.amountRaw <= 0n
+  ) {
+    return spendable;
+  }
+
+  const merchantRaw =
+    spendable.rawBalance > taxFunding.amountRaw
+      ? spendable.rawBalance - taxFunding.amountRaw
+      : 0n;
+
+  if (merchantRaw === spendable.rawBalance) {
+    return spendable;
+  }
+
+  const usdScale =
+    spendable.usdValue != null && spendable.rawBalance > 0n
+      ? Number(merchantRaw) / Number(spendable.rawBalance)
+      : 1;
+
+  return {
+    ...spendable,
+    rawBalance: merchantRaw,
+    balanceFormatted: formatRawTokenBalance(merchantRaw, spendable.decimals),
+    usdValue:
+      spendable.usdValue != null
+        ? Math.max(0, spendable.usdValue * usdScale)
+        : spendable.usdValue,
+  };
+}
 
 export function SendAdvancedDetails({
   selectedStrategy,
@@ -37,6 +80,7 @@ export function SendAdvancedDetails({
   onAllocationInputUnitChange,
   allocations,
   spendableTokens,
+  taxFunding = null,
   allocationInputs,
   onAllocationAmountChange,
   onRemoveAllocation,
@@ -45,6 +89,7 @@ export function SendAdvancedDetails({
 }: SendAdvancedDetailsProps) {
   const {
     formatFromUsd,
+    formatAmountInputFromUsd,
     currencyCode,
     currencySymbol,
     rate,
@@ -138,12 +183,17 @@ export function SendAdvancedDetails({
       ) : (
         allocations.map((leg) => {
           const spendable = spendableById.get(leg.token.id) ?? leg.token;
+          const availableToken = merchantAvailableToken(spendable, taxFunding);
+          const taxRawOnLeg =
+            taxFunding != null && taxFunding.token.id === leg.token.id
+              ? taxFunding.amountRaw
+              : 0n;
           const inputValue =
             allocationInputs[leg.token.id] ??
             (allocationInputUnit === 'usd'
               ? String(leg.usd)
               : leg.amountFormatted);
-          const exceeds = leg.amountRaw > spendable.rawBalance;
+          const exceeds = leg.amountRaw + taxRawOnLeg > spendable.rawBalance;
           const secondaryValue =
             allocationInputUnit === 'usd'
               ? leg.amountFormatted || '—'
@@ -152,14 +202,14 @@ export function SendAdvancedDetails({
           const availableLabel =
             allocationInputUnit === 'usd'
               ? (() => {
-                  if (spendable.usdValue == null) {
+                  if (availableToken.usdValue == null) {
                     return '—';
                   }
-                  if (!(spendable.usdValue > 0)) {
+                  if (!(availableToken.usdValue > 0)) {
                     return defaultFormattedZero;
                   }
                   const { displayFiat } = floorUsdToSendableCap(
-                    spendable.usdValue,
+                    availableToken.usdValue,
                     rate,
                     currencyCode,
                   );
@@ -168,7 +218,7 @@ export function SendAdvancedDetails({
                     defaultFormattedZero
                   );
                 })()
-              : spendable.balanceFormatted;
+              : availableToken.balanceFormatted;
 
           return (
             <View key={leg.token.id} style={styles.allocationRow}>
@@ -239,6 +289,48 @@ export function SendAdvancedDetails({
           );
         })
       )}
+
+      {taxFunding != null && taxFunding.amountRaw > 0n ? (
+        <View style={[styles.allocationRow, styles.taxAllocationRow]}>
+          <View style={styles.allocationHeader}>
+            <TokenIcon
+              logoUrl={taxFunding.token.logoUrl}
+              network={taxFunding.token.network}
+              size={32}
+              symbol={taxFunding.token.symbol}
+            />
+            <View style={styles.allocationText}>
+              <View style={styles.allocationTitleRow}>
+                <Text style={styles.allocationSymbol} numberOfLines={1}>
+                  {taxFunding.token.symbol}
+                </Text>
+                <Text style={styles.taxBadge}>Service fee</Text>
+              </View>
+              <Text style={styles.allocationMeta} numberOfLines={1}>
+                {taxFunding.token.networkLabel}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.allocationControls}>
+            {allocationInputUnit === 'usd' ? (
+              <Text style={styles.allocationInputPrefix}>{currencySymbol}</Text>
+            ) : null}
+            <View style={styles.taxAmountBox}>
+              <Text style={styles.taxAmountText}>
+                {allocationInputUnit === 'usd'
+                  ? formatAmountInputFromUsd(taxFunding.usd)
+                  : taxFunding.amountFormatted}
+              </Text>
+            </View>
+            <Text style={styles.allocationSecondary} numberOfLines={1}>
+              {allocationInputUnit === 'usd'
+                ? taxFunding.amountFormatted
+                : (formatFromUsd(taxFunding.usd) ?? '—')}
+            </Text>
+            <View style={styles.allocationRemove} />
+          </View>
+        </View>
+      ) : null}
 
       {canAddToken ? (
         <Pressable
@@ -352,6 +444,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     gap: 8,
   },
+  taxAllocationRow: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#d1fae5',
+    marginTop: 4,
+    paddingTop: 12,
+  },
   allocationHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -372,6 +470,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#166534',
+  },
+  taxBadge: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   allocationMeta: {
     marginTop: 2,
@@ -413,6 +518,24 @@ const styles = StyleSheet.create({
   },
   allocationInputError: {
     borderColor: '#fca5a5',
+  },
+  taxAmountBox: {
+    flex: 1,
+    minWidth: 0,
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    justifyContent: 'center',
+    backgroundColor: '#ecfdf5',
+  },
+  taxAmountText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textAlign: 'right',
+    fontVariant: ['tabular-nums'],
   },
   allocationSecondary: {
     minWidth: 64,

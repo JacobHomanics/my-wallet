@@ -11,12 +11,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
+import { ExportPrivateKeyWebView } from '@/components/ExportPrivateKeyWebView';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { WalletDebitCard } from '@/components/WalletDebitCard';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
-import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
+import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
+import { useExportPrivateKey } from '@/hooks/useExportPrivateKey';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
+import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useSignOut } from '@/hooks/useSignOut';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useUserWallets } from '@/hooks/useUserWallets';
@@ -27,6 +30,12 @@ export function SettingsScreen() {
   const { ready, wallets } = useUserWallets();
   const { signOut } = useSignOut();
   const { copy, isCopied } = useCopyToClipboard();
+  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const {
+    exportPrivateKey,
+    exportWebViewUri,
+    closeExportWebView,
+  } = useExportPrivateKey();
   const {
     strategies,
     selectedStrategy,
@@ -75,27 +84,6 @@ export function SettingsScreen() {
       <Text style={styles.subtitle}>Signed in as {displayName}.</Text>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Default strategy</Text>
-        <Pressable
-          accessibilityLabel={`Default strategy ${selectedStrategy.label}`}
-          accessibilityRole="button"
-          onPress={openPicker}
-          style={({ pressed }) => [
-            styles.strategyRow,
-            pressed && styles.strategyRowPressed,
-          ]}
-        >
-          <View style={styles.strategyRowText}>
-            <Text style={styles.strategyLabel}>{selectedStrategy.label}</Text>
-            <Text style={styles.strategyDescription}>
-              {selectedStrategy.description}
-            </Text>
-          </View>
-          <Ionicons name="chevron-down" size={18} color="#86a894" />
-        </Pressable>
-      </View>
-
-      <View style={styles.section}>
         <Text style={styles.sectionTitle}>Display currency</Text>
         <Pressable
           accessibilityLabel={`Display currency ${selectedCurrency.label}`}
@@ -118,53 +106,104 @@ export function SettingsScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Chain priority</Text>
-        <Pressable
-          accessibilityLabel={`Chain priority ${selectedChainPriority.label}`}
-          accessibilityRole="button"
-          onPress={openChainPriorityPicker}
-          style={({ pressed }) => [
-            styles.strategyRow,
-            pressed && styles.strategyRowPressed,
-          ]}
-        >
-          <View style={styles.strategyRowText}>
-            <Text style={styles.strategyLabel}>
-              {selectedChainPriority.label}
-            </Text>
-            <Text style={styles.strategyDescription}>
-              {selectedChainPriority.description}
-            </Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: showAdvanced }}
+        onPress={toggleAdvanced}
+        style={({ pressed }) => [
+          styles.advancedToggle,
+          pressed && styles.advancedTogglePressed,
+        ]}
+      >
+        <Text style={styles.advancedToggleText}>
+          {showAdvanced ? 'Hide advanced details' : 'Show advanced details'}
+        </Text>
+        <Ionicons
+          name={showAdvanced ? 'chevron-up' : 'chevron-down'}
+          size={16}
+          color="#5a7d6a"
+        />
+      </Pressable>
+
+      {showAdvanced ? (
+        <>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Default strategy</Text>
+            <Pressable
+              accessibilityLabel={`Default strategy ${selectedStrategy.label}`}
+              accessibilityRole="button"
+              onPress={openPicker}
+              style={({ pressed }) => [
+                styles.strategyRow,
+                pressed && styles.strategyRowPressed,
+              ]}
+            >
+              <View style={styles.strategyRowText}>
+                <Text style={styles.strategyLabel}>
+                  {selectedStrategy.label}
+                </Text>
+                <Text style={styles.strategyDescription}>
+                  {selectedStrategy.description}
+                </Text>
+              </View>
+              <Ionicons name="chevron-down" size={18} color="#86a894" />
+            </Pressable>
           </View>
-          <Ionicons name="chevron-down" size={18} color="#86a894" />
-        </Pressable>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Wallet</Text>
-        {!ready ? (
-          <ActivityIndicator color="#166534" style={styles.loader} />
-        ) : wallets.length === 0 ? (
-          <Text style={styles.empty}>Creating your wallet…</Text>
-        ) : (
-          wallets.map((wallet) => {
-            const walletKey = `${wallet.chain}-${wallet.address}`;
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Chain priority</Text>
+            <Pressable
+              accessibilityLabel={`Chain priority ${selectedChainPriority.label}`}
+              accessibilityRole="button"
+              onPress={openChainPriorityPicker}
+              style={({ pressed }) => [
+                styles.strategyRow,
+                pressed && styles.strategyRowPressed,
+              ]}
+            >
+              <View style={styles.strategyRowText}>
+                <Text style={styles.strategyLabel}>
+                  {selectedChainPriority.label}
+                </Text>
+                <Text style={styles.strategyDescription}>
+                  {selectedChainPriority.description}
+                </Text>
+              </View>
+              <Ionicons name="chevron-down" size={18} color="#86a894" />
+            </Pressable>
+          </View>
 
-            return (
-              <WalletDebitCard
-                key={walletKey}
-                wallet={wallet}
-                accountLabel={displayName}
-                copied={isCopied(walletKey)}
-                onCopy={() => {
-                  void copy(wallet.address, walletKey);
-                }}
-              />
-            );
-          })
-        )}
-      </View>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Wallet</Text>
+            {!ready ? (
+              <ActivityIndicator color="#166534" style={styles.loader} />
+            ) : wallets.length === 0 ? (
+              <Text style={styles.empty}>Creating your wallet…</Text>
+            ) : (
+              wallets.map((wallet) => {
+                const walletKey = `${wallet.chain}-${wallet.address}`;
+
+                return (
+                  <WalletDebitCard
+                    key={walletKey}
+                    wallet={wallet}
+                    accountLabel={displayName}
+                    copied={isCopied(walletKey)}
+                    onCopy={() => {
+                      void copy(wallet.address, walletKey);
+                    }}
+                    onExport={() => {
+                      void exportPrivateKey(wallet).catch((error) => {
+                        console.error(error);
+                      });
+                    }}
+                  />
+                );
+              })
+            )}
+          </View>
+        </>
+      ) : null}
 
       <Pressable
         accessibilityRole="button"
@@ -176,6 +215,11 @@ export function SettingsScreen() {
         <Text style={styles.buttonText}>Log out</Text>
       </Pressable>
       </ScrollView>
+
+      <ExportPrivateKeyWebView
+        onClose={closeExportWebView}
+        uri={exportWebViewUri}
+      />
 
       <StrategyPickerModal
         onClose={closePicker}
@@ -269,6 +313,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     color: '#86a894',
+  },
+  advancedToggle: {
+    marginTop: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  advancedTogglePressed: {
+    opacity: 0.65,
+  },
+  advancedToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5a7d6a',
   },
   loader: {
     marginTop: 8,

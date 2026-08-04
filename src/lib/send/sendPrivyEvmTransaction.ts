@@ -19,6 +19,8 @@ export type SendPrivyEvmTransactionParams = {
   gas?: `0x${string}`;
   maxFeePerGas?: `0x${string}`;
   maxPriorityFeePerGas?: `0x${string}`;
+  /** Explicit nonce — avoids colliding with a pending mempool tx. */
+  nonce?: `0x${string}`;
 };
 
 type PopulatedTx = Record<string, unknown>;
@@ -77,6 +79,9 @@ export async function sendPrivyEvmTransaction(
   if (params.maxPriorityFeePerGas != null) {
     request.maxPriorityFeePerGas = params.maxPriorityFeePerGas;
   }
+  if (params.nonce != null) {
+    request.nonce = params.nonce;
+  }
 
   const populated = (await params.provider.request({
     method: 'eth_populateTransactionRequest',
@@ -104,6 +109,10 @@ export async function sendPrivyEvmTransaction(
   }
   if (params.value != null) {
     toSign.value = params.value;
+  }
+  // Force our nonce after populate — Privy/viem may otherwise pick `latest`.
+  if (params.nonce != null) {
+    toSign.nonce = params.nonce;
   }
 
   const signedRaw = await params.provider.request({

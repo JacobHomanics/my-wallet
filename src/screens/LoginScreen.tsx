@@ -1,4 +1,5 @@
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import {
@@ -22,6 +23,7 @@ import type { RootStackParamList } from '@/navigation/types';
 export function LoginScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'login'>>();
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const { send } = useSendLoginCode();
@@ -44,7 +46,17 @@ export function LoginScreen() {
 
     try {
       await send(method, value);
-      navigation.navigate('loginVerify', { method, value: value.trim() });
+      navigation.navigate('loginVerify', {
+        method,
+        value: value.trim(),
+        ...(route.params?.returnTo === 'exportWallet'
+          ? {
+              returnTo: 'exportWallet' as const,
+              address: route.params.address,
+              chain: route.params.chain,
+            }
+          : {}),
+      });
     } catch (error) {
       console.error(error);
       setErrorMessage(

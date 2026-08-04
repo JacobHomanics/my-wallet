@@ -14,6 +14,8 @@ import QRCodeStyled from 'react-native-qrcode-styled';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
+import { useAppTax } from '@/hooks/useAppTax';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -27,14 +29,21 @@ export function ReceiveQrScreen() {
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'receiveQr'>>();
   const usdAmount = route.params.usdAmount;
-  const { ready, url } = useReceivePaymentUrl(usdAmount);
+  const { ready, url, ethereumAddress, solanaAddress } =
+    useReceivePaymentUrl(usdAmount);
   const { copy, isCopied } = useCopyToClipboard();
   const { formatFromUsd, parseDisplayInputToUsd, currencySymbol } =
     useFiatDisplay();
+  const { taxUsdFor, payerTotalUsdFor } = useAppTax();
 
   const usd = parseDisplayInputToUsd(usdAmount);
+  const taxUsd = usd != null && usd > 0 ? taxUsdFor(usd) : 0;
+  const payerTotalUsd =
+    usd != null && usd > 0 ? payerTotalUsdFor(usd) : null;
   const amountLabel =
-    usd != null ? formatFromUsd(usd) : `${currencySymbol}${usdAmount}`;
+    (payerTotalUsd != null ? formatFromUsd(payerTotalUsd) : null) ??
+    `${currencySymbol}${usdAmount}`;
+  const taxLabel = taxUsd > 0 ? formatFromUsd(taxUsd) : null;
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -70,6 +79,15 @@ export function ReceiveQrScreen() {
               <Text style={styles.amount} accessibilityRole="header">
                 {amountLabel}
               </Text>
+
+              {taxLabel ? (
+                <TaxDetailsCollapsible
+                  showEvm={Boolean(ethereumAddress)}
+                  showSolana={Boolean(solanaAddress)}
+                  style={styles.taxSection}
+                  taxLabel={taxLabel}
+                />
+              ) : null}
 
               <View style={styles.qrWrap}>
                 <QRCodeStyled
@@ -174,7 +192,13 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
-    marginBottom: 28,
+    marginBottom: 8,
+  },
+  taxSection: {
+    marginTop: 8,
+    marginBottom: 20,
+    maxWidth: 360,
+    width: '100%',
   },
   qrWrap: {
     backgroundColor: '#ffffff',

@@ -45,10 +45,29 @@ export function LoginVerifyScreen() {
       await verify(method, value, code);
       // Wallet creation runs in EnsureEmbeddedWallets after auth settles
       // (avoids racing a second create call from this screen).
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'main' }],
-      });
+      if (
+        route.params.returnTo === 'exportWallet' &&
+        route.params.address &&
+        route.params.chain
+      ) {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'exportWallet',
+              params: {
+                address: route.params.address,
+                chain: route.params.chain,
+              },
+            },
+          ],
+        });
+      } else {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'main' }],
+        });
+      }
     } catch (error) {
       console.error(error);
       setErrorMessage('Invalid code. Please try again.');

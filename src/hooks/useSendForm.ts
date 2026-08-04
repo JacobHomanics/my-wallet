@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useAppTax } from '@/hooks/useAppTax';
 import { useChainPriority } from '@/hooks/useChainPriority';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import { registerDisplayCurrencyChangeListener } from '@/hooks/useDisplayCurrency';
@@ -20,6 +21,11 @@ import {
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { compareChainFamilies, type ChainPriorityId } from '@/lib/chainPriority';
 import {
+  reserveTaxHeadroomOnTokens,
+  resolveTaxFunding,
+  type TaxFundingPick,
+} from '@/lib/send/buildPaymentLegsWithTax';
+import {
   allocatePaymentUsd,
   type PaymentAllocation,
 } from '@/lib/strategies/allocatePayment';
@@ -29,8 +35,17 @@ import { isValidRecipientAddress } from '@/lib/validation';
 export type SendFormState = {
   /** USD amount the user is trying to send. */
   amount: string;
-  /** Base amount + optional tip, in USD (before Available Balance capping). */
+  /**
+   * Merchant payment USD (base + optional tip), before Available Balance
+   * capping. Payer also owes tax on top — see `taxUsd` / `payerTotalUsd`.
+   */
   requestedUsd: number | null;
+  /** Tax USD added on top of the merchant payment. */
+  taxUsd: number;
+  /** Merchant + tax USD the payer must cover. */
+  payerTotalUsd: number | null;
+  /** Single-token funding pick for the tax transfer, when available. */
+  taxFunding: TaxFundingPick | null;
   allocations: PaymentAllocation[];
   /** Per-token input strings shown in advanced (may be mid-edit). */
   allocationInputs: Record<string, string>;
@@ -125,6 +140,7 @@ export function useSendForm(
   additionalUsd?: number | null,
 ): SendFormState {
   const { selectedChainPriorityId } = useChainPriority();
+  const { taxUsdFor, payerTotalUsdFor, maxMerchantUsdFor } = useAppTax();
   const {
     formatAmountInputFromUsd,
     parseDisplayInputToUsd,
@@ -175,7 +191,12 @@ export function useSendForm(
     setAllocationInputs({});
   }, [tipUsd]);
 
-  /** Cap at Available Balance so typing the displayed max always succeeds. */
+  /**
+   * Merchant allocation target. Only soft-cap tiny display rounding past the
+   * max affordable merchant amount (available / (1 + tax)). Do not treat
+   * "typed available balance" as max merchant — that would hide insufficient
+   * funds when tax makes the grand total exceed holdings.
+   */
   const targetUsd = (() => {
     if (requestedUsd == null || !(requestedUsd > 0)) {
       return requestedUsd;
@@ -183,15 +204,28 @@ export function useSendForm(
     if (maxAvailableUsd == null || !(maxAvailableUsd >= 0)) {
       return requestedUsd;
     }
-    if (requestedUsd <= maxAvailableUsd + 0.000001) {
-      return Math.min(requestedUsd, maxAvailableUsd);
+    const maxMerchant = maxMerchantUsdFor(maxAvailableUsd);
+    if (requestedUsd <= maxMerchant + 0.000001) {
+      return Math.min(requestedUsd, maxMerchant);
     }
-    // User typed the rounded display max (or slightly over) — send the cap.
-    if (requestedUsd <= maxAvailableUsd + 0.015) {
-      return maxAvailableUsd;
+    // Slight overshoot of max sendable merchant (display rounding).
+    if (requestedUsd <= maxMerchant + 0.015) {
+      return maxMerchant;
     }
     return requestedUsd;
   })();
+
+  /** Leave headroom on one preferred token so a single tax transfer can fit. */
+  const tokensForMerchantAllocation = useMemo(() => {
+    if (targetUsd == null || !(targetUsd > 0)) {
+      return tokens;
+    }
+    const taxUsdNeeded = taxUsdFor(targetUsd);
+    if (!(taxUsdNeeded > 0)) {
+      return tokens;
+    }
+    return reserveTaxHeadroomOnTokens(tokens, taxUsdNeeded);
+  }, [targetUsd, taxUsdFor, tokens]);
 
   const strategyPlan = useMemo(() => {
     if (targetUsd == null || targetUsd <= 0) {
@@ -205,13 +239,19 @@ export function useSendForm(
     }
 
     return allocatePaymentUsd({
-      tokens,
+      tokens: tokensForMerchantAllocation,
       usdAmount: targetUsd,
       strategyId,
       chainPriorityId: selectedChainPriorityId,
       preferredTokenId,
     });
-  }, [preferredTokenId, selectedChainPriorityId, strategyId, targetUsd, tokens]);
+  }, [
+    preferredTokenId,
+    selectedChainPriorityId,
+    strategyId,
+    targetUsd,
+    tokensForMerchantAllocation,
+  ]);
 
   // Strategy / preferred-token changes discard manual leg edits.
   useEffect(() => {
@@ -310,9 +350,24 @@ export function useSendForm(
 
   const amountValid = usdAmount != null && usdAmount > 0;
 
-  const legsWithinBalance = allocations.every(
-    (leg) => leg.amountRaw <= leg.token.rawBalance,
+  const taxUsd =
+    targetUsd != null && targetUsd > 0 ? taxUsdFor(targetUsd) : 0;
+  const payerTotalUsd =
+    targetUsd != null && targetUsd > 0
+      ? payerTotalUsdFor(targetUsd)
+      : requestedUsd != null && requestedUsd > 0
+        ? payerTotalUsdFor(requestedUsd)
+        : null;
+
+  const taxFunding = useMemo(
+    () => resolveTaxFunding(allocations, tokens, taxUsd),
+    [allocations, taxUsd, tokens],
   );
+
+  // Merchant legs must fit; tax must fit on a single leftover token.
+  const legsWithinBalance =
+    allocations.every((leg) => leg.amountRaw <= leg.token.rawBalance) &&
+    (taxUsd <= 0 || taxFunding != null);
   const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
 
   const filledUsd = allocations.reduce((sum, leg) => sum + leg.usd, 0);
@@ -331,11 +386,14 @@ export function useSendForm(
         (!amountLocked || coversRequestedAmount)
       : strategyPlan.canFulfill && legsWithinBalance;
 
+  const payerExceedsAvailable =
+    maxAvailableUsd != null &&
+    payerTotalUsd != null &&
+    payerTotalUsd > maxAvailableUsd + 0.015;
+
   const insufficientFunds =
     amountValid &&
-    (maxAvailableUsd != null &&
-    requestedUsd != null &&
-    requestedUsd > maxAvailableUsd + 0.015
+    (payerExceedsAvailable
       ? true
       : resolvedManualBase != null
         ? !canFulfill
@@ -346,6 +404,7 @@ export function useSendForm(
     canFulfill &&
     hasPositiveLeg &&
     recipientsValid &&
+    !payerExceedsAvailable &&
     (!needsEthereumRecipient || ethereumRecipient.trim().length > 0) &&
     (!needsSolanaRecipient || solanaRecipient.trim().length > 0);
 
@@ -403,6 +462,10 @@ export function useSendForm(
 
       const token =
         tokens.find((item) => item.id === tokenId) ?? base[index].token;
+      // Cap merchant input so the preferred tax funding token keeps headroom.
+      const merchantCap =
+        tokensForMerchantAllocation.find((item) => item.id === tokenId) ??
+        token;
 
       if (sanitized.trim() === '' || sanitized === '.') {
         const next = [...base];
@@ -423,14 +486,16 @@ export function useSendForm(
             ? (() => {
                 const usdForToken = parseDisplayInputToUsd(sanitized);
                 return usdForToken != null
-                  ? parseUsdAmountToTokenRaw(String(usdForToken), token)
+                  ? parseUsdAmountToTokenRaw(String(usdForToken), merchantCap)
                   : null;
               })()
             : parseTokenAmountToRaw(sanitized, token.decimals);
         if (parsed == null) {
           return null;
         }
-        return parsed > token.rawBalance ? token.rawBalance : parsed;
+        return parsed > merchantCap.rawBalance
+          ? merchantCap.rawBalance
+          : parsed;
       })();
       if (amountRaw == null) {
         return;
@@ -464,6 +529,7 @@ export function useSendForm(
       strategyPlan.allocations,
       syncAmountFromLegs,
       tokens,
+      tokensForMerchantAllocation,
     ],
   );
 
@@ -531,6 +597,9 @@ export function useSendForm(
   return {
     amount,
     requestedUsd,
+    taxUsd,
+    payerTotalUsd,
+    taxFunding,
     allocations,
     allocationInputs: resolvedAllocationInputs,
     chains,

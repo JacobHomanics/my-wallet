@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { HoloTapGentlyButton } from '@/components/HoloTapGentlyButton';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import type { UserWallet } from '@/hooks/useUserWallets.shared';
 
@@ -10,6 +11,8 @@ type WalletDebitCardProps = {
   accountLabel: string;
   copied: boolean;
   onCopy: () => void;
+  /** When set, shows a holographic “tap gently” export control on the card. */
+  onExport?: () => void;
 };
 
 const CARD_THEME = {
@@ -33,6 +36,7 @@ export function WalletDebitCard({
   accountLabel,
   copied,
   onCopy,
+  onExport,
 }: WalletDebitCardProps) {
   const theme = CARD_THEME[wallet.chain];
 
@@ -62,7 +66,15 @@ export function WalletDebitCard({
             />
           </Pressable>
         </View>
-        <View style={[styles.chip, { backgroundColor: theme.chip }]} />
+        <View style={styles.chipRow}>
+          <View style={[styles.chip, { backgroundColor: theme.chip }]} />
+          {onExport ? (
+            <HoloTapGentlyButton
+              accessibilityLabel={`Export ${wallet.label} private key`}
+              onPress={onExport}
+            />
+          ) : null}
+        </View>
       </View>
 
       <View style={styles.bottomRow}>
@@ -109,6 +121,11 @@ const styles = StyleSheet.create({
   },
   copyButtonPressed: {
     opacity: 0.7,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   chip: {
     width: 36,

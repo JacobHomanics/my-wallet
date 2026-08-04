@@ -95,6 +95,9 @@ export function useSendTransaction(): SendTransactionResult {
                   maxFeePerGas: prepared.maxFeePerGas,
                   maxPriorityFeePerGas: prepared.maxPriorityFeePerGas,
                   chainId,
+                  ...(params.nonce != null
+                    ? { nonce: Number(BigInt(params.nonce)) }
+                    : {}),
                 };
               })()
             : await (async () => {
@@ -114,6 +117,9 @@ export function useSendTransaction(): SendTransactionResult {
                   data,
                   value: toHexQuantity(0n),
                   chainId,
+                  ...(params.nonce != null
+                    ? { nonce: Number(BigInt(params.nonce)) }
+                    : {}),
                 };
               })();
 

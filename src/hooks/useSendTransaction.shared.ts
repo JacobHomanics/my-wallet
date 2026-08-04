@@ -4,6 +4,11 @@ export type SendTokenParams = {
   token: OwnedToken;
   recipient: string;
   amountRaw: bigint;
+  /**
+   * Explicit EVM nonce (hex). Required for back-to-back same-network sends so
+   * Privy/viem don't reuse a pending nonce ("replacement transaction underpriced").
+   */
+  nonce?: `0x${string}`;
 };
 
 export type SendTokenResult = {
