@@ -64,7 +64,7 @@ export function SentScreen() {
             <Ionicons
               name={showAdvanced ? 'chevron-up' : 'chevron-down'}
               size={16}
-              color="#64748b"
+              color="#5a7d6a"
             />
           </Pressable>
 
@@ -139,7 +139,7 @@ function SummaryRow({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
   },
   flex: {
     flex: 1,
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   topBarSpacer: {
     width: 44,
@@ -178,13 +178,13 @@ const styles = StyleSheet.create({
   resultTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#166534',
     marginBottom: 8,
   },
   heroUsd: {
     fontSize: 36,
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#166534',
     letterSpacing: -0.6,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
@@ -204,13 +204,13 @@ const styles = StyleSheet.create({
   advancedToggleText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#5a7d6a',
   },
   advanced: {
     marginTop: 8,
     alignSelf: 'stretch',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#d1fae5',
     borderRadius: 12,
     backgroundColor: '#fff',
     paddingHorizontal: 16,
@@ -230,11 +230,11 @@ const styles = StyleSheet.create({
   tokenSymbol: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   tokenMeta: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: '#86a894',
   },
   summaryRow: {
     paddingBottom: 14,
@@ -243,14 +243,14 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#5a7d6a',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   summaryValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   summaryMono: {
     fontVariant: ['tabular-nums'],
@@ -258,13 +258,13 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#d1fae5',
   },
   primaryButton: {
     marginTop: 28,
     alignItems: 'center',
     alignSelf: 'stretch',
-    backgroundColor: '#0f172a',
+    backgroundColor: '#166534',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   primaryButtonText: {
-    color: '#f8fafc',
+    color: '#f0fdf4',
     fontSize: 16,
     fontWeight: '600',
   },

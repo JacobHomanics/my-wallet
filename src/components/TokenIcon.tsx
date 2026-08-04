@@ -91,16 +91,16 @@ export const TokenIcon = memo(function TokenIcon({
 
 const styles = StyleSheet.create({
   logo: {
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#d1fae5',
   },
   logoFallback: {
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#d1fae5',
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoFallbackText: {
     fontWeight: '700',
-    color: '#475569',
+    color: '#3f6b52',
   },
   chainBadgeWrap: {
     position: 'absolute',
@@ -109,6 +109,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1.5,
     borderColor: '#ffffff',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
   },
 });

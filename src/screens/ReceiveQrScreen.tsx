@@ -64,7 +64,7 @@ export function ReceiveQrScreen() {
 
         <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
           {!ready || !url ? (
-            <ActivityIndicator color="#0f172a" style={styles.loader} />
+            <ActivityIndicator color="#166534" style={styles.loader} />
           ) : (
             <>
               <Text style={styles.amount} accessibilityRole="header">
@@ -76,7 +76,7 @@ export function ReceiveQrScreen() {
                   data={url}
                   padding={16}
                   size={220}
-                  color="#0f172a"
+                  color="#166534"
                   style={styles.qr}
                 />
               </View>
@@ -97,7 +97,7 @@ export function ReceiveQrScreen() {
                 <Ionicons
                   name={isCopied('url') ? 'checkmark' : 'link-outline'}
                   size={18}
-                  color={isCopied('url') ? '#15803d' : '#0f172a'}
+                  color={isCopied('url') ? '#15803d' : '#166534'}
                 />
                 <Text
                   style={[
@@ -119,7 +119,7 @@ export function ReceiveQrScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
   },
   content: {
     flex: 1,
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   topBarSpacer: {
     width: 44,
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#0f172a',
+    color: '#166534',
   },
   body: {
     alignItems: 'center',
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   amount: {
     fontSize: 36,
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#166534',
     letterSpacing: -0.5,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#d1fae5',
   },
   copyLinkButtonPressed: {
     opacity: 0.85,
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   copyLinkText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   copyLinkTextCopied: {
     color: '#15803d',

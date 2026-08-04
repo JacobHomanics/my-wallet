@@ -43,7 +43,7 @@ export function ContactsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
   },
   content: {
     flex: 1,
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   topBarSpacer: {
     width: 44,
@@ -79,13 +79,13 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#166534',
   },
   empty: {
     marginTop: 48,
     paddingHorizontal: 24,
     fontSize: 15,
-    color: '#94a3b8',
+    color: '#86a894',
     textAlign: 'center',
   },
 });

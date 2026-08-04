@@ -57,14 +57,14 @@ export function HomeScreen() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor="#0f172a"
+          tintColor="#166534"
         />
       }
       style={styles.container}
     >
       <View style={styles.hero}>
         {!ready || loading ? (
-          <ActivityIndicator color="#0f172a" />
+          <ActivityIndicator color="#166534" />
         ) : !hasWallet ? (
           <Text style={styles.empty}>Creating your wallets…</Text>
         ) : error && tokens.length === 0 ? (
@@ -98,7 +98,7 @@ export function HomeScreen() {
                       pressed && styles.actionButtonPressed,
                     ]}
                   >
-                    <Ionicons name="arrow-up" size={18} color="#f8fafc" />
+                    <Ionicons name="arrow-up" size={18} color="#f0fdf4" />
                     <Text style={styles.actionButtonText}>Pay</Text>
                   </Pressable>
                   <Pressable
@@ -111,7 +111,7 @@ export function HomeScreen() {
                       pressed && styles.actionButtonPressed,
                     ]}
                   >
-                    <Ionicons name="arrow-down" size={18} color="#f8fafc" />
+                    <Ionicons name="arrow-down" size={18} color="#f0fdf4" />
                     <Text style={styles.actionButtonText}>Receive</Text>
                   </Pressable>
                 </View>
@@ -173,7 +173,7 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
   },
   content: {
     flexGrow: 1,
@@ -189,14 +189,14 @@ const styles = StyleSheet.create({
   total: {
     fontSize: 48,
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#166534',
     letterSpacing: -1,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
   },
   empty: {
     fontSize: 15,
-    color: '#94a3b8',
+    color: '#86a894',
     textAlign: 'center',
   },
   errorBlock: {
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   retryButton: {
-    backgroundColor: '#0f172a',
+    backgroundColor: '#166534',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   retryButtonText: {
-    color: '#f8fafc',
+    color: '#f0fdf4',
     fontSize: 15,
     fontWeight: '600',
   },
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#166534',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   actionButtonText: {
-    color: '#f8fafc',
+    color: '#f0fdf4',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   detailsLinkText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#64748b',
+    color: '#5a7d6a',
     textDecorationLine: 'underline',
   },
   bottomLinks: {

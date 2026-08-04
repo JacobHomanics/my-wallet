@@ -29,8 +29,8 @@ export function MainTabs() {
           },
         },
         tabBarPosition: isDesktopWeb ? 'top' : 'bottom',
-        tabBarActiveTintColor: '#0f172a',
-        tabBarInactiveTintColor: '#94a3b8',
+        tabBarActiveTintColor: '#166534',
+        tabBarInactiveTintColor: '#86a894',
         tabBarStyle,
         tabBarLabelStyle: {
           // Room for descenders; default fontSize 10 clips "g" in Settings on web.

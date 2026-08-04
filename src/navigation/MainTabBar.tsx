@@ -8,6 +8,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ProfileDropdown } from '@/components/ProfileDropdown';
 import { useAppBrand } from '@/hooks/useAppBrand';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useThemeColors } from '@/hooks/useThemeColors';
+import { colors } from '@/theme/colors';
 
 const TAB_ICONS = {
   home: { focused: 'wallet', outline: 'wallet-outline' },
@@ -18,11 +20,12 @@ type TabRouteName = keyof typeof TAB_ICONS;
 
 function WebTopNav({ state, descriptors, navigation }: BottomTabBarProps) {
   const { name, tagline } = useAppBrand();
+  const theme = useThemeColors();
 
   return (
     <View style={styles.header}>
       <View style={styles.brandBlock}>
-        <Ionicons name="wallet" size={28} color="#0f172a" />
+        <Ionicons name="wallet" size={28} color={theme.primary} />
         <View style={styles.brandText}>
           <Text style={styles.brand}>{name}</Text>
           <Text style={styles.tagline}>{tagline}</Text>
@@ -73,7 +76,7 @@ function WebTopNav({ state, descriptors, navigation }: BottomTabBarProps) {
                 <Ionicons
                   name={isFocused ? icons.focused : icons.outline}
                   size={18}
-                  color={isFocused ? '#0f172a' : '#64748b'}
+                  color={isFocused ? theme.primary : theme.textMuted}
                 />
               ) : null}
               <Text
@@ -115,10 +118,10 @@ const styles = StyleSheet.create({
     minHeight: 64,
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e2e8f0',
-    boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+    borderBottomColor: colors.border,
+    boxShadow: '0 1px 3px rgba(22, 101, 52, 0.08)',
     zIndex: 10,
   },
   brandBlock: {
@@ -133,12 +136,12 @@ const styles = StyleSheet.create({
   brand: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#0f172a',
+    color: colors.primary,
     letterSpacing: -0.3,
   },
   tagline: {
     fontSize: 12,
-    color: '#64748b',
+    color: colors.textMuted,
   },
   links: {
     flexDirection: 'row',
@@ -157,18 +160,18 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   linkActive: {
-    backgroundColor: '#e2e8f0',
+    backgroundColor: colors.border,
   },
   linkHovered: {
-    backgroundColor: '#f1f5f9',
+    backgroundColor: colors.surfaceMuted,
   },
   linkLabel: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#64748b',
+    color: colors.textMuted,
   },
   linkLabelActive: {
-    color: '#0f172a',
+    color: colors.primary,
     fontWeight: '600',
   },
 });

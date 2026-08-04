@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAppBrand } from '@/hooks/useAppBrand';
 import type { RootStackParamList } from '@/navigation/types';
+import { colors } from '@/theme/colors';
 
 export function WelcomeScreen() {
   const { name, tagline } = useAppBrand();
@@ -32,25 +33,25 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f8fafc',
+    backgroundColor: colors.bg,
     paddingHorizontal: 24,
   },
   brand: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#0f172a',
+    color: colors.primary,
     letterSpacing: -0.5,
   },
   subtitle: {
     marginTop: 12,
     fontSize: 16,
     lineHeight: 24,
-    color: '#475569',
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   button: {
     marginTop: 24,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.primary,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   buttonText: {
-    color: '#f8fafc',
+    color: colors.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
