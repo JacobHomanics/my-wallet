@@ -34,10 +34,6 @@ export function SettingsScreen() {
   const { signOut } = useSignOut();
   const { copy, isCopied } = useCopyToClipboard();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
-  const ethereumAddress =
-    wallets.find((wallet) => wallet.chain === 'ethereum')?.address ?? null;
-  const solanaAddress =
-    wallets.find((wallet) => wallet.chain === 'solana')?.address ?? null;
   const {
     exportPrivateKey,
     exportWebViewUri,

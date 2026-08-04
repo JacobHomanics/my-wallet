@@ -82,8 +82,6 @@ export function SendScreen() {
     needsSolanaRecipient,
     ethereumRecipient,
     solanaRecipient,
-    ethereumRecipientValid,
-    solanaRecipientValid,
     insufficientFunds,
     canContinue,
     setEthereumRecipient,

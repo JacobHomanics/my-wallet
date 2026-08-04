@@ -22,8 +22,7 @@ export function ReceiveScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goHome = usePopToHome();
-  const { ready, url, identityId, ethereumAddress, solanaAddress } =
-    useReceiveAddressUrl();
+  const { ready, url, identityId } = useReceiveAddressUrl();
   const { copy, isCopied } = useCopyToClipboard();
 
   return (
