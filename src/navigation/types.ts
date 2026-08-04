@@ -16,6 +16,8 @@ export type SentLeg = {
   networkLabel: string;
   tokenName: string;
   logoUrl: string | null;
+  /** True when this transfer paid the app tax wallet. */
+  isTax?: boolean;
 };
 
 export type HomeStackParamList = {

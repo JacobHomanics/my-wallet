@@ -18,6 +18,7 @@ import { BackButton } from '@/components/BackButton';
 import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
+import { useAppTax } from '@/hooks/useAppTax';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { usePopToSend } from '@/hooks/usePopToSend';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
@@ -30,10 +31,11 @@ import { useSendStatus } from '@/hooks/useSendStatus';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useSendTip } from '@/hooks/useSendTip';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
+import { useShowTaxDetails } from '@/hooks/useShowTaxDetails';
 import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
-import { getNetworkChain } from '@/lib/alchemy/networks';
+import { buildPaymentLegsWithTax } from '@/lib/send/buildPaymentLegsWithTax';
 import { formatSendError } from '@/lib/send/formatSendError';
 import type { HomeStackParamList } from '@/navigation/types';
 
@@ -51,7 +53,14 @@ export function ConfirmSendScreen() {
   const { error, clearStatus, setError } = useSendStatus();
   const { copy, isCopied } = useCopyToClipboard();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const { showTaxDetails, toggleTaxDetails } = useShowTaxDetails();
   const { tip, tipUsd, setTip, setTipPercent } = useSendTip();
+  const {
+    ratePercentLabel,
+    evmAddress: taxEvmAddress,
+    solanaAddress: taxSolanaAddress,
+    rate: taxRate,
+  } = useAppTax();
   const { allocationInputUnit, setAllocationInputUnit } = useSendDraftUi();
   const {
     strategies,
@@ -68,7 +77,6 @@ export function ConfirmSendScreen() {
   const openFreshSend = useOpenFreshSend();
   const {
     formatFromUsd,
-    formatAmountInputFromUsd,
     currencySymbol,
   } = useFiatDisplay();
 
@@ -83,6 +91,8 @@ export function ConfirmSendScreen() {
   const {
     amount,
     requestedUsd,
+    taxUsd,
+    payerTotalUsd,
     allocations,
     allocationInputs,
     needsEthereumRecipient,
@@ -104,14 +114,11 @@ export function ConfirmSendScreen() {
 
   const baseUsd =
     requestedUsd != null ? Math.max(0, requestedUsd - tipUsd) : null;
-  const requiredLabel =
-    baseUsd != null
-      ? formatFromUsd(baseUsd)
-      : `${currencySymbol}${amount || '0'}`;
+  const taxLabel = taxUsd > 0 ? formatFromUsd(taxUsd) : null;
   const totalLabel =
-    requestedUsd != null
-      ? formatFromUsd(requestedUsd)
-      : requiredLabel;
+    (payerTotalUsd != null ? formatFromUsd(payerTotalUsd) : null) ??
+    (requestedUsd != null ? formatFromUsd(requestedUsd) : null) ??
+    `${currencySymbol}${amount || '0'}`;
   const availableLabel =
     insufficientFunds ? formatFromUsd(filledUsd) : null;
 
@@ -147,24 +154,27 @@ export function ConfirmSendScreen() {
 
     void (async () => {
       try {
+        const paymentLegs = buildPaymentLegsWithTax({
+          allocations,
+          ethereumRecipient: trimmedEthereum,
+          solanaRecipient: trimmedSolana,
+          taxEvmAddress,
+          taxSolanaAddress,
+          taxRate,
+        });
         const results = await sendPayment(
-          allocations.map((leg) => {
-            const chain = getNetworkChain(leg.token.network);
-            return {
-              token: leg.token,
-              recipient:
-                chain === 'solana' ? trimmedSolana : trimmedEthereum,
-              amountRaw: leg.amountRaw,
-              amountFormatted: leg.amountFormatted,
-            };
-          }),
+          paymentLegs.map((leg) => ({
+            token: leg.token,
+            recipient: leg.recipient,
+            amountRaw: leg.amountRaw,
+            amountFormatted: leg.amountFormatted,
+            isTax: leg.isTax,
+          })),
         );
         resetSendDraft();
         refresh();
         navigation.navigate('sent', {
-          usdLabel:
-            totalLabel ??
-            `${currencySymbol}${formatAmountInputFromUsd(requestedUsd ?? 0)}`,
+          usdLabel: totalLabel,
           legs: results.map((result) => ({
             hash: result.hash,
             amount: result.amount,
@@ -173,6 +183,7 @@ export function ConfirmSendScreen() {
             networkLabel: result.networkLabel,
             tokenName: result.tokenName,
             logoUrl: result.logoUrl,
+            isTax: result.isTax === true,
           })),
         });
       } catch (err) {
@@ -184,14 +195,14 @@ export function ConfirmSendScreen() {
     allocations,
     canSend,
     clearStatus,
-    currencySymbol,
-    formatAmountInputFromUsd,
     navigation,
     refresh,
-    requestedUsd,
     sendPayment,
     sending,
     setError,
+    taxEvmAddress,
+    taxRate,
+    taxSolanaAddress,
     totalLabel,
     trimmedEthereum,
     trimmedSolana,
@@ -257,7 +268,7 @@ export function ConfirmSendScreen() {
           <ActivityIndicator color="#166534" style={styles.loader} />
         ) : (
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
-            <Text style={styles.heroUsd}>{requiredLabel}</Text>
+            <Text style={styles.heroUsd}>{totalLabel}</Text>
             {availableLabel ? (
               <Text style={styles.availableUsd}>
                 Available Balance: {availableLabel}
@@ -307,6 +318,115 @@ export function ConfirmSendScreen() {
                 />
               </View>
             </View>
+
+            {taxLabel ? (
+              <View style={styles.taxSection}>
+                <Pressable
+                  accessibilityLabel={
+                    showTaxDetails
+                      ? 'Hide tax destination details'
+                      : 'Show tax destination details'
+                  }
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: showTaxDetails }}
+                  onPress={toggleTaxDetails}
+                  style={({ pressed }) => [
+                    styles.taxHeader,
+                    pressed && styles.taxHeaderPressed,
+                  ]}
+                >
+                  <View style={styles.taxHeaderLeft}>
+                    <Text style={styles.taxLabel}>
+                      Tax ({ratePercentLabel}%)
+                    </Text>
+                    <Ionicons
+                      name={showTaxDetails ? 'chevron-up' : 'chevron-down'}
+                      size={16}
+                      color="#5a7d6a"
+                    />
+                  </View>
+                  <Text style={styles.taxValue}>{taxLabel}</Text>
+                </Pressable>
+
+                {showTaxDetails ? (
+                  <View style={styles.taxDetails}>
+                    <Text style={styles.taxDetailsLabel}>Goes to</Text>
+                    {needsEthereumRecipient ? (
+                      <View style={styles.taxAddressRow}>
+                        <Text style={styles.toChainLabel}>EVM</Text>
+                        <Text style={styles.toAddress} selectable>
+                          {formatWalletAddress(taxEvmAddress)}
+                        </Text>
+                        <Pressable
+                          accessibilityLabel={
+                            isCopied('tax-evm')
+                              ? 'Tax EVM address copied'
+                              : 'Copy tax EVM address'
+                          }
+                          accessibilityRole="button"
+                          hitSlop={8}
+                          onPress={() => {
+                            void copy(taxEvmAddress, 'tax-evm');
+                          }}
+                          style={({ pressed }) => [
+                            styles.copyButton,
+                            pressed && styles.copyButtonPressed,
+                          ]}
+                        >
+                          <Ionicons
+                            name={
+                              isCopied('tax-evm')
+                                ? 'checkmark'
+                                : 'copy-outline'
+                            }
+                            size={18}
+                            color={
+                              isCopied('tax-evm') ? '#15803d' : '#5a7d6a'
+                            }
+                          />
+                        </Pressable>
+                      </View>
+                    ) : null}
+                    {needsSolanaRecipient ? (
+                      <View style={styles.taxAddressRow}>
+                        <Text style={styles.toChainLabel}>Solana</Text>
+                        <Text style={styles.toAddress} selectable>
+                          {formatWalletAddress(taxSolanaAddress)}
+                        </Text>
+                        <Pressable
+                          accessibilityLabel={
+                            isCopied('tax-solana')
+                              ? 'Tax Solana address copied'
+                              : 'Copy tax Solana address'
+                          }
+                          accessibilityRole="button"
+                          hitSlop={8}
+                          onPress={() => {
+                            void copy(taxSolanaAddress, 'tax-solana');
+                          }}
+                          style={({ pressed }) => [
+                            styles.copyButton,
+                            pressed && styles.copyButtonPressed,
+                          ]}
+                        >
+                          <Ionicons
+                            name={
+                              isCopied('tax-solana')
+                                ? 'checkmark'
+                                : 'copy-outline'
+                            }
+                            size={18}
+                            color={
+                              isCopied('tax-solana') ? '#15803d' : '#5a7d6a'
+                            }
+                          />
+                        </Pressable>
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
 
             {needsEthereumRecipient ||
               needsSolanaRecipient ||
@@ -665,6 +785,59 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     fontSize: 16,
     color: '#166534',
+  },
+  taxSection: {
+    marginTop: 16,
+    alignSelf: 'stretch',
+  },
+  taxHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  taxHeaderPressed: {
+    opacity: 0.75,
+  },
+  taxHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  taxLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5a7d6a',
+  },
+  taxValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#166534',
+    fontVariant: ['tabular-nums'],
+  },
+  taxDetails: {
+    marginTop: 10,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#b7e4c7',
+    backgroundColor: '#f0fdf4',
+  },
+  taxDetailsLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#86a894',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  taxAddressRow: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    gap: 10,
   },
   toSection: {
     marginTop: 36,

@@ -83,6 +83,7 @@ export function SentScreen() {
                     <View style={styles.tokenText}>
                       <Text style={styles.tokenSymbol}>
                         {leg.amount} {leg.symbol}
+                        {leg.isTax ? ' (tax)' : ''}
                       </Text>
                       <Text style={styles.tokenMeta}>{leg.networkLabel}</Text>
                     </View>

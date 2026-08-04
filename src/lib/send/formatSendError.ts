@@ -40,6 +40,14 @@ export function formatSendError(error: unknown): string {
     return 'Transaction simulation failed. Try a slightly smaller amount.';
   }
 
+  if (
+    lower.includes('replacement transaction underpriced') ||
+    lower.includes('already known') ||
+    lower.includes('nonce too low')
+  ) {
+    return 'A previous transfer on this network is still confirming. Please wait a moment and try again.';
+  }
+
   return 'There was an error. Please try again later.';
 }
 

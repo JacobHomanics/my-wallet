@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useAppTax } from '@/hooks/useAppTax';
 import { useChainPriority } from '@/hooks/useChainPriority';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import { registerDisplayCurrencyChangeListener } from '@/hooks/useDisplayCurrency';
@@ -19,6 +20,7 @@ import {
 } from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { compareChainFamilies, type ChainPriorityId } from '@/lib/chainPriority';
+import { taxRawFromAmount } from '@/lib/tax';
 import {
   allocatePaymentUsd,
   type PaymentAllocation,
@@ -29,8 +31,15 @@ import { isValidRecipientAddress } from '@/lib/validation';
 export type SendFormState = {
   /** USD amount the user is trying to send. */
   amount: string;
-  /** Base amount + optional tip, in USD (before Available Balance capping). */
+  /**
+   * Merchant payment USD (base + optional tip), before Available Balance
+   * capping. Payer also owes tax on top — see `taxUsd` / `payerTotalUsd`.
+   */
   requestedUsd: number | null;
+  /** Tax USD added on top of the merchant payment. */
+  taxUsd: number;
+  /** Merchant + tax USD the payer must cover. */
+  payerTotalUsd: number | null;
   allocations: PaymentAllocation[];
   /** Per-token input strings shown in advanced (may be mid-edit). */
   allocationInputs: Record<string, string>;
@@ -125,6 +134,8 @@ export function useSendForm(
   additionalUsd?: number | null,
 ): SendFormState {
   const { selectedChainPriorityId } = useChainPriority();
+  const { rate: taxRate, taxUsdFor, payerTotalUsdFor, maxMerchantUsdFor } =
+    useAppTax();
   const {
     formatAmountInputFromUsd,
     parseDisplayInputToUsd,
@@ -175,7 +186,10 @@ export function useSendForm(
     setAllocationInputs({});
   }, [tipUsd]);
 
-  /** Cap at Available Balance so typing the displayed max always succeeds. */
+  /**
+   * Merchant allocation target. Cap so merchant + tax still fit under Available
+   * Balance when the user types the displayed max.
+   */
   const targetUsd = (() => {
     if (requestedUsd == null || !(requestedUsd > 0)) {
       return requestedUsd;
@@ -183,15 +197,46 @@ export function useSendForm(
     if (maxAvailableUsd == null || !(maxAvailableUsd >= 0)) {
       return requestedUsd;
     }
-    if (requestedUsd <= maxAvailableUsd + 0.000001) {
-      return Math.min(requestedUsd, maxAvailableUsd);
+    const maxMerchant = maxMerchantUsdFor(maxAvailableUsd);
+    if (requestedUsd <= maxMerchant + 0.000001) {
+      return Math.min(requestedUsd, maxMerchant);
     }
-    // User typed the rounded display max (or slightly over) — send the cap.
+    // User typed the rounded display max (or slightly over) — send tax-aware cap.
     if (requestedUsd <= maxAvailableUsd + 0.015) {
-      return maxAvailableUsd;
+      return maxMerchant;
     }
     return requestedUsd;
   })();
+
+  /** Leave raw headroom so proportional tax fits on the same tokens. */
+  const tokensForMerchantAllocation = useMemo(() => {
+    if (!(taxRate > 0)) {
+      return tokens;
+    }
+    return tokens.map((token) => {
+      if (token.rawBalance <= 0n) {
+        return token;
+      }
+      const taxIfFull = taxRawFromAmount(token.rawBalance, taxRate);
+      if (taxIfFull <= 0n) {
+        return token;
+      }
+      const merchantMax = token.rawBalance - taxIfFull;
+      if (merchantMax <= 0n || merchantMax === token.rawBalance) {
+        return token;
+      }
+      const usdScale =
+        token.usdValue != null && token.rawBalance > 0n
+          ? Number(merchantMax) / Number(token.rawBalance)
+          : 1;
+      return {
+        ...token,
+        rawBalance: merchantMax,
+        usdValue:
+          token.usdValue != null ? token.usdValue * usdScale : token.usdValue,
+      };
+    });
+  }, [taxRate, tokens]);
 
   const strategyPlan = useMemo(() => {
     if (targetUsd == null || targetUsd <= 0) {
@@ -205,13 +250,19 @@ export function useSendForm(
     }
 
     return allocatePaymentUsd({
-      tokens,
+      tokens: tokensForMerchantAllocation,
       usdAmount: targetUsd,
       strategyId,
       chainPriorityId: selectedChainPriorityId,
       preferredTokenId,
     });
-  }, [preferredTokenId, selectedChainPriorityId, strategyId, targetUsd, tokens]);
+  }, [
+    preferredTokenId,
+    selectedChainPriorityId,
+    strategyId,
+    targetUsd,
+    tokensForMerchantAllocation,
+  ]);
 
   // Strategy / preferred-token changes discard manual leg edits.
   useEffect(() => {
@@ -310,9 +361,20 @@ export function useSendForm(
 
   const amountValid = usdAmount != null && usdAmount > 0;
 
-  const legsWithinBalance = allocations.every(
-    (leg) => leg.amountRaw <= leg.token.rawBalance,
-  );
+  const taxUsd =
+    targetUsd != null && targetUsd > 0 ? taxUsdFor(targetUsd) : 0;
+  const payerTotalUsd =
+    targetUsd != null && targetUsd > 0
+      ? payerTotalUsdFor(targetUsd)
+      : requestedUsd != null && requestedUsd > 0
+        ? payerTotalUsdFor(requestedUsd)
+        : null;
+
+  // Merchant + proportional tax must fit each token's spendable balance.
+  const legsWithinBalance = allocations.every((leg) => {
+    const taxRaw = taxRawFromAmount(leg.amountRaw, taxRate);
+    return leg.amountRaw + taxRaw <= leg.token.rawBalance;
+  });
   const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
 
   const filledUsd = allocations.reduce((sum, leg) => sum + leg.usd, 0);
@@ -331,11 +393,14 @@ export function useSendForm(
         (!amountLocked || coversRequestedAmount)
       : strategyPlan.canFulfill && legsWithinBalance;
 
+  const payerExceedsAvailable =
+    maxAvailableUsd != null &&
+    payerTotalUsd != null &&
+    payerTotalUsd > maxAvailableUsd + 0.015;
+
   const insufficientFunds =
     amountValid &&
-    (maxAvailableUsd != null &&
-    requestedUsd != null &&
-    requestedUsd > maxAvailableUsd + 0.015
+    (payerExceedsAvailable
       ? true
       : resolvedManualBase != null
         ? !canFulfill
@@ -346,6 +411,7 @@ export function useSendForm(
     canFulfill &&
     hasPositiveLeg &&
     recipientsValid &&
+    !payerExceedsAvailable &&
     (!needsEthereumRecipient || ethereumRecipient.trim().length > 0) &&
     (!needsSolanaRecipient || solanaRecipient.trim().length > 0);
 
@@ -531,6 +597,8 @@ export function useSendForm(
   return {
     amount,
     requestedUsd,
+    taxUsd,
+    payerTotalUsd,
     allocations,
     allocationInputs: resolvedAllocationInputs,
     chains,

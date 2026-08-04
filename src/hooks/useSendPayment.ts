@@ -6,6 +6,8 @@ import type {
   SendTransactionResult,
 } from '@/hooks/useSendTransaction.shared';
 import { useSendTransaction } from '@/hooks/useSendTransaction';
+import { getNetworkChain } from '@/lib/alchemy/networks';
+import { waitForEvmReceipt } from '@/lib/send/waitForEvmReceipt';
 import { isGasToken } from '@/lib/strategies/gasTokens';
 
 export type SendPaymentLegResult = SendTokenResult & {
@@ -16,6 +18,7 @@ export type SendPaymentLegResult = SendTokenResult & {
   networkLabel: string;
   tokenName: string;
   logoUrl: string | null;
+  isTax?: boolean;
 };
 
 export type SendPaymentResult = {
@@ -24,6 +27,7 @@ export type SendPaymentResult = {
   sendPayment: (
     legs: (SendTokenParams & {
       amountFormatted: string;
+      isTax?: boolean;
     })[],
   ) => Promise<SendPaymentLegResult[]>;
 };
@@ -31,6 +35,10 @@ export type SendPaymentResult = {
 /**
  * Sends one or more token transfer legs sequentially (multi-token payments).
  * Simulates every leg first; only broadcasts if all simulations succeed.
+ *
+ * On EVM, waits for each network's prior tx to confirm before the next leg on
+ * that network so nonce collisions ("replacement transaction underpriced")
+ * don't fire when merchant + tax share a chain.
  */
 export function useSendPayment(): SendPaymentResult {
   const { ready, send, simulatePayment } = useSendTransaction();
@@ -38,7 +46,10 @@ export function useSendPayment(): SendPaymentResult {
 
   const sendPayment = useCallback(
     async (
-      legs: (SendTokenParams & { amountFormatted: string })[],
+      legs: (SendTokenParams & {
+        amountFormatted: string;
+        isTax?: boolean;
+      })[],
     ): Promise<SendPaymentLegResult[]> => {
       if (legs.length === 0) {
         throw new Error('Nothing to send');
@@ -55,6 +66,9 @@ export function useSendPayment(): SendPaymentResult {
         return aGas - bGas;
       });
 
+      /** Last broadcast hash per EVM network — confirm before reuse. */
+      const lastEvmHashByNetwork = new Map<string, string>();
+
       try {
         // All-or-nothing preflight: do not broadcast anything unless every
         // leg simulates successfully (including cumulative gas on shared nets).
@@ -67,11 +81,24 @@ export function useSendPayment(): SendPaymentResult {
         );
 
         for (const leg of orderedLegs) {
+          const chain = getNetworkChain(leg.token.network);
+          if (chain === 'ethereum') {
+            const previousHash = lastEvmHashByNetwork.get(leg.token.network);
+            if (previousHash) {
+              await waitForEvmReceipt(leg.token.network, previousHash);
+            }
+          }
+
           const result = await send({
             token: leg.token,
             recipient: leg.recipient,
             amountRaw: leg.amountRaw,
           });
+
+          if (result.chain === 'ethereum') {
+            lastEvmHashByNetwork.set(leg.token.network, result.hash);
+          }
+
           results.push({
             ...result,
             tokenId: leg.token.id,
@@ -81,6 +108,7 @@ export function useSendPayment(): SendPaymentResult {
             networkLabel: leg.token.networkLabel,
             tokenName: leg.token.name,
             logoUrl: leg.token.logoUrl,
+            isTax: leg.isTax === true,
           });
         }
         return results;
