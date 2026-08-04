@@ -13,7 +13,6 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors } from '@/theme/colors';
 
 const TAB_ICONS = {
-  home: { focused: 'wallet', outline: 'wallet-outline' },
   settings: { focused: 'settings', outline: 'settings-outline' },
 } as const;
 
@@ -48,6 +47,7 @@ function WebTopNav({ state, descriptors, navigation }: BottomTabBarProps) {
               : (options.title ?? route.name);
           const isFocused = state.index === index;
           const icons = TAB_ICONS[route.name as TabRouteName];
+          const tint = isFocused ? theme.primary : theme.textMuted;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -79,11 +79,19 @@ function WebTopNav({ state, descriptors, navigation }: BottomTabBarProps) {
                 ];
               }}
             >
-              {icons ? (
+              {route.name === 'home' ? (
+                <CashboxIcon
+                  size={18}
+                  color={tint}
+                  detailColor={
+                    isFocused ? colors.border : colors.surface
+                  }
+                />
+              ) : icons ? (
                 <Ionicons
                   name={isFocused ? icons.focused : icons.outline}
                   size={18}
-                  color={isFocused ? theme.primary : theme.textMuted}
+                  color={tint}
                 />
               ) : null}
               <Text

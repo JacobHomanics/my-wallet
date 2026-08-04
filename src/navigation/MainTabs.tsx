@@ -3,12 +3,14 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { Platform } from 'react-native';
 
+import { CashboxIcon } from '@/components/CashboxIcon';
 import { useBottomTabBarStyle } from '@/hooks/useBottomTabBarStyle';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { HomeStack } from '@/navigation/HomeStack';
 import { MainTabBar } from '@/navigation/MainTabBar';
 import type { MainTabParamList } from '@/navigation/types';
 import { SettingsScreen } from '@/screens/SettingsScreen';
+import { colors } from '@/theme/colors';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -60,11 +62,11 @@ export function MainTabs() {
           return {
             title: 'Home',
             tabBarStyle: hideTabBar ? { display: 'none' } : tabBarStyle,
-            tabBarIcon: ({ color, focused, size }) => (
-              <Ionicons
-                name={focused ? 'wallet' : 'wallet-outline'}
-                color={color}
+            tabBarIcon: ({ color, size }) => (
+              <CashboxIcon
                 size={size}
+                color={color}
+                detailColor={colors.surface}
               />
             ),
           };
