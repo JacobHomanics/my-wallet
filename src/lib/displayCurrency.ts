@@ -5,6 +5,7 @@ export type DisplayCurrencyId =
   | 'jpy'
   | 'php'
   | 'thb'
+  | 'vnd'
   | 'cad'
   | 'aud'
   | 'chf'
@@ -65,6 +66,12 @@ export const DISPLAY_CURRENCY_OPTIONS: readonly DisplayCurrencyOption[] = [
     code: 'THB',
     label: 'Thai Baht',
     description: 'Show balances and amounts in Thai baht.',
+  },
+  {
+    id: 'vnd',
+    code: 'VND',
+    label: 'Vietnamese Dong',
+    description: 'Show balances and amounts in Vietnamese dong.',
   },
   {
     id: 'cad',
