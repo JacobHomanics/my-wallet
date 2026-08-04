@@ -184,38 +184,20 @@ export function SettingsScreen() {
                 const walletKey = `${wallet.chain}-${wallet.address}`;
 
                 return (
-                  <View key={walletKey} style={styles.walletBlock}>
-                    <WalletDebitCard
-                      wallet={wallet}
-                      accountLabel={displayName}
-                      copied={isCopied(walletKey)}
-                      onCopy={() => {
-                        void copy(wallet.address, walletKey);
-                      }}
-                    />
-                    <Pressable
-                      accessibilityLabel={`Export ${wallet.label} private key`}
-                      accessibilityRole="button"
-                      onPress={() => {
-                        void exportPrivateKey(wallet).catch((error) => {
-                          console.error(error);
-                        });
-                      }}
-                      style={({ pressed }) => [
-                        styles.exportButton,
-                        pressed && styles.exportButtonPressed,
-                      ]}
-                    >
-                      <Ionicons
-                        name="key-outline"
-                        size={16}
-                        color="#5a7d6a"
-                      />
-                      <Text style={styles.exportButtonText}>
-                        Export private key
-                      </Text>
-                    </Pressable>
-                  </View>
+                  <WalletDebitCard
+                    key={walletKey}
+                    wallet={wallet}
+                    accountLabel={displayName}
+                    copied={isCopied(walletKey)}
+                    onCopy={() => {
+                      void copy(wallet.address, walletKey);
+                    }}
+                    onExport={() => {
+                      void exportPrivateKey(wallet).catch((error) => {
+                        console.error(error);
+                      });
+                    }}
+                  />
                 );
               })
             )}
@@ -355,26 +337,6 @@ const styles = StyleSheet.create({
   empty: {
     fontSize: 15,
     color: '#86a894',
-  },
-  walletBlock: {
-    gap: 10,
-  },
-  exportButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    alignSelf: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
-  exportButtonPressed: {
-    opacity: 0.65,
-  },
-  exportButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#5a7d6a',
   },
   button: {
     marginTop: 24,
