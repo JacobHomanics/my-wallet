@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton } from '@/components/BackButton';
 import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
+import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
 import { useAppTax } from '@/hooks/useAppTax';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
@@ -31,7 +32,6 @@ import { useSendStatus } from '@/hooks/useSendStatus';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useSendTip } from '@/hooks/useSendTip';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
-import { useShowTaxDetails } from '@/hooks/useShowTaxDetails';
 import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
@@ -54,10 +54,8 @@ export function ConfirmSendScreen() {
   const { error, clearStatus, setError } = useSendStatus();
   const { copy, isCopied } = useCopyToClipboard();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
-  const { showTaxDetails, toggleTaxDetails } = useShowTaxDetails();
   const { tip, tipUsd, setTip, setTipPercent } = useSendTip();
   const {
-    ratePercentLabel,
     evmAddress: taxEvmAddress,
     solanaAddress: taxSolanaAddress,
     rate: taxRate,
@@ -127,8 +125,6 @@ export function ConfirmSendScreen() {
   const taxFundingChain = taxFunding
     ? getNetworkChain(taxFunding.token.network)
     : null;
-  const showTaxEvm = taxFundingChain === 'ethereum';
-  const showTaxSolana = taxFundingChain === 'solana';
 
   const onTipPercent = useCallback(
     (percent: number) => {
@@ -330,114 +326,12 @@ export function ConfirmSendScreen() {
             </View>
 
             {taxLabel ? (
-              <View style={styles.taxSection}>
-                <Pressable
-                  accessibilityLabel={
-                    showTaxDetails
-                      ? 'Hide tax destination details'
-                      : 'Show tax destination details'
-                  }
-                  accessibilityRole="button"
-                  accessibilityState={{ expanded: showTaxDetails }}
-                  onPress={toggleTaxDetails}
-                  style={({ pressed }) => [
-                    styles.taxHeader,
-                    pressed && styles.taxHeaderPressed,
-                  ]}
-                >
-                  <View style={styles.taxHeaderLeft}>
-                    <Text style={styles.taxLabel}>
-                      Tax ({ratePercentLabel}%)
-                    </Text>
-                    <Ionicons
-                      name={showTaxDetails ? 'chevron-up' : 'chevron-down'}
-                      size={16}
-                      color="#5a7d6a"
-                    />
-                  </View>
-                  <Text style={styles.taxValue}>{taxLabel}</Text>
-                </Pressable>
-
-                {showTaxDetails ? (
-                  <View style={styles.taxDetails}>
-                    <Text style={styles.taxDetailsLabel}>
-                      Paid in {taxFunding?.token.symbol ?? 'token'} · Goes to
-                    </Text>
-                    {showTaxEvm ? (
-                      <View style={styles.taxAddressRow}>
-                        <Text style={styles.toChainLabel}>EVM</Text>
-                        <Text style={styles.toAddress} selectable>
-                          {formatWalletAddress(taxEvmAddress)}
-                        </Text>
-                        <Pressable
-                          accessibilityLabel={
-                            isCopied('tax-evm')
-                              ? 'Tax EVM address copied'
-                              : 'Copy tax EVM address'
-                          }
-                          accessibilityRole="button"
-                          hitSlop={8}
-                          onPress={() => {
-                            void copy(taxEvmAddress, 'tax-evm');
-                          }}
-                          style={({ pressed }) => [
-                            styles.copyButton,
-                            pressed && styles.copyButtonPressed,
-                          ]}
-                        >
-                          <Ionicons
-                            name={
-                              isCopied('tax-evm')
-                                ? 'checkmark'
-                                : 'copy-outline'
-                            }
-                            size={18}
-                            color={
-                              isCopied('tax-evm') ? '#15803d' : '#5a7d6a'
-                            }
-                          />
-                        </Pressable>
-                      </View>
-                    ) : null}
-                    {showTaxSolana ? (
-                      <View style={styles.taxAddressRow}>
-                        <Text style={styles.toChainLabel}>Solana</Text>
-                        <Text style={styles.toAddress} selectable>
-                          {formatWalletAddress(taxSolanaAddress)}
-                        </Text>
-                        <Pressable
-                          accessibilityLabel={
-                            isCopied('tax-solana')
-                              ? 'Tax Solana address copied'
-                              : 'Copy tax Solana address'
-                          }
-                          accessibilityRole="button"
-                          hitSlop={8}
-                          onPress={() => {
-                            void copy(taxSolanaAddress, 'tax-solana');
-                          }}
-                          style={({ pressed }) => [
-                            styles.copyButton,
-                            pressed && styles.copyButtonPressed,
-                          ]}
-                        >
-                          <Ionicons
-                            name={
-                              isCopied('tax-solana')
-                                ? 'checkmark'
-                                : 'copy-outline'
-                            }
-                            size={18}
-                            color={
-                              isCopied('tax-solana') ? '#15803d' : '#5a7d6a'
-                            }
-                          />
-                        </Pressable>
-                      </View>
-                    ) : null}
-                  </View>
-                ) : null}
-              </View>
+              <TaxDetailsCollapsible
+                fundingSymbol={taxFunding?.token.symbol}
+                showEvm={taxFundingChain === 'ethereum'}
+                showSolana={taxFundingChain === 'solana'}
+                taxLabel={taxLabel}
+              />
             ) : null}
 
             {needsEthereumRecipient ||
@@ -797,59 +691,6 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     fontSize: 16,
     color: '#166534',
-  },
-  taxSection: {
-    marginTop: 16,
-    alignSelf: 'stretch',
-  },
-  taxHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  taxHeaderPressed: {
-    opacity: 0.75,
-  },
-  taxHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  taxLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#5a7d6a',
-  },
-  taxValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#166534',
-    fontVariant: ['tabular-nums'],
-  },
-  taxDetails: {
-    marginTop: 10,
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#b7e4c7',
-    backgroundColor: '#f0fdf4',
-  },
-  taxDetailsLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#86a894',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  taxAddressRow: {
-    marginTop: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    gap: 10,
   },
   toSection: {
     marginTop: 36,
