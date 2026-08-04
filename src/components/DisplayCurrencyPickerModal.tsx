@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import {
   FlatList,
@@ -6,10 +6,12 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useDisplayCurrencyFilter } from '@/hooks/useDisplayCurrencyFilter';
 import type {
   DisplayCurrencyId,
   DisplayCurrencyOption,
@@ -34,6 +36,14 @@ export function DisplayCurrencyPickerModal({
   onSelect,
 }: DisplayCurrencyPickerModalProps) {
   const insets = useSafeAreaInsets();
+  const { query, setQuery, clearQuery, filteredOptions, hasActiveQuery } =
+    useDisplayCurrencyFilter(options);
+
+  useEffect(() => {
+    if (!visible) {
+      clearQuery();
+    }
+  }, [clearQuery, visible]);
 
   const renderOption = useCallback(
     ({ item }: { item: DisplayCurrencyOption }) => {
@@ -97,10 +107,45 @@ export function DisplayCurrencyPickerModal({
           </Pressable>
         </View>
 
+        <View style={styles.searchRow}>
+          <Ionicons name="search" size={18} color="#5a7d6a" />
+          <TextInput
+            accessibilityLabel="Search display currencies"
+            autoCapitalize="none"
+            autoCorrect={false}
+            onChangeText={setQuery}
+            placeholder="Search by name or code"
+            placeholderTextColor="#86a894"
+            returnKeyType="search"
+            style={styles.searchInput}
+            value={query}
+          />
+          {hasActiveQuery ? (
+            <Pressable
+              accessibilityLabel="Clear search"
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={clearQuery}
+              style={({ pressed }) => [
+                styles.clearSearchButton,
+                pressed && styles.clearSearchButtonPressed,
+              ]}
+            >
+              <Ionicons name="close-circle" size={18} color="#5a7d6a" />
+            </Pressable>
+          ) : null}
+        </View>
+
         <FlatList
           contentContainerStyle={styles.optionList}
-          data={[...options]}
+          data={[...filteredOptions]}
           keyExtractor={(item) => item.id}
+          keyboardShouldPersistTaps="handled"
+          ListEmptyComponent={
+            <Text style={styles.empty}>
+              No display currencies match <Text style={styles.emptyQuery}>{query.trim()}</Text>.
+            </Text>
+          }
           renderItem={renderOption}
         />
       </View>
@@ -138,6 +183,34 @@ const styles = StyleSheet.create({
   },
   modalClosePressed: {
     opacity: 0.6,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 4,
+    paddingHorizontal: 14,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+  },
+  searchInput: {
+    flex: 1,
+    minHeight: 48,
+    fontSize: 15,
+    color: '#166534',
+  },
+  clearSearchButton: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clearSearchButtonPressed: {
+    opacity: 0.7,
   },
   optionList: {
     paddingHorizontal: 16,
@@ -178,5 +251,14 @@ const styles = StyleSheet.create({
   },
   optionSpacer: {
     width: 22,
+  },
+  empty: {
+    paddingTop: 24,
+    fontSize: 15,
+    color: '#86a894',
+    textAlign: 'center',
+  },
+  emptyQuery: {
+    fontWeight: '600',
   },
 });
