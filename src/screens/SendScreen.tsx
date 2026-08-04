@@ -306,7 +306,7 @@ export function SendScreen() {
                     autoCapitalize="none"
                     autoCorrect={false}
                     onChangeText={setAccountNumber}
-                    placeholder="Paste account number"
+                    placeholder="AXQtNcxmNM...IfzT3I3cs"
                     placeholderTextColor="#86a894"
                     style={styles.fieldInput}
                     value={accountNumber}
