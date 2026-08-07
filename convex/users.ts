@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
+import type { Doc } from "./_generated/dataModel";
 
 /** Look up a user by Privy DID (`externalId`). */
 export const getByExternalId = query({
@@ -13,31 +14,60 @@ export const getByExternalId = query({
   },
 });
 
-/** Find users whose username starts with the query (case-insensitive). */
+/** Find users by username or account number prefix (case-insensitive username). */
 export const search = query({
   args: {
     query: v.string(),
     excludeExternalId: v.optional(v.string()),
   },
   handler: async (ctx, { query, excludeExternalId }) => {
-    const prefix = query.trim().replace(/^@/, "").toLowerCase();
-    if (prefix.length < 1) {
+    const trimmed = query.trim();
+    const usernamePrefix = trimmed.replace(/^@/, "").toLowerCase();
+    if (trimmed.length < 1) {
       return [];
     }
 
-    const matches = await ctx.db
+    const byId = new Map<string, Doc<"users">>();
+
+    if (usernamePrefix.length >= 1) {
+      const matches = await ctx.db
+        .query("users")
+        .withIndex("by_username", (q) =>
+          q
+            .gte("username", usernamePrefix)
+            .lt("username", usernamePrefix + "\uffff"),
+        )
+        .take(20);
+
+      for (const user of matches) {
+        if (
+          typeof user.username === "string" &&
+          user.username.startsWith(usernamePrefix) &&
+          user.externalId !== excludeExternalId
+        ) {
+          byId.set(user._id, user);
+        }
+      }
+    }
+
+    const identityMatches = await ctx.db
       .query("users")
-      .withIndex("by_username", (q) =>
-        q.gte("username", prefix).lt("username", prefix + "\uffff"),
+      .withIndex("by_identityId", (q) =>
+        q.gte("identityId", trimmed).lt("identityId", trimmed + "\uffff"),
       )
       .take(20);
 
-    return matches.filter(
-      (user) =>
-        typeof user.username === "string" &&
-        user.username.startsWith(prefix) &&
-        user.externalId !== excludeExternalId,
-    );
+    for (const user of identityMatches) {
+      if (
+        typeof user.identityId === "string" &&
+        user.identityId.startsWith(trimmed) &&
+        user.externalId !== excludeExternalId
+      ) {
+        byId.set(user._id, user);
+      }
+    }
+
+    return Array.from(byId.values()).slice(0, 20);
   },
 });
 

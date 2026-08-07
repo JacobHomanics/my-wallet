@@ -17,10 +17,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { ContactPickerModal } from '@/components/ContactPickerModal';
+import { RecipientSearchModal } from '@/components/RecipientSearchModal';
 import { useContactPickerModal } from '@/hooks/useContactPickerModal';
+import type { ContactSearchHit } from '@/hooks/useContactSearch';
 import type { ContactListItem } from '@/hooks/useContacts';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
+import { useRecipientSearchModal } from '@/hooks/useRecipientSearchModal';
 import {
   getSendDraftSnapshot,
   updateSendDraft,
@@ -36,7 +39,7 @@ import { isValidRecipientAddress } from '@/lib/validation';
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
- * Send step 1 — choose the recipient (account number and/or chain addresses).
+ * Send step 1 — choose the recipient via search, contacts, or addresses.
  */
 export function SendScreen() {
   const insets = useSafeAreaInsets();
@@ -46,6 +49,7 @@ export function SendScreen() {
   const route = useRoute<RouteProp<HomeStackParamList, 'send'>>();
   const goHome = usePopToHome();
   const { pickerOpen, openPicker, closePicker } = useContactPickerModal();
+  const { searchOpen, openSearch, closeSearch } = useRecipientSearchModal();
   const { sendToContact } = useSendToContact();
 
   const initialDraft = getSendDraftSnapshot();
@@ -77,7 +81,7 @@ export function SendScreen() {
   });
   const [showDecodedAddresses, setShowDecodedAddresses] = useState(false);
 
-  const { accountNumberError, canContinue } = useSendRecipientReady(
+  const { canContinue } = useSendRecipientReady(
     accountNumber,
     ethereumRecipient,
     solanaRecipient,
@@ -209,6 +213,35 @@ export function SendScreen() {
     ],
   );
 
+  const onSelectSearchHit = useCallback(
+    (hit: ContactSearchHit) => {
+      if (!hit.identityId) {
+        return;
+      }
+
+      setAccountNumber(hit.identityId);
+      closeSearch();
+      sendToContact(
+        {
+          identityId: hit.identityId,
+          evmAddress: null,
+          solanaAddress: null,
+        },
+        {
+          tokenId: route.params?.tokenId,
+          usdAmount: route.params?.usdAmount,
+        },
+      );
+    },
+    [
+      closeSearch,
+      route.params?.tokenId,
+      route.params?.usdAmount,
+      sendToContact,
+      setAccountNumber,
+    ],
+  );
+
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
       <KeyboardAvoidingView
@@ -249,39 +282,33 @@ export function SendScreen() {
             style={styles.flex}
           >
             <View style={styles.formBody}>
-              <Text style={styles.label}>Account Number</Text>
-              <View
-                style={[
-                  styles.fieldRow,
-                  accountNumberError ? styles.fieldRowError : null,
+              <Pressable
+                accessibilityLabel="Search usernames and account numbers"
+                accessibilityRole="button"
+                onPress={openSearch}
+                style={({ pressed }) => [
+                  styles.contactsButton,
+                  pressed && styles.contactsButtonPressed,
                 ]}
               >
-                <TextInput
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  onChangeText={setAccountNumber}
-                  placeholder="AXQtNcxmNM...IfzT3I3cs"
-                  placeholderTextColor="#86a894"
-                  style={styles.fieldInput}
-                  value={accountNumber}
-                />
-                {accountNumber.trim() ? (
-                  <Pressable
-                    accessibilityLabel="Clear account number"
-                    accessibilityRole="button"
-                    hitSlop={8}
-                    onPress={() => {
-                      setAccountNumber('');
-                    }}
-                    style={styles.clearButton}
-                  >
-                    <Ionicons name="close-circle" size={20} color="#86a894" />
-                  </Pressable>
-                ) : null}
-              </View>
-              {accountNumberError ? (
-                <Text style={styles.fieldError}>{accountNumberError}</Text>
-              ) : null}
+                <Ionicons name="search-outline" size={20} color="#166534" />
+                <Text style={styles.contactsButtonText}>Search</Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityLabel="Choose from contacts"
+                accessibilityRole="button"
+                onPress={openPicker}
+                style={({ pressed }) => [
+                  styles.contactsButton,
+                  styles.secondaryButtonSpacing,
+                  pressed && styles.contactsButtonPressed,
+                ]}
+              >
+                <Ionicons name="people-outline" size={20} color="#166534" />
+                <Text style={styles.contactsButtonText}>Contacts</Text>
+              </Pressable>
+
               <Pressable
                 accessibilityLabel={
                   showDecodedAddresses ? 'Hide advanced' : 'Show advanced'
@@ -312,7 +339,7 @@ export function SendScreen() {
                         autoCapitalize="none"
                         autoCorrect={false}
                         onChangeText={setDecodedEthereumRecipient}
-                        placeholder="Enter a valid account number"
+                        placeholder="0x…"
                         placeholderTextColor="#86a894"
                         style={styles.decodedInput}
                         value={ethereumRecipient}
@@ -344,7 +371,7 @@ export function SendScreen() {
                         autoCapitalize="none"
                         autoCorrect={false}
                         onChangeText={setDecodedSolanaRecipient}
-                        placeholder="Enter a valid account number"
+                        placeholder="Solana address"
                         placeholderTextColor="#86a894"
                         style={styles.decodedInput}
                         value={solanaRecipient}
@@ -372,19 +399,6 @@ export function SendScreen() {
               ) : null}
 
               <Pressable
-                accessibilityLabel="Choose from contacts"
-                accessibilityRole="button"
-                onPress={openPicker}
-                style={({ pressed }) => [
-                  styles.contactsButton,
-                  pressed && styles.contactsButtonPressed,
-                ]}
-              >
-                <Ionicons name="people-outline" size={20} color="#166534" />
-                <Text style={styles.contactsButtonText}>Contacts</Text>
-              </Pressable>
-
-              <Pressable
                 accessibilityRole="button"
                 disabled={!canContinue}
                 onPress={onContinue}
@@ -400,6 +414,12 @@ export function SendScreen() {
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+
+      <RecipientSearchModal
+        visible={searchOpen}
+        onClose={closeSearch}
+        onSelect={onSelectSearchHit}
+      />
 
       <ContactPickerModal
         visible={pickerOpen}
@@ -463,51 +483,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
   },
-  label: {
-    marginTop: 20,
-    marginBottom: 8,
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  fieldRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#86d4a4',
-    borderRadius: 12,
-    paddingLeft: 16,
-    paddingRight: 8,
-    backgroundColor: '#fff',
-    minHeight: 52,
-  },
-  fieldRowError: {
-    borderColor: '#fca5a5',
-  },
-  fieldInput: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingRight: 8,
-    fontSize: 16,
-    color: '#166534',
-  },
   clearButton: {
     width: 36,
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  fieldError: {
-    marginTop: 8,
-    fontSize: 13,
-    color: '#b91c1c',
-  },
   advancedTogglePressed: {
     opacity: 0.65,
   },
   decodedToggle: {
+    marginTop: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -562,7 +548,6 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   contactsButton: {
-    marginTop: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -571,6 +556,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
+  },
+  secondaryButtonSpacing: {
+    marginTop: 12,
   },
   contactsButtonPressed: {
     opacity: 0.85,
@@ -581,7 +569,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   continueButton: {
-    marginTop: 12,
+    marginTop: 24,
     alignItems: 'center',
     backgroundColor: '#166534',
     paddingHorizontal: 20,

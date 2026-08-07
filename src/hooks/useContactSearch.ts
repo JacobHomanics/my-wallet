@@ -1,27 +1,33 @@
+import { useCallback, useMemo, useState } from 'react';
 import { useQuery } from 'convex/react';
-import { useMemo, useState } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
+import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import { getPrivyExternalId } from '@/lib/convex/getPrivyExternalId';
 import type { Id } from '../../convex/_generated/dataModel';
 import { api } from '../../convex/_generated/api';
 
 export type ContactSearchHit = {
   userId: Id<'users'>;
-  username: string;
+  username: string | null;
+  identityId: string | null;
   label: string;
+  subtitle: string | null;
 };
 
+function identitySubtitle(identityId: string): string {
+  return `Account ${formatWalletAddress(identityId, 6, 4)}`;
+}
+
 /**
- * Prefix search users by Convex username (excludes the signed-in user).
+ * Prefix search users by username or account number (excludes the signed-in user).
  */
 export function useContactSearch() {
   const { user, isReady } = useAuth();
   const externalId = isReady ? getPrivyExternalId(user) : null;
   const [query, setQuery] = useState('');
   const trimmed = query.trim();
-  const prefix = trimmed.replace(/^@/, '').toLowerCase();
-  const shouldSearch = prefix.length >= 1;
+  const shouldSearch = trimmed.length >= 1;
 
   const convexUsers = useQuery(
     api.users.search,
@@ -38,14 +44,32 @@ export function useContactSearch() {
       return [];
     }
 
-    return convexUsers
-      .filter((hit) => typeof hit.username === 'string')
-      .map((hit) => ({
+    return convexUsers.map((hit) => {
+      const username =
+        typeof hit.username === 'string' ? hit.username : null;
+      const identityId =
+        typeof hit.identityId === 'string' ? hit.identityId : null;
+
+      return {
         userId: hit._id,
-        username: hit.username!,
-        label: `@${hit.username}`,
-      }));
+        username,
+        identityId,
+        label: username ? `@${username}` : (identityId ?? 'User'),
+        subtitle:
+          username && identityId
+            ? identitySubtitle(identityId)
+            : username
+              ? null
+              : identityId
+                ? identitySubtitle(identityId)
+                : null,
+      };
+    });
   }, [convexUsers]);
+
+  const clearQuery = useCallback(() => {
+    setQuery('');
+  }, []);
 
   const isSearching = shouldSearch && convexUsers === undefined;
 
@@ -54,6 +78,7 @@ export function useContactSearch() {
   return {
     query,
     setQuery,
+    clearQuery,
     results,
     isSearching,
     showEmpty,

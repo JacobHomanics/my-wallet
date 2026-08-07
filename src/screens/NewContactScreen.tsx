@@ -108,9 +108,12 @@ export function NewContactScreen() {
                   key={hit.userId}
                   accessibilityLabel={`Add ${hit.label}`}
                   accessibilityRole="button"
-                  disabled={isAdding}
+                  disabled={isAdding || !hit.username}
                   onPress={() => {
                     void (async () => {
+                      if (!hit.username) {
+                        return;
+                      }
                       const ok = await add(hit.userId);
                       if (ok) {
                         goContacts();
@@ -120,10 +123,13 @@ export function NewContactScreen() {
                   style={({ pressed }) => [
                     styles.resultCard,
                     pressed && styles.resultCardPressed,
-                    isAdding && styles.resultCardDisabled,
+                    (isAdding || !hit.username) && styles.resultCardDisabled,
                   ]}
                 >
                   <Text style={styles.resultLabel}>{hit.label}</Text>
+                  {hit.subtitle ? (
+                    <Text style={styles.resultSubtitle}>{hit.subtitle}</Text>
+                  ) : null}
                 </Pressable>
               ))}
             </View>
@@ -360,6 +366,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#166534',
+  },
+  resultSubtitle: {
+    marginTop: 4,
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#86a894',
   },
   empty: {
     marginTop: 16,
