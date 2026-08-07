@@ -24,6 +24,7 @@ import { TokenPickerModal } from '@/components/TokenPickerModal';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendAmountRecipientDisplay } from '@/hooks/useSendAmountRecipientDisplay';
+import { useClearSendRecipientOnBack } from '@/hooks/useClearSendRecipientOnBack';
 import {
   updateSendDraft,
   useSendDraft,
@@ -164,17 +165,7 @@ export function SendAmountScreen() {
     solanaRecipient,
   ]);
 
-  const onBack = useCallback(() => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return;
-    }
-
-    navigation.reset({
-      index: 1,
-      routes: [{ name: 'index' }, { name: 'send' }],
-    });
-  }, [navigation]);
+  const { onBack } = useClearSendRecipientOnBack();
 
   const onAddToken = useCallback(
     (tokenId: string) => {

@@ -27,6 +27,7 @@ import {
 } from '@/hooks/useSendDraft';
 import { useSendRecipientReady } from '@/hooks/useSendRecipientReady';
 import { useSendToContact } from '@/hooks/useSendToContact';
+import { useSyncSendRecipientFromDraft } from '@/hooks/useSyncSendRecipientFromDraft';
 import {
   encodeWalletIdentity,
   tryDecodeWalletIdentity,
@@ -148,6 +149,13 @@ export function SendScreen() {
     },
     [ethereumRecipient, setSolanaRecipient, syncAccountNumberFromAddresses],
   );
+
+  useSyncSendRecipientFromDraft({
+    setAccountNumber: setAccountNumberState,
+    setEthereumRecipient: setEthereumRecipientState,
+    setSolanaRecipient: setSolanaRecipientState,
+    setShowDecodedAddresses,
+  });
 
   useEffect(() => {
     updateSendDraft({
