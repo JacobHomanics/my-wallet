@@ -14,6 +14,7 @@ export type ContactListItem = {
   solanaAddress: string | null;
   label: string;
   subtitle: string | null;
+  isExternal: boolean;
 };
 
 function buildAddressSubtitle(
@@ -35,6 +36,8 @@ function buildAddressSubtitle(
  */
 export function useContacts(): {
   contacts: ContactListItem[];
+  userContacts: ContactListItem[];
+  externalContacts: ContactListItem[];
   isLoading: boolean;
 } {
   const { user, isReady } = useAuth();
@@ -56,6 +59,7 @@ export function useContacts(): {
       const evmAddress = row.evmAddress ?? null;
       const solanaAddress = row.solanaAddress ?? null;
       const addressSubtitle = buildAddressSubtitle(evmAddress, solanaAddress);
+      const isExternal = !username;
 
       return {
         id: row._id,
@@ -63,14 +67,29 @@ export function useContacts(): {
         name,
         evmAddress,
         solanaAddress,
-        label: username ? `@${username}` : (name ?? addressSubtitle ?? 'Contact'),
-        subtitle: username ? addressSubtitle : addressSubtitle,
+        isExternal,
+        label: username
+          ? `@${username}`
+          : (name ?? addressSubtitle ?? 'Contact'),
+        subtitle: addressSubtitle,
       };
     });
   }, [rows]);
 
+  const userContacts = useMemo(
+    () => contacts.filter((contact) => !contact.isExternal),
+    [contacts],
+  );
+
+  const externalContacts = useMemo(
+    () => contacts.filter((contact) => contact.isExternal),
+    [contacts],
+  );
+
   return {
     contacts,
+    userContacts,
+    externalContacts,
     isLoading: externalId != null && rows === undefined,
   };
 }
