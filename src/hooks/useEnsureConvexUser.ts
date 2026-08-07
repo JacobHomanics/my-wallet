@@ -2,38 +2,50 @@ import { useMutation } from 'convex/react';
 import { useEffect, useRef } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useWalletIdentityId } from '@/hooks/useWalletIdentityId';
 import { getPrivyExternalId } from '@/lib/convex/getPrivyExternalId';
 import { api } from '../../convex/_generated/api';
 
 /**
- * After auth, ensure a Convex `users` row exists for the Privy DID.
+ * After auth, ensure a Convex `users` row exists for the Privy DID,
+ * and keep `identityId` (account number) in sync once wallets are ready.
  */
 export function useEnsureConvexUser() {
   const { isReady, user } = useAuth();
+  const { ready: walletsReady, identityId } = useWalletIdentityId();
   const ensureUser = useMutation(api.users.ensureByExternalId);
-  const attemptedForUserRef = useRef<string | null>(null);
+  const lastSyncedKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isReady) {
-      attemptedForUserRef.current = null;
+      lastSyncedKeyRef.current = null;
       return;
     }
 
     const externalId = getPrivyExternalId(user);
     if (!externalId) {
-      attemptedForUserRef.current = null;
+      lastSyncedKeyRef.current = null;
       return;
     }
 
-    if (attemptedForUserRef.current === externalId) {
+    // Wait for wallet readiness so we persist the account number when available.
+    if (!walletsReady) {
       return;
     }
 
-    attemptedForUserRef.current = externalId;
+    const syncKey = `${externalId}:${identityId ?? ''}`;
+    if (lastSyncedKeyRef.current === syncKey) {
+      return;
+    }
 
-    void ensureUser({ externalId }).catch((error) => {
-      attemptedForUserRef.current = null;
+    lastSyncedKeyRef.current = syncKey;
+
+    void ensureUser({
+      externalId,
+      identityId: identityId ?? undefined,
+    }).catch((error) => {
+      lastSyncedKeyRef.current = null;
       console.error('Failed to ensure Convex user', error);
     });
-  }, [ensureUser, isReady, user]);
+  }, [ensureUser, identityId, isReady, user, walletsReady]);
 }

@@ -1,9 +1,17 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { useContacts } from '@/hooks/useContacts';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import type { HomeStackParamList } from '@/navigation/types';
@@ -14,6 +22,7 @@ export function ContactsScreen() {
   const goHome = usePopToHome();
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+  const { contacts, isLoading } = useContacts();
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -39,20 +48,39 @@ export function ContactsScreen() {
           <View style={styles.topBarSpacer} />
         </View>
 
-        <Text style={styles.empty}>No contacts yet.</Text>
-
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => {
-            navigation.navigate('newContact');
-          }}
-          style={({ pressed }) => [
-            styles.button,
-            pressed && styles.buttonPressed,
+        <ScrollView
+          contentContainerStyle={[
+            styles.list,
+            { paddingBottom: Math.max(insets.bottom, 24) + 24 },
           ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.buttonText}>New Contact</Text>
-        </Pressable>
+          {isLoading ? (
+            <ActivityIndicator color="#166534" style={styles.loader} />
+          ) : contacts.length === 0 ? (
+            <Text style={styles.empty}>No contacts yet.</Text>
+          ) : (
+            contacts.map((contact) => (
+              <View key={contact.id} style={styles.contactRow}>
+                <Text style={styles.contactLabel}>{contact.label}</Text>
+              </View>
+            ))
+          )}
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              navigation.navigate('newContact');
+            }}
+            style={({ pressed }) => [
+              styles.button,
+              pressed && styles.buttonPressed,
+            ]}
+          >
+            <Text style={styles.buttonText}>New Contact</Text>
+          </Pressable>
+        </ScrollView>
       </View>
     </View>
   );
@@ -99,12 +127,34 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#166534',
   },
+  list: {
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  loader: {
+    marginTop: 48,
+  },
   empty: {
     marginTop: 48,
-    paddingHorizontal: 24,
     fontSize: 15,
     color: '#86a894',
     textAlign: 'center',
+  },
+  contactRow: {
+    width: '100%',
+    maxWidth: 420,
+    marginTop: 12,
+    backgroundColor: '#ffffff',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#d1fae5',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  contactLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#166534',
   },
   button: {
     alignSelf: 'center',

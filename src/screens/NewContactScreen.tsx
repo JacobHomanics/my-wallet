@@ -9,6 +9,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { useAddContact } from '@/hooks/useAddContact';
 import { useContactSearch } from '@/hooks/useContactSearch';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToContacts } from '@/hooks/usePopToContacts';
@@ -19,6 +20,7 @@ export function NewContactScreen() {
   const goContacts = usePopToContacts();
   const { query, setQuery, results, isSearching, showEmpty } =
     useContactSearch();
+  const { add, isAdding, errorMessage } = useAddContact();
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -54,6 +56,7 @@ export function NewContactScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             autoComplete="off"
+            editable={!isAdding}
             onChangeText={setQuery}
             placeholder="Username"
             placeholderTextColor="#86a894"
@@ -61,19 +64,41 @@ export function NewContactScreen() {
             value={query}
           />
           <Text style={styles.hint}>
-            Start typing a username — partial matches work.
+            Tap a username to add them to your contacts.
           </Text>
 
-          {isSearching ? (
+          {errorMessage ? (
+            <Text style={styles.error}>{errorMessage}</Text>
+          ) : null}
+
+          {isSearching || isAdding ? (
             <ActivityIndicator color="#166534" style={styles.loader} />
           ) : null}
 
           {results.length > 0 ? (
             <View style={styles.results}>
               {results.map((hit) => (
-                <View key={hit.username} style={styles.resultCard}>
+                <Pressable
+                  key={hit.userId}
+                  accessibilityLabel={`Add ${hit.label}`}
+                  accessibilityRole="button"
+                  disabled={isAdding}
+                  onPress={() => {
+                    void (async () => {
+                      const ok = await add(hit.userId);
+                      if (ok) {
+                        goContacts();
+                      }
+                    })();
+                  }}
+                  style={({ pressed }) => [
+                    styles.resultCard,
+                    pressed && styles.resultCardPressed,
+                    isAdding && styles.resultCardDisabled,
+                  ]}
+                >
                   <Text style={styles.resultLabel}>{hit.label}</Text>
-                </View>
+                </Pressable>
               ))}
             </View>
           ) : null}
@@ -156,6 +181,11 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: '#86a894',
   },
+  error: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#b91c1c',
+  },
   loader: {
     marginTop: 16,
   },
@@ -170,6 +200,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
+  },
+  resultCardPressed: {
+    opacity: 0.85,
+    backgroundColor: '#f0fdf4',
+  },
+  resultCardDisabled: {
+    opacity: 0.55,
   },
   resultLabel: {
     fontSize: 16,

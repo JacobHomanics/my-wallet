@@ -15,8 +15,11 @@ export const getByExternalId = query({
 
 /** Find users whose username starts with the query (case-insensitive). */
 export const search = query({
-  args: { query: v.string() },
-  handler: async (ctx, { query }) => {
+  args: {
+    query: v.string(),
+    excludeExternalId: v.optional(v.string()),
+  },
+  handler: async (ctx, { query, excludeExternalId }) => {
     const prefix = query.trim().replace(/^@/, "").toLowerCase();
     if (prefix.length < 1) {
       return [];
@@ -31,25 +34,41 @@ export const search = query({
 
     return matches.filter(
       (user) =>
-        typeof user.username === "string" && user.username.startsWith(prefix),
+        typeof user.username === "string" &&
+        user.username.startsWith(prefix) &&
+        user.externalId !== excludeExternalId,
     );
   },
 });
 
 /** Insert a users row for this Privy DID if one does not already exist. */
 export const ensureByExternalId = mutation({
-  args: { externalId: v.string() },
-  handler: async (ctx, { externalId }) => {
+  args: {
+    externalId: v.string(),
+    identityId: v.optional(v.string()),
+  },
+  handler: async (ctx, { externalId, identityId }) => {
     const existing = await ctx.db
       .query("users")
       .withIndex("by_externalId", (q) => q.eq("externalId", externalId))
       .unique();
 
+    const normalizedIdentity = identityId?.trim() || undefined;
+
     if (existing) {
+      if (
+        normalizedIdentity &&
+        existing.identityId !== normalizedIdentity
+      ) {
+        await ctx.db.patch(existing._id, { identityId: normalizedIdentity });
+      }
       return existing._id;
     }
 
-    return await ctx.db.insert("users", { externalId });
+    return await ctx.db.insert("users", {
+      externalId,
+      identityId: normalizedIdentity,
+    });
   },
 });
 
