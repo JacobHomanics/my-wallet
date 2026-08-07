@@ -12,6 +12,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AccountNumber } from '@/components/AccountNumber';
 import { BackButton } from '@/components/BackButton';
+import { ConfirmDeleteContactModal } from '@/components/ConfirmDeleteContactModal';
+import { useConfirmDeleteContact } from '@/hooks/useConfirmDeleteContact';
 import { useContactDetails } from '@/hooks/useContactDetails';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -66,9 +68,26 @@ export function ContactDetailsScreen() {
   const isDesktopWeb = useIsDesktopWeb();
   const goContacts = usePopToContacts();
   const route = useRoute<RouteProp<HomeStackParamList, 'contactDetails'>>();
-  const { contact, isLoading, notFound } = useContactDetails(
-    route.params?.contactId,
-  );
+  const contactId = route.params?.contactId;
+  const { contact, isLoading, notFound } = useContactDetails(contactId);
+  const {
+    confirmVisible,
+    contactLabel,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
+    isDeleting,
+    errorMessage,
+  } = useConfirmDeleteContact(goContacts);
+
+  const canDelete = Boolean(contactId) && !notFound && !isLoading && Boolean(contact);
+
+  const handleDelete = () => {
+    if (!contactId || !contact || isDeleting) {
+      return;
+    }
+    requestDelete(contactId, contact.title);
+  };
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -96,7 +115,24 @@ export function ContactDetailsScreen() {
           <Text style={styles.topBarTitle} numberOfLines={1}>
             {contact?.title ?? 'Contact'}
           </Text>
-          <View style={styles.topBarSpacer} />
+          {canDelete ? (
+            <Pressable
+              accessibilityLabel="Delete contact"
+              accessibilityRole="button"
+              disabled={isDeleting}
+              hitSlop={8}
+              onPress={handleDelete}
+              style={({ pressed }) => [
+                styles.deleteButton,
+                pressed && styles.deleteButtonPressed,
+                isDeleting && styles.deleteButtonDisabled,
+              ]}
+            >
+              <Ionicons name="trash-outline" size={20} color="#ffffff" />
+            </Pressable>
+          ) : (
+            <View style={styles.topBarSpacer} />
+          )}
         </View>
 
         <ScrollView
@@ -165,6 +201,17 @@ export function ContactDetailsScreen() {
           )}
         </ScrollView>
       </View>
+
+      <ConfirmDeleteContactModal
+        visible={confirmVisible}
+        contactLabel={contactLabel}
+        isDeleting={isDeleting}
+        errorMessage={errorMessage}
+        onCancel={cancelDelete}
+        onConfirm={() => {
+          void confirmDelete();
+        }}
+      />
     </View>
   );
 }
@@ -195,6 +242,21 @@ const styles = StyleSheet.create({
   },
   topBarSpacer: {
     width: 44,
+  },
+  deleteButton: {
+    width: 36,
+    height: 36,
+    marginHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#b91c1c',
+    borderRadius: 10,
+  },
+  deleteButtonPressed: {
+    opacity: 0.85,
+  },
+  deleteButtonDisabled: {
+    opacity: 0.6,
   },
   webBack: {
     minWidth: 44,

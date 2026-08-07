@@ -14,16 +14,17 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { ConfirmDeleteContactModal } from '@/components/ConfirmDeleteContactModal';
 import { SwipeableContactRow } from '@/components/SwipeableContactRow';
 import {
   useContacts,
   type ContactListItem,
 } from '@/hooks/useContacts';
+import { useConfirmDeleteContact } from '@/hooks/useConfirmDeleteContact';
 import { useContactsAllSections } from '@/hooks/useContactsAllSections';
 import { useContactsFilter } from '@/hooks/useContactsFilter';
 import { useContactsSwipe } from '@/hooks/useContactsSwipe';
 import { useContactsTab } from '@/hooks/useContactsTab';
-import { useDeleteContact } from '@/hooks/useDeleteContact';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import type { HomeStackParamList } from '@/navigation/types';
@@ -38,7 +39,7 @@ function ContactRows({
 }: {
   contacts: ContactListItem[];
   onPressContact: (contactId: string) => void;
-  onDeleteContact: (contactId: string) => void;
+  onDeleteContact: (contactId: string, label: string) => void;
   onRowOpen: (contactId: string, ref: Swipeable) => void;
   onRowClose: (contactId: string) => void;
 }) {
@@ -52,7 +53,7 @@ function ContactRows({
             onPressContact(contact.id);
           }}
           onDelete={() => {
-            onDeleteContact(contact.id);
+            onDeleteContact(contact.id, contact.label);
           }}
           onOpen={(ref) => {
             onRowOpen(contact.id, ref);
@@ -81,7 +82,7 @@ function CollapsibleSection({
   onToggle: () => void;
   contacts: ContactListItem[];
   onPressContact: (contactId: string) => void;
-  onDeleteContact: (contactId: string) => void;
+  onDeleteContact: (contactId: string, label: string) => void;
   onRowOpen: (contactId: string, ref: Swipeable) => void;
   onRowClose: (contactId: string) => void;
 }) {
@@ -168,7 +169,15 @@ export function ContactsScreen() {
     toggleContacts,
     toggleExternal,
   } = useContactsAllSections();
-  const { remove } = useDeleteContact();
+  const {
+    confirmVisible,
+    contactLabel,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
+    isDeleting,
+    errorMessage,
+  } = useConfirmDeleteContact();
   const { onRowOpen, onRowClose, closeOpen } = useContactsSwipe();
 
   const openContact = (contactId: string) => {
@@ -176,8 +185,9 @@ export function ContactsScreen() {
     navigation.navigate('contactDetails', { contactId });
   };
 
-  const deleteContact = (contactId: string) => {
-    void remove(contactId);
+  const deleteContact = (contactId: string, label: string) => {
+    closeOpen();
+    requestDelete(contactId, label);
   };
 
   const hasAnyContacts =
@@ -341,6 +351,17 @@ export function ContactsScreen() {
           </ScrollView>
         </GestureHandlerRootView>
       </View>
+
+      <ConfirmDeleteContactModal
+        visible={confirmVisible}
+        contactLabel={contactLabel}
+        isDeleting={isDeleting}
+        errorMessage={errorMessage}
+        onCancel={cancelDelete}
+        onConfirm={() => {
+          void confirmDelete();
+        }}
+      />
     </View>
   );
 }
