@@ -11,6 +11,7 @@ function contactMatchesQuery(
     contact.subtitle,
     contact.username,
     contact.name,
+    contact.identityId,
     contact.evmAddress,
     contact.solanaAddress,
   ]

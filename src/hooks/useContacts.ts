@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import { getPrivyExternalId } from '@/lib/convex/getPrivyExternalId';
+import { encodeWalletIdentity } from '@/lib/walletIdentity';
 import { api } from '../../convex/_generated/api';
 
 export type ContactListItem = {
@@ -30,6 +31,46 @@ function buildAddressSubtitle(
     parts.push(`Solana ${formatWalletAddress(solanaAddress, 6, 4)}`);
   }
   return parts.length > 0 ? parts.join(' · ') : null;
+}
+
+function resolveAccountNumber(
+  identityId: string | null,
+  evmAddress: string | null,
+  solanaAddress: string | null,
+): string | null {
+  if (identityId?.trim()) {
+    return identityId.trim();
+  }
+
+  const evm = evmAddress?.trim() ?? '';
+  const solana = solanaAddress?.trim() ?? '';
+  if (!evm || !solana) {
+    return null;
+  }
+
+  try {
+    return encodeWalletIdentity(evm, solana);
+  } catch {
+    return null;
+  }
+}
+
+function buildContactLabel(params: {
+  username: string | null;
+  name: string | null;
+  accountNumber: string | null;
+  addressSubtitle: string | null;
+}): string {
+  if (params.username) {
+    return `@${params.username}`;
+  }
+  if (params.accountNumber) {
+    return formatWalletAddress(params.accountNumber, 10, 8);
+  }
+  if (params.name?.trim()) {
+    return params.name.trim();
+  }
+  return params.addressSubtitle ?? 'Contact';
 }
 
 /**
@@ -59,8 +100,15 @@ export function useContacts(): {
       const name = row.name ?? null;
       const evmAddress = row.evmAddress ?? null;
       const solanaAddress = row.solanaAddress ?? null;
+      const identityId = row.identityId ?? null;
+      // Platform contacts are linked users — never classify by username.
+      const isExternal = row.contactUserId == null;
+      const accountNumber = resolveAccountNumber(
+        identityId,
+        evmAddress,
+        solanaAddress,
+      );
       const addressSubtitle = buildAddressSubtitle(evmAddress, solanaAddress);
-      const isExternal = row.isExternal;
 
       return {
         id: row._id,
@@ -68,11 +116,14 @@ export function useContacts(): {
         name,
         evmAddress,
         solanaAddress,
-        identityId: row.identityId ?? null,
+        identityId: accountNumber,
         isExternal,
-        label: username
-          ? `@${username}`
-          : (name ?? addressSubtitle ?? 'Contact'),
+        label: buildContactLabel({
+          username,
+          name,
+          accountNumber,
+          addressSubtitle,
+        }),
         subtitle: isExternal ? null : addressSubtitle,
       };
     });

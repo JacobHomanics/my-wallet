@@ -1,6 +1,7 @@
 import { useQuery } from 'convex/react';
 
 import { useAuth } from '@/hooks/useAuth';
+import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import { getPrivyExternalId } from '@/lib/convex/getPrivyExternalId';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
@@ -51,6 +52,12 @@ export function useContactDetails(contactId: string | undefined): {
 
   const username = row.username;
   const name = row.name;
+  const identityId = row.identityId;
+  const title = username
+    ? `@${username}`
+    : identityId
+      ? formatWalletAddress(identityId, 10, 8)
+      : (name ?? 'Contact');
 
   return {
     contact: {
@@ -59,9 +66,9 @@ export function useContactDetails(contactId: string | undefined): {
       name,
       evmAddress: row.evmAddress,
       solanaAddress: row.solanaAddress,
-      identityId: row.identityId,
-      isExternal: row.isExternal,
-      title: username ? `@${username}` : (name ?? 'Contact'),
+      identityId,
+      isExternal: row.contactUserId == null,
+      title,
     },
     isLoading: false,
     notFound: false,

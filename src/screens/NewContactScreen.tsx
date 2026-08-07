@@ -108,10 +108,10 @@ export function NewContactScreen() {
                   key={hit.userId}
                   accessibilityLabel={`Add ${hit.label}`}
                   accessibilityRole="button"
-                  disabled={isAdding || !hit.username}
+                  disabled={isAdding || (!hit.username && !hit.identityId)}
                   onPress={() => {
                     void (async () => {
-                      if (!hit.username) {
+                      if (!hit.username && !hit.identityId) {
                         return;
                       }
                       const ok = await add(hit.userId);
@@ -123,7 +123,8 @@ export function NewContactScreen() {
                   style={({ pressed }) => [
                     styles.resultCard,
                     pressed && styles.resultCardPressed,
-                    (isAdding || !hit.username) && styles.resultCardDisabled,
+                    (isAdding || (!hit.username && !hit.identityId)) &&
+                      styles.resultCardDisabled,
                   ]}
                 >
                   <Text style={styles.resultLabel}>{hit.label}</Text>

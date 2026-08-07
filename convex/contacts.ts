@@ -101,6 +101,7 @@ export const getForOwner = query({
 
     return {
       _id: contact._id,
+      contactUserId: contact.contactUserId ?? null,
       username,
       name: contact.name ?? null,
       evmAddress: contact.evmAddress ?? null,
@@ -123,8 +124,8 @@ export const add = mutation({
       throw new Error("User not found");
     }
 
-    if (!contactUser.username) {
-      throw new Error("User has no username");
+    if (!contactUser.username && !contactUser.identityId) {
+      throw new Error("User has no username or account number");
     }
 
     if (contactUser.externalId === ownerExternalId) {
