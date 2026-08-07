@@ -13,6 +13,29 @@ export const getByExternalId = query({
   },
 });
 
+/** Find users whose username starts with the query (case-insensitive). */
+export const search = query({
+  args: { query: v.string() },
+  handler: async (ctx, { query }) => {
+    const prefix = query.trim().replace(/^@/, "").toLowerCase();
+    if (prefix.length < 1) {
+      return [];
+    }
+
+    const matches = await ctx.db
+      .query("users")
+      .withIndex("by_username", (q) =>
+        q.gte("username", prefix).lt("username", prefix + "\uffff"),
+      )
+      .take(20);
+
+    return matches.filter(
+      (user) =>
+        typeof user.username === "string" && user.username.startsWith(prefix),
+    );
+  },
+});
+
 /** Insert a users row for this Privy DID if one does not already exist. */
 export const ensureByExternalId = mutation({
   args: { externalId: v.string() },

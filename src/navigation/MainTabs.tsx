@@ -52,6 +52,8 @@ export function MainTabs() {
           const hideTabBar =
             !isDesktopWeb &&
             (focusedRoute === 'tokenDetails' ||
+              focusedRoute === 'contacts' ||
+              focusedRoute === 'newContact' ||
               focusedRoute === 'receive' ||
               focusedRoute === 'request' ||
               focusedRoute === 'receiveQr' ||

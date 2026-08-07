@@ -92,6 +92,7 @@ const HOME_STACK_HISTORY: Partial<Record<keyof HomeStackParamList, string[]>> =
     tokenDetails: ['index'],
     transactions: ['index'],
     contacts: ['index'],
+    newContact: ['index', 'contacts'],
     receive: ['index'],
     request: ['index'],
     receiveQr: ['index', 'request'],
@@ -248,6 +249,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               tokenDetails: '/tokens',
               transactions: '/transactions',
               contacts: '/contacts',
+              newContact: '/contacts/new',
               receive: '/receive',
               request: '/request',
               receiveQr: {

@@ -4,6 +4,7 @@ import type { HomeStackParamList } from '@/navigation/types';
 import { ConfirmSendScreen } from '@/screens/ConfirmSendScreen';
 import { ContactsScreen } from '@/screens/ContactsScreen';
 import { HomeScreen } from '@/screens/HomeScreen';
+import { NewContactScreen } from '@/screens/NewContactScreen';
 import { ReceiveQrScreen } from '@/screens/ReceiveQrScreen';
 import { ReceiveScreen } from '@/screens/ReceiveScreen';
 import { RequestScreen } from '@/screens/RequestScreen';
@@ -19,6 +20,7 @@ export const homeStackScreens = {
   tokenDetails: TokenDetailsScreen,
   transactions: TransactionsScreen,
   contacts: ContactsScreen,
+  newContact: NewContactScreen,
   receive: ReceiveScreen,
   request: RequestScreen,
   receiveQr: ReceiveQrScreen,

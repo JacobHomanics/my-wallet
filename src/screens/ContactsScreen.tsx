@@ -1,14 +1,19 @@
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
+import type { HomeStackParamList } from '@/navigation/types';
 
 export function ContactsScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goHome = usePopToHome();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -35,6 +40,19 @@ export function ContactsScreen() {
         </View>
 
         <Text style={styles.empty}>No contacts yet.</Text>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            navigation.navigate('newContact');
+          }}
+          style={({ pressed }) => [
+            styles.button,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <Text style={styles.buttonText}>New Contact</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -87,5 +105,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#86a894',
     textAlign: 'center',
+  },
+  button: {
+    alignSelf: 'center',
+    marginTop: 24,
+    backgroundColor: '#166534',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  buttonPressed: {
+    opacity: 0.85,
+  },
+  buttonText: {
+    color: '#f0fdf4',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
