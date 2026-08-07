@@ -98,7 +98,8 @@ const HOME_STACK_HISTORY: Partial<Record<keyof HomeStackParamList, string[]>> =
     request: ['index'],
     receiveQr: ['index', 'request'],
     send: ['index'],
-    confirmSend: ['index', 'send'],
+    sendAmount: ['index', 'send'],
+    confirmSend: ['index', 'send', 'sendAmount'],
   };
 
 function hydrateSendDraftFromNavState(state: NavState | undefined): void {
@@ -108,7 +109,9 @@ function hydrateSendDraftFromNavState(state: NavState | undefined): void {
 
   for (const route of state.routes) {
     if (
-      (route.name === 'confirmSend' || route.name === 'send') &&
+      (route.name === 'confirmSend' ||
+        route.name === 'send' ||
+        route.name === 'sendAmount') &&
       route.params
     ) {
       const params = route.params as {
@@ -273,6 +276,13 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
                   identity: (value: string) => value || undefined,
                   ethereumRecipient: (value: string) => value || undefined,
                   solanaRecipient: (value: string) => value || undefined,
+                },
+              },
+              sendAmount: {
+                path: '/send/amount',
+                parse: {
+                  tokenId: (tokenId: string) => tokenId || undefined,
+                  usdAmount: (usdAmount: string) => usdAmount || undefined,
                 },
               },
               confirmSend: {

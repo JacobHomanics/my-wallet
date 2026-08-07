@@ -9,6 +9,7 @@ import { NewContactScreen } from '@/screens/NewContactScreen';
 import { ReceiveQrScreen } from '@/screens/ReceiveQrScreen';
 import { ReceiveScreen } from '@/screens/ReceiveScreen';
 import { RequestScreen } from '@/screens/RequestScreen';
+import { SendAmountScreen } from '@/screens/SendAmountScreen';
 import { SendScreen } from '@/screens/SendScreen';
 import { SentScreen } from '@/screens/SentScreen';
 import { TokenDetailsScreen } from '@/screens/TokenDetailsScreen';
@@ -27,6 +28,7 @@ export const homeStackScreens = {
   request: RequestScreen,
   receiveQr: ReceiveQrScreen,
   send: SendScreen,
+  sendAmount: SendAmountScreen,
   confirmSend: ConfirmSendScreen,
   sent: SentScreen,
 } as const satisfies Record<keyof HomeStackParamList, ComponentType<object>>;

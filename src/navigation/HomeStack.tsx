@@ -47,6 +47,10 @@ export function HomeStack() {
       />
       <NativeStack.Screen name="send" component={homeStackScreens.send} />
       <NativeStack.Screen
+        name="sendAmount"
+        component={homeStackScreens.sendAmount}
+      />
+      <NativeStack.Screen
         name="confirmSend"
         component={homeStackScreens.confirmSend}
       />

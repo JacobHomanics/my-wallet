@@ -56,6 +56,10 @@ export function HomeStack() {
       />
       <WebStack.Screen name="send" component={homeStackScreens.send} />
       <WebStack.Screen
+        name="sendAmount"
+        component={homeStackScreens.sendAmount}
+      />
+      <WebStack.Screen
         name="confirmSend"
         component={homeStackScreens.confirmSend}
       />

@@ -10,7 +10,7 @@ import {
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
- * Open Send prefilled for a contact (account number and/or chain addresses).
+ * Open Send Amount prefilled for a contact (skips Recipient when details known).
  */
 export function useSendToContact() {
   const navigation =
@@ -31,20 +31,14 @@ export function useSendToContact() {
 
       if (contact.identityId) {
         hydrateSendDraftFromConfirmParams({ identity: contact.identityId });
-        navigation.navigate('send', { identity: contact.identityId });
-        return;
+      } else {
+        hydrateSendDraftFromConfirmParams({
+          ethereumRecipient: contact.evmAddress ?? undefined,
+          solanaRecipient: contact.solanaAddress ?? undefined,
+        });
       }
 
-      const ethereumRecipient = contact.evmAddress ?? undefined;
-      const solanaRecipient = contact.solanaAddress ?? undefined;
-      hydrateSendDraftFromConfirmParams({
-        ethereumRecipient,
-        solanaRecipient,
-      });
-      navigation.navigate('send', {
-        ethereumRecipient,
-        solanaRecipient,
-      });
+      navigation.navigate('sendAmount');
     },
     [navigation],
   );

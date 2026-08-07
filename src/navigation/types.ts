@@ -44,6 +44,11 @@ export type HomeStackParamList = {
     ethereumRecipient?: string;
     solanaRecipient?: string;
   } | undefined;
+  sendAmount: {
+    tokenId?: string;
+    /** Optional when opened with a locked display-currency amount. */
+    usdAmount?: string;
+  } | undefined;
   confirmSend: {
     /** USD amount string the user entered. Optional for receive deep links. */
     usdAmount?: string;

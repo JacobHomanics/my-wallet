@@ -59,6 +59,7 @@ export function MainTabs() {
               focusedRoute === 'request' ||
               focusedRoute === 'receiveQr' ||
               focusedRoute === 'send' ||
+              focusedRoute === 'sendAmount' ||
               focusedRoute === 'confirmSend' ||
               focusedRoute === 'sent');
 
