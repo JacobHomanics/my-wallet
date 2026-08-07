@@ -16,6 +16,36 @@ export const listForOwner = query({
   },
 });
 
+/** Single contact for the signed-in Privy user (null if missing or not owned). */
+export const getForOwner = query({
+  args: {
+    ownerExternalId: v.string(),
+    contactId: v.id("contacts"),
+  },
+  handler: async (ctx, { ownerExternalId, contactId }) => {
+    const contact = await ctx.db.get(contactId);
+    if (!contact || contact.ownerExternalId !== ownerExternalId) {
+      return null;
+    }
+
+    let identityId: string | null = null;
+    if (contact.contactUserId) {
+      const user = await ctx.db.get(contact.contactUserId);
+      identityId = user?.identityId ?? null;
+    }
+
+    return {
+      _id: contact._id,
+      contactUsername: contact.contactUsername ?? null,
+      name: contact.name ?? null,
+      evmAddress: contact.evmAddress ?? null,
+      solanaAddress: contact.solanaAddress ?? null,
+      identityId,
+      isExternal: !contact.contactUsername,
+    };
+  },
+});
+
 /** Add a registered user to the owner's contacts list (idempotent). */
 export const add = mutation({
   args: {

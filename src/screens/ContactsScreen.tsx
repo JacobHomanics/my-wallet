@@ -24,16 +24,33 @@ import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import type { HomeStackParamList } from '@/navigation/types';
 
-function ContactRows({ contacts }: { contacts: ContactListItem[] }) {
+function ContactRows({
+  contacts,
+  onPressContact,
+}: {
+  contacts: ContactListItem[];
+  onPressContact: (contactId: string) => void;
+}) {
   return (
     <>
       {contacts.map((contact) => (
-        <View key={contact.id} style={styles.contactRow}>
+        <Pressable
+          key={contact.id}
+          accessibilityLabel={`View ${contact.label}`}
+          accessibilityRole="button"
+          onPress={() => {
+            onPressContact(contact.id);
+          }}
+          style={({ pressed }) => [
+            styles.contactRow,
+            pressed && styles.contactRowPressed,
+          ]}
+        >
           <Text style={styles.contactLabel}>{contact.label}</Text>
           {contact.subtitle ? (
             <Text style={styles.contactSubtitle}>{contact.subtitle}</Text>
           ) : null}
-        </View>
+        </Pressable>
       ))}
     </>
   );
@@ -44,11 +61,13 @@ function CollapsibleSection({
   expanded,
   onToggle,
   contacts,
+  onPressContact,
 }: {
   title: string;
   expanded: boolean;
   onToggle: () => void;
   contacts: ContactListItem[];
+  onPressContact: (contactId: string) => void;
 }) {
   return (
     <View style={styles.section}>
@@ -68,7 +87,9 @@ function CollapsibleSection({
           color="#5a7d6a"
         />
       </Pressable>
-      {expanded ? <ContactRows contacts={contacts} /> : null}
+      {expanded ? (
+        <ContactRows contacts={contacts} onPressContact={onPressContact} />
+      ) : null}
     </View>
   );
 }
@@ -125,6 +146,10 @@ export function ContactsScreen() {
     toggleContacts,
     toggleExternal,
   } = useContactsAllSections();
+
+  const openContact = (contactId: string) => {
+    navigation.navigate('contactDetails', { contactId });
+  };
 
   const hasAnyContacts =
     userContacts.length > 0 || externalContacts.length > 0;
@@ -249,6 +274,7 @@ export function ContactsScreen() {
                   expanded={contactsExpanded}
                   onToggle={toggleContacts}
                   contacts={filteredUserContacts}
+                  onPressContact={openContact}
                 />
               ) : null}
               {filteredExternalContacts.length > 0 ? (
@@ -257,6 +283,7 @@ export function ContactsScreen() {
                   expanded={externalExpanded}
                   onToggle={toggleExternal}
                   contacts={filteredExternalContacts}
+                  onPressContact={openContact}
                 />
               ) : null}
             </>
@@ -268,6 +295,7 @@ export function ContactsScreen() {
                     ? filteredUserContacts
                     : filteredExternalContacts
                 }
+                onPressContact={openContact}
               />
             </View>
           )}
@@ -418,6 +446,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
+  },
+  contactRowPressed: {
+    opacity: 0.85,
   },
   contactLabel: {
     fontSize: 16,

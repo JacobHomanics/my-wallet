@@ -35,6 +35,10 @@ export function HomeStack() {
         name="newContact"
         component={homeStackScreens.newContact}
       />
+      <NativeStack.Screen
+        name="contactDetails"
+        component={homeStackScreens.contactDetails}
+      />
       <NativeStack.Screen name="receive" component={homeStackScreens.receive} />
       <NativeStack.Screen name="request" component={homeStackScreens.request} />
       <NativeStack.Screen

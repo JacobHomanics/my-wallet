@@ -26,6 +26,9 @@ export type HomeStackParamList = {
   transactions: undefined;
   contacts: undefined;
   newContact: undefined;
+  contactDetails: {
+    contactId: string;
+  };
   receive: undefined;
   request: undefined;
   receiveQr: {
