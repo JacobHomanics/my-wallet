@@ -18,6 +18,7 @@ import { useContactDetails } from '@/hooks/useContactDetails';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToContacts } from '@/hooks/usePopToContacts';
+import { useSendToContact } from '@/hooks/useSendToContact';
 import type { HomeStackParamList } from '@/navigation/types';
 
 function DetailField({
@@ -79,14 +80,23 @@ export function ContactDetailsScreen() {
     isDeleting,
     errorMessage,
   } = useConfirmDeleteContact(goContacts);
+  const { canSendToContact, sendToContact } = useSendToContact();
 
   const canDelete = Boolean(contactId) && !notFound && !isLoading && Boolean(contact);
+  const canSend = canSendToContact(contact);
 
   const handleDelete = () => {
     if (!contactId || !contact || isDeleting) {
       return;
     }
     requestDelete(contactId, contact.title);
+  };
+
+  const handleSend = () => {
+    if (!contact || !canSend) {
+      return;
+    }
+    sendToContact(contact);
   };
 
   return (
@@ -196,6 +206,20 @@ export function ContactDetailsScreen() {
               !contact.solanaAddress &&
               !contact.identityId ? (
                 <Text style={styles.empty}>No details available.</Text>
+              ) : null}
+              {canSend ? (
+                <Pressable
+                  accessibilityLabel={`Send to ${contact.title}`}
+                  accessibilityRole="button"
+                  onPress={handleSend}
+                  style={({ pressed }) => [
+                    styles.sendButton,
+                    pressed && styles.sendButtonPressed,
+                  ]}
+                >
+                  <Ionicons name="send" size={18} color="#f0fdf4" />
+                  <Text style={styles.sendButtonText}>Send</Text>
+                </Pressable>
               ) : null}
             </>
           )}
@@ -331,5 +355,26 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     marginTop: 16,
+  },
+  sendButton: {
+    width: '100%',
+    maxWidth: 420,
+    marginTop: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#166534',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  sendButtonPressed: {
+    opacity: 0.85,
+  },
+  sendButtonText: {
+    color: '#f0fdf4',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
