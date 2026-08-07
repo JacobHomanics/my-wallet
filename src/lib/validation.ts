@@ -32,3 +32,19 @@ export function isValidRecipientAddress(
     ? isValidSolanaAddress(value)
     : isValidEvmAddress(value);
 }
+
+/** Lowercase trimmed username for storage / comparison. */
+export function normalizeUsername(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+/**
+ * Empty (clears username) or 3–24 chars of a-z, 0-9, underscore.
+ */
+export function isValidUsername(value: string): boolean {
+  const normalized = normalizeUsername(value);
+  if (normalized.length === 0) {
+    return true;
+  }
+  return /^[a-z0-9_]{3,24}$/.test(normalized);
+}

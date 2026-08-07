@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,6 +24,7 @@ import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToProfile } from '@/hooks/usePopToProfile';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
+import { useUsernameSettings } from '@/hooks/useUsernameSettings';
 import { useUserWallets } from '@/hooks/useUserWallets';
 
 export function SettingsScreen() {
@@ -32,6 +34,16 @@ export function SettingsScreen() {
   const { displayName } = useProfileIdentity();
   const { ready, wallets } = useUserWallets();
   const { copy, isCopied } = useCopyToClipboard();
+  const {
+    draft: usernameDraft,
+    onChangeDraft: onChangeUsername,
+    save: saveUsername,
+    canSave: canSaveUsername,
+    isSaving: isSavingUsername,
+    errorMessage: usernameError,
+    isDirty: usernameDirty,
+    isValid: usernameValid,
+  } = useUsernameSettings();
   const {
     exportPrivateKey,
     exportWebViewUri,
@@ -105,6 +117,49 @@ export function SettingsScreen() {
           </View>
 
           <View style={styles.sections}>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Username</Text>
+              <TextInput
+                accessibilityLabel="Username"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="username"
+                editable={!isSavingUsername}
+                onChangeText={onChangeUsername}
+                placeholder="Choose a username"
+                placeholderTextColor="#86a894"
+                style={styles.input}
+                value={usernameDraft}
+              />
+              <Text style={styles.hint}>
+                3–24 characters: letters, numbers, or underscores.
+              </Text>
+              {usernameDirty && !usernameValid ? (
+                <Text style={styles.error}>Enter a valid username.</Text>
+              ) : null}
+              {usernameError ? (
+                <Text style={styles.error}>{usernameError}</Text>
+              ) : null}
+              <Pressable
+                accessibilityRole="button"
+                disabled={!canSaveUsername}
+                onPress={() => {
+                  void saveUsername();
+                }}
+                style={({ pressed }) => [
+                  styles.saveButton,
+                  !canSaveUsername && styles.saveButtonDisabled,
+                  pressed && canSaveUsername && styles.saveButtonPressed,
+                ]}
+              >
+                {isSavingUsername ? (
+                  <ActivityIndicator color="#f0fdf4" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Save username</Text>
+                )}
+              </Pressable>
+            </View>
+
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Display currency</Text>
               <Pressable
@@ -302,6 +357,47 @@ const styles = StyleSheet.create({
     color: '#5a7d6a',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
+  },
+  input: {
+    width: '100%',
+    backgroundColor: '#ffffff',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#d1fae5',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#166534',
+  },
+  hint: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#86a894',
+  },
+  error: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#b91c1c',
+  },
+  saveButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#166534',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    minWidth: 140,
+    alignItems: 'center',
+  },
+  saveButtonDisabled: {
+    opacity: 0.45,
+  },
+  saveButtonPressed: {
+    opacity: 0.85,
+  },
+  saveButtonText: {
+    color: '#f0fdf4',
+    fontSize: 15,
+    fontWeight: '600',
   },
   strategyRow: {
     flexDirection: 'row',
