@@ -160,3 +160,19 @@ export const addByAddresses = mutation({
     });
   },
 });
+
+/** Remove a contact owned by the signed-in Privy user. */
+export const remove = mutation({
+  args: {
+    ownerExternalId: v.string(),
+    contactId: v.id("contacts"),
+  },
+  handler: async (ctx, { ownerExternalId, contactId }) => {
+    const contact = await ctx.db.get(contactId);
+    if (!contact || contact.ownerExternalId !== ownerExternalId) {
+      throw new Error("Contact not found");
+    }
+
+    await ctx.db.delete(contactId);
+  },
+});

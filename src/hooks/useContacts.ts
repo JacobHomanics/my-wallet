@@ -71,7 +71,7 @@ export function useContacts(): {
         label: username
           ? `@${username}`
           : (name ?? addressSubtitle ?? 'Contact'),
-        subtitle: addressSubtitle,
+        subtitle: isExternal ? null : addressSubtitle,
       };
     });
   }, [rows]);

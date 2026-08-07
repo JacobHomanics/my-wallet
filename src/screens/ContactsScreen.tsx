@@ -10,50 +10,57 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { SwipeableContactRow } from '@/components/SwipeableContactRow';
 import {
   useContacts,
   type ContactListItem,
 } from '@/hooks/useContacts';
 import { useContactsAllSections } from '@/hooks/useContactsAllSections';
 import { useContactsFilter } from '@/hooks/useContactsFilter';
+import { useContactsSwipe } from '@/hooks/useContactsSwipe';
 import { useContactsTab } from '@/hooks/useContactsTab';
+import { useDeleteContact } from '@/hooks/useDeleteContact';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import type { HomeStackParamList } from '@/navigation/types';
+import type Swipeable from 'react-native-gesture-handler/Swipeable';
 
 function ContactRows({
   contacts,
   onPressContact,
+  onDeleteContact,
+  onRowOpen,
+  onRowClose,
 }: {
   contacts: ContactListItem[];
   onPressContact: (contactId: string) => void;
+  onDeleteContact: (contactId: string) => void;
+  onRowOpen: (contactId: string, ref: Swipeable) => void;
+  onRowClose: (contactId: string) => void;
 }) {
   return (
     <>
       {contacts.map((contact) => (
-        <Pressable
+        <SwipeableContactRow
           key={contact.id}
-          accessibilityLabel={`View ${contact.label}`}
-          accessibilityRole="button"
+          contact={contact}
           onPress={() => {
             onPressContact(contact.id);
           }}
-          style={({ pressed }) => [
-            styles.contactRow,
-            pressed && styles.contactRowPressed,
-          ]}
-        >
-          <View style={styles.contactRowText}>
-            <Text style={styles.contactLabel}>{contact.label}</Text>
-            {contact.subtitle ? (
-              <Text style={styles.contactSubtitle}>{contact.subtitle}</Text>
-            ) : null}
-          </View>
-          <Ionicons name="chevron-forward" size={18} color="#86a894" />
-        </Pressable>
+          onDelete={() => {
+            onDeleteContact(contact.id);
+          }}
+          onOpen={(ref) => {
+            onRowOpen(contact.id, ref);
+          }}
+          onClose={() => {
+            onRowClose(contact.id);
+          }}
+        />
       ))}
     </>
   );
@@ -65,12 +72,18 @@ function CollapsibleSection({
   onToggle,
   contacts,
   onPressContact,
+  onDeleteContact,
+  onRowOpen,
+  onRowClose,
 }: {
   title: string;
   expanded: boolean;
   onToggle: () => void;
   contacts: ContactListItem[];
   onPressContact: (contactId: string) => void;
+  onDeleteContact: (contactId: string) => void;
+  onRowOpen: (contactId: string, ref: Swipeable) => void;
+  onRowClose: (contactId: string) => void;
 }) {
   return (
     <View style={styles.section}>
@@ -91,7 +104,13 @@ function CollapsibleSection({
         />
       </Pressable>
       {expanded ? (
-        <ContactRows contacts={contacts} onPressContact={onPressContact} />
+        <ContactRows
+          contacts={contacts}
+          onPressContact={onPressContact}
+          onDeleteContact={onDeleteContact}
+          onRowOpen={onRowOpen}
+          onRowClose={onRowClose}
+        />
       ) : null}
     </View>
   );
@@ -149,9 +168,16 @@ export function ContactsScreen() {
     toggleContacts,
     toggleExternal,
   } = useContactsAllSections();
+  const { remove } = useDeleteContact();
+  const { onRowOpen, onRowClose, closeOpen } = useContactsSwipe();
 
   const openContact = (contactId: string) => {
+    closeOpen();
     navigation.navigate('contactDetails', { contactId });
+  };
+
+  const deleteContact = (contactId: string) => {
+    void remove(contactId);
   };
 
   const hasAnyContacts =
@@ -243,66 +269,77 @@ export function ContactsScreen() {
           />
         </View>
 
-        <ScrollView
-          contentContainerStyle={[
-            styles.list,
-            { paddingBottom: Math.max(insets.bottom, 24) + 24 },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {hasAnyContacts ? (
-            <TextInput
-              accessibilityLabel="Search contacts"
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="off"
-              onChangeText={setQuery}
-              placeholder={searchPlaceholder}
-              placeholderTextColor="#86a894"
-              style={styles.searchInput}
-              value={query}
-            />
-          ) : null}
-
-          {isLoading ? (
-            <ActivityIndicator color="#166534" style={styles.loader} />
-          ) : !hasFilteredResults ? (
-            <Text style={styles.empty}>{emptyMessage}</Text>
-          ) : isAllTab ? (
-            <>
-              {filteredUserContacts.length > 0 ? (
-                <CollapsibleSection
-                  title="Contacts"
-                  expanded={contactsExpanded}
-                  onToggle={toggleContacts}
-                  contacts={filteredUserContacts}
-                  onPressContact={openContact}
-                />
-              ) : null}
-              {filteredExternalContacts.length > 0 ? (
-                <CollapsibleSection
-                  title="External Contacts"
-                  expanded={externalExpanded}
-                  onToggle={toggleExternal}
-                  contacts={filteredExternalContacts}
-                  onPressContact={openContact}
-                />
-              ) : null}
-            </>
-          ) : (
-            <View style={styles.section}>
-              <ContactRows
-                contacts={
-                  isContactsTab
-                    ? filteredUserContacts
-                    : filteredExternalContacts
-                }
-                onPressContact={openContact}
+        <GestureHandlerRootView style={styles.gestureRoot}>
+          <ScrollView
+            contentContainerStyle={[
+              styles.list,
+              { paddingBottom: Math.max(insets.bottom, 24) + 24 },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {hasAnyContacts ? (
+              <TextInput
+                accessibilityLabel="Search contacts"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="off"
+                onChangeText={setQuery}
+                placeholder={searchPlaceholder}
+                placeholderTextColor="#86a894"
+                style={styles.searchInput}
+                value={query}
               />
-            </View>
-          )}
-        </ScrollView>
+            ) : null}
+
+            {isLoading ? (
+              <ActivityIndicator color="#166534" style={styles.loader} />
+            ) : !hasFilteredResults ? (
+              <Text style={styles.empty}>{emptyMessage}</Text>
+            ) : isAllTab ? (
+              <>
+                {filteredUserContacts.length > 0 ? (
+                  <CollapsibleSection
+                    title="Contacts"
+                    expanded={contactsExpanded}
+                    onToggle={toggleContacts}
+                    contacts={filteredUserContacts}
+                    onPressContact={openContact}
+                    onDeleteContact={deleteContact}
+                    onRowOpen={onRowOpen}
+                    onRowClose={onRowClose}
+                  />
+                ) : null}
+                {filteredExternalContacts.length > 0 ? (
+                  <CollapsibleSection
+                    title="External Contacts"
+                    expanded={externalExpanded}
+                    onToggle={toggleExternal}
+                    contacts={filteredExternalContacts}
+                    onPressContact={openContact}
+                    onDeleteContact={deleteContact}
+                    onRowOpen={onRowOpen}
+                    onRowClose={onRowClose}
+                  />
+                ) : null}
+              </>
+            ) : (
+              <View style={styles.section}>
+                <ContactRows
+                  contacts={
+                    isContactsTab
+                      ? filteredUserContacts
+                      : filteredExternalContacts
+                  }
+                  onPressContact={openContact}
+                  onDeleteContact={deleteContact}
+                  onRowOpen={onRowOpen}
+                  onRowClose={onRowClose}
+                />
+              </View>
+            )}
+          </ScrollView>
+        </GestureHandlerRootView>
       </View>
     </View>
   );
@@ -318,6 +355,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 640,
     alignSelf: 'center',
+  },
+  gestureRoot: {
+    flex: 1,
   },
   topBar: {
     flexDirection: 'row',
@@ -439,36 +479,5 @@ const styles = StyleSheet.create({
     color: '#5a7d6a',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
-  },
-  contactRow: {
-    width: '100%',
-    marginTop: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#ffffff',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  contactRowPressed: {
-    opacity: 0.85,
-  },
-  contactRowText: {
-    flex: 1,
-    minWidth: 0,
-  },
-  contactLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#166534',
-  },
-  contactSubtitle: {
-    marginTop: 4,
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#86a894',
   },
 });
