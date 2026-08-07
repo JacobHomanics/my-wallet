@@ -24,6 +24,7 @@ import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToProfile } from '@/hooks/usePopToProfile';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
+import { useSignOut } from '@/hooks/useSignOut';
 import { useUsernameSettings } from '@/hooks/useUsernameSettings';
 import { useUserWallets } from '@/hooks/useUserWallets';
 
@@ -32,6 +33,7 @@ export function SettingsScreen() {
   const isDesktopWeb = useIsDesktopWeb();
   const goProfile = usePopToProfile();
   const { displayName } = useProfileIdentity();
+  const { signOut } = useSignOut();
   const { ready, wallets } = useUserWallets();
   const { copy, isCopied } = useCopyToClipboard();
   const {
@@ -258,6 +260,19 @@ export function SettingsScreen() {
                 })
               )}
             </View>
+
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                void signOut();
+              }}
+              style={({ pressed }) => [
+                styles.logoutButton,
+                pressed && styles.logoutButtonPressed,
+              ]}
+            >
+              <Text style={styles.logoutButtonText}>Log out</Text>
+            </Pressable>
           </View>
         </View>
       </ScrollView>
@@ -434,5 +449,23 @@ const styles = StyleSheet.create({
   empty: {
     fontSize: 15,
     color: '#86a894',
+  },
+  logoutButton: {
+    width: '100%',
+    maxWidth: 420,
+    marginTop: 32,
+    backgroundColor: '#166534',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  logoutButtonPressed: {
+    opacity: 0.85,
+  },
+  logoutButtonText: {
+    color: '#f0fdf4',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

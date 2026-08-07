@@ -7,7 +7,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AccountNumber } from '@/components/AccountNumber';
 import { useConvexUsername } from '@/hooks/useConvexUsername';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
-import { useSignOut } from '@/hooks/useSignOut';
 import { useWalletIdentityId } from '@/hooks/useWalletIdentityId';
 import type { ProfileStackParamList } from '@/navigation/types';
 
@@ -18,7 +17,6 @@ export function ProfileScreen() {
   const { displayName } = useProfileIdentity();
   const { username } = useConvexUsername();
   const { identityId } = useWalletIdentityId();
-  const { signOut } = useSignOut();
 
   return (
     <View style={styles.container}>
@@ -69,19 +67,6 @@ export function ProfileScreen() {
             />
           </View>
         ) : null}
-
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => {
-            void signOut();
-          }}
-          style={({ pressed }) => [
-            styles.button,
-            pressed && styles.buttonPressed,
-          ]}
-        >
-          <Text style={styles.buttonText}>Log out</Text>
-        </Pressable>
       </ScrollView>
     </View>
   );
@@ -139,20 +124,5 @@ const styles = StyleSheet.create({
   accountNumber: {
     maxWidth: '100%',
     alignSelf: 'stretch',
-  },
-  button: {
-    marginTop: 24,
-    backgroundColor: '#166534',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 10,
-  },
-  buttonPressed: {
-    opacity: 0.85,
-  },
-  buttonText: {
-    color: '#f0fdf4',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
