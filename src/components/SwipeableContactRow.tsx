@@ -1,12 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRef } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { RectButton } from 'react-native-gesture-handler';
+import { Animated, StyleSheet, Text, View } from 'react-native';
+import {
+  RectButton,
+  TouchableOpacity,
+} from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 import type { ContactListItem } from '@/hooks/useContacts';
 
 const DELETE_WIDTH = 72;
+/** Progress (0–1) before the trash icon fades in. */
+const TRASH_REVEAL_PROGRESS = 0.55;
 
 type SwipeableContactRowProps = {
   contact: ContactListItem;
@@ -28,25 +33,42 @@ export function SwipeableContactRow({
 }: SwipeableContactRowProps) {
   const swipeableRef = useRef<Swipeable | null>(null);
 
-  const renderRightActions = () => (
-    <RectButton
-      accessibilityLabel={`Delete ${contact.label}`}
-      onPress={() => {
-        swipeableRef.current?.close();
-        onDelete();
-      }}
-      style={styles.deleteButton}
-    >
-      <Ionicons name="trash-outline" size={22} color="#ffffff" />
-    </RectButton>
-  );
+  const renderRightActions = (
+    progress: Animated.AnimatedInterpolation<number>,
+  ) => {
+    const buttonOpacity = progress.interpolate({
+      inputRange: [
+        0,
+        TRASH_REVEAL_PROGRESS,
+        Math.min(TRASH_REVEAL_PROGRESS + 0.12, 1),
+        1,
+      ],
+      outputRange: [0, 0, 1, 1],
+      extrapolate: 'clamp',
+    });
+
+    return (
+      <Animated.View style={[styles.deleteSlot, { opacity: buttonOpacity }]}>
+        <RectButton
+          accessibilityLabel={`Delete ${contact.label}`}
+          onPress={() => {
+            swipeableRef.current?.close();
+            onDelete();
+          }}
+          style={styles.deleteButton}
+        >
+          <Ionicons name="trash-outline" size={22} color="#ffffff" />
+        </RectButton>
+      </Animated.View>
+    );
+  };
 
   return (
     <Swipeable
       ref={swipeableRef}
       friction={2}
       overshootRight={false}
-      rightThreshold={40}
+      rightThreshold={DELETE_WIDTH * TRASH_REVEAL_PROGRESS}
       renderRightActions={renderRightActions}
       onSwipeableOpen={() => {
         if (swipeableRef.current) {
@@ -56,14 +78,12 @@ export function SwipeableContactRow({
       onSwipeableClose={onClose}
       containerStyle={styles.swipeContainer}
     >
-      <Pressable
+      <TouchableOpacity
         accessibilityLabel={`View ${contact.label}`}
         accessibilityRole="button"
+        activeOpacity={0.85}
         onPress={onPress}
-        style={({ pressed }) => [
-          styles.contactRow,
-          pressed && styles.contactRowPressed,
-        ]}
+        style={styles.contactRow}
       >
         <View style={styles.contactRowText}>
           <Text style={styles.contactLabel}>{contact.label}</Text>
@@ -72,7 +92,7 @@ export function SwipeableContactRow({
           ) : null}
         </View>
         <Ionicons name="chevron-forward" size={18} color="#86a894" />
-      </Pressable>
+      </TouchableOpacity>
     </Swipeable>
   );
 }
@@ -93,9 +113,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  contactRowPressed: {
-    opacity: 0.85,
-  },
   contactRowText: {
     flex: 1,
     minWidth: 0,
@@ -111,9 +128,13 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: '#86a894',
   },
-  deleteButton: {
+  deleteSlot: {
     width: DELETE_WIDTH,
     marginLeft: 8,
+    alignSelf: 'stretch',
+  },
+  deleteButton: {
+    flex: 1,
     borderRadius: 12,
     backgroundColor: '#b91c1c',
     alignItems: 'center',
