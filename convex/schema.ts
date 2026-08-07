@@ -13,7 +13,8 @@ export default defineSchema({
     .index("by_identityId", ["identityId"]),
 
   contacts: defineTable({
-    ownerExternalId: v.string(),
+    /** Convex `users` document id of the contact list owner. */
+    ownerId: v.optional(v.id("users")),
     /** Set when the contact is a registered Cashbox user. */
     contactUserId: v.optional(v.id("users")),
     /** Display name for address-book / advanced contacts. */
@@ -22,8 +23,8 @@ export default defineSchema({
     evmAddress: v.optional(v.string()),
     solanaAddress: v.optional(v.string()),
   })
-    .index("by_owner", ["ownerExternalId"])
-    .index("by_owner_and_contact", ["ownerExternalId", "contactUserId"])
-    .index("by_owner_and_evm", ["ownerExternalId", "evmAddress"])
-    .index("by_owner_and_solana", ["ownerExternalId", "solanaAddress"]),
+    .index("by_owner", ["ownerId"])
+    .index("by_owner_and_contact", ["ownerId", "contactUserId"])
+    .index("by_owner_and_evm", ["ownerId", "evmAddress"])
+    .index("by_owner_and_solana", ["ownerId", "solanaAddress"]),
 });

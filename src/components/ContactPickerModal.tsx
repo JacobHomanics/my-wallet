@@ -19,7 +19,6 @@ import {
   useContacts,
   type ContactListItem,
 } from '@/hooks/useContacts';
-import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 
 type ContactPickerModalProps = {
   visible: boolean;
@@ -36,8 +35,6 @@ function canSelectContact(contact: ContactListItem): boolean {
 function contactDisplayLabel(contact: ContactListItem): string {
   if (contact.isExternal) {
     const name = contact.name?.trim();
-    // Prefer the contact's name; otherwise keep the shared list label
-    // (account number / addresses) instead of a generic "Contact".
     return name || contact.label;
   }
   return contact.label;
@@ -48,7 +45,7 @@ function contactDescription(contact: ContactListItem): string | null {
     return null;
   }
   if (contact.username && contact.identityId) {
-    return formatWalletAddress(contact.identityId, 10, 8);
+    return contact.identityId;
   }
   return contact.subtitle;
 }

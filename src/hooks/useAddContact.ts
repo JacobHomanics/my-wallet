@@ -1,8 +1,7 @@
 import { useMutation } from 'convex/react';
 import { useCallback, useState } from 'react';
 
-import { useAuth } from '@/hooks/useAuth';
-import { getPrivyExternalId } from '@/lib/convex/getPrivyExternalId';
+import { useConvexUserId } from '@/hooks/useConvexUserId';
 import type { Id } from '../../convex/_generated/dataModel';
 import { api } from '../../convex/_generated/api';
 
@@ -10,25 +9,16 @@ import { api } from '../../convex/_generated/api';
  * Add contacts by registered user id or by EVM/Solana addresses.
  */
 export function useAddContact() {
-  const { user, isReady } = useAuth();
+  const { userId } = useConvexUserId();
   const addContact = useMutation(api.contacts.add);
   const addByAddresses = useMutation(api.contacts.addByAddresses);
   const [isAdding, setIsAdding] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const resolveOwner = useCallback(() => {
-    const externalId = isReady ? getPrivyExternalId(user) : null;
-    if (!externalId) {
-      setErrorMessage('Not signed in');
-      return null;
-    }
-    return externalId;
-  }, [isReady, user]);
-
   const add = useCallback(
     async (contactUserId: Id<'users'>) => {
-      const externalId = resolveOwner();
-      if (!externalId) {
+      if (!userId) {
+        setErrorMessage('Not signed in');
         return false;
       }
 
@@ -37,7 +27,7 @@ export function useAddContact() {
 
       try {
         await addContact({
-          ownerExternalId: externalId,
+          ownerId: userId,
           contactUserId,
         });
         return true;
@@ -50,7 +40,7 @@ export function useAddContact() {
         setIsAdding(false);
       }
     },
-    [addContact, resolveOwner],
+    [addContact, userId],
   );
 
   const addAddresses = useCallback(
@@ -59,8 +49,8 @@ export function useAddContact() {
       evmAddress?: string;
       solanaAddress?: string;
     }) => {
-      const externalId = resolveOwner();
-      if (!externalId) {
+      if (!userId) {
+        setErrorMessage('Not signed in');
         return false;
       }
 
@@ -69,7 +59,7 @@ export function useAddContact() {
 
       try {
         await addByAddresses({
-          ownerExternalId: externalId,
+          ownerId: userId,
           name: addresses.name,
           evmAddress: addresses.evmAddress,
           solanaAddress: addresses.solanaAddress,
@@ -84,7 +74,7 @@ export function useAddContact() {
         setIsAdding(false);
       }
     },
-    [addByAddresses, resolveOwner],
+    [addByAddresses, userId],
   );
 
   return {

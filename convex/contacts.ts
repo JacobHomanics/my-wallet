@@ -1,30 +1,54 @@
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 
 const EVM_ADDRESS = /^0x[a-fA-F0-9]{40}$/;
 const SOLANA_ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
+type LegacyContact = {
+  _id: Id<"contacts">;
+  ownerId?: Id<"users">;
+  ownerExternalId?: string;
+  contactUserId?: Id<"users">;
+  contactUsername?: string;
+  name?: string;
+  evmAddress?: string;
+  solanaAddress?: string;
+};
+
 /**
- * One-time cleanup: rewrite contacts without legacy `contactUsername`.
- * Run with: npx convex run contacts:stripLegacyContactUsernames
+ * One-time cleanup: map legacy `ownerExternalId` → `ownerId` and drop
+ * denormalized `contactUsername`.
+ * Run with: npx convex run contacts:migrateOwnerIds
  */
-export const stripLegacyContactUsernames = mutation({
+export const migrateOwnerIds = mutation({
   args: {},
   handler: async (ctx) => {
-    const contacts = await ctx.db.query("contacts").collect();
+    const contacts = (await ctx.db.query("contacts").collect()) as LegacyContact[];
     let updated = 0;
+    let deleted = 0;
 
     for (const contact of contacts) {
-      const legacy = contact as typeof contact & {
-        contactUsername?: string;
-      };
-      if (legacy.contactUsername === undefined) {
+      let ownerId = contact.ownerId;
+
+      if (!ownerId && contact.ownerExternalId) {
+        const ownerExternalId = contact.ownerExternalId;
+        const owner = await ctx.db
+          .query("users")
+          .withIndex("by_externalId", (q) => q.eq("externalId", ownerExternalId))
+          .unique();
+        ownerId = owner?._id;
+      }
+
+      if (!ownerId) {
+        await ctx.db.delete(contact._id);
+        deleted += 1;
         continue;
       }
 
       await ctx.db.replace(contact._id, {
-        ownerExternalId: contact.ownerExternalId,
+        ownerId,
         ...(contact.contactUserId
           ? { contactUserId: contact.contactUserId }
           : {}),
@@ -39,17 +63,17 @@ export const stripLegacyContactUsernames = mutation({
       updated += 1;
     }
 
-    return { updated };
+    return { updated, deleted };
   },
 });
 
-/** List contacts for the signed-in Privy user. */
+/** List contacts for the signed-in user. */
 export const listForOwner = query({
-  args: { ownerExternalId: v.string() },
-  handler: async (ctx, { ownerExternalId }) => {
+  args: { ownerId: v.id("users") },
+  handler: async (ctx, { ownerId }) => {
     const contacts = await ctx.db
       .query("contacts")
-      .withIndex("by_owner", (q) => q.eq("ownerExternalId", ownerExternalId))
+      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
       .collect();
 
     return await Promise.all(
@@ -78,15 +102,15 @@ export const listForOwner = query({
   },
 });
 
-/** Single contact for the signed-in Privy user (null if missing or not owned). */
+/** Single contact for the signed-in user (null if missing or not owned). */
 export const getForOwner = query({
   args: {
-    ownerExternalId: v.string(),
+    ownerId: v.id("users"),
     contactId: v.id("contacts"),
   },
-  handler: async (ctx, { ownerExternalId, contactId }) => {
+  handler: async (ctx, { ownerId, contactId }) => {
     const contact = await ctx.db.get(contactId);
-    if (!contact || contact.ownerExternalId !== ownerExternalId) {
+    if (!contact || contact.ownerId !== ownerId) {
       return null;
     }
 
@@ -115,10 +139,15 @@ export const getForOwner = query({
 /** Add a registered user to the owner's contacts list (idempotent). */
 export const add = mutation({
   args: {
-    ownerExternalId: v.string(),
+    ownerId: v.id("users"),
     contactUserId: v.id("users"),
   },
-  handler: async (ctx, { ownerExternalId, contactUserId }) => {
+  handler: async (ctx, { ownerId, contactUserId }) => {
+    const owner = await ctx.db.get(ownerId);
+    if (!owner) {
+      throw new Error("Owner not found");
+    }
+
     const contactUser = await ctx.db.get(contactUserId);
     if (!contactUser) {
       throw new Error("User not found");
@@ -128,16 +157,14 @@ export const add = mutation({
       throw new Error("User has no username or account number");
     }
 
-    if (contactUser.externalId === ownerExternalId) {
+    if (contactUserId === ownerId) {
       throw new Error("You can't add yourself as a contact");
     }
 
     const existing = await ctx.db
       .query("contacts")
       .withIndex("by_owner_and_contact", (q) =>
-        q
-          .eq("ownerExternalId", ownerExternalId)
-          .eq("contactUserId", contactUserId),
+        q.eq("ownerId", ownerId).eq("contactUserId", contactUserId),
       )
       .unique();
 
@@ -146,7 +173,7 @@ export const add = mutation({
     }
 
     return await ctx.db.insert("contacts", {
-      ownerExternalId,
+      ownerId,
       contactUserId,
     });
   },
@@ -155,12 +182,17 @@ export const add = mutation({
 /** Add a contact by EVM and/or Solana address (idempotent). */
 export const addByAddresses = mutation({
   args: {
-    ownerExternalId: v.string(),
+    ownerId: v.id("users"),
     name: v.string(),
     evmAddress: v.optional(v.string()),
     solanaAddress: v.optional(v.string()),
   },
-  handler: async (ctx, { ownerExternalId, name, evmAddress, solanaAddress }) => {
+  handler: async (ctx, { ownerId, name, evmAddress, solanaAddress }) => {
+    const owner = await ctx.db.get(ownerId);
+    if (!owner) {
+      throw new Error("Owner not found");
+    }
+
     const trimmedName = name.trim();
     if (!trimmedName) {
       throw new Error("Enter a name for this contact");
@@ -185,7 +217,7 @@ export const addByAddresses = mutation({
       const existingEvm = await ctx.db
         .query("contacts")
         .withIndex("by_owner_and_evm", (q) =>
-          q.eq("ownerExternalId", ownerExternalId).eq("evmAddress", evm),
+          q.eq("ownerId", ownerId).eq("evmAddress", evm),
         )
         .unique();
       if (existingEvm) {
@@ -203,9 +235,7 @@ export const addByAddresses = mutation({
       const existingSolana = await ctx.db
         .query("contacts")
         .withIndex("by_owner_and_solana", (q) =>
-          q
-            .eq("ownerExternalId", ownerExternalId)
-            .eq("solanaAddress", solana),
+          q.eq("ownerId", ownerId).eq("solanaAddress", solana),
         )
         .unique();
       if (existingSolana) {
@@ -218,7 +248,7 @@ export const addByAddresses = mutation({
     }
 
     return await ctx.db.insert("contacts", {
-      ownerExternalId,
+      ownerId,
       name: trimmedName,
       evmAddress: evm,
       solanaAddress: solana,
@@ -226,15 +256,15 @@ export const addByAddresses = mutation({
   },
 });
 
-/** Remove a contact owned by the signed-in Privy user. */
+/** Remove a contact owned by the signed-in user. */
 export const remove = mutation({
   args: {
-    ownerExternalId: v.string(),
+    ownerId: v.id("users"),
     contactId: v.id("contacts"),
   },
-  handler: async (ctx, { ownerExternalId, contactId }) => {
+  handler: async (ctx, { ownerId, contactId }) => {
     const contact = await ctx.db.get(contactId);
-    if (!contact || contact.ownerExternalId !== ownerExternalId) {
+    if (!contact || contact.ownerId !== ownerId) {
       throw new Error("Contact not found");
     }
 

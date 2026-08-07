@@ -1,8 +1,7 @@
 import { useMutation } from 'convex/react';
 import { useCallback, useState } from 'react';
 
-import { useAuth } from '@/hooks/useAuth';
-import { getPrivyExternalId } from '@/lib/convex/getPrivyExternalId';
+import { useConvexUserId } from '@/hooks/useConvexUserId';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 
@@ -10,15 +9,14 @@ import type { Id } from '../../convex/_generated/dataModel';
  * Delete an owned contact by id.
  */
 export function useDeleteContact() {
-  const { user, isReady } = useAuth();
+  const { userId } = useConvexUserId();
   const removeContact = useMutation(api.contacts.remove);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const remove = useCallback(
     async (contactId: string) => {
-      const externalId = isReady ? getPrivyExternalId(user) : null;
-      if (!externalId) {
+      if (!userId) {
         setErrorMessage('Not signed in');
         return false;
       }
@@ -28,7 +26,7 @@ export function useDeleteContact() {
 
       try {
         await removeContact({
-          ownerExternalId: externalId,
+          ownerId: userId,
           contactId: contactId as Id<'contacts'>,
         });
         return true;
@@ -41,7 +39,7 @@ export function useDeleteContact() {
         setIsDeleting(false);
       }
     },
-    [isReady, removeContact, user],
+    [removeContact, userId],
   );
 
   return {

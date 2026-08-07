@@ -1,9 +1,8 @@
 import { useQuery } from 'convex/react';
 import { useMemo } from 'react';
 
-import { useAuth } from '@/hooks/useAuth';
+import { useConvexUserId } from '@/hooks/useConvexUserId';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
-import { getPrivyExternalId } from '@/lib/convex/getPrivyExternalId';
 import { encodeWalletIdentity } from '@/lib/walletIdentity';
 import { api } from '../../convex/_generated/api';
 
@@ -65,7 +64,7 @@ function buildContactLabel(params: {
     return `@${params.username}`;
   }
   if (params.accountNumber) {
-    return formatWalletAddress(params.accountNumber, 10, 8);
+    return params.accountNumber;
   }
   if (params.name?.trim()) {
     return params.name.trim();
@@ -74,7 +73,7 @@ function buildContactLabel(params: {
 }
 
 /**
- * Convex contacts for the authenticated Privy user.
+ * Convex contacts for the authenticated user.
  */
 export function useContacts(): {
   contacts: ContactListItem[];
@@ -82,12 +81,11 @@ export function useContacts(): {
   externalContacts: ContactListItem[];
   isLoading: boolean;
 } {
-  const { user, isReady } = useAuth();
-  const externalId = isReady ? getPrivyExternalId(user) : null;
+  const { userId, isLoading: userIdLoading } = useConvexUserId();
 
   const rows = useQuery(
     api.contacts.listForOwner,
-    externalId ? { ownerExternalId: externalId } : 'skip',
+    userId ? { ownerId: userId } : 'skip',
   );
 
   const contacts = useMemo((): ContactListItem[] => {
@@ -109,6 +107,12 @@ export function useContacts(): {
         solanaAddress,
       );
       const addressSubtitle = buildAddressSubtitle(evmAddress, solanaAddress);
+      const label = buildContactLabel({
+        username,
+        name,
+        accountNumber,
+        addressSubtitle,
+      });
 
       return {
         id: row._id,
@@ -118,12 +122,7 @@ export function useContacts(): {
         solanaAddress,
         identityId: accountNumber,
         isExternal,
-        label: buildContactLabel({
-          username,
-          name,
-          accountNumber,
-          addressSubtitle,
-        }),
+        label,
         subtitle: isExternal ? null : addressSubtitle,
       };
     });
@@ -143,6 +142,6 @@ export function useContacts(): {
     contacts,
     userContacts,
     externalContacts,
-    isLoading: externalId != null && rows === undefined,
+    isLoading: userIdLoading || (userId != null && rows === undefined),
   };
 }

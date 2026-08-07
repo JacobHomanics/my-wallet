@@ -1,8 +1,7 @@
 import { useQuery } from 'convex/react';
 
-import { useAuth } from '@/hooks/useAuth';
+import { useConvexUserId } from '@/hooks/useConvexUserId';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
-import { getPrivyExternalId } from '@/lib/convex/getPrivyExternalId';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 
@@ -25,21 +24,24 @@ export function useContactDetails(contactId: string | undefined): {
   isLoading: boolean;
   notFound: boolean;
 } {
-  const { user, isReady } = useAuth();
-  const externalId = isReady ? getPrivyExternalId(user) : null;
+  const { userId, isLoading: userIdLoading } = useConvexUserId();
 
   const row = useQuery(
     api.contacts.getForOwner,
-    externalId && contactId
+    userId && contactId
       ? {
-          ownerExternalId: externalId,
+          ownerId: userId,
           contactId: contactId as Id<'contacts'>,
         }
       : 'skip',
   );
 
-  if (!externalId || !contactId) {
-    return { contact: null, isLoading: false, notFound: true };
+  if (!userId || !contactId) {
+    return {
+      contact: null,
+      isLoading: userIdLoading,
+      notFound: !userIdLoading && !userId,
+    };
   }
 
   if (row === undefined) {
