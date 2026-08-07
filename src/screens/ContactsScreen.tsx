@@ -46,10 +46,13 @@ function ContactRows({
             pressed && styles.contactRowPressed,
           ]}
         >
-          <Text style={styles.contactLabel}>{contact.label}</Text>
-          {contact.subtitle ? (
-            <Text style={styles.contactSubtitle}>{contact.subtitle}</Text>
-          ) : null}
+          <View style={styles.contactRowText}>
+            <Text style={styles.contactLabel}>{contact.label}</Text>
+            {contact.subtitle ? (
+              <Text style={styles.contactSubtitle}>{contact.subtitle}</Text>
+            ) : null}
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#86a894" />
         </Pressable>
       ))}
     </>
@@ -440,6 +443,9 @@ const styles = StyleSheet.create({
   contactRow: {
     width: '100%',
     marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#d1fae5',
@@ -449,6 +455,10 @@ const styles = StyleSheet.create({
   },
   contactRowPressed: {
     opacity: 0.85,
+  },
+  contactRowText: {
+    flex: 1,
+    minWidth: 0,
   },
   contactLabel: {
     fontSize: 16,
