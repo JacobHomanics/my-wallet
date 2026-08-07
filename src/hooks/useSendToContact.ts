@@ -12,6 +12,8 @@ export type SendableContact = {
   identityId: string | null;
   evmAddress: string | null;
   solanaAddress: string | null;
+  username?: string | null;
+  name?: string | null;
 };
 
 type SendToContactOptions = {
@@ -42,12 +44,16 @@ export function useSendToContact() {
       if (contact.identityId) {
         hydrateSendDraftFromConfirmParams({
           identity: contact.identityId,
+          recipientUsername: contact.username,
+          recipientName: contact.name,
           usdAmount: options?.usdAmount,
         });
       } else {
         hydrateSendDraftFromConfirmParams({
           ethereumRecipient: contact.evmAddress ?? undefined,
           solanaRecipient: contact.solanaAddress ?? undefined,
+          recipientUsername: contact.username,
+          recipientName: contact.name,
           usdAmount: options?.usdAmount,
         });
       }

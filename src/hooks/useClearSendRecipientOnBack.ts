@@ -10,6 +10,8 @@ function clearSendRecipientFields() {
     accountNumber: '',
     ethereumRecipient: '',
     solanaRecipient: '',
+    recipientUsername: null,
+    recipientName: null,
   });
 }
 

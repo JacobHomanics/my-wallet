@@ -226,6 +226,8 @@ export function SendScreen() {
           identityId: hit.identityId,
           evmAddress: null,
           solanaAddress: null,
+          username: hit.username,
+          name: null,
         },
         {
           tokenId: route.params?.tokenId,

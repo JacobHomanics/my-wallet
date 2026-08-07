@@ -14,6 +14,22 @@ export const getByExternalId = query({
   },
 });
 
+/** Look up a user by wallet identity / account number. */
+export const getByIdentityId = query({
+  args: { identityId: v.string() },
+  handler: async (ctx, { identityId }) => {
+    const trimmed = identityId.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    return await ctx.db
+      .query("users")
+      .withIndex("by_identityId", (q) => q.eq("identityId", trimmed))
+      .unique();
+  },
+});
+
 /** Find users by username or account number prefix (case-insensitive username). */
 export const search = query({
   args: {

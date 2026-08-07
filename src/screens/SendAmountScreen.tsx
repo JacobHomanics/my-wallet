@@ -31,6 +31,7 @@ import {
   useSendDraftUi,
 } from '@/hooks/useSendDraft';
 import { useSendForm } from '@/hooks/useSendForm';
+import { useSendRecipientUsername } from '@/hooks/useSendRecipientUsername';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useSpendableTokens } from '@/hooks/useSpendableTokens';
@@ -52,12 +53,9 @@ export function SendAmountScreen() {
   const { spendableTokens, availableUsd, availableLabel } =
     useSpendableTokens(tokens);
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
-  const {
-    showAdvanced: showRecipientAdvanced,
-    toggleAdvanced: toggleRecipientAdvanced,
-  } = useShowAdvanced();
   const { allocationInputUnit, setAllocationInputUnit } = useSendDraftUi();
-  const { accountNumber } = useSendDraft();
+  const { accountNumber, recipientName } = useSendDraft();
+  const recipientUsername = useSendRecipientUsername();
   const {
     strategies,
     selectedStrategy,
@@ -107,13 +105,13 @@ export function SendAmountScreen() {
   const {
     hasRecipient,
     primaryLabel,
-    trimmedEthereum,
-    trimmedSolana,
-    showAccountNumber,
+    recipientFieldLabel,
   } = useSendAmountRecipientDisplay({
     accountNumber,
     ethereumRecipient,
     solanaRecipient,
+    username: recipientUsername,
+    name: recipientName,
   });
 
   const totalLabel = availableLabel;
@@ -225,9 +223,7 @@ export function SendAmountScreen() {
               <View style={styles.formBody}>
                 {hasRecipient && primaryLabel ? (
                   <View style={styles.recipientSection}>
-                    <Text style={styles.label}>
-                      {showAccountNumber ? 'Account Number' : 'Recipient'}
-                    </Text>
+                    <Text style={styles.label}>{recipientFieldLabel}</Text>
                     <View
                       style={[styles.fieldRow, styles.fieldRowDisabled]}
                     >
@@ -240,70 +236,6 @@ export function SendAmountScreen() {
                         {primaryLabel}
                       </Text>
                     </View>
-                    {trimmedEthereum || trimmedSolana ? (
-                      <>
-                        <Pressable
-                          accessibilityLabel={
-                            showRecipientAdvanced
-                              ? 'Hide recipient advanced'
-                              : 'Show recipient advanced'
-                          }
-                          accessibilityRole="button"
-                          accessibilityState={{
-                            expanded: showRecipientAdvanced,
-                          }}
-                          onPress={toggleRecipientAdvanced}
-                          style={({ pressed }) => [
-                            styles.recipientAdvancedToggle,
-                            pressed && styles.advancedTogglePressed,
-                          ]}
-                        >
-                          <Text style={styles.recipientAdvancedToggleText}>
-                            Advanced
-                          </Text>
-                          <Ionicons
-                            name={
-                              showRecipientAdvanced
-                                ? 'chevron-up'
-                                : 'chevron-down'
-                            }
-                            size={16}
-                            color="#5a7d6a"
-                          />
-                        </Pressable>
-                        {showRecipientAdvanced ? (
-                          <View style={styles.decodedCard}>
-                            {trimmedEthereum ? (
-                              <View style={styles.decodedGroup}>
-                                <Text style={styles.decodedLabel}>EVM</Text>
-                                <Text
-                                  style={styles.decodedValue}
-                                  selectable
-                                >
-                                  {trimmedEthereum}
-                                </Text>
-                              </View>
-                            ) : null}
-                            {trimmedEthereum && trimmedSolana ? (
-                              <View style={styles.decodedDivider} />
-                            ) : null}
-                            {trimmedSolana ? (
-                              <View style={styles.decodedGroup}>
-                                <Text style={styles.decodedLabel}>
-                                  Solana
-                                </Text>
-                                <Text
-                                  style={styles.decodedValue}
-                                  selectable
-                                >
-                                  {trimmedSolana}
-                                </Text>
-                              </View>
-                            ) : null}
-                          </View>
-                        ) : null}
-                      </>
-                    ) : null}
                   </View>
                 ) : null}
 
@@ -526,47 +458,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#166534',
     fontVariant: ['tabular-nums'],
-  },
-  recipientAdvancedToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 6,
-  },
-  recipientAdvancedToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    marginRight: 4,
-  },
-  decodedCard: {
-    marginTop: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#d1fae5',
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  decodedGroup: {
-    gap: 8,
-  },
-  decodedLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#86a894',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  decodedValue: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#166534',
-  },
-  decodedDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
-    marginVertical: 10,
   },
   label: {
     marginTop: 20,

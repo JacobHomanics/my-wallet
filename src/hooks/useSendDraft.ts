@@ -17,6 +17,10 @@ export type SendDraft = {
   accountNumber: string;
   ethereumRecipient: string;
   solanaRecipient: string;
+  /** Platform username for the recipient when known (e.g. from contacts/search). */
+  recipientUsername: string | null;
+  /** Display name for the recipient when known (e.g. external contact). */
+  recipientName: string | null;
   amount: string;
   /**
    * When true (e.g. receive QR payment request), editing token legs must not
@@ -36,6 +40,8 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   accountNumber: '',
   ethereumRecipient: '',
   solanaRecipient: '',
+  recipientUsername: null,
+  recipientName: null,
   amount: '',
   amountLocked: false,
   manualLegs: null,
@@ -78,9 +84,13 @@ export function hydrateSendDraftFromConfirmParams(params: {
   identity?: string;
   ethereumRecipient?: string;
   solanaRecipient?: string;
+  recipientUsername?: string | null;
+  recipientName?: string | null;
 }): void {
   const amount = params.usdAmount?.trim() ?? '';
   const decoded = tryDecodeWalletIdentity(params.identity);
+  const username = params.recipientUsername?.trim().replace(/^@/, '') || null;
+  const name = params.recipientName?.trim() || null;
   sendDraft = {
     ...DEFAULT_SEND_DRAFT,
     accountNumber: params.identity?.trim() ?? '',
@@ -88,6 +98,8 @@ export function hydrateSendDraftFromConfirmParams(params: {
       decoded?.evmAddress ?? params.ethereumRecipient?.trim() ?? '',
     solanaRecipient:
       decoded?.solanaAddress ?? params.solanaRecipient?.trim() ?? '',
+    recipientUsername: username,
+    recipientName: name,
     amount,
     amountLocked: amount.length > 0,
   };
