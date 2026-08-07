@@ -19,7 +19,6 @@ import {
   useContacts,
   type ContactListItem,
 } from '@/hooks/useContacts';
-import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 
 type ContactPickerModalProps = {
   visible: boolean;
@@ -33,19 +32,19 @@ function canSelectContact(contact: ContactListItem): boolean {
   );
 }
 
-function contactDescription(contact: ContactListItem): string | null {
-  if (contact.subtitle) {
-    return contact.subtitle;
+function contactDisplayLabel(contact: ContactListItem): string {
+  if (contact.isExternal) {
+    const name = contact.name?.trim();
+    return name || 'Contact';
   }
+  return contact.label;
+}
 
-  const parts: string[] = [];
-  if (contact.evmAddress) {
-    parts.push(`EVM ${formatWalletAddress(contact.evmAddress, 6, 4)}`);
+function contactDescription(contact: ContactListItem): string | null {
+  if (contact.isExternal) {
+    return null;
   }
-  if (contact.solanaAddress) {
-    parts.push(`Solana ${formatWalletAddress(contact.solanaAddress, 6, 4)}`);
-  }
-  return parts.length > 0 ? parts.join(' · ') : null;
+  return contact.subtitle;
 }
 
 function ContactsTabChip({
@@ -79,11 +78,12 @@ function ContactPickerRow({
   onSelect: (contact: ContactListItem) => void;
 }) {
   const selectable = canSelectContact(contact);
+  const label = contactDisplayLabel(contact);
   const description = contactDescription(contact);
 
   return (
     <Pressable
-      accessibilityLabel={`Select ${contact.label}`}
+      accessibilityLabel={`Select ${label}`}
       accessibilityRole="button"
       accessibilityState={{ disabled: !selectable }}
       disabled={!selectable}
@@ -97,7 +97,7 @@ function ContactPickerRow({
       ]}
     >
       <View style={styles.optionText}>
-        <Text style={styles.optionLabel}>{contact.label}</Text>
+        <Text style={styles.optionLabel}>{label}</Text>
         {description ? (
           <Text style={styles.optionDescription}>{description}</Text>
         ) : null}
