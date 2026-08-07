@@ -16,6 +16,7 @@ import { AccountNumber } from '@/components/AccountNumber';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { WalletDebitCard } from '@/components/WalletDebitCard';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
+import { useConvexUsername } from '@/hooks/useConvexUsername';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
 import { useExportPrivateKey } from '@/hooks/useExportPrivateKey';
@@ -29,6 +30,7 @@ import { useWalletIdentityId } from '@/hooks/useWalletIdentityId';
 export function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { displayName } = useProfileIdentity();
+  const { username } = useConvexUsername();
   const { ready, wallets } = useUserWallets();
   const { identityId } = useWalletIdentityId();
   const { signOut } = useSignOut();
@@ -85,6 +87,9 @@ export function SettingsScreen() {
       >
       <Text style={styles.title}>Settings</Text>
       <Text style={styles.subtitle}>Signed in as {displayName}.</Text>
+      {username ? (
+        <Text style={styles.username}>@{username}</Text>
+      ) : null}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Display currency</Text>
@@ -282,6 +287,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: '#3f6b52',
+    textAlign: 'center',
+  },
+  username: {
+    marginTop: 4,
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 22,
+    color: '#166534',
     textAlign: 'center',
   },
   section: {
