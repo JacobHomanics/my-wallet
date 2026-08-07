@@ -5,6 +5,44 @@ import { mutation, query } from "./_generated/server";
 const EVM_ADDRESS = /^0x[a-fA-F0-9]{40}$/;
 const SOLANA_ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
+/**
+ * One-time cleanup: rewrite contacts without legacy `contactUsername`.
+ * Run with: npx convex run contacts:stripLegacyContactUsernames
+ */
+export const stripLegacyContactUsernames = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const contacts = await ctx.db.query("contacts").collect();
+    let updated = 0;
+
+    for (const contact of contacts) {
+      const legacy = contact as typeof contact & {
+        contactUsername?: string;
+      };
+      if (legacy.contactUsername === undefined) {
+        continue;
+      }
+
+      await ctx.db.replace(contact._id, {
+        ownerExternalId: contact.ownerExternalId,
+        ...(contact.contactUserId
+          ? { contactUserId: contact.contactUserId }
+          : {}),
+        ...(contact.name !== undefined ? { name: contact.name } : {}),
+        ...(contact.evmAddress !== undefined
+          ? { evmAddress: contact.evmAddress }
+          : {}),
+        ...(contact.solanaAddress !== undefined
+          ? { solanaAddress: contact.solanaAddress }
+          : {}),
+      });
+      updated += 1;
+    }
+
+    return { updated };
+  },
+});
+
 /** List contacts for the signed-in Privy user. */
 export const listForOwner = query({
   args: { ownerExternalId: v.string() },
@@ -16,15 +54,24 @@ export const listForOwner = query({
 
     return await Promise.all(
       contacts.map(async (contact) => {
+        let username: string | null = null;
         let identityId: string | null = null;
+
         if (contact.contactUserId) {
           const user = await ctx.db.get(contact.contactUserId);
+          username = user?.username ?? null;
           identityId = user?.identityId ?? null;
         }
 
         return {
-          ...contact,
+          _id: contact._id,
+          contactUserId: contact.contactUserId ?? null,
+          name: contact.name ?? null,
+          evmAddress: contact.evmAddress ?? null,
+          solanaAddress: contact.solanaAddress ?? null,
+          username,
           identityId,
+          isExternal: !contact.contactUserId,
         };
       }),
     );
@@ -43,20 +90,23 @@ export const getForOwner = query({
       return null;
     }
 
+    let username: string | null = null;
     let identityId: string | null = null;
+
     if (contact.contactUserId) {
       const user = await ctx.db.get(contact.contactUserId);
+      username = user?.username ?? null;
       identityId = user?.identityId ?? null;
     }
 
     return {
       _id: contact._id,
-      contactUsername: contact.contactUsername ?? null,
+      username,
       name: contact.name ?? null,
       evmAddress: contact.evmAddress ?? null,
       solanaAddress: contact.solanaAddress ?? null,
       identityId,
-      isExternal: !contact.contactUsername,
+      isExternal: !contact.contactUserId,
     };
   },
 });
@@ -97,7 +147,6 @@ export const add = mutation({
     return await ctx.db.insert("contacts", {
       ownerExternalId,
       contactUserId,
-      contactUsername: contactUser.username,
     });
   },
 });

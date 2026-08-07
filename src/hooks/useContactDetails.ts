@@ -49,7 +49,7 @@ export function useContactDetails(contactId: string | undefined): {
     return { contact: null, isLoading: false, notFound: true };
   }
 
-  const username = row.contactUsername;
+  const username = row.username;
   const name = row.name;
 
   return {

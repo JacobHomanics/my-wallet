@@ -55,12 +55,12 @@ export function useContacts(): {
     }
 
     return rows.map((row) => {
-      const username = row.contactUsername ?? null;
+      const username = row.username ?? null;
       const name = row.name ?? null;
       const evmAddress = row.evmAddress ?? null;
       const solanaAddress = row.solanaAddress ?? null;
       const addressSubtitle = buildAddressSubtitle(evmAddress, solanaAddress);
-      const isExternal = !username;
+      const isExternal = row.isExternal;
 
       return {
         id: row._id,

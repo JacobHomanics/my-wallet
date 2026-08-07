@@ -16,7 +16,6 @@ export default defineSchema({
     ownerExternalId: v.string(),
     /** Set when the contact is a registered Cashbox user. */
     contactUserId: v.optional(v.id("users")),
-    contactUsername: v.optional(v.string()),
     /** Display name for address-book / advanced contacts. */
     name: v.optional(v.string()),
     /** Optional chain addresses for address-book / advanced contacts. */
