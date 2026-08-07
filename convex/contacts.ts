@@ -2,6 +2,9 @@ import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
 
+const EVM_ADDRESS = /^0x[a-fA-F0-9]{40}$/;
+const SOLANA_ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+
 /** List contacts for the signed-in Privy user. */
 export const listForOwner = query({
   args: { ownerExternalId: v.string() },
@@ -13,7 +16,7 @@ export const listForOwner = query({
   },
 });
 
-/** Add a user to the owner's contacts list (idempotent). */
+/** Add a registered user to the owner's contacts list (idempotent). */
 export const add = mutation({
   args: {
     ownerExternalId: v.string(),
@@ -50,6 +53,80 @@ export const add = mutation({
       ownerExternalId,
       contactUserId,
       contactUsername: contactUser.username,
+    });
+  },
+});
+
+/** Add a contact by EVM and/or Solana address (idempotent). */
+export const addByAddresses = mutation({
+  args: {
+    ownerExternalId: v.string(),
+    name: v.string(),
+    evmAddress: v.optional(v.string()),
+    solanaAddress: v.optional(v.string()),
+  },
+  handler: async (ctx, { ownerExternalId, name, evmAddress, solanaAddress }) => {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      throw new Error("Enter a name for this contact");
+    }
+
+    const evm = evmAddress?.trim() || undefined;
+    const solana = solanaAddress?.trim() || undefined;
+
+    if (!evm && !solana) {
+      throw new Error("Enter an EVM or Solana address");
+    }
+
+    if (evm && !EVM_ADDRESS.test(evm)) {
+      throw new Error("Invalid EVM address");
+    }
+
+    if (solana && !SOLANA_ADDRESS.test(solana)) {
+      throw new Error("Invalid Solana address");
+    }
+
+    if (evm) {
+      const existingEvm = await ctx.db
+        .query("contacts")
+        .withIndex("by_owner_and_evm", (q) =>
+          q.eq("ownerExternalId", ownerExternalId).eq("evmAddress", evm),
+        )
+        .unique();
+      if (existingEvm) {
+        await ctx.db.patch(existingEvm._id, {
+          name: trimmedName,
+          ...(solana && !existingEvm.solanaAddress
+            ? { solanaAddress: solana }
+            : {}),
+        });
+        return existingEvm._id;
+      }
+    }
+
+    if (solana) {
+      const existingSolana = await ctx.db
+        .query("contacts")
+        .withIndex("by_owner_and_solana", (q) =>
+          q
+            .eq("ownerExternalId", ownerExternalId)
+            .eq("solanaAddress", solana),
+        )
+        .unique();
+      if (existingSolana) {
+        await ctx.db.patch(existingSolana._id, {
+          name: trimmedName,
+          ...(evm && !existingSolana.evmAddress ? { evmAddress: evm } : {}),
+        });
+        return existingSolana._id;
+      }
+    }
+
+    return await ctx.db.insert("contacts", {
+      ownerExternalId,
+      name: trimmedName,
+      evmAddress: evm,
+      solanaAddress: solana,
     });
   },
 });

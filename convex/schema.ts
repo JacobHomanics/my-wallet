@@ -14,9 +14,17 @@ export default defineSchema({
 
   contacts: defineTable({
     ownerExternalId: v.string(),
-    contactUserId: v.id("users"),
-    contactUsername: v.string(),
+    /** Set when the contact is a registered Cashbox user. */
+    contactUserId: v.optional(v.id("users")),
+    contactUsername: v.optional(v.string()),
+    /** Display name for address-book / advanced contacts. */
+    name: v.optional(v.string()),
+    /** Optional chain addresses for address-book / advanced contacts. */
+    evmAddress: v.optional(v.string()),
+    solanaAddress: v.optional(v.string()),
   })
     .index("by_owner", ["ownerExternalId"])
-    .index("by_owner_and_contact", ["ownerExternalId", "contactUserId"]),
+    .index("by_owner_and_contact", ["ownerExternalId", "contactUserId"])
+    .index("by_owner_and_evm", ["ownerExternalId", "evmAddress"])
+    .index("by_owner_and_solana", ["ownerExternalId", "solanaAddress"]),
 });

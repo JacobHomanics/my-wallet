@@ -64,6 +64,9 @@ export function ContactsScreen() {
             contacts.map((contact) => (
               <View key={contact.id} style={styles.contactRow}>
                 <Text style={styles.contactLabel}>{contact.label}</Text>
+                {contact.subtitle ? (
+                  <Text style={styles.contactSubtitle}>{contact.subtitle}</Text>
+                ) : null}
               </View>
             ))
           )}
@@ -155,6 +158,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#166534',
+  },
+  contactSubtitle: {
+    marginTop: 4,
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#86a894',
   },
   button: {
     alignSelf: 'center',
