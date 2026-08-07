@@ -1,0 +1,28 @@
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+import {
+  PROFILE_STACK_INITIAL_ROUTE,
+  profileStackScreens,
+} from '@/navigation/ProfileStack.shared';
+import type { ProfileStackParamList } from '@/navigation/types';
+
+const NativeStack = createNativeStackNavigator<ProfileStackParamList>();
+
+export function ProfileStack() {
+  return (
+    <NativeStack.Navigator
+      initialRouteName={PROFILE_STACK_INITIAL_ROUTE}
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+        gestureEnabled: true,
+      }}
+    >
+      <NativeStack.Screen name="index" component={profileStackScreens.index} />
+      <NativeStack.Screen
+        name="settings"
+        component={profileStackScreens.settings}
+      />
+    </NativeStack.Navigator>
+  );
+}

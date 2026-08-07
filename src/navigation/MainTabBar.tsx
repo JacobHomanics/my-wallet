@@ -13,7 +13,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors } from '@/theme/colors';
 
 const TAB_ICONS = {
-  settings: { focused: 'settings', outline: 'settings-outline' },
+  profile: { focused: 'person', outline: 'person-outline' },
 } as const;
 
 type TabRouteName = keyof typeof TAB_ICONS;
@@ -106,8 +106,8 @@ function WebTopNav({ state, descriptors, navigation }: BottomTabBarProps) {
 
       <ProfileDropdown
         navigation={navigation as never}
-        onOpenSettings={() => {
-          navigation.navigate('settings');
+        onOpenProfile={() => {
+          navigation.navigate('profile');
         }}
       />
     </View>

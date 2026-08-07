@@ -20,7 +20,7 @@ import {
 
 type ProfileDropdownProps = {
   navigation: SignOutNavigation;
-  onOpenSettings?: () => void;
+  onOpenProfile?: () => void;
 };
 
 /**
@@ -28,7 +28,7 @@ type ProfileDropdownProps = {
  */
 export function ProfileDropdown({
   navigation,
-  onOpenSettings,
+  onOpenProfile,
 }: ProfileDropdownProps) {
   const { logout } = useAuth();
   const { displayName, avatarSeed } = useProfileIdentity();
@@ -79,11 +79,11 @@ export function ProfileDropdown({
 
       {isOpen ? (
         <View style={styles.menu}>
-          {onOpenSettings ? (
+          {onOpenProfile ? (
             <Pressable
               accessibilityRole="button"
               onPress={() => {
-                onOpenSettings();
+                onOpenProfile();
                 closeDropdown();
               }}
               style={(pressState) => [
@@ -91,12 +91,12 @@ export function ProfileDropdown({
                 pressState.pressed && styles.menuItemPressed,
               ]}
             >
-              <Ionicons name="settings-outline" size={18} color="#166534" />
-              <Text style={styles.menuItemLabel}>Settings</Text>
+              <Ionicons name="person-outline" size={18} color="#166534" />
+              <Text style={styles.menuItemLabel}>Profile</Text>
             </Pressable>
           ) : null}
 
-          {onOpenSettings ? <View style={styles.separator} /> : null}
+          {onOpenProfile ? <View style={styles.separator} /> : null}
 
           <Pressable
             accessibilityRole="button"

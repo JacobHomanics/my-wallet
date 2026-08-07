@@ -303,7 +303,13 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               },
             },
           },
-          settings: 'settings',
+          profile: {
+            path: 'profile',
+            screens: {
+              index: '',
+              settings: 'settings',
+            },
+          },
         },
       },
     },

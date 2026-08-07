@@ -49,7 +49,7 @@ export function AccountNumberInfoModal({
             </Text>
             <Text style={styles.paragraph}>
               You can view your EVM and Solana addresses anytime in the
-              advanced details section of the Settings screen.
+              advanced details section of the Profile screen.
             </Text>
           </View>
           <Pressable

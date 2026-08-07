@@ -55,9 +55,14 @@ export type HomeStackParamList = {
   };
 };
 
+export type ProfileStackParamList = {
+  index: undefined;
+  settings: undefined;
+};
+
 export type MainTabParamList = {
   home: NavigatorScreenParams<HomeStackParamList> | undefined;
-  settings: undefined;
+  profile: NavigatorScreenParams<ProfileStackParamList> | undefined;
 };
 
 export type ExportWalletParams = {

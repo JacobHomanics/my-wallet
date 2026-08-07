@@ -8,8 +8,8 @@ import { useBottomTabBarStyle } from '@/hooks/useBottomTabBarStyle';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { HomeStack } from '@/navigation/HomeStack';
 import { MainTabBar } from '@/navigation/MainTabBar';
+import { ProfileStack } from '@/navigation/ProfileStack';
 import type { MainTabParamList } from '@/navigation/types';
-import { SettingsScreen } from '@/screens/SettingsScreen';
 import { colors } from '@/theme/colors';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -35,7 +35,6 @@ export function MainTabs() {
         tabBarInactiveTintColor: '#86a894',
         tabBarStyle,
         tabBarLabelStyle: {
-          // Room for descenders; default fontSize 10 clips "g" in Settings on web.
           lineHeight: 13,
         },
         // Pass a bounded height into tab scenes so nested ScrollViews scroll on web.
@@ -74,17 +73,24 @@ export function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="settings"
-        component={SettingsScreen}
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons
-              name={focused ? 'settings' : 'settings-outline'}
-              color={color}
-              size={size}
-            />
-          ),
+        name="profile"
+        component={ProfileStack}
+        options={({ route }) => {
+          const focusedRoute =
+            getFocusedRouteNameFromRoute(route) ?? 'index';
+          const hideTabBar = !isDesktopWeb && focusedRoute === 'settings';
+
+          return {
+            title: 'Profile',
+            tabBarStyle: hideTabBar ? { display: 'none' } : tabBarStyle,
+            tabBarIcon: ({ color, focused, size }) => (
+              <Ionicons
+                name={focused ? 'person' : 'person-outline'}
+                color={color}
+                size={size}
+              />
+            ),
+          };
         }}
       />
     </Tab.Navigator>
