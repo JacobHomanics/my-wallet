@@ -16,6 +16,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { ContactPickerModal } from '@/components/ContactPickerModal';
+import { useContactPickerModal } from '@/hooks/useContactPickerModal';
+import type { ContactListItem } from '@/hooks/useContacts';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import {
@@ -23,6 +26,7 @@ import {
   updateSendDraft,
 } from '@/hooks/useSendDraft';
 import { useSendRecipientReady } from '@/hooks/useSendRecipientReady';
+import { useSendToContact } from '@/hooks/useSendToContact';
 import {
   encodeWalletIdentity,
   tryDecodeWalletIdentity,
@@ -40,6 +44,8 @@ export function SendScreen() {
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'send'>>();
   const goHome = usePopToHome();
+  const { pickerOpen, openPicker, closePicker } = useContactPickerModal();
+  const { sendToContact } = useSendToContact();
 
   const initialDraft = getSendDraftSnapshot();
   const [ethereumRecipient, setEthereumRecipientState] = useState(
@@ -161,6 +167,39 @@ export function SendScreen() {
       usdAmount: route.params?.usdAmount,
     });
   }, [canContinue, navigation, route.params?.tokenId, route.params?.usdAmount]);
+
+  const onSelectContact = useCallback(
+    (contact: ContactListItem) => {
+      if (contact.identityId) {
+        setAccountNumber(contact.identityId);
+      } else {
+        const nextEvm = contact.evmAddress?.trim() ?? '';
+        const nextSolana = contact.solanaAddress?.trim() ?? '';
+        setEthereumRecipient(nextEvm);
+        setSolanaRecipient(nextSolana);
+        syncAccountNumberFromAddresses(nextEvm, nextSolana);
+        if (nextEvm || nextSolana) {
+          setShowDecodedAddresses(true);
+        }
+      }
+
+      closePicker();
+      sendToContact(contact, {
+        tokenId: route.params?.tokenId,
+        usdAmount: route.params?.usdAmount,
+      });
+    },
+    [
+      closePicker,
+      route.params?.tokenId,
+      route.params?.usdAmount,
+      sendToContact,
+      setAccountNumber,
+      setEthereumRecipient,
+      setSolanaRecipient,
+      syncAccountNumberFromAddresses,
+    ],
+  );
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -325,6 +364,19 @@ export function SendScreen() {
               ) : null}
 
               <Pressable
+                accessibilityLabel="Choose from contacts"
+                accessibilityRole="button"
+                onPress={openPicker}
+                style={({ pressed }) => [
+                  styles.contactsButton,
+                  pressed && styles.contactsButtonPressed,
+                ]}
+              >
+                <Ionicons name="people-outline" size={20} color="#166534" />
+                <Text style={styles.contactsButtonText}>Contacts</Text>
+              </Pressable>
+
+              <Pressable
                 accessibilityRole="button"
                 disabled={!canContinue}
                 onPress={onContinue}
@@ -340,6 +392,12 @@ export function SendScreen() {
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+
+      <ContactPickerModal
+        visible={pickerOpen}
+        onClose={closePicker}
+        onSelect={onSelectContact}
+      />
     </View>
   );
 }
@@ -495,8 +553,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#d1fae5',
     marginVertical: 10,
   },
+  contactsButton: {
+    marginTop: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#d1fae5',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 10,
+  },
+  contactsButtonPressed: {
+    opacity: 0.85,
+  },
+  contactsButtonText: {
+    color: '#166534',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   continueButton: {
-    marginTop: 32,
+    marginTop: 12,
     alignItems: 'center',
     backgroundColor: '#166534',
     paddingHorizontal: 20,

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import type { ContactListItem } from '@/hooks/useContacts';
 
@@ -50,6 +50,10 @@ export function useContactsFilter(contacts: {
     );
   }, [contacts.externalContacts, normalizedQuery]);
 
+  const clearQuery = useCallback(() => {
+    setQuery('');
+  }, []);
+
   const hasActiveQuery = normalizedQuery.length > 0;
   const hasFilteredResults =
     filteredUserContacts.length > 0 || filteredExternalContacts.length > 0;
@@ -57,6 +61,7 @@ export function useContactsFilter(contacts: {
   return {
     query,
     setQuery,
+    clearQuery,
     filteredUserContacts,
     filteredExternalContacts,
     hasActiveQuery,

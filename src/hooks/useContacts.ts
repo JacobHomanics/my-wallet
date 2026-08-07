@@ -12,6 +12,7 @@ export type ContactListItem = {
   name: string | null;
   evmAddress: string | null;
   solanaAddress: string | null;
+  identityId: string | null;
   label: string;
   subtitle: string | null;
   isExternal: boolean;
@@ -67,6 +68,7 @@ export function useContacts(): {
         name,
         evmAddress,
         solanaAddress,
+        identityId: row.identityId ?? null,
         isExternal,
         label: username
           ? `@${username}`

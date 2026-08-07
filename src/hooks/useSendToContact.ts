@@ -2,12 +2,22 @@ import { useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import type { ContactDetails } from '@/hooks/useContactDetails';
 import {
   hydrateSendDraftFromConfirmParams,
   resetSendDraft,
 } from '@/hooks/useSendDraft';
 import type { HomeStackParamList } from '@/navigation/types';
+
+export type SendableContact = {
+  identityId: string | null;
+  evmAddress: string | null;
+  solanaAddress: string | null;
+};
+
+type SendToContactOptions = {
+  tokenId?: string;
+  usdAmount?: string;
+};
 
 /**
  * Open Send Amount prefilled for a contact (skips Recipient when details known).
@@ -16,7 +26,7 @@ export function useSendToContact() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
 
-  const canSendToContact = useCallback((contact: ContactDetails | null) => {
+  const canSendToContact = useCallback((contact: SendableContact | null) => {
     if (!contact) {
       return false;
     }
@@ -26,19 +36,26 @@ export function useSendToContact() {
   }, []);
 
   const sendToContact = useCallback(
-    (contact: ContactDetails) => {
+    (contact: SendableContact, options?: SendToContactOptions) => {
       resetSendDraft();
 
       if (contact.identityId) {
-        hydrateSendDraftFromConfirmParams({ identity: contact.identityId });
+        hydrateSendDraftFromConfirmParams({
+          identity: contact.identityId,
+          usdAmount: options?.usdAmount,
+        });
       } else {
         hydrateSendDraftFromConfirmParams({
           ethereumRecipient: contact.evmAddress ?? undefined,
           solanaRecipient: contact.solanaAddress ?? undefined,
+          usdAmount: options?.usdAmount,
         });
       }
 
-      navigation.navigate('sendAmount');
+      navigation.navigate('sendAmount', {
+        tokenId: options?.tokenId,
+        usdAmount: options?.usdAmount,
+      });
     },
     [navigation],
   );

@@ -9,10 +9,25 @@ const SOLANA_ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 export const listForOwner = query({
   args: { ownerExternalId: v.string() },
   handler: async (ctx, { ownerExternalId }) => {
-    return await ctx.db
+    const contacts = await ctx.db
       .query("contacts")
       .withIndex("by_owner", (q) => q.eq("ownerExternalId", ownerExternalId))
       .collect();
+
+    return await Promise.all(
+      contacts.map(async (contact) => {
+        let identityId: string | null = null;
+        if (contact.contactUserId) {
+          const user = await ctx.db.get(contact.contactUserId);
+          identityId = user?.identityId ?? null;
+        }
+
+        return {
+          ...contact,
+          identityId,
+        };
+      }),
+    );
   },
 });
 
