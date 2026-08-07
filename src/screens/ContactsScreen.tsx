@@ -145,7 +145,7 @@ export function ContactsScreen() {
     selectedTab === 'all'
       ? 'Search contacts'
       : selectedTab === 'contacts'
-        ? 'Search contacts'
+        ? '@username'
         : 'Search external contacts';
 
   const emptyMessage = !hasSourceContacts
