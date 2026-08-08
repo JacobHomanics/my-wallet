@@ -1,14 +1,27 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AccountNumber } from '@/components/AccountNumber';
 import { Avatar } from '@/components/Avatar';
+import { ExportPrivateKeyWebView } from '@/components/ExportPrivateKeyWebView';
+import { WalletDebitCard } from '@/components/WalletDebitCard';
 import { useConvexUsername } from '@/hooks/useConvexUsername';
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
+import { useExportPrivateKey } from '@/hooks/useExportPrivateKey';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useProfilePhoto } from '@/hooks/useProfilePhoto';
+import { useShowAdvanced } from '@/hooks/useShowAdvanced';
+import { useUserWallets } from '@/hooks/useUserWallets';
 import { useWalletIdentityId } from '@/hooks/useWalletIdentityId';
 import type { ProfileStackParamList } from '@/navigation/types';
 
@@ -20,6 +33,14 @@ export function ProfileScreen() {
   const { profilePhotoUrl } = useProfilePhoto();
   const { username } = useConvexUsername();
   const { identityId } = useWalletIdentityId();
+  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const { ready, wallets } = useUserWallets();
+  const { copy, isCopied } = useCopyToClipboard();
+  const {
+    exportPrivateKey,
+    exportWebViewUri,
+    closeExportWebView,
+  } = useExportPrivateKey();
 
   return (
     <View style={styles.container}>
@@ -77,7 +98,63 @@ export function ProfileScreen() {
             />
           </View>
         ) : null}
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded: showAdvanced }}
+          onPress={toggleAdvanced}
+          style={({ pressed }) => [
+            styles.advancedToggle,
+            pressed && styles.advancedTogglePressed,
+          ]}
+        >
+          <Text style={styles.advancedToggleText}>
+            {showAdvanced ? 'Hide advanced details' : 'Show advanced details'}
+          </Text>
+          <Ionicons
+            name={showAdvanced ? 'chevron-up' : 'chevron-down'}
+            size={16}
+            color="#5a7d6a"
+          />
+        </Pressable>
+
+        {showAdvanced ? (
+          <View style={styles.advancedSection}>
+            <Text style={styles.sectionTitle}>Wallet</Text>
+            {!ready ? (
+              <ActivityIndicator color="#166534" style={styles.loader} />
+            ) : wallets.length === 0 ? (
+              <Text style={styles.empty}>Creating your wallet…</Text>
+            ) : (
+              wallets.map((wallet) => {
+                const walletKey = `${wallet.chain}-${wallet.address}`;
+
+                return (
+                  <WalletDebitCard
+                    key={walletKey}
+                    wallet={wallet}
+                    accountLabel={displayName}
+                    copied={isCopied(walletKey)}
+                    onCopy={() => {
+                      void copy(wallet.address, walletKey);
+                    }}
+                    onExport={() => {
+                      void exportPrivateKey(wallet).catch((error) => {
+                        console.error(error);
+                      });
+                    }}
+                  />
+                );
+              })
+            )}
+          </View>
+        ) : null}
       </ScrollView>
+
+      <ExportPrivateKeyWebView
+        onClose={closeExportWebView}
+        uri={exportWebViewUri}
+      />
     </View>
   );
 }
@@ -137,5 +214,43 @@ const styles = StyleSheet.create({
   accountNumber: {
     maxWidth: '100%',
     alignSelf: 'stretch',
+  },
+  advancedToggle: {
+    marginTop: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  advancedTogglePressed: {
+    opacity: 0.65,
+  },
+  advancedToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5a7d6a',
+  },
+  advancedSection: {
+    width: '100%',
+    maxWidth: 420,
+    marginTop: 8,
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  loader: {
+    marginTop: 8,
+  },
+  empty: {
+    fontSize: 15,
+    color: '#86a894',
   },
 });

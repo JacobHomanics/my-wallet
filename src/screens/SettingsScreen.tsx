@@ -14,13 +14,9 @@ import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
 import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
-import { ExportPrivateKeyWebView } from '@/components/ExportPrivateKeyWebView';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
-import { WalletDebitCard } from '@/components/WalletDebitCard';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
-import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
-import { useExportPrivateKey } from '@/hooks/useExportPrivateKey';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToProfile } from '@/hooks/usePopToProfile';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
@@ -28,7 +24,6 @@ import { useProfilePhotoSettings } from '@/hooks/useProfilePhotoSettings';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useSignOut } from '@/hooks/useSignOut';
 import { useUsernameSettings } from '@/hooks/useUsernameSettings';
-import { useUserWallets } from '@/hooks/useUserWallets';
 
 export function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -36,8 +31,6 @@ export function SettingsScreen() {
   const goProfile = usePopToProfile();
   const { displayName, avatarSeed } = useProfileIdentity();
   const { signOut } = useSignOut();
-  const { ready, wallets } = useUserWallets();
-  const { copy, isCopied } = useCopyToClipboard();
   const {
     profilePhotoUrl,
     isUploading: isUploadingPhoto,
@@ -56,11 +49,6 @@ export function SettingsScreen() {
     isDirty: usernameDirty,
     isValid: usernameValid,
   } = useUsernameSettings();
-  const {
-    exportPrivateKey,
-    exportWebViewUri,
-    closeExportWebView,
-  } = useExportPrivateKey();
   const {
     strategies,
     selectedStrategy,
@@ -296,36 +284,6 @@ export function SettingsScreen() {
               </Pressable>
             </View>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Wallet</Text>
-              {!ready ? (
-                <ActivityIndicator color="#166534" style={styles.loader} />
-              ) : wallets.length === 0 ? (
-                <Text style={styles.empty}>Creating your wallet…</Text>
-              ) : (
-                wallets.map((wallet) => {
-                  const walletKey = `${wallet.chain}-${wallet.address}`;
-
-                  return (
-                    <WalletDebitCard
-                      key={walletKey}
-                      wallet={wallet}
-                      accountLabel={displayName}
-                      copied={isCopied(walletKey)}
-                      onCopy={() => {
-                        void copy(wallet.address, walletKey);
-                      }}
-                      onExport={() => {
-                        void exportPrivateKey(wallet).catch((error) => {
-                          console.error(error);
-                        });
-                      }}
-                    />
-                  );
-                })
-              )}
-            </View>
-
             <Pressable
               accessibilityRole="button"
               onPress={() => {
@@ -341,11 +299,6 @@ export function SettingsScreen() {
           </View>
         </View>
       </ScrollView>
-
-      <ExportPrivateKeyWebView
-        onClose={closeExportWebView}
-        uri={exportWebViewUri}
-      />
 
       <StrategyPickerModal
         onClose={closePicker}
@@ -528,13 +481,6 @@ const styles = StyleSheet.create({
   strategyDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#86a894',
-  },
-  loader: {
-    marginTop: 8,
-  },
-  empty: {
-    fontSize: 15,
     color: '#86a894',
   },
   logoutButton: {
