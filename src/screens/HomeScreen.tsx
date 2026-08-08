@@ -155,6 +155,19 @@ export function HomeScreen() {
             accessibilityRole="link"
             hitSlop={8}
             onPress={() => {
+              navigation.navigate('rewards');
+            }}
+            style={({ pressed }) => [
+              styles.bottomLink,
+              pressed && styles.detailsLinkPressed,
+            ]}
+          >
+            <Text style={styles.detailsLinkText}>Rewards</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="link"
+            hitSlop={8}
+            onPress={() => {
               navigation.navigate('transactions');
             }}
             style={({ pressed }) => [

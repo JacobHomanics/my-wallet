@@ -15,6 +15,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/Avatar';
 import { TokenIcon } from '@/components/TokenIcon';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
+import { getNetworkLabel } from '@/lib/alchemy/networks';
+import {
+  REWARD_POINTS_LABEL,
+  REWARD_TOKEN_NETWORK,
+  REWARD_TOKEN_SYMBOL,
+} from '@/lib/rewardToken';
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
@@ -28,6 +34,9 @@ export function SentScreen() {
   const {
     usdLabel,
     legs,
+    rewardAmount,
+    rewardHash,
+    rewardFailed,
     recipientLabel,
     recipientProfilePhotoUrl,
     recipientUsername,
@@ -73,6 +82,24 @@ export function SentScreen() {
                   {recipientLabel}
                 </Text>
               </View>
+            </View>
+          ) : null}
+
+          {rewardAmount ? (
+            <View style={styles.rewardSection}>
+              <Text style={styles.rewardLabel}>Rewards</Text>
+              <Text style={styles.rewardValue}>
+                {rewardAmount} {REWARD_POINTS_LABEL}
+              </Text>
+            </View>
+          ) : rewardFailed ? (
+            <View style={styles.rewardSection}>
+              <Text style={styles.rewardFailedText}>
+                {
+                  "Your money was sent! However, we weren't able to send "
+                }
+                {REWARD_POINTS_LABEL}. Sorry!
+              </Text>
             </View>
           ) : null}
 
@@ -124,6 +151,32 @@ export function SentScreen() {
                   />
                 </View>
               ))}
+              {rewardAmount && rewardHash ? (
+                <View key={`reward-${rewardHash}`}>
+                  {legs.length > 0 ? <View style={styles.divider} /> : null}
+                  <View style={styles.tokenRow}>
+                    <TokenIcon
+                      logoUrl={null}
+                      network={REWARD_TOKEN_NETWORK}
+                      size={36}
+                      symbol={REWARD_TOKEN_SYMBOL}
+                    />
+                    <View style={styles.tokenText}>
+                      <Text style={styles.tokenSymbol}>
+                        {rewardAmount} {REWARD_POINTS_LABEL} (reward)
+                      </Text>
+                      <Text style={styles.tokenMeta}>
+                        {getNetworkLabel(REWARD_TOKEN_NETWORK)}
+                      </Text>
+                    </View>
+                  </View>
+                  <SummaryRow
+                    label="Transaction"
+                    value={formatWalletAddress(rewardHash, 10, 10)}
+                    mono
+                  />
+                </View>
+              ) : null}
             </View>
           ) : null}
 
@@ -245,6 +298,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#166534',
     fontVariant: ['tabular-nums'],
+  },
+  rewardSection: {
+    marginTop: 24,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+  },
+  rewardLabel: {
+    marginBottom: 10,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  rewardValue: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#15803d',
+    fontVariant: ['tabular-nums'],
+  },
+  rewardFailedText: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '500',
+    color: '#a16207',
+    textAlign: 'center',
   },
   advancedToggle: {
     marginTop: 28,

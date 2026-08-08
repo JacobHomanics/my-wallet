@@ -23,6 +23,7 @@ export type SentLeg = {
 export type HomeStackParamList = {
   index: undefined;
   tokenDetails: undefined;
+  rewards: undefined;
   transactions: undefined;
   contacts: undefined;
   newContact: undefined;
@@ -61,6 +62,12 @@ export type HomeStackParamList = {
   sent: {
     usdLabel: string;
     legs: SentLeg[];
+    /** Whole-token treasury reward amount; omitted for frontend (device) sends. */
+    rewardAmount?: string | null;
+    /** Treasury reward tx hash when a reward was sent. */
+    rewardHash?: string | null;
+    /** Payment succeeded but treasury reward failed. */
+    rewardFailed?: boolean;
     /** Display label for the recipient (username, name, or truncated address). */
     recipientLabel?: string;
     recipientProfilePhotoUrl?: string | null;

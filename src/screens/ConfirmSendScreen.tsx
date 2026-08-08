@@ -63,7 +63,8 @@ export function ConfirmSendScreen() {
     solanaAddress: taxSolanaAddress,
     rate: taxRate,
   } = useAppTax();
-  const { allocationInputUnit, setAllocationInputUnit } = useSendDraftUi();
+  const { allocationInputUnit, setAllocationInputUnit, broadcastMode, setBroadcastMode } =
+    useSendDraftUi();
   const {
     strategies,
     selectedStrategy,
@@ -179,7 +180,7 @@ export function ConfirmSendScreen() {
           taxSolanaAddress,
           taxRate,
         });
-        const results = await sendPayment(
+        const outcome = await sendPayment(
           paymentLegs.map((leg) => ({
             token: leg.token,
             recipient: leg.recipient,
@@ -187,6 +188,7 @@ export function ConfirmSendScreen() {
             amountFormatted: leg.amountFormatted,
             isTax: leg.isTax,
           })),
+          { broadcastMode },
         );
         resetSendDraft();
         refresh();
@@ -195,7 +197,10 @@ export function ConfirmSendScreen() {
           recipientLabel: primaryLabel ?? undefined,
           recipientProfilePhotoUrl,
           recipientUsername,
-          legs: results.map((result) => ({
+          rewardAmount: outcome.rewardAmount,
+          rewardHash: outcome.rewardHash,
+          rewardFailed: outcome.rewardFailed,
+          legs: outcome.legs.map((result) => ({
             hash: result.hash,
             amount: result.amount,
             symbol: result.symbol,
@@ -213,6 +218,7 @@ export function ConfirmSendScreen() {
     })();
   }, [
     allocations,
+    broadcastMode,
     canSend,
     clearStatus,
     navigation,
@@ -403,12 +409,14 @@ export function ConfirmSendScreen() {
                 allocationInputUnit={allocationInputUnit}
                 allocationInputs={allocationInputs}
                 allocations={allocations}
+                broadcastMode={broadcastMode}
                 canAddToken={canAddToken}
                 onAddToken={() => {
                   setTokenPickerOpen(true);
                 }}
                 onAllocationAmountChange={setAllocationAmount}
                 onAllocationInputUnitChange={setAllocationInputUnit}
+                onBroadcastModeChange={setBroadcastMode}
                 onOpenStrategyPicker={openStrategyPicker}
                 onRemoveAllocation={removeAllocation}
                 selectedStrategy={selectedStrategy}

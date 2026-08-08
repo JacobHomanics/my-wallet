@@ -10,6 +10,7 @@
     "@expo/vector-icons": "^15.1.1",
     "@privy-io/expo": "^0.70.4",
     "@privy-io/expo-native-extensions": "^0.0.12",
+    "@privy-io/node": "^0.28.0",
     "@privy-io/react-auth": "^3.35.2",
     "@react-navigation/bottom-tabs": "^7.18.14",
     "@react-navigation/native": "^7.3.14",
@@ -25,6 +26,7 @@
     "convex": "^1.43.0",
     "css-to-react-native": "^3.2.0",
     "eslint-config-expo": "~57.0.1",
+    "ethers": "^6.17.0",
     "expo": "~57.0.10",
     "expo-apple-authentication": "~57.0.1",
     "expo-application": "~57.0.2",
@@ -50,7 +52,8 @@
     "react-native-screens": "~4.26.2",
     "react-native-svg": "15.15.4",
     "react-native-web": "^0.21.2",
-    "react-native-webview": "13.16.1"
+    "react-native-webview": "13.16.1",
+    "viem": "^2.55.11"
   },
   "devDependencies": {
     "@expo/webpack-config": "^19.0.1",
@@ -69,7 +72,8 @@
     "lint": "eslint . --max-warnings 0 && tsc --noEmit --incremental",
     "clear-all-temp": "rm -rf .expo ios android node_modules",
     "prepare": "husky",
-    "check-types": "tsc --noEmit --incremental"
+    "check-types": "tsc --noEmit --incremental",
+    "keystore:treasury": "npx tsx scripts/create-treasury-keystore.ts"
   },
   "private": true
 }

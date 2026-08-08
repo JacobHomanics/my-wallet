@@ -4,6 +4,8 @@ export type UserWallet = {
   chain: 'ethereum' | 'solana';
   label: string;
   address: string;
+  /** Privy server wallet id (required for Wallet API sends). */
+  id?: string;
 };
 
 export type UserWalletsResult = {

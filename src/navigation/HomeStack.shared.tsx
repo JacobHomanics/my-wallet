@@ -9,6 +9,7 @@ import { NewContactScreen } from '@/screens/NewContactScreen';
 import { ReceiveQrScreen } from '@/screens/ReceiveQrScreen';
 import { ReceiveScreen } from '@/screens/ReceiveScreen';
 import { RequestScreen } from '@/screens/RequestScreen';
+import { RewardsScreen } from '@/screens/RewardsScreen';
 import { SendAmountScreen } from '@/screens/SendAmountScreen';
 import { SendScreen } from '@/screens/SendScreen';
 import { SentScreen } from '@/screens/SentScreen';
@@ -20,6 +21,7 @@ export const HOME_STACK_INITIAL_ROUTE: keyof HomeStackParamList = 'index';
 export const homeStackScreens = {
   index: HomeScreen,
   tokenDetails: TokenDetailsScreen,
+  rewards: RewardsScreen,
   transactions: TransactionsScreen,
   contacts: ContactsScreen,
   newContact: NewContactScreen,
