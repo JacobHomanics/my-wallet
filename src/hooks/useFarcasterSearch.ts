@@ -1,7 +1,6 @@
 import { useAction } from 'convex/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import { api } from '../../convex/_generated/api';
 
 export type FarcasterSearchHit = {
@@ -12,28 +11,10 @@ export type FarcasterSearchHit = {
   evmAddress: string | null;
   solanaAddress: string | null;
   label: string;
-  subtitle: string;
   hasAddress: boolean;
 };
 
 const DEBOUNCE_MS = 300;
-
-function buildSubtitle(hit: {
-  evmAddress: string | null;
-  solanaAddress: string | null;
-}): string {
-  const parts: string[] = ['Farcaster'];
-  if (hit.evmAddress) {
-    parts.push(`EVM ${formatWalletAddress(hit.evmAddress, 6, 4)}`);
-  }
-  if (hit.solanaAddress) {
-    parts.push(`Solana ${formatWalletAddress(hit.solanaAddress, 6, 4)}`);
-  }
-  if (!hit.evmAddress && !hit.solanaAddress) {
-    parts.push('No verified address');
-  }
-  return parts.join(' · ');
-}
 
 /**
  * Debounced Farcaster username search via Neynar (Convex action).
@@ -75,7 +56,6 @@ export function useFarcasterSearch(query: string) {
               return {
                 ...hit,
                 label: `@${hit.username}`,
-                subtitle: buildSubtitle(hit),
                 hasAddress,
               };
             }),

@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 
-export type ContactsTabId = 'all' | 'contacts' | 'farcaster' | 'external';
+export type ContactsTabId = 'all' | 'contacts' | 'external';
 
 /**
- * Segmented tab state for All / Contacts / Farcaster / External.
+ * Segmented tab state for All / Contacts / External Contacts.
  */
 export function useContactsTab(initial: ContactsTabId = 'all') {
   const [selectedTab, setSelectedTab] = useState<ContactsTabId>(initial);
@@ -16,10 +16,6 @@ export function useContactsTab(initial: ContactsTabId = 'all') {
     setSelectedTab('contacts');
   }, []);
 
-  const selectFarcaster = useCallback(() => {
-    setSelectedTab('farcaster');
-  }, []);
-
   const selectExternal = useCallback(() => {
     setSelectedTab('external');
   }, []);
@@ -29,11 +25,9 @@ export function useContactsTab(initial: ContactsTabId = 'all') {
     setSelectedTab,
     selectAll,
     selectContacts,
-    selectFarcaster,
     selectExternal,
     isAllTab: selectedTab === 'all',
     isContactsTab: selectedTab === 'contacts',
-    isFarcasterTab: selectedTab === 'farcaster',
     isExternalTab: selectedTab === 'external',
   };
 }

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
@@ -42,7 +42,7 @@ function contactDisplayLabel(contact: ContactListItem): string {
 }
 
 function contactDescription(contact: ContactListItem): string | null {
-  if (contact.isExternal && !contact.isFarcaster) {
+  if (contact.isFarcaster || contact.isExternal) {
     return null;
   }
   return contact.subtitle;
@@ -140,12 +140,53 @@ function CollapsibleSection({
   onToggle,
   contacts,
   onSelect,
+  nested = false,
 }: {
   title: string;
   expanded: boolean;
   onToggle: () => void;
   contacts: ContactListItem[];
   onSelect: (contact: ContactListItem) => void;
+  nested?: boolean;
+}) {
+  return (
+    <View style={[styles.section, nested && styles.nestedSection]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        onPress={onToggle}
+        style={({ pressed }) => [
+          styles.sectionHeader,
+          nested && styles.nestedSectionHeader,
+          pressed && styles.sectionHeaderPressed,
+        ]}
+      >
+        <Text style={[styles.sectionTitle, nested && styles.nestedSectionTitle]}>
+          {title}
+        </Text>
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={16}
+          color="#5a7d6a"
+        />
+      </Pressable>
+      {expanded ? (
+        <ContactPickerRows contacts={contacts} onSelect={onSelect} />
+      ) : null}
+    </View>
+  );
+}
+
+function CollapsibleGroup({
+  title,
+  expanded,
+  onToggle,
+  children,
+}: {
+  title: string;
+  expanded: boolean;
+  onToggle: () => void;
+  children: ReactNode;
 }) {
   return (
     <View style={styles.section}>
@@ -165,9 +206,7 @@ function CollapsibleSection({
           color="#5a7d6a"
         />
       </Pressable>
-      {expanded ? (
-        <ContactPickerRows contacts={contacts} onSelect={onSelect} />
-      ) : null}
+      {expanded ? <View style={styles.groupBody}>{children}</View> : null}
     </View>
   );
 }
@@ -196,20 +235,20 @@ export function ContactPickerModal({
     selectedTab,
     isAllTab,
     isContactsTab,
-    isFarcasterTab,
     isExternalTab,
     selectAll,
     selectContacts,
-    selectFarcaster,
     selectExternal,
   } = useContactsTab();
   const {
     contactsExpanded,
+    externalGroupExpanded,
+    walletsExpanded,
     farcasterExpanded,
-    externalExpanded,
     toggleContacts,
+    toggleExternalGroup,
+    toggleWallets,
     toggleFarcaster,
-    toggleExternal,
   } = useContactsAllSections();
 
   useEffect(() => {
@@ -227,9 +266,7 @@ export function ContactPickerModal({
     ? hasAnyContacts
     : isContactsTab
       ? userContacts.length > 0
-      : isFarcasterTab
-        ? farcasterContacts.length > 0
-        : externalContacts.length > 0;
+      : externalContacts.length > 0 || farcasterContacts.length > 0;
 
   const hasFilteredResults = isAllTab
     ? filteredUserContacts.length > 0 ||
@@ -237,40 +274,28 @@ export function ContactPickerModal({
       filteredExternalContacts.length > 0
     : isContactsTab
       ? filteredUserContacts.length > 0
-      : isFarcasterTab
-        ? filteredFarcasterContacts.length > 0
-        : filteredExternalContacts.length > 0;
+      : filteredExternalContacts.length > 0 ||
+        filteredFarcasterContacts.length > 0;
 
   const searchPlaceholder =
     selectedTab === 'all'
       ? 'Search contacts'
       : selectedTab === 'contacts'
         ? '@username'
-        : selectedTab === 'farcaster'
-          ? '@farcaster'
-          : 'Search external contacts';
+        : 'Search external contacts';
 
   const emptyMessage = !hasSourceContacts
     ? selectedTab === 'external'
       ? 'No external contacts yet.'
-      : selectedTab === 'farcaster'
-        ? 'No Farcaster contacts yet.'
-        : selectedTab === 'contacts'
-          ? 'No contacts yet.'
-          : 'No contacts yet.'
+      : selectedTab === 'contacts'
+        ? 'No contacts yet.'
+        : 'No contacts yet.'
     : hasActiveQuery
       ? 'No contacts match your search.'
       : selectedTab === 'external'
         ? 'No external contacts yet.'
-        : selectedTab === 'farcaster'
-          ? 'No Farcaster contacts yet.'
-          : 'No contacts yet.';
+        : 'No contacts yet.';
 
-  const tabContacts = isContactsTab
-    ? filteredUserContacts
-    : isFarcasterTab
-      ? filteredFarcasterContacts
-      : filteredExternalContacts;
   return (
     <Modal
       animationType="slide"
@@ -312,11 +337,6 @@ export function ContactPickerModal({
             onPress={selectContacts}
           />
           <ContactsTabChip
-            label="Farcaster"
-            selected={isFarcasterTab}
-            onPress={selectFarcaster}
-          />
-          <ContactsTabChip
             label="External"
             selected={isExternalTab}
             onPress={selectExternal}
@@ -349,14 +369,21 @@ export function ContactPickerModal({
             <ActivityIndicator color="#166534" style={styles.loader} />
           ) : !hasFilteredResults ? (
             <Text style={styles.empty}>{emptyMessage}</Text>
-          ) : isAllTab ? (
+          ) : isContactsTab ? (
+            <View style={styles.section}>
+              <ContactPickerRows
+                contacts={filteredUserContacts}
+                onSelect={onSelect}
+              />
+            </View>
+          ) : isExternalTab ? (
             <>
-              {filteredUserContacts.length > 0 ? (
+              {filteredExternalContacts.length > 0 ? (
                 <CollapsibleSection
-                  title="Contacts"
-                  expanded={contactsExpanded}
-                  onToggle={toggleContacts}
-                  contacts={filteredUserContacts}
+                  title="Wallets"
+                  expanded={walletsExpanded}
+                  onToggle={toggleWallets}
+                  contacts={filteredExternalContacts}
                   onSelect={onSelect}
                 />
               ) : null}
@@ -369,20 +396,48 @@ export function ContactPickerModal({
                   onSelect={onSelect}
                 />
               ) : null}
-              {filteredExternalContacts.length > 0 ? (
+            </>
+          ) : (
+            <>
+              {filteredUserContacts.length > 0 ? (
                 <CollapsibleSection
-                  title="External Contacts"
-                  expanded={externalExpanded}
-                  onToggle={toggleExternal}
-                  contacts={filteredExternalContacts}
+                  title="Contacts"
+                  expanded={contactsExpanded}
+                  onToggle={toggleContacts}
+                  contacts={filteredUserContacts}
                   onSelect={onSelect}
                 />
               ) : null}
+              {filteredExternalContacts.length > 0 ||
+              filteredFarcasterContacts.length > 0 ? (
+                <CollapsibleGroup
+                  title="External Contacts"
+                  expanded={externalGroupExpanded}
+                  onToggle={toggleExternalGroup}
+                >
+                  {filteredExternalContacts.length > 0 ? (
+                    <CollapsibleSection
+                      title="Wallets"
+                      expanded={walletsExpanded}
+                      onToggle={toggleWallets}
+                      contacts={filteredExternalContacts}
+                      onSelect={onSelect}
+                      nested
+                    />
+                  ) : null}
+                  {filteredFarcasterContacts.length > 0 ? (
+                    <CollapsibleSection
+                      title="Farcaster"
+                      expanded={farcasterExpanded}
+                      onToggle={toggleFarcaster}
+                      contacts={filteredFarcasterContacts}
+                      onSelect={onSelect}
+                      nested
+                    />
+                  ) : null}
+                </CollapsibleGroup>
+              ) : null}
             </>
-          ) : (
-            <View style={styles.section}>
-              <ContactPickerRows contacts={tabContacts} onSelect={onSelect} />
-            </View>
           )}
         </ScrollView>
       </View>
@@ -445,7 +500,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   tabChipText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#5a7d6a',
     textAlign: 'center',
@@ -484,6 +539,12 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     marginTop: 8,
   },
+  nestedSection: {
+    marginTop: 4,
+  },
+  groupBody: {
+    paddingLeft: 8,
+  },
   sectionHeader: {
     marginTop: 16,
     marginBottom: 4,
@@ -492,6 +553,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
     paddingVertical: 4,
+  },
+  nestedSectionHeader: {
+    marginTop: 8,
   },
   sectionHeaderPressed: {
     opacity: 0.7,
@@ -502,6 +566,10 @@ const styles = StyleSheet.create({
     color: '#5a7d6a',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
+  },
+  nestedSectionTitle: {
+    fontSize: 13,
+    letterSpacing: 0.4,
   },
   option: {
     flexDirection: 'row',

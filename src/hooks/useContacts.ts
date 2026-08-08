@@ -123,11 +123,7 @@ export function useContacts(): {
 
       let subtitle: string | null = null;
       if (isFarcaster) {
-        const parts = ['Farcaster'];
-        if (addressSubtitle) {
-          parts.push(addressSubtitle);
-        }
-        subtitle = parts.join(' · ');
+        subtitle = null;
       } else if (!isExternal) {
         subtitle = addressSubtitle;
       }
