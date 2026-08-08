@@ -40,13 +40,18 @@ export function OnboardingScreen() {
   } = useOnboardingProfile();
 
   const goMain = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
     navigation.reset({
       index: 0,
       routes: [{ name: 'main' }],
     });
   };
 
-  const readyForActions = onboardingStatus === 'needed';
+  const readyForActions =
+    onboardingStatus === 'needed' || onboardingStatus === 'done';
 
   const onContinue = () => {
     if (!readyForActions) {
@@ -98,8 +103,7 @@ export function OnboardingScreen() {
       >
         <Text style={styles.title}>Set up your profile</Text>
         <Text style={styles.prompt}>
-          Pick a username so friends can find you and send money without
-          copying long wallet addresses.
+          Pick a username and set a profile photo so friends can easily find you and send money.
         </Text>
 
         <View style={styles.photoBlock}>
@@ -163,12 +167,12 @@ export function OnboardingScreen() {
           style={({ pressed }) => [
             styles.continueButton,
             (!readyForActions || !hasUsername || isBusy) &&
-              styles.buttonDisabled,
+            styles.buttonDisabled,
             pressed &&
-              readyForActions &&
-              hasUsername &&
-              !isBusy &&
-              styles.continueButtonPressed,
+            readyForActions &&
+            hasUsername &&
+            !isBusy &&
+            styles.continueButtonPressed,
           ]}
         >
           {isContinuing ? (

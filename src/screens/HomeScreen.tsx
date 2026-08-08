@@ -14,6 +14,7 @@ import {
 
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
+import { useOpenOnboarding } from '@/hooks/useOpenOnboarding';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import type { HomeStackParamList } from '@/navigation/types';
@@ -39,6 +40,7 @@ export function HomeScreen() {
   });
 
   const openFreshSend = useOpenFreshSend();
+  const openOnboarding = useOpenOnboarding();
   const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
 
   const onRefresh = useCallback(() => {
@@ -155,6 +157,17 @@ export function HomeScreen() {
                   ]}
                 >
                   <Text style={styles.detailsLinkText}>Transactions</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="link"
+                  hitSlop={8}
+                  onPress={openOnboarding}
+                  style={({ pressed }) => [
+                    styles.detailsLink,
+                    pressed && styles.detailsLinkPressed,
+                  ]}
+                >
+                  <Text style={styles.detailsLinkText}>Set up profile</Text>
                 </Pressable>
               </>
             ) : null}
