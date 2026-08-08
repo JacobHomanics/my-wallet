@@ -23,30 +23,9 @@ export function HomeStack() {
         name="tokenDetails"
         component={homeStackScreens.tokenDetails}
       />
-      <NativeStack.Screen name="rewards" component={homeStackScreens.rewards} />
       <NativeStack.Screen
         name="transactions"
         component={homeStackScreens.transactions}
-      />
-      <NativeStack.Screen
-        name="contacts"
-        component={homeStackScreens.contacts}
-      />
-      <NativeStack.Screen
-        name="newContact"
-        component={homeStackScreens.newContact}
-      />
-      <NativeStack.Screen
-        name="newFarcasterContact"
-        component={homeStackScreens.newFarcasterContact}
-      />
-      <NativeStack.Screen
-        name="newRawAddressContact"
-        component={homeStackScreens.newRawAddressContact}
-      />
-      <NativeStack.Screen
-        name="contactDetails"
-        component={homeStackScreens.contactDetails}
       />
       <NativeStack.Screen name="receive" component={homeStackScreens.receive} />
       <NativeStack.Screen name="request" component={homeStackScreens.request} />

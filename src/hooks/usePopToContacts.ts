@@ -2,20 +2,20 @@ import { useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import type { HomeStackParamList } from '@/navigation/types';
+import type { ContactsStackParamList } from '@/navigation/types';
 
 /**
- * Returns to the contacts screen with a back animation when possible.
- * Falls back to resetting onto contacts when opened directly (e.g. /contacts/new).
+ * Returns to the contacts list with a back animation when possible.
+ * Falls back to resetting onto contacts index when opened directly.
  */
 export function usePopToContacts() {
   const navigation =
-    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+    useNavigation<NativeStackNavigationProp<ContactsStackParamList>>();
 
   return useCallback(() => {
     const state = navigation.getState();
     const contactsRouteIndex = state.routes.findIndex(
-      (route) => route.name === 'contacts',
+      (route) => route.name === 'index',
     );
 
     if (contactsRouteIndex >= 0 && state.index > contactsRouteIndex) {
@@ -29,8 +29,8 @@ export function usePopToContacts() {
     }
 
     navigation.reset({
-      index: 1,
-      routes: [{ name: 'index' }, { name: 'contacts' }],
+      index: 0,
+      routes: [{ name: 'index' }],
     });
   }, [navigation]);
 }

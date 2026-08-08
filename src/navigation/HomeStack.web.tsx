@@ -32,30 +32,9 @@ export function HomeStack() {
         name="tokenDetails"
         component={homeStackScreens.tokenDetails}
       />
-      <WebStack.Screen name="rewards" component={homeStackScreens.rewards} />
       <WebStack.Screen
         name="transactions"
         component={homeStackScreens.transactions}
-      />
-      <WebStack.Screen
-        name="contacts"
-        component={homeStackScreens.contacts}
-      />
-      <WebStack.Screen
-        name="newContact"
-        component={homeStackScreens.newContact}
-      />
-      <WebStack.Screen
-        name="newFarcasterContact"
-        component={homeStackScreens.newFarcasterContact}
-      />
-      <WebStack.Screen
-        name="newRawAddressContact"
-        component={homeStackScreens.newRawAddressContact}
-      />
-      <WebStack.Screen
-        name="contactDetails"
-        component={homeStackScreens.contactDetails}
       />
       <WebStack.Screen name="receive" component={homeStackScreens.receive} />
       <WebStack.Screen name="request" component={homeStackScreens.request} />

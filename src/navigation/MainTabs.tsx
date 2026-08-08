@@ -6,9 +6,11 @@ import { Platform } from 'react-native';
 import { CashboxIcon } from '@/components/CashboxIcon';
 import { useBottomTabBarStyle } from '@/hooks/useBottomTabBarStyle';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { ContactsStack } from '@/navigation/ContactsStack';
 import { HomeStack } from '@/navigation/HomeStack';
 import { MainTabBar } from '@/navigation/MainTabBar';
 import { ProfileStack } from '@/navigation/ProfileStack';
+import { RewardsStack } from '@/navigation/RewardsStack';
 import type { MainTabParamList } from '@/navigation/types';
 import { colors } from '@/theme/colors';
 
@@ -52,18 +54,14 @@ export function MainTabs() {
           const hideTabBar =
             !isDesktopWeb &&
             (focusedRoute === 'tokenDetails' ||
-              focusedRoute === 'contacts' ||
-              focusedRoute === 'newContact' ||
-              focusedRoute === 'newFarcasterContact' ||
-              focusedRoute === 'newRawAddressContact' ||
-              focusedRoute === 'contactDetails' ||
               focusedRoute === 'receive' ||
               focusedRoute === 'request' ||
               focusedRoute === 'receiveQr' ||
               focusedRoute === 'send' ||
               focusedRoute === 'sendAmount' ||
               focusedRoute === 'confirmSend' ||
-              focusedRoute === 'sent');
+              focusedRoute === 'sent' ||
+              focusedRoute === 'transactions');
 
           return {
             title: 'Home',
@@ -76,6 +74,46 @@ export function MainTabs() {
               />
             ),
           };
+        }}
+      />
+      <Tab.Screen
+        name="contacts"
+        component={ContactsStack}
+        options={({ route }) => {
+          const focusedRoute =
+            getFocusedRouteNameFromRoute(route) ?? 'index';
+          const hideTabBar =
+            !isDesktopWeb &&
+            (focusedRoute === 'newContact' ||
+              focusedRoute === 'newFarcasterContact' ||
+              focusedRoute === 'newRawAddressContact' ||
+              focusedRoute === 'contactDetails');
+
+          return {
+            title: 'Contacts',
+            tabBarStyle: hideTabBar ? { display: 'none' } : tabBarStyle,
+            tabBarIcon: ({ color, focused, size }) => (
+              <Ionicons
+                name={focused ? 'people' : 'people-outline'}
+                color={color}
+                size={size}
+              />
+            ),
+          };
+        }}
+      />
+      <Tab.Screen
+        name="rewards"
+        component={RewardsStack}
+        options={{
+          title: 'Rewards',
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              name={focused ? 'gift' : 'gift-outline'}
+              color={color}
+              size={size}
+            />
+          ),
         }}
       />
       <Tab.Screen

@@ -19,14 +19,14 @@ import { useContactSearch } from '@/hooks/useContactSearch';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToContacts } from '@/hooks/usePopToContacts';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
-import type { HomeStackParamList } from '@/navigation/types';
+import type { ContactsStackParamList } from '@/navigation/types';
 
 export function NewContactScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goContacts = usePopToContacts();
   const navigation =
-    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+    useNavigation<NativeStackNavigationProp<ContactsStackParamList>>();
   const { query, setQuery, results, isSearching, showEmpty } =
     useContactSearch();
   const { add, isAdding, errorMessage } = useAddContact();

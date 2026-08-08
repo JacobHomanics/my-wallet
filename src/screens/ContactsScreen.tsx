@@ -14,7 +14,6 @@ import {
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BackButton } from '@/components/BackButton';
 import { ConfirmDeleteContactModal } from '@/components/ConfirmDeleteContactModal';
 import { SwipeableContactRow } from '@/components/SwipeableContactRow';
 import {
@@ -26,9 +25,7 @@ import { useContactsAllSections } from '@/hooks/useContactsAllSections';
 import { useContactsFilter } from '@/hooks/useContactsFilter';
 import { useContactsSwipe } from '@/hooks/useContactsSwipe';
 import { useContactsTab } from '@/hooks/useContactsTab';
-import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
-import { usePopToHome } from '@/hooks/usePopToHome';
-import type { HomeStackParamList } from '@/navigation/types';
+import type { ContactsStackParamList } from '@/navigation/types';
 import type Swipeable from 'react-native-gesture-handler/Swipeable';
 
 function ContactRows({
@@ -182,10 +179,8 @@ function ContactsTabChip({
 
 export function ContactsScreen() {
   const insets = useSafeAreaInsets();
-  const isDesktopWeb = useIsDesktopWeb();
-  const goHome = usePopToHome();
   const navigation =
-    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+    useNavigation<NativeStackNavigationProp<ContactsStackParamList>>();
   const { userContacts, farcasterContacts, externalContacts, isLoading } =
     useContacts();
   const {
@@ -279,22 +274,7 @@ export function ContactsScreen() {
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
       <View style={styles.content}>
         <View style={styles.topBar}>
-          {isDesktopWeb ? (
-            <Pressable
-              accessibilityLabel="Back to home"
-              accessibilityRole="button"
-              hitSlop={8}
-              onPress={goHome}
-              style={({ pressed }) => [
-                styles.webBack,
-                pressed && styles.webBackPressed,
-              ]}
-            >
-              <Text style={styles.webBackText}>Back</Text>
-            </Pressable>
-          ) : (
-            <BackButton accessibilityLabel="Back to home" onPress={goHome} />
-          )}
+          <View style={styles.topBarSpacer} />
           <Text style={styles.topBarTitle}>Contacts</Text>
           <Pressable
             accessibilityLabel="New contact"
@@ -490,6 +470,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#166534',
   },
+  topBarSpacer: {
+    width: 36,
+    marginHorizontal: 4,
+  },
   addButton: {
     width: 36,
     height: 36,
@@ -501,20 +485,6 @@ const styles = StyleSheet.create({
   },
   addButtonPressed: {
     opacity: 0.85,
-  },
-  webBack: {
-    minWidth: 44,
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-    justifyContent: 'center',
-  },
-  webBackPressed: {
-    opacity: 0.7,
-  },
-  webBackText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#166534',
   },
   tabs: {
     flexDirection: 'row',

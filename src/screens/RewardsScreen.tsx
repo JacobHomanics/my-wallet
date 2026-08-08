@@ -1,7 +1,5 @@
 import { useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ActivityIndicator,
   Pressable,
@@ -13,8 +11,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BackButton } from '@/components/BackButton';
-import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useRewardTokenBalance } from '@/hooks/useRewardTokenBalance';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
@@ -25,16 +21,12 @@ import {
   REWARD_TOKEN_ADDRESS,
   REWARD_TOKEN_NETWORK,
 } from '@/lib/rewardToken';
-import type { HomeStackParamList } from '@/navigation/types';
 
 /**
  * Shows the user's CashBox Points balance earned from backend payments.
  */
 export function RewardsScreen() {
   const insets = useSafeAreaInsets();
-  const isDesktopWeb = useIsDesktopWeb();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const {
     ready,
     ethereumAddress,
@@ -57,10 +49,6 @@ export function RewardsScreen() {
     refresh();
   }, [refresh]);
 
-  const onBack = useCallback(() => {
-    navigation.navigate('index');
-  }, [navigation]);
-
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
   const loading = !ready || rewardLoading;
   const chainLabel = getNetworkLabel(REWARD_TOKEN_NETWORK);
@@ -69,22 +57,7 @@ export function RewardsScreen() {
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
       <View style={styles.content}>
         <View style={styles.topBar}>
-          {isDesktopWeb ? (
-            <Pressable
-              accessibilityLabel="Back to home"
-              accessibilityRole="button"
-              hitSlop={8}
-              onPress={onBack}
-              style={({ pressed }) => [
-                styles.webBack,
-                pressed && styles.webBackPressed,
-              ]}
-            >
-              <Text style={styles.webBackText}>Back</Text>
-            </Pressable>
-          ) : (
-            <BackButton accessibilityLabel="Back to home" onPress={onBack} />
-          )}
+          <View style={styles.topBarSpacer} />
           <Text style={styles.topBarTitle}>Rewards</Text>
           <View style={styles.topBarSpacer} />
         </View>
@@ -187,20 +160,6 @@ const styles = StyleSheet.create({
   },
   topBarSpacer: {
     width: 44,
-  },
-  webBack: {
-    width: 44,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    paddingVertical: 8,
-  },
-  webBackPressed: {
-    opacity: 0.6,
-  },
-  webBackText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#166534',
   },
   body: {
     flexGrow: 1,

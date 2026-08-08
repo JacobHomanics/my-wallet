@@ -18,7 +18,7 @@ import { useAddContact } from '@/hooks/useAddContact';
 import { useFarcasterSearch } from '@/hooks/useFarcasterSearch';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToContacts } from '@/hooks/usePopToContacts';
-import type { HomeStackParamList } from '@/navigation/types';
+import type { ContactsStackParamList } from '@/navigation/types';
 
 /**
  * Search and add a Farcaster user as a contact.
@@ -28,7 +28,7 @@ export function NewFarcasterContactScreen() {
   const isDesktopWeb = useIsDesktopWeb();
   const goContacts = usePopToContacts();
   const navigation =
-    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+    useNavigation<NativeStackNavigationProp<ContactsStackParamList>>();
   const [query, setQuery] = useState('');
   const { results, isSearching, showEmpty, errorMessage: searchError } =
     useFarcasterSearch(query);

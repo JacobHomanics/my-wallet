@@ -4,7 +4,11 @@ import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
 
 import { hydrateSendDraftFromConfirmParams } from '@/hooks/useSendDraft';
-import type { RootStackParamList, HomeStackParamList } from '@/navigation/types';
+import type {
+  RootStackParamList,
+  HomeStackParamList,
+  ContactsStackParamList,
+} from '@/navigation/types';
 
 /** Custom URL scheme registered in app.json / Info.plist (Privy OAuth redirects). */
 export const APP_SCHEME = 'cashbox';
@@ -91,11 +95,6 @@ const HOME_STACK_HISTORY: Partial<Record<keyof HomeStackParamList, string[]>> =
   {
     tokenDetails: ['index'],
     transactions: ['index'],
-    contacts: ['index'],
-    newContact: ['index', 'contacts'],
-    newFarcasterContact: ['index', 'contacts', 'newContact'],
-    newRawAddressContact: ['index', 'contacts', 'newContact'],
-    contactDetails: ['index', 'contacts'],
     receive: ['index'],
     request: ['index'],
     receiveQr: ['index', 'request'],
@@ -103,6 +102,15 @@ const HOME_STACK_HISTORY: Partial<Record<keyof HomeStackParamList, string[]>> =
     sendAmount: ['index', 'send'],
     confirmSend: ['index', 'send', 'sendAmount'],
   };
+
+const CONTACTS_STACK_HISTORY: Partial<
+  Record<keyof ContactsStackParamList, string[]>
+> = {
+  newContact: ['index'],
+  newFarcasterContact: ['index', 'newContact'],
+  newRawAddressContact: ['index', 'newContact'],
+  contactDetails: ['index'],
+};
 
 function hydrateSendDraftFromNavState(state: NavState | undefined): void {
   if (!state?.routes?.length) {
@@ -171,7 +179,43 @@ function ensureHomeStackHistory(state: NavState): NavState {
   };
 }
 
-/** Deep links into /send omit ancestor screens; prepend them for pop animations. */
+function ensureContactsStackHistory(state: NavState): NavState {
+  const routes = state.routes ?? [];
+  if (!routes.length) {
+    return state;
+  }
+
+  const currentIndex = state.index ?? routes.length - 1;
+  const currentRoute = routes[currentIndex];
+  if (!currentRoute?.name) {
+    return state;
+  }
+
+  const requiredPrefix =
+    CONTACTS_STACK_HISTORY[
+      currentRoute.name as keyof ContactsStackParamList
+    ];
+  if (!requiredPrefix?.length) {
+    return state;
+  }
+
+  const existingByName = new Map(
+    routes.map((route) => [route.name, route] as const),
+  );
+  const ordered = [
+    ...requiredPrefix.map((name) => existingByName.get(name) ?? { name }),
+    ...routes.filter((route) => !requiredPrefix.includes(route.name)),
+  ];
+
+  const newIndex = ordered.findIndex((route) => route === currentRoute);
+  return {
+    ...state,
+    routes: ordered,
+    index: newIndex >= 0 ? newIndex : ordered.length - 1,
+  };
+}
+
+/** Deep links into nested stacks omit ancestor screens; prepend them for pop animations. */
 function ensureHomeStackDeepLinkHistory(
   state: NavState | undefined,
 ): NavState | undefined {
@@ -190,6 +234,13 @@ function ensureHomeStackDeepLinkHistory(
         return {
           ...route,
           state: ensureHomeStackHistory(route.state),
+        };
+      }
+
+      if (route.name === 'contacts') {
+        return {
+          ...route,
+          state: ensureContactsStackHistory(route.state),
         };
       }
 
@@ -254,16 +305,6 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               // stealing splash's empty-path alias.
               tokenDetails: '/tokens',
               transactions: '/transactions',
-              contacts: '/contacts',
-              newContact: '/contacts/new',
-              newFarcasterContact: '/contacts/new/farcaster',
-              newRawAddressContact: '/contacts/new/addresses',
-              contactDetails: {
-                path: '/contacts/:contactId',
-                parse: {
-                  contactId: (contactId: string) => contactId,
-                },
-              },
               receive: '/receive',
               request: '/request',
               receiveQr: {
@@ -324,6 +365,27 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
                   legs: (legs: unknown) => JSON.stringify(legs ?? []),
                 },
               },
+            },
+          },
+          contacts: {
+            path: 'contacts',
+            screens: {
+              index: '',
+              newContact: 'new',
+              newFarcasterContact: 'new/farcaster',
+              newRawAddressContact: 'new/addresses',
+              contactDetails: {
+                path: ':contactId',
+                parse: {
+                  contactId: (contactId: string) => contactId,
+                },
+              },
+            },
+          },
+          rewards: {
+            path: 'rewards',
+            screens: {
+              index: '',
             },
           },
           profile: {

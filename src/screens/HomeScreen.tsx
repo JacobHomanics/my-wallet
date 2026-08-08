@@ -143,55 +143,24 @@ export function HomeScreen() {
                     Show advanced details
                   </Text>
                 </Pressable>
+                <Pressable
+                  accessibilityRole="link"
+                  hitSlop={8}
+                  onPress={() => {
+                    navigation.navigate('transactions');
+                  }}
+                  style={({ pressed }) => [
+                    styles.detailsLink,
+                    pressed && styles.detailsLinkPressed,
+                  ]}
+                >
+                  <Text style={styles.detailsLinkText}>Transactions</Text>
+                </Pressable>
               </>
             ) : null}
           </>
         )}
       </View>
-
-      {showActions ? (
-        <View style={styles.bottomLinks}>
-          <Pressable
-            accessibilityRole="link"
-            hitSlop={8}
-            onPress={() => {
-              navigation.navigate('rewards');
-            }}
-            style={({ pressed }) => [
-              styles.bottomLink,
-              pressed && styles.detailsLinkPressed,
-            ]}
-          >
-            <Text style={styles.detailsLinkText}>Rewards</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="link"
-            hitSlop={8}
-            onPress={() => {
-              navigation.navigate('transactions');
-            }}
-            style={({ pressed }) => [
-              styles.bottomLink,
-              pressed && styles.detailsLinkPressed,
-            ]}
-          >
-            <Text style={styles.detailsLinkText}>Transactions</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="link"
-            hitSlop={8}
-            onPress={() => {
-              navigation.navigate('contacts');
-            }}
-            style={({ pressed }) => [
-              styles.bottomLink,
-              pressed && styles.detailsLinkPressed,
-            ]}
-          >
-            <Text style={styles.detailsLinkText}>Contacts</Text>
-          </Pressable>
-        </View>
-      ) : null}
     </ScrollView>
   );
 }
@@ -292,14 +261,5 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#5a7d6a',
     textDecorationLine: 'underline',
-  },
-  bottomLinks: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 24,
-  },
-  bottomLink: {
-    paddingVertical: 4,
   },
 });

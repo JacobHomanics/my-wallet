@@ -16,7 +16,7 @@ import { useAddContact } from '@/hooks/useAddContact';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useNewContactAdvanced } from '@/hooks/useNewContactAdvanced';
 import { usePopToContacts } from '@/hooks/usePopToContacts';
-import type { HomeStackParamList } from '@/navigation/types';
+import type { ContactsStackParamList } from '@/navigation/types';
 
 /**
  * Add an external contact by name and EVM/Solana addresses.
@@ -26,7 +26,7 @@ export function NewRawAddressContactScreen() {
   const isDesktopWeb = useIsDesktopWeb();
   const goContacts = usePopToContacts();
   const navigation =
-    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+    useNavigation<NativeStackNavigationProp<ContactsStackParamList>>();
   const { addAddresses, isAdding, errorMessage } = useAddContact();
   const {
     name,

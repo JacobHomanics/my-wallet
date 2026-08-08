@@ -23,15 +23,7 @@ export type SentLeg = {
 export type HomeStackParamList = {
   index: undefined;
   tokenDetails: undefined;
-  rewards: undefined;
   transactions: undefined;
-  contacts: undefined;
-  newContact: undefined;
-  newFarcasterContact: undefined;
-  newRawAddressContact: undefined;
-  contactDetails: {
-    contactId: string;
-  };
   receive: undefined;
   request: undefined;
   receiveQr: {
@@ -77,6 +69,20 @@ export type HomeStackParamList = {
   };
 };
 
+export type RewardsStackParamList = {
+  index: undefined;
+};
+
+export type ContactsStackParamList = {
+  index: undefined;
+  newContact: undefined;
+  newFarcasterContact: undefined;
+  newRawAddressContact: undefined;
+  contactDetails: {
+    contactId: string;
+  };
+};
+
 export type ProfileStackParamList = {
   index: undefined;
   settings: undefined;
@@ -84,6 +90,8 @@ export type ProfileStackParamList = {
 
 export type MainTabParamList = {
   home: NavigatorScreenParams<HomeStackParamList> | undefined;
+  contacts: NavigatorScreenParams<ContactsStackParamList> | undefined;
+  rewards: NavigatorScreenParams<RewardsStackParamList> | undefined;
   profile: NavigatorScreenParams<ProfileStackParamList> | undefined;
 };
 

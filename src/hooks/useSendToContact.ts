@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NavigationProp } from '@react-navigation/native';
 
 import {
   hydrateSendDraftFromConfirmParams,
   resetSendDraft,
 } from '@/hooks/useSendDraft';
-import type { HomeStackParamList } from '@/navigation/types';
+import type { MainTabParamList } from '@/navigation/types';
 
 export type SendableContact = {
   identityId: string | null;
@@ -26,8 +26,7 @@ type SendToContactOptions = {
  * Open Send Amount prefilled for a contact (skips Recipient when details known).
  */
 export function useSendToContact() {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+  const navigation = useNavigation<NavigationProp<MainTabParamList>>();
 
   const canSendToContact = useCallback((contact: SendableContact | null) => {
     if (!contact) {
@@ -61,9 +60,12 @@ export function useSendToContact() {
         });
       }
 
-      navigation.navigate('sendAmount', {
-        tokenId: options?.tokenId,
-        usdAmount: options?.usdAmount,
+      navigation.navigate('home', {
+        screen: 'sendAmount',
+        params: {
+          tokenId: options?.tokenId,
+          usdAmount: options?.usdAmount,
+        },
       });
     },
     [navigation],

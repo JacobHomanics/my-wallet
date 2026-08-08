@@ -20,7 +20,7 @@ import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToContacts } from '@/hooks/usePopToContacts';
 import { useSendToContact } from '@/hooks/useSendToContact';
-import type { HomeStackParamList } from '@/navigation/types';
+import type { ContactsStackParamList } from '@/navigation/types';
 
 function DetailField({
   label,
@@ -69,7 +69,7 @@ export function ContactDetailsScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goContacts = usePopToContacts();
-  const route = useRoute<RouteProp<HomeStackParamList, 'contactDetails'>>();
+  const route = useRoute<RouteProp<ContactsStackParamList, 'contactDetails'>>();
   const contactId = route.params?.contactId;
   const { contact, isLoading, notFound } = useContactDetails(contactId);
   const {
