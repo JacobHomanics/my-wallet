@@ -17,6 +17,7 @@ import { TokenIcon } from '@/components/TokenIcon';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import { getNetworkLabel } from '@/lib/alchemy/networks';
 import {
+  REWARD_POINTS_LABEL,
   REWARD_TOKEN_NETWORK,
   REWARD_TOKEN_SYMBOL,
 } from '@/lib/rewardToken';
@@ -88,14 +89,14 @@ export function SentScreen() {
             <View style={styles.rewardSection}>
               <Text style={styles.rewardLabel}>Rewards</Text>
               <Text style={styles.rewardValue}>
-                {rewardAmount} {REWARD_TOKEN_SYMBOL} rewarded
+                {rewardAmount} {REWARD_POINTS_LABEL}
               </Text>
             </View>
           ) : rewardFailed ? (
             <View style={styles.rewardSection}>
               <Text style={styles.rewardFailedText}>
-                Your money was sent! However, we weren't able to send rewards.
-                Sorry!
+                Your money was sent! However, we weren't able to send{' '}
+                {REWARD_POINTS_LABEL}. Sorry!
               </Text>
             </View>
           ) : null}
@@ -160,7 +161,7 @@ export function SentScreen() {
                     />
                     <View style={styles.tokenText}>
                       <Text style={styles.tokenSymbol}>
-                        {rewardAmount} {REWARD_TOKEN_SYMBOL} (reward)
+                        {rewardAmount} {REWARD_POINTS_LABEL} (reward)
                       </Text>
                       <Text style={styles.tokenMeta}>
                         {getNetworkLabel(REWARD_TOKEN_NETWORK)}

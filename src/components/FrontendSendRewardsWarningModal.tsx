@@ -1,5 +1,7 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { REWARD_POINTS_LABEL } from '@/lib/rewardToken';
+
 type FrontendSendRewardsWarningModalProps = {
   visible: boolean;
   onCancel: () => void;
@@ -7,7 +9,7 @@ type FrontendSendRewardsWarningModalProps = {
 };
 
 /**
- * Warns that device-signed (frontend) sends do not earn Cashbox rewards.
+ * Warns that device-signed (frontend) sends do not earn CashBox Points.
  */
 export function FrontendSendRewardsWarningModal({
   visible,
@@ -34,10 +36,10 @@ export function FrontendSendRewardsWarningModal({
           }}
           style={styles.card}
         >
-          <Text style={styles.title}>No Cashbox rewards</Text>
+          <Text style={styles.title}>No {REWARD_POINTS_LABEL}</Text>
           <Text style={styles.paragraph}>
             Sending from this device skips the Cashbox backend, so you will not
-            receive any Cashbox rewards for this payment.
+            receive any {REWARD_POINTS_LABEL} for this payment.
           </Text>
           <View style={styles.actions}>
             <Pressable
@@ -52,7 +54,7 @@ export function FrontendSendRewardsWarningModal({
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </Pressable>
             <Pressable
-              accessibilityLabel="Continue without rewards"
+              accessibilityLabel={`Continue without ${REWARD_POINTS_LABEL}`}
               accessibilityRole="button"
               onPress={onConfirm}
               style={({ pressed }) => [

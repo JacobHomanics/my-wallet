@@ -20,6 +20,7 @@ import {
 import { floorUsdToSendableCap, formatFiatValue } from '@/lib/fiat';
 import type { SendBroadcastMode } from '@/lib/send/broadcastMode';
 import type { TaxFundingPick } from '@/lib/send/buildPaymentLegsWithTax';
+import { REWARD_POINTS_LABEL } from '@/lib/rewardToken';
 import type { PaymentStrategy } from '@/lib/strategies';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
 
@@ -158,7 +159,7 @@ export function SendAdvancedDetails({
         <View style={styles.broadcastText}>
           <Text style={styles.broadcastLabel}>Send from this device</Text>
           <Text style={styles.broadcastHint}>
-            Skips backend broadcast and Cashbox rewards
+            Skips backend broadcast and {REWARD_POINTS_LABEL}
           </Text>
         </View>
         <Switch

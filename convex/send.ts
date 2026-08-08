@@ -65,7 +65,7 @@ async function resolveWalletId(
 }
 
 /**
- * Broadcast user payment legs via Privy, then send SE2Token reward from treasury.
+ * Broadcast user payment legs via Privy, then send CashBox Points from treasury.
  */
 export const sendPayment = action({
   args: {

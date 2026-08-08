@@ -15,7 +15,7 @@ export type RewardTokenBalanceResult = {
 };
 
 /**
- * User's CBR reward token balance from Alchemy-backed wallet balances.
+ * User's CashBox Points balance from the Base reward token via Alchemy.
  */
 export function useRewardTokenBalance(): RewardTokenBalanceResult {
   const { tokens, loading, ready } = useTokenBalances();

@@ -13,6 +13,11 @@ import {
   isNativeTokenAddress,
   resolveTokenLogoUrl,
 } from '@/lib/alchemy/tokenLogos';
+import {
+  isRewardToken,
+  REWARD_POINTS_LABEL,
+  REWARD_TOKEN_SYMBOL,
+} from '@/lib/rewardToken';
 
 export type OwnedToken = {
   id: string;
@@ -289,12 +294,16 @@ function toOwnedToken(row: AlchemyTokenRow): OwnedToken | null {
   const decimals =
     row.tokenMetadata?.decimals ??
     (isNative ? nativeFallback.decimals : getDefaultTokenDecimals(network));
-  const symbol =
-    row.tokenMetadata?.symbol?.trim() ||
-    (isNative ? nativeFallback.symbol : formatContractSymbol(row.tokenAddress));
-  const name =
-    row.tokenMetadata?.name?.trim() ||
-    (isNative ? nativeFallback.name : symbol);
+  const tokenAddress = isNative ? null : (row.tokenAddress ?? null);
+  const reward = isRewardToken(network, tokenAddress);
+  const symbol = reward
+    ? REWARD_TOKEN_SYMBOL
+    : row.tokenMetadata?.symbol?.trim() ||
+      (isNative ? nativeFallback.symbol : formatContractSymbol(row.tokenAddress));
+  const name = reward
+    ? REWARD_POINTS_LABEL
+    : row.tokenMetadata?.name?.trim() ||
+      (isNative ? nativeFallback.name : symbol);
 
   const unitPrice = usdPrice(row.tokenPrices);
   const balanceAsNumber = rawBalanceToNumber(rawBalance, decimals);
@@ -302,8 +311,6 @@ function toOwnedToken(row: AlchemyTokenRow): OwnedToken | null {
     unitPrice != null && Number.isFinite(balanceAsNumber)
       ? balanceAsNumber * unitPrice
       : null;
-
-  const tokenAddress = isNative ? null : (row.tokenAddress ?? null);
 
   return {
     id: `${network}:${tokenAddress ?? 'native'}`,

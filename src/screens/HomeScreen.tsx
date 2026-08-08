@@ -17,6 +17,7 @@ import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useRewardTokenBalance } from '@/hooks/useRewardTokenBalance';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
+import { REWARD_POINTS_LABEL } from '@/lib/rewardToken';
 import type { HomeStackParamList } from '@/navigation/types';
 
 export function HomeScreen() {
@@ -34,10 +35,7 @@ export function HomeScreen() {
     refresh,
     poll,
   } = useTokenBalances();
-  const {
-    balanceFormatted: rewardBalance,
-    symbol: rewardSymbol,
-  } = useRewardTokenBalance();
+  const { balanceFormatted: rewardBalance } = useRewardTokenBalance();
 
   usePollTokenBalances(poll, {
     enabled: ready && Boolean(ethereumAddress || solanaAddress),
@@ -94,7 +92,7 @@ export function HomeScreen() {
             <View style={styles.rewardSection}>
               <Text style={styles.rewardLabel}>Rewards</Text>
               <Text style={styles.rewardBalance}>
-                {rewardBalance} {rewardSymbol}
+                {rewardBalance} {REWARD_POINTS_LABEL}
               </Text>
             </View>
             {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
