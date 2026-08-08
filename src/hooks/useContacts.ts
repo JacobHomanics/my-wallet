@@ -64,7 +64,7 @@ function buildContactLabel(params: {
     return `@${params.username}`;
   }
   if (params.accountNumber) {
-    return params.accountNumber;
+    return formatWalletAddress(params.accountNumber, 10, 8);
   }
   if (params.name?.trim()) {
     return params.name.trim();

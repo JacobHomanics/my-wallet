@@ -44,9 +44,6 @@ function contactDescription(contact: ContactListItem): string | null {
   if (contact.isExternal) {
     return null;
   }
-  if (contact.username && contact.identityId) {
-    return contact.identityId;
-  }
   return contact.subtitle;
 }
 
