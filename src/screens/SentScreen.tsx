@@ -96,7 +96,7 @@ export function SentScreen() {
             <View style={styles.rewardSection}>
               <Text style={styles.rewardFailedText}>
                 {
-                  "Your money was sent! However, we weren't able to send "
+                  "Your money was sent! However, we weren't able to reward you with "
                 }
                 {REWARD_POINTS_LABEL}. Sorry!
               </Text>
