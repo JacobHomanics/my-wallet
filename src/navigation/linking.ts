@@ -296,6 +296,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
           chain: (chain: string) => chain as 'ethereum' | 'solana',
         },
       },
+      onboarding: 'onboarding',
       main: {
         screens: {
           home: {

@@ -7,6 +7,7 @@ import { useCallback, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useNeedsOnboarding } from '@/hooks/useNeedsOnboarding';
 import { useWebNavigationA11yFix } from '@/hooks/useWebNavigationA11yFix';
 import { rootLinking } from '@/navigation/linking';
 import { RootStack } from '@/navigation/RootStack';
@@ -20,13 +21,24 @@ const UNAUTHENTICATED_ROUTES = new Set<string>([
   'exportWallet',
 ]);
 
+/** Authenticated routes that should not force the onboarding screen. */
+const ONBOARDING_BYPASS_ROUTES = new Set<string>([
+  'splash',
+  'onboarding',
+  'exportWallet',
+  'welcome',
+  'login',
+  'loginVerify',
+]);
+
 export function RootNavigator() {
   const navigationRef = useNavigationContainerRef<RootStackParamList>();
   const { isReady, isAuthenticated } = useAuth();
+  const { status: onboardingStatus } = useNeedsOnboarding();
   useWebNavigationA11yFix(navigationRef);
 
-  const enforceUnauthenticatedRoute = useCallback(() => {
-    if (!navigationRef.isReady() || !isReady || isAuthenticated) {
+  const enforceAuthRoutes = useCallback(() => {
+    if (!navigationRef.isReady() || !isReady) {
       return;
     }
 
@@ -34,28 +46,61 @@ export function RootNavigator() {
     const activeRootRoute =
       rootState.routes[rootState.index ?? rootState.routes.length - 1];
 
-    if (!activeRootRoute || UNAUTHENTICATED_ROUTES.has(activeRootRoute.name)) {
+    if (!activeRootRoute) {
       return;
     }
 
-    navigationRef.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [{ name: 'welcome' }],
-      }),
-    );
-  }, [isAuthenticated, isReady, navigationRef]);
+    if (!isAuthenticated) {
+      if (UNAUTHENTICATED_ROUTES.has(activeRootRoute.name)) {
+        return;
+      }
+
+      navigationRef.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'welcome' }],
+        }),
+      );
+      return;
+    }
+
+    if (onboardingStatus === 'needed') {
+      if (ONBOARDING_BYPASS_ROUTES.has(activeRootRoute.name)) {
+        return;
+      }
+
+      navigationRef.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'onboarding' }],
+        }),
+      );
+      return;
+    }
+
+    if (
+      onboardingStatus === 'done' &&
+      activeRootRoute.name === 'onboarding'
+    ) {
+      navigationRef.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'main' }],
+        }),
+      );
+    }
+  }, [isAuthenticated, isReady, navigationRef, onboardingStatus]);
 
   useEffect(() => {
-    enforceUnauthenticatedRoute();
-  }, [enforceUnauthenticatedRoute]);
+    enforceAuthRoutes();
+  }, [enforceAuthRoutes]);
 
   return (
     <NavigationContainer
       ref={navigationRef}
       linking={rootLinking}
-      onReady={enforceUnauthenticatedRoute}
-      onStateChange={enforceUnauthenticatedRoute}
+      onReady={enforceAuthRoutes}
+      onStateChange={enforceAuthRoutes}
     >
       <RootStack />
       <StatusBar style="dark" />

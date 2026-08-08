@@ -9,6 +9,9 @@ import { api } from '../../convex/_generated/api';
 /**
  * After auth, ensure a Convex `users` row exists for the Privy DID,
  * and keep `identityId` (account number) in sync once wallets are ready.
+ *
+ * Creates the user row as soon as auth is ready (so onboarding can run)
+ * even before wallets finish; patches identityId when available.
  */
 export function useEnsureConvexUser() {
   const { isReady, user } = useAuth();
@@ -28,12 +31,9 @@ export function useEnsureConvexUser() {
       return;
     }
 
-    // Wait for wallet readiness so we persist the account number when available.
-    if (!walletsReady) {
-      return;
-    }
-
-    const syncKey = `${externalId}:${identityId ?? ''}`;
+    const identityToSync =
+      walletsReady && identityId ? identityId : undefined;
+    const syncKey = `${externalId}:${identityToSync ?? ''}`;
     if (lastSyncedKeyRef.current === syncKey) {
       return;
     }
@@ -42,7 +42,7 @@ export function useEnsureConvexUser() {
 
     void ensureUser({
       externalId,
-      identityId: identityId ?? undefined,
+      identityId: identityToSync,
     }).catch((error) => {
       lastSyncedKeyRef.current = null;
       console.error('Failed to ensure Convex user', error);

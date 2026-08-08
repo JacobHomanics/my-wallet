@@ -34,6 +34,10 @@ export function RootStack() {
         name="exportWallet"
         component={rootStackScreens.exportWallet}
       />
+      <WebStack.Screen
+        name="onboarding"
+        component={rootStackScreens.onboarding}
+      />
       <WebStack.Screen name="main" component={rootStackScreens.main} />
     </WebStack.Navigator>
   );

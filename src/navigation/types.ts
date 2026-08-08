@@ -116,6 +116,7 @@ export type RootStackParamList = {
     chain?: 'ethereum' | 'solana';
   };
   exportWallet: ExportWalletParams;
+  onboarding: undefined;
   main: NavigatorScreenParams<MainTabParamList> | undefined;
 };
 
