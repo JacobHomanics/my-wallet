@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
 import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
@@ -23,6 +24,7 @@ import { useExportPrivateKey } from '@/hooks/useExportPrivateKey';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToProfile } from '@/hooks/usePopToProfile';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
+import { useProfilePhotoSettings } from '@/hooks/useProfilePhotoSettings';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useSignOut } from '@/hooks/useSignOut';
 import { useUsernameSettings } from '@/hooks/useUsernameSettings';
@@ -32,10 +34,18 @@ export function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goProfile = usePopToProfile();
-  const { displayName } = useProfileIdentity();
+  const { displayName, avatarSeed } = useProfileIdentity();
   const { signOut } = useSignOut();
   const { ready, wallets } = useUserWallets();
   const { copy, isCopied } = useCopyToClipboard();
+  const {
+    profilePhotoUrl,
+    isUploading: isUploadingPhoto,
+    errorMessage: photoError,
+    pickAndUpload,
+    remove: removePhoto,
+    canRemove: canRemovePhoto,
+  } = useProfilePhotoSettings();
   const {
     draft: usernameDraft,
     onChangeDraft: onChangeUsername,
@@ -119,6 +129,61 @@ export function SettingsScreen() {
           </View>
 
           <View style={styles.sections}>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Profile photo</Text>
+              <View style={styles.photoRow}>
+                <Avatar
+                  label={displayName}
+                  photoUrl={profilePhotoUrl}
+                  seed={avatarSeed}
+                  size={72}
+                />
+                <View style={styles.photoActions}>
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={isUploadingPhoto}
+                    onPress={() => {
+                      void pickAndUpload();
+                    }}
+                    style={({ pressed }) => [
+                      styles.saveButton,
+                      isUploadingPhoto && styles.saveButtonDisabled,
+                      pressed && !isUploadingPhoto && styles.saveButtonPressed,
+                    ]}
+                  >
+                    {isUploadingPhoto ? (
+                      <ActivityIndicator color="#f0fdf4" />
+                    ) : (
+                      <Text style={styles.saveButtonText}>
+                        {profilePhotoUrl ? 'Change photo' : 'Upload photo'}
+                      </Text>
+                    )}
+                  </Pressable>
+                  {canRemovePhoto ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      disabled={isUploadingPhoto}
+                      onPress={() => {
+                        void removePhoto();
+                      }}
+                      style={({ pressed }) => [
+                        styles.removePhotoButton,
+                        pressed && styles.removePhotoButtonPressed,
+                      ]}
+                    >
+                      <Text style={styles.removePhotoButtonText}>Remove</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              </View>
+              <Text style={styles.hint}>
+                Square photos work best. Max 5MB.
+              </Text>
+              {photoError ? (
+                <Text style={styles.error}>{photoError}</Text>
+              ) : null}
+            </View>
+
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Username</Text>
               <TextInput
@@ -372,6 +437,28 @@ const styles = StyleSheet.create({
     color: '#5a7d6a',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
+  },
+  photoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  photoActions: {
+    flex: 1,
+    gap: 8,
+  },
+  removePhotoButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  removePhotoButtonPressed: {
+    opacity: 0.7,
+  },
+  removePhotoButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#b91c1c',
   },
   input: {
     width: '100%',

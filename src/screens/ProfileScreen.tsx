@@ -5,8 +5,10 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AccountNumber } from '@/components/AccountNumber';
+import { Avatar } from '@/components/Avatar';
 import { useConvexUsername } from '@/hooks/useConvexUsername';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
+import { useProfilePhoto } from '@/hooks/useProfilePhoto';
 import { useWalletIdentityId } from '@/hooks/useWalletIdentityId';
 import type { ProfileStackParamList } from '@/navigation/types';
 
@@ -14,7 +16,8 @@ export function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
-  const { displayName } = useProfileIdentity();
+  const { displayName, avatarSeed } = useProfileIdentity();
+  const { profilePhotoUrl } = useProfilePhoto();
   const { username } = useConvexUsername();
   const { identityId } = useWalletIdentityId();
 
@@ -53,6 +56,13 @@ export function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         style={styles.scroll}
       >
+        <Avatar
+          label={displayName}
+          photoUrl={profilePhotoUrl}
+          seed={avatarSeed}
+          size={88}
+          style={styles.avatar}
+        />
         <Text style={styles.title}>Profile</Text>
         <Text style={styles.subtitle}>Signed in as {displayName}.</Text>
         {username ? (
@@ -93,6 +103,9 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: 'center',
+  },
+  avatar: {
+    marginBottom: 16,
   },
   title: {
     fontSize: 28,

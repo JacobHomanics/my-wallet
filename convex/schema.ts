@@ -7,6 +7,8 @@ export default defineSchema({
     username: v.optional(v.string()),
     /** Reversible wallet identity / account number (EVM + Solana). */
     identityId: v.optional(v.string()),
+    /** Profile photo stored in Convex file storage. */
+    profilePhotoId: v.optional(v.id("_storage")),
   })
     .index("by_externalId", ["externalId"])
     .index("by_username", ["username"])

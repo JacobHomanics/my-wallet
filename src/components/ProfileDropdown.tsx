@@ -7,12 +7,11 @@ import {
 } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
-import {
-  getAvatarColor,
-  useProfileIdentity,
-} from '@/hooks/useProfileIdentity';
+import { useProfileIdentity } from '@/hooks/useProfileIdentity';
+import { useProfilePhoto } from '@/hooks/useProfilePhoto';
 import {
   signOutAndReset,
   type SignOutNavigation,
@@ -32,6 +31,7 @@ export function ProfileDropdown({
 }: ProfileDropdownProps) {
   const { logout } = useAuth();
   const { displayName, avatarSeed } = useProfileIdentity();
+  const { profilePhotoUrl } = useProfilePhoto();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<View | null>(null);
 
@@ -43,9 +43,6 @@ export function ProfileDropdown({
     containerRef as unknown as RefObject<Element | null>,
     closeDropdown,
   );
-
-  const avatarColor = getAvatarColor(avatarSeed);
-  const avatarLetter = displayName.trim().charAt(0).toUpperCase() || '?';
 
   return (
     <View ref={containerRef} style={styles.container} collapsable={false}>
@@ -64,9 +61,12 @@ export function ProfileDropdown({
           ];
         }}
       >
-        <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
-          <Text style={styles.avatarText}>{avatarLetter}</Text>
-        </View>
+        <Avatar
+          label={displayName}
+          photoUrl={profilePhotoUrl}
+          seed={avatarSeed}
+          size={28}
+        />
         <Text style={styles.triggerLabel} numberOfLines={1}>
           {displayName}
         </Text>
@@ -141,18 +141,6 @@ const styles = StyleSheet.create({
   },
   triggerActive: {
     backgroundColor: '#d1fae5',
-  },
-  avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '700',
   },
   triggerLabel: {
     flexShrink: 1,

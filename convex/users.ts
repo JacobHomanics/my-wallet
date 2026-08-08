@@ -7,10 +7,23 @@ import type { Doc } from "./_generated/dataModel";
 export const getByExternalId = query({
   args: { externalId: v.string() },
   handler: async (ctx, { externalId }) => {
-    return await ctx.db
+    const user = await ctx.db
       .query("users")
       .withIndex("by_externalId", (q) => q.eq("externalId", externalId))
       .unique();
+
+    if (!user) {
+      return null;
+    }
+
+    const profilePhotoUrl = user.profilePhotoId
+      ? await ctx.storage.getUrl(user.profilePhotoId)
+      : null;
+
+    return {
+      ...user,
+      profilePhotoUrl,
+    };
   },
 });
 
@@ -156,6 +169,78 @@ export const setUsername = mutation({
     }
 
     await ctx.db.patch(user._id, { username: normalized });
+    return user._id;
+  },
+});
+
+/** Generate a short-lived URL for uploading a profile photo. */
+export const generateUploadUrl = mutation({
+  args: {
+    externalId: v.string(),
+  },
+  handler: async (ctx, { externalId }) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_externalId", (q) => q.eq("externalId", externalId))
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+/** Save a newly uploaded profile photo and remove the previous one. */
+export const setProfilePhoto = mutation({
+  args: {
+    externalId: v.string(),
+    storageId: v.id("_storage"),
+  },
+  handler: async (ctx, { externalId, storageId }) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_externalId", (q) => q.eq("externalId", externalId))
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const previousPhotoId = user.profilePhotoId;
+    await ctx.db.patch(user._id, { profilePhotoId: storageId });
+
+    if (previousPhotoId && previousPhotoId !== storageId) {
+      await ctx.storage.delete(previousPhotoId);
+    }
+
+    return user._id;
+  },
+});
+
+/** Clear the profile photo and delete the stored file. */
+export const clearProfilePhoto = mutation({
+  args: {
+    externalId: v.string(),
+  },
+  handler: async (ctx, { externalId }) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_externalId", (q) => q.eq("externalId", externalId))
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const previousPhotoId = user.profilePhotoId;
+    await ctx.db.patch(user._id, { profilePhotoId: undefined });
+
+    if (previousPhotoId) {
+      await ctx.storage.delete(previousPhotoId);
+    }
+
     return user._id;
   },
 });
