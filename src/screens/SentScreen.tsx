@@ -35,6 +35,7 @@ export function SentScreen() {
     legs,
     rewardAmount,
     rewardHash,
+    rewardFailed,
     recipientLabel,
     recipientProfilePhotoUrl,
     recipientUsername,
@@ -88,6 +89,13 @@ export function SentScreen() {
               <Text style={styles.rewardLabel}>Rewards</Text>
               <Text style={styles.rewardValue}>
                 {rewardAmount} {REWARD_TOKEN_SYMBOL} rewarded
+              </Text>
+            </View>
+          ) : rewardFailed ? (
+            <View style={styles.rewardSection}>
+              <Text style={styles.rewardFailedText}>
+                Your money was sent! However, we weren't able to send rewards.
+                Sorry!
               </Text>
             </View>
           ) : null}
@@ -306,6 +314,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#15803d',
     fontVariant: ['tabular-nums'],
+  },
+  rewardFailedText: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '500',
+    color: '#a16207',
+    textAlign: 'center',
   },
   advancedToggle: {
     marginTop: 28,

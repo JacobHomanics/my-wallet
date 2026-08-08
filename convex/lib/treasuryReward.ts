@@ -15,7 +15,8 @@ import { getAlchemyRpcUrl } from "./networks";
 
 const DEFAULT_REWARD_TOKEN =
   "0x4ed932ac83f77a5d4f3d950ab9ba90882ed06e55" as const;
-const DEFAULT_REWARD_AMOUNT = "1";
+/** Whole CBR tokens sent after a successful backend payment. */
+const REWARD_TOKEN_AMOUNT = "10";
 const DEFAULT_REWARD_CHAIN_ID = 8453;
 
 function getRewardChain(chainId: number) {
@@ -40,7 +41,7 @@ function getRewardNetworkSlug(chainId: number): string {
 
 export type TreasuryRewardResult = {
   hash: string;
-  /** Whole-token amount sent (matches REWARD_TOKEN_AMOUNT). */
+  /** Whole-token amount sent. */
   amount: string;
 };
 
@@ -59,8 +60,7 @@ export async function sendTreasuryReward(
   const chain = getRewardChain(chainId);
   const tokenAddress = (process.env.REWARD_TOKEN_ADDRESS ??
     DEFAULT_REWARD_TOKEN) as Address;
-  const amountWhole =
-    process.env.REWARD_TOKEN_AMOUNT?.trim() || DEFAULT_REWARD_AMOUNT;
+  const amountWhole = REWARD_TOKEN_AMOUNT;
 
   const account = privateKeyToAccount(privateKey);
   const transport = http(getAlchemyRpcUrl(getRewardNetworkSlug(chainId)));

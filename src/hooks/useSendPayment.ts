@@ -29,9 +29,11 @@ export type SendPaymentLegResult = {
 
 export type SendPaymentOutcome = {
   legs: SendPaymentLegResult[];
-  /** Null when broadcast on-device (no treasury reward). */
+  /** Null when broadcast on-device or when reward failed. */
   rewardAmount: string | null;
   rewardHash: string | null;
+  /** True when payment succeeded but treasury reward failed (backend only). */
+  rewardFailed: boolean;
 };
 
 export type SendPaymentOptions = {
@@ -157,6 +159,7 @@ export function useSendPayment(): SendPaymentResult {
             legs: results,
             rewardAmount: null,
             rewardHash: null,
+            rewardFailed: false,
           };
         }
 
@@ -207,6 +210,7 @@ export function useSendPayment(): SendPaymentResult {
           })),
           rewardAmount: result.rewardAmount,
           rewardHash: result.rewardHash,
+          rewardFailed: result.rewardFailed === true,
         };
       } finally {
         setSending(false);

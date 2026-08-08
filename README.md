@@ -13,8 +13,7 @@ Set these on your Convex deployment (`npx convex env set KEY value`):
 | `PRIVY_AUTHORIZATION_PRIVATE_KEY` | yes | From Privy Dashboard → Authorization keys (`wallet-auth:…`) |
 | `ALCHEMY_API_KEY` | yes | Used for EVM/Solana RPC + receipt polling |
 | `TREASURY_KEYSTORE_PASSWORD` | yes | Password for `convex/keystores/treasury.json` |
-| `REWARD_TOKEN_ADDRESS` | no | Defaults to Base SE2Token `0x4ed932ac83f77a5d4f3d950ab9ba90882ed06e55` |
-| `REWARD_TOKEN_AMOUNT` | no | Whole tokens to send after a successful payment (default `1`) |
+| `REWARD_TOKEN_ADDRESS` | no | Defaults to Base SE2Token / CBR `0x4ed932ac83f77a5d4f3d950ab9ba90882ed06e55` |
 | `REWARD_CHAIN_ID` | no | Default `8453` (Base). Use `84532` for Base Sepolia |
 
 The treasury private key is **not** an env var — it lives in encrypted [`convex/keystores/treasury.json`](convex/keystores/). The decrypt password is Convex env `TREASURY_KEYSTORE_PASSWORD`.

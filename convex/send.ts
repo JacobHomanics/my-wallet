@@ -41,8 +41,10 @@ export type SendPaymentLegResult = {
 
 export type SendPaymentResult = {
   legs: SendPaymentLegResult[];
-  rewardHash: string;
-  rewardAmount: string;
+  rewardHash: string | null;
+  rewardAmount: string | null;
+  /** True when payment legs succeeded but the treasury reward transfer failed. */
+  rewardFailed: boolean;
 };
 
 async function resolveWalletId(
@@ -178,12 +180,24 @@ export const sendPayment = action({
       });
     }
 
-    const reward = await sendTreasuryReward(args.ethereumAddress);
+    let rewardHash: string | null = null;
+    let rewardAmount: string | null = null;
+    let rewardFailed = false;
+
+    try {
+      const reward = await sendTreasuryReward(args.ethereumAddress);
+      rewardHash = reward.hash;
+      rewardAmount = reward.amount;
+    } catch (error) {
+      rewardFailed = true;
+      console.error("Treasury reward failed after successful payment", error);
+    }
 
     return {
       legs: results,
-      rewardHash: reward.hash,
-      rewardAmount: reward.amount,
+      rewardHash,
+      rewardAmount,
+      rewardFailed,
     };
   },
 });

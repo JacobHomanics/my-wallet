@@ -199,6 +199,7 @@ export function ConfirmSendScreen() {
           recipientUsername,
           rewardAmount: outcome.rewardAmount,
           rewardHash: outcome.rewardHash,
+          rewardFailed: outcome.rewardFailed,
           legs: outcome.legs.map((result) => ({
             hash: result.hash,
             amount: result.amount,
