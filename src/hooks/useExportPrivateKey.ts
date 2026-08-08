@@ -3,7 +3,6 @@ import { useExportWallet as useExportSolanaWallet } from '@privy-io/react-auth/s
 import { useCallback } from 'react';
 
 import {
-  confirmExportPrivateKey,
   postExportResultToNative,
   type ExportPrivateKeyResult,
 } from '@/hooks/useExportPrivateKey.shared';
@@ -11,6 +10,7 @@ import type { UserWallet } from '@/hooks/useUserWallets.shared';
 
 /**
  * Opens Privy’s secure export modal for an embedded Ethereum or Solana wallet.
+ * Confirmation UI lives in `useConfirmExportPrivateKey`.
  * @see https://docs.privy.io/wallets/wallets/export
  */
 export function useExportPrivateKey(): ExportPrivateKeyResult {
@@ -18,14 +18,7 @@ export function useExportPrivateKey(): ExportPrivateKeyResult {
   const { exportWallet: exportSolanaWallet } = useExportSolanaWallet();
 
   const exportPrivateKey = useCallback(
-    async (wallet: UserWallet, options?: { skipConfirm?: boolean }) => {
-      if (!options?.skipConfirm) {
-        const confirmed = await confirmExportPrivateKey(wallet);
-        if (!confirmed) {
-          return;
-        }
-      }
-
+    async (wallet: UserWallet, _options?: { skipConfirm?: boolean }) => {
       try {
         if (wallet.chain === 'ethereum') {
           await exportEthereumWallet({ address: wallet.address });
