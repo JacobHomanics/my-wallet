@@ -12,6 +12,7 @@ function clearSendRecipientFields() {
     solanaRecipient: '',
     recipientUsername: null,
     recipientName: null,
+    recipientProfilePhotoUrl: null,
   });
 }
 

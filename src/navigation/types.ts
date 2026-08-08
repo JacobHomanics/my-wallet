@@ -61,6 +61,10 @@ export type HomeStackParamList = {
   sent: {
     usdLabel: string;
     legs: SentLeg[];
+    /** Display label for the recipient (username, name, or truncated address). */
+    recipientLabel?: string;
+    recipientProfilePhotoUrl?: string | null;
+    recipientUsername?: string | null;
   };
 };
 

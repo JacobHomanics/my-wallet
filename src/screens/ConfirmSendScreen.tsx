@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
 import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
@@ -53,7 +54,8 @@ export function ConfirmSendScreen() {
   const { sendPayment, sending } = useSendPayment();
   const { error, clearStatus, setError } = useSendStatus();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
-  const { accountNumber, recipientName } = useSendDraft();
+  const { accountNumber, recipientName, recipientProfilePhotoUrl } =
+    useSendDraft();
   const recipientUsername = useSendRecipientUsername();
   const { tip, tipUsd, setTip, setTipPercent } = useSendTip();
   const {
@@ -190,6 +192,9 @@ export function ConfirmSendScreen() {
         refresh();
         navigation.navigate('sent', {
           usdLabel: totalLabel,
+          recipientLabel: primaryLabel ?? undefined,
+          recipientProfilePhotoUrl,
+          recipientUsername,
           legs: results.map((result) => ({
             hash: result.hash,
             amount: result.amount,
@@ -211,6 +216,9 @@ export function ConfirmSendScreen() {
     canSend,
     clearStatus,
     navigation,
+    primaryLabel,
+    recipientProfilePhotoUrl,
+    recipientUsername,
     refresh,
     sendPayment,
     sending,
@@ -287,14 +295,22 @@ export function ConfirmSendScreen() {
             {hasRecipient && primaryLabel ? (
               <View style={styles.toSection}>
                 <Text style={styles.recipientLabel}>{recipientFieldLabel}</Text>
-                <Text
-                  style={styles.recipientValue}
-                  selectable
-                  numberOfLines={1}
-                  ellipsizeMode="middle"
-                >
-                  {primaryLabel}
-                </Text>
+                <View style={styles.recipientRow}>
+                  <Avatar
+                    label={primaryLabel}
+                    photoUrl={recipientProfilePhotoUrl}
+                    seed={recipientUsername ?? primaryLabel}
+                    size={40}
+                  />
+                  <Text
+                    style={styles.recipientValue}
+                    selectable
+                    numberOfLines={1}
+                    ellipsizeMode="middle"
+                  >
+                    {primaryLabel}
+                  </Text>
+                </View>
               </View>
             ) : null}
             {hasRecipient && primaryLabel ? (
@@ -658,7 +674,14 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
+  recipientRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   recipientValue: {
+    flex: 1,
+    minWidth: 0,
     fontSize: 18,
     fontWeight: '600',
     color: '#166534',

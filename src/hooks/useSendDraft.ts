@@ -21,6 +21,8 @@ export type SendDraft = {
   recipientUsername: string | null;
   /** Display name for the recipient when known (e.g. external contact). */
   recipientName: string | null;
+  /** Profile photo URL for the recipient when known. */
+  recipientProfilePhotoUrl: string | null;
   amount: string;
   /**
    * When true (e.g. receive QR payment request), editing token legs must not
@@ -42,6 +44,7 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   solanaRecipient: '',
   recipientUsername: null,
   recipientName: null,
+  recipientProfilePhotoUrl: null,
   amount: '',
   amountLocked: false,
   manualLegs: null,
@@ -86,11 +89,13 @@ export function hydrateSendDraftFromConfirmParams(params: {
   solanaRecipient?: string;
   recipientUsername?: string | null;
   recipientName?: string | null;
+  recipientProfilePhotoUrl?: string | null;
 }): void {
   const amount = params.usdAmount?.trim() ?? '';
   const decoded = tryDecodeWalletIdentity(params.identity);
   const username = params.recipientUsername?.trim().replace(/^@/, '') || null;
   const name = params.recipientName?.trim() || null;
+  const profilePhotoUrl = params.recipientProfilePhotoUrl?.trim() || null;
   sendDraft = {
     ...DEFAULT_SEND_DRAFT,
     accountNumber: params.identity?.trim() ?? '',
@@ -100,6 +105,7 @@ export function hydrateSendDraftFromConfirmParams(params: {
       decoded?.solanaAddress ?? params.solanaRecipient?.trim() ?? '',
     recipientUsername: username,
     recipientName: name,
+    recipientProfilePhotoUrl: profilePhotoUrl,
     amount,
     amountLocked: amount.length > 0,
   };

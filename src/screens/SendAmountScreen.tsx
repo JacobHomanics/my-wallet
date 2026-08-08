@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
 import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
@@ -54,7 +55,8 @@ export function SendAmountScreen() {
     useSpendableTokens(tokens);
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const { allocationInputUnit, setAllocationInputUnit } = useSendDraftUi();
-  const { accountNumber, recipientName } = useSendDraft();
+  const { accountNumber, recipientName, recipientProfilePhotoUrl } =
+    useSendDraft();
   const recipientUsername = useSendRecipientUsername();
   const {
     strategies,
@@ -227,6 +229,13 @@ export function SendAmountScreen() {
                     <View
                       style={[styles.fieldRow, styles.fieldRowDisabled]}
                     >
+                      <Avatar
+                        label={primaryLabel}
+                        photoUrl={recipientProfilePhotoUrl}
+                        seed={recipientUsername ?? primaryLabel}
+                        size={32}
+                        style={styles.recipientAvatar}
+                      />
                       <Text
                         style={styles.recipientValue}
                         selectable
@@ -448,6 +457,9 @@ const styles = StyleSheet.create({
   recipientSection: {
     width: '100%',
     marginBottom: 4,
+  },
+  recipientAvatar: {
+    marginRight: 4,
   },
   recipientValue: {
     flex: 1,

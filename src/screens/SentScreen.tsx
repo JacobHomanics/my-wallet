@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Avatar } from '@/components/Avatar';
 import { TokenIcon } from '@/components/TokenIcon';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import type { HomeStackParamList } from '@/navigation/types';
@@ -24,7 +25,13 @@ export function SentScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'sent'>>();
-  const { usdLabel, legs } = route.params;
+  const {
+    usdLabel,
+    legs,
+    recipientLabel,
+    recipientProfilePhotoUrl,
+    recipientUsername,
+  } = route.params;
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const onDone = useCallback(() => {
@@ -46,6 +53,28 @@ export function SentScreen() {
           </View>
           <Text style={styles.resultTitle}>Sent</Text>
           <Text style={styles.heroUsd}>{usdLabel}</Text>
+
+          {recipientLabel ? (
+            <View style={styles.recipientSection}>
+              <Text style={styles.recipientLabel}>To</Text>
+              <View style={styles.recipientRow}>
+                <Avatar
+                  label={recipientLabel}
+                  photoUrl={recipientProfilePhotoUrl}
+                  seed={recipientUsername ?? recipientLabel}
+                  size={40}
+                />
+                <Text
+                  style={styles.recipientValue}
+                  selectable
+                  numberOfLines={1}
+                  ellipsizeMode="middle"
+                >
+                  {recipientLabel}
+                </Text>
+              </View>
+            </View>
+          ) : null}
 
           <Pressable
             accessibilityRole="button"
@@ -188,6 +217,33 @@ const styles = StyleSheet.create({
     color: '#166534',
     letterSpacing: -0.6,
     textAlign: 'center',
+    fontVariant: ['tabular-nums'],
+  },
+  recipientSection: {
+    marginTop: 24,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+  },
+  recipientLabel: {
+    marginBottom: 10,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  recipientRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    maxWidth: '100%',
+  },
+  recipientValue: {
+    flexShrink: 1,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#166534',
     fontVariant: ['tabular-nums'],
   },
   advancedToggle: {

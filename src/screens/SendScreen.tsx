@@ -228,6 +228,7 @@ export function SendScreen() {
           solanaAddress: null,
           username: hit.username,
           name: null,
+          profilePhotoUrl: hit.profilePhotoUrl,
         },
         {
           tokenId: route.params?.tokenId,

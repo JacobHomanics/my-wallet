@@ -14,6 +14,7 @@ export type SendableContact = {
   solanaAddress: string | null;
   username?: string | null;
   name?: string | null;
+  profilePhotoUrl?: string | null;
 };
 
 type SendToContactOptions = {
@@ -46,6 +47,7 @@ export function useSendToContact() {
           identity: contact.identityId,
           recipientUsername: contact.username,
           recipientName: contact.name,
+          recipientProfilePhotoUrl: contact.profilePhotoUrl,
           usdAmount: options?.usdAmount,
         });
       } else {
@@ -54,6 +56,7 @@ export function useSendToContact() {
           solanaRecipient: contact.solanaAddress ?? undefined,
           recipientUsername: contact.username,
           recipientName: contact.name,
+          recipientProfilePhotoUrl: contact.profilePhotoUrl,
           usdAmount: options?.usdAmount,
         });
       }
