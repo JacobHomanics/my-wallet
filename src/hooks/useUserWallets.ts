@@ -11,7 +11,10 @@ import {
   type UserWalletsResult,
 } from '@/hooks/useUserWallets.shared';
 import { useChainPriority } from '@/hooks/useChainPriority';
-import { getPrivyEmbeddedWalletAddress } from '@/lib/privy/wallets/hasPrivyEmbeddedWallet';
+import {
+  getPrivyEmbeddedWalletAddress,
+  getPrivyEmbeddedWalletId,
+} from '@/lib/privy/wallets/hasPrivyEmbeddedWallet';
 
 /**
  * Embedded EVM + Solana wallets for the authenticated user (web).
@@ -29,20 +32,43 @@ export function useUserWallets(): UserWalletsResult {
 
   const wallets: UserWallet[] = [];
 
+  const ethereumEmbedded = ethereumReady
+    ? getEmbeddedConnectedWallet(ethereumWallets) ?? ethereumWallets[0]
+    : undefined;
   const ethereum =
-    (ethereumReady
-      ? getEmbeddedConnectedWallet(ethereumWallets)?.address ??
-        ethereumWallets[0]?.address
-      : undefined) ?? getPrivyEmbeddedWalletAddress(user, 'ethereum');
+    ethereumEmbedded?.address ??
+    getPrivyEmbeddedWalletAddress(user, 'ethereum');
   if (ethereum) {
-    wallets.push({ chain: 'ethereum', label: 'Ethereum', address: ethereum });
+    const idFromWallet =
+      ethereumEmbedded &&
+      'id' in ethereumEmbedded &&
+      typeof ethereumEmbedded.id === 'string'
+        ? ethereumEmbedded.id
+        : undefined;
+    wallets.push({
+      chain: 'ethereum',
+      label: 'Ethereum',
+      address: ethereum,
+      id: idFromWallet ?? getPrivyEmbeddedWalletId(user, 'ethereum'),
+    });
   }
 
+  const solanaWallet = solanaReady ? solanaWallets[0] : undefined;
   const solana =
-    (solanaReady ? solanaWallets[0]?.address : undefined) ??
-    getPrivyEmbeddedWalletAddress(user, 'solana');
+    solanaWallet?.address ?? getPrivyEmbeddedWalletAddress(user, 'solana');
   if (solana) {
-    wallets.push({ chain: 'solana', label: 'Solana', address: solana });
+    const idFromWallet =
+      solanaWallet &&
+      'id' in solanaWallet &&
+      typeof solanaWallet.id === 'string'
+        ? solanaWallet.id
+        : undefined;
+    wallets.push({
+      chain: 'solana',
+      label: 'Solana',
+      address: solana,
+      id: idFromWallet ?? getPrivyEmbeddedWalletId(user, 'solana'),
+    });
   }
 
   if (!ethereumReady && !solanaReady && wallets.length === 0) {

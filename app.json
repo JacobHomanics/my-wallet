@@ -36,7 +36,13 @@
       ],
       "expo-secure-store",
       "expo-web-browser",
-      "expo-image"
+      "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Cashbox to access your photos for your profile picture."
+        }
+      ]
     ]
   }
 }

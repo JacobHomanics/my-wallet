@@ -3,6 +3,7 @@ import { useCallback, useSyncExternalStore } from 'react';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import type { PaymentStrategyId } from '@/lib/strategies';
 import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
+import type { SendBroadcastMode } from '@/lib/send/broadcastMode';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
 import { tryDecodeWalletIdentity } from '@/lib/walletIdentity';
 
@@ -17,6 +18,12 @@ export type SendDraft = {
   accountNumber: string;
   ethereumRecipient: string;
   solanaRecipient: string;
+  /** Platform username for the recipient when known (e.g. from contacts/search). */
+  recipientUsername: string | null;
+  /** Display name for the recipient when known (e.g. external contact). */
+  recipientName: string | null;
+  /** Profile photo URL for the recipient when known. */
+  recipientProfilePhotoUrl: string | null;
   amount: string;
   /**
    * When true (e.g. receive QR payment request), editing token legs must not
@@ -28,6 +35,11 @@ export type SendDraft = {
   allocationInputUnit: AllocationInputUnit;
   /** When set, overrides the default strategy for this send only. */
   strategyId: PaymentStrategyId | null;
+  /**
+   * Where payment legs are broadcast: Convex backend (rewards) or device
+   * wallets (no rewards).
+   */
+  broadcastMode: SendBroadcastMode;
 };
 
 type DraftListener = () => void;
@@ -36,12 +48,16 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   accountNumber: '',
   ethereumRecipient: '',
   solanaRecipient: '',
+  recipientUsername: null,
+  recipientName: null,
+  recipientProfilePhotoUrl: null,
   amount: '',
   amountLocked: false,
   manualLegs: null,
   allocationInputs: {},
   allocationInputUnit: 'token',
   strategyId: null,
+  broadcastMode: 'backend',
 };
 
 let sendDraft: SendDraft = { ...DEFAULT_SEND_DRAFT };
@@ -78,9 +94,15 @@ export function hydrateSendDraftFromConfirmParams(params: {
   identity?: string;
   ethereumRecipient?: string;
   solanaRecipient?: string;
+  recipientUsername?: string | null;
+  recipientName?: string | null;
+  recipientProfilePhotoUrl?: string | null;
 }): void {
   const amount = params.usdAmount?.trim() ?? '';
   const decoded = tryDecodeWalletIdentity(params.identity);
+  const username = params.recipientUsername?.trim().replace(/^@/, '') || null;
+  const name = params.recipientName?.trim() || null;
+  const profilePhotoUrl = params.recipientProfilePhotoUrl?.trim() || null;
   sendDraft = {
     ...DEFAULT_SEND_DRAFT,
     accountNumber: params.identity?.trim() ?? '',
@@ -88,6 +110,9 @@ export function hydrateSendDraftFromConfirmParams(params: {
       decoded?.evmAddress ?? params.ethereumRecipient?.trim() ?? '',
     solanaRecipient:
       decoded?.solanaAddress ?? params.solanaRecipient?.trim() ?? '',
+    recipientUsername: username,
+    recipientName: name,
+    recipientProfilePhotoUrl: profilePhotoUrl,
     amount,
     amountLocked: amount.length > 0,
   };
@@ -158,8 +183,14 @@ export function useSendDraftUi() {
     updateSendDraft({ allocationInputUnit });
   }, []);
 
+  const setBroadcastMode = useCallback((broadcastMode: SendBroadcastMode) => {
+    updateSendDraft({ broadcastMode });
+  }, []);
+
   return {
     allocationInputUnit: draft.allocationInputUnit,
     setAllocationInputUnit,
+    broadcastMode: draft.broadcastMode,
+    setBroadcastMode,
   };
 }

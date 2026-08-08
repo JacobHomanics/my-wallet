@@ -2,11 +2,11 @@ import type { ComponentType } from 'react';
 
 import type { HomeStackParamList } from '@/navigation/types';
 import { ConfirmSendScreen } from '@/screens/ConfirmSendScreen';
-import { ContactsScreen } from '@/screens/ContactsScreen';
 import { HomeScreen } from '@/screens/HomeScreen';
 import { ReceiveQrScreen } from '@/screens/ReceiveQrScreen';
 import { ReceiveScreen } from '@/screens/ReceiveScreen';
 import { RequestScreen } from '@/screens/RequestScreen';
+import { SendAmountScreen } from '@/screens/SendAmountScreen';
 import { SendScreen } from '@/screens/SendScreen';
 import { SentScreen } from '@/screens/SentScreen';
 import { TokenDetailsScreen } from '@/screens/TokenDetailsScreen';
@@ -18,11 +18,11 @@ export const homeStackScreens = {
   index: HomeScreen,
   tokenDetails: TokenDetailsScreen,
   transactions: TransactionsScreen,
-  contacts: ContactsScreen,
   receive: ReceiveScreen,
   request: RequestScreen,
   receiveQr: ReceiveQrScreen,
   send: SendScreen,
+  sendAmount: SendAmountScreen,
   confirmSend: ConfirmSendScreen,
   sent: SentScreen,
 } as const satisfies Record<keyof HomeStackParamList, ComponentType<object>>;

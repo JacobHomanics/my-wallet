@@ -24,7 +24,6 @@ export type HomeStackParamList = {
   index: undefined;
   tokenDetails: undefined;
   transactions: undefined;
-  contacts: undefined;
   receive: undefined;
   request: undefined;
   receiveQr: {
@@ -40,6 +39,11 @@ export type HomeStackParamList = {
     ethereumRecipient?: string;
     solanaRecipient?: string;
   } | undefined;
+  sendAmount: {
+    tokenId?: string;
+    /** Optional when opened with a locked display-currency amount. */
+    usdAmount?: string;
+  } | undefined;
   confirmSend: {
     /** USD amount string the user entered. Optional for receive deep links. */
     usdAmount?: string;
@@ -52,12 +56,43 @@ export type HomeStackParamList = {
   sent: {
     usdLabel: string;
     legs: SentLeg[];
+    /** Whole-token treasury reward amount; omitted for frontend (device) sends. */
+    rewardAmount?: string | null;
+    /** Treasury reward tx hash when a reward was sent. */
+    rewardHash?: string | null;
+    /** Payment succeeded but treasury reward failed. */
+    rewardFailed?: boolean;
+    /** Display label for the recipient (username, name, or truncated address). */
+    recipientLabel?: string;
+    recipientProfilePhotoUrl?: string | null;
+    recipientUsername?: string | null;
   };
+};
+
+export type RewardsStackParamList = {
+  index: undefined;
+};
+
+export type ContactsStackParamList = {
+  index: undefined;
+  newContact: undefined;
+  newFarcasterContact: undefined;
+  newRawAddressContact: undefined;
+  contactDetails: {
+    contactId: string;
+  };
+};
+
+export type ProfileStackParamList = {
+  index: undefined;
+  settings: undefined;
 };
 
 export type MainTabParamList = {
   home: NavigatorScreenParams<HomeStackParamList> | undefined;
-  settings: undefined;
+  contacts: NavigatorScreenParams<ContactsStackParamList> | undefined;
+  rewards: NavigatorScreenParams<RewardsStackParamList> | undefined;
+  profile: NavigatorScreenParams<ProfileStackParamList> | undefined;
 };
 
 export type ExportWalletParams = {

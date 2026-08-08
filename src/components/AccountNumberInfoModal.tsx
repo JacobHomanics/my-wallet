@@ -48,8 +48,7 @@ export function AccountNumberInfoModal({
               addresses—so you can share one id instead of two.
             </Text>
             <Text style={styles.paragraph}>
-              You can view your EVM and Solana addresses anytime in the
-              advanced details section of the Settings screen.
+              You can view your EVM and Solana addresses anytime in Settings.
             </Text>
           </View>
           <Pressable

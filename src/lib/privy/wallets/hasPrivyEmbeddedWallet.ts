@@ -1,5 +1,6 @@
 type LinkedAccountLike = {
   type?: string;
+  id?: string | null;
   address?: string;
   chainType?: string;
   chain_type?: string;
@@ -63,19 +64,36 @@ export function hasPrivyEmbeddedWallet(
   );
 }
 
-/** Address of the user's Privy embedded wallet on the given chain, if linked. */
-export function getPrivyEmbeddedWalletAddress(
+function getPrivyEmbeddedWalletAccount(
   user: unknown,
   chainType: 'ethereum' | 'solana',
-): string | undefined {
-  const linked = getLinkedAccounts(user).find(
+): LinkedAccountLike | undefined {
+  return getLinkedAccounts(user).find(
     (account) =>
       isPrivyEmbeddedWallet(account, chainType) &&
       typeof account.address === 'string' &&
       account.address.length > 0,
   );
+}
 
-  return linked?.address;
+/** Address of the user's Privy embedded wallet on the given chain, if linked. */
+export function getPrivyEmbeddedWalletAddress(
+  user: unknown,
+  chainType: 'ethereum' | 'solana',
+): string | undefined {
+  return getPrivyEmbeddedWalletAccount(user, chainType)?.address;
+}
+
+/** Privy server wallet id for the embedded wallet on the given chain, if present. */
+export function getPrivyEmbeddedWalletId(
+  user: unknown,
+  chainType: 'ethereum' | 'solana',
+): string | undefined {
+  const linked = getPrivyEmbeddedWalletAccount(user, chainType);
+  if (typeof linked?.id === 'string' && linked.id.length > 0) {
+    return linked.id;
+  }
+  return undefined;
 }
 
 /** True when Privy reports the wallet already exists (treat as success). */

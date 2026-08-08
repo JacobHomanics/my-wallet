@@ -11,7 +11,6 @@ import {
 import { AccountNumberInfoModal } from '@/components/AccountNumberInfoModal';
 import { useAccountNumberInfoModal } from '@/hooks/useAccountNumberInfoModal';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
-import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 
 type AccountNumberProps = {
   identityId: string;
@@ -34,8 +33,8 @@ export function AccountNumber({
         <View style={styles.header}>
           <View style={styles.headerText}>
             <Text style={styles.label}>Account Number</Text>
-            <Text style={styles.value} selectable>
-              {formatWalletAddress(identityId, 10, 8)}
+            <Text style={styles.value} selectable numberOfLines={1} ellipsizeMode="middle">
+              {identityId}
             </Text>
           </View>
           <Pressable

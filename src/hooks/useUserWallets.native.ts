@@ -11,7 +11,10 @@ import {
   type UserWalletsResult,
 } from '@/hooks/useUserWallets.shared';
 import { useChainPriority } from '@/hooks/useChainPriority';
-import { getPrivyEmbeddedWalletAddress } from '@/lib/privy/wallets/hasPrivyEmbeddedWallet';
+import {
+  getPrivyEmbeddedWalletAddress,
+  getPrivyEmbeddedWalletId,
+} from '@/lib/privy/wallets/hasPrivyEmbeddedWallet';
 
 /**
  * Embedded EVM + Solana wallets for the authenticated user (native).
@@ -33,7 +36,12 @@ export function useUserWallets(): UserWalletsResult {
     ethereumWallets[0]?.address ??
     getPrivyEmbeddedWalletAddress(user, 'ethereum');
   if (ethereum) {
-    wallets.push({ chain: 'ethereum', label: 'Ethereum', address: ethereum });
+    wallets.push({
+      chain: 'ethereum',
+      label: 'Ethereum',
+      address: ethereum,
+      id: getPrivyEmbeddedWalletId(user, 'ethereum'),
+    });
   }
 
   const solanaConnected =
@@ -43,7 +51,12 @@ export function useUserWallets(): UserWalletsResult {
   const solana =
     solanaConnected ?? getPrivyEmbeddedWalletAddress(user, 'solana');
   if (solana) {
-    wallets.push({ chain: 'solana', label: 'Solana', address: solana });
+    wallets.push({
+      chain: 'solana',
+      label: 'Solana',
+      address: solana,
+      id: getPrivyEmbeddedWalletId(user, 'solana'),
+    });
   }
 
   return {

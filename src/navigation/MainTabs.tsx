@@ -6,10 +6,12 @@ import { Platform } from 'react-native';
 import { CashboxIcon } from '@/components/CashboxIcon';
 import { useBottomTabBarStyle } from '@/hooks/useBottomTabBarStyle';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { ContactsStack } from '@/navigation/ContactsStack';
 import { HomeStack } from '@/navigation/HomeStack';
 import { MainTabBar } from '@/navigation/MainTabBar';
+import { ProfileStack } from '@/navigation/ProfileStack';
+import { RewardsStack } from '@/navigation/RewardsStack';
 import type { MainTabParamList } from '@/navigation/types';
-import { SettingsScreen } from '@/screens/SettingsScreen';
 import { colors } from '@/theme/colors';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -35,7 +37,6 @@ export function MainTabs() {
         tabBarInactiveTintColor: '#86a894',
         tabBarStyle,
         tabBarLabelStyle: {
-          // Room for descenders; default fontSize 10 clips "g" in Settings on web.
           lineHeight: 13,
         },
         // Pass a bounded height into tab scenes so nested ScrollViews scroll on web.
@@ -57,8 +58,10 @@ export function MainTabs() {
               focusedRoute === 'request' ||
               focusedRoute === 'receiveQr' ||
               focusedRoute === 'send' ||
+              focusedRoute === 'sendAmount' ||
               focusedRoute === 'confirmSend' ||
-              focusedRoute === 'sent');
+              focusedRoute === 'sent' ||
+              focusedRoute === 'transactions');
 
           return {
             title: 'Home',
@@ -74,17 +77,64 @@ export function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="settings"
-        component={SettingsScreen}
+        name="contacts"
+        component={ContactsStack}
+        options={({ route }) => {
+          const focusedRoute =
+            getFocusedRouteNameFromRoute(route) ?? 'index';
+          const hideTabBar =
+            !isDesktopWeb &&
+            (focusedRoute === 'newContact' ||
+              focusedRoute === 'newFarcasterContact' ||
+              focusedRoute === 'newRawAddressContact' ||
+              focusedRoute === 'contactDetails');
+
+          return {
+            title: 'Contacts',
+            tabBarStyle: hideTabBar ? { display: 'none' } : tabBarStyle,
+            tabBarIcon: ({ color, focused, size }) => (
+              <Ionicons
+                name={focused ? 'people' : 'people-outline'}
+                color={color}
+                size={size}
+              />
+            ),
+          };
+        }}
+      />
+      <Tab.Screen
+        name="rewards"
+        component={RewardsStack}
         options={{
-          title: 'Settings',
+          title: 'Rewards',
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons
-              name={focused ? 'settings' : 'settings-outline'}
+              name={focused ? 'gift' : 'gift-outline'}
               color={color}
               size={size}
             />
           ),
+        }}
+      />
+      <Tab.Screen
+        name="profile"
+        component={ProfileStack}
+        options={({ route }) => {
+          const focusedRoute =
+            getFocusedRouteNameFromRoute(route) ?? 'index';
+          const hideTabBar = !isDesktopWeb && focusedRoute === 'settings';
+
+          return {
+            title: 'Profile',
+            tabBarStyle: hideTabBar ? { display: 'none' } : tabBarStyle,
+            tabBarIcon: ({ color, focused, size }) => (
+              <Ionicons
+                name={focused ? 'person' : 'person-outline'}
+                color={color}
+                size={size}
+              />
+            ),
+          };
         }}
       />
     </Tab.Navigator>

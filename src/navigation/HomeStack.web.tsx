@@ -36,10 +36,6 @@ export function HomeStack() {
         name="transactions"
         component={homeStackScreens.transactions}
       />
-      <WebStack.Screen
-        name="contacts"
-        component={homeStackScreens.contacts}
-      />
       <WebStack.Screen name="receive" component={homeStackScreens.receive} />
       <WebStack.Screen name="request" component={homeStackScreens.request} />
       <WebStack.Screen
@@ -47,6 +43,10 @@ export function HomeStack() {
         component={homeStackScreens.receiveQr}
       />
       <WebStack.Screen name="send" component={homeStackScreens.send} />
+      <WebStack.Screen
+        name="sendAmount"
+        component={homeStackScreens.sendAmount}
+      />
       <WebStack.Screen
         name="confirmSend"
         component={homeStackScreens.confirmSend}

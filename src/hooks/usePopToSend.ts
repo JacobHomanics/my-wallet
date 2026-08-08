@@ -5,7 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
- * Returns to the send screen with a back animation when possible.
+ * Returns to the Amount screen (or Recipient) with a back animation when possible.
  * Falls back to resetting the stack when opened directly (e.g. page refresh on /send/confirm).
  */
 export function usePopToSend() {
@@ -14,6 +14,15 @@ export function usePopToSend() {
 
   return useCallback(() => {
     const state = navigation.getState();
+    const sendAmountRouteIndex = state.routes.findIndex(
+      (route) => route.name === 'sendAmount',
+    );
+
+    if (sendAmountRouteIndex >= 0 && state.index > sendAmountRouteIndex) {
+      navigation.pop(state.index - sendAmountRouteIndex);
+      return;
+    }
+
     const sendRouteIndex = state.routes.findIndex(
       (route) => route.name === 'send',
     );
@@ -29,8 +38,8 @@ export function usePopToSend() {
     }
 
     navigation.reset({
-      index: 1,
-      routes: [{ name: 'index' }, { name: 'send' }],
+      index: 2,
+      routes: [{ name: 'index' }, { name: 'send' }, { name: 'sendAmount' }],
     });
   }, [navigation]);
 }

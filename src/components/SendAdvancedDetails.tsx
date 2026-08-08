@@ -1,12 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useState } from 'react';
 import {
   Pressable,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
 } from 'react-native';
 
+import { FrontendSendRewardsWarningModal } from '@/components/FrontendSendRewardsWarningModal';
 import { TokenIcon } from '@/components/TokenIcon';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
@@ -15,7 +18,9 @@ import {
   type OwnedToken,
 } from '@/lib/alchemy/fetchTokensByAddress';
 import { floorUsdToSendableCap, formatFiatValue } from '@/lib/fiat';
+import type { SendBroadcastMode } from '@/lib/send/broadcastMode';
 import type { TaxFundingPick } from '@/lib/send/buildPaymentLegsWithTax';
+import { REWARD_POINTS_LABEL } from '@/lib/rewardToken';
 import type { PaymentStrategy } from '@/lib/strategies';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
 
@@ -24,6 +29,8 @@ type SendAdvancedDetailsProps = {
   onOpenStrategyPicker: () => void;
   allocationInputUnit: AllocationInputUnit;
   onAllocationInputUnitChange: (unit: AllocationInputUnit) => void;
+  broadcastMode: SendBroadcastMode;
+  onBroadcastModeChange: (mode: SendBroadcastMode) => void;
   allocations: PaymentAllocation[];
   /** Fee-reserved balances — used for the Available line on each leg. */
   spendableTokens: OwnedToken[];
@@ -78,6 +85,8 @@ export function SendAdvancedDetails({
   onOpenStrategyPicker,
   allocationInputUnit,
   onAllocationInputUnitChange,
+  broadcastMode,
+  onBroadcastModeChange,
   allocations,
   spendableTokens,
   taxFunding = null,
@@ -95,10 +104,36 @@ export function SendAdvancedDetails({
     rate,
     defaultFormattedZero,
   } = useFiatDisplay();
+  const [frontendWarningOpen, setFrontendWarningOpen] = useState(false);
 
   const spendableById = new Map(
     spendableTokens.map((token) => [token.id, token]),
   );
+
+  const frontendSendEnabled = broadcastMode === 'frontend';
+
+  const onFrontendSendChange = useCallback(
+    (enabled: boolean) => {
+      if (!enabled) {
+        onBroadcastModeChange('backend');
+        return;
+      }
+      if (broadcastMode === 'frontend') {
+        return;
+      }
+      setFrontendWarningOpen(true);
+    },
+    [broadcastMode, onBroadcastModeChange],
+  );
+
+  const onCancelFrontendWarning = useCallback(() => {
+    setFrontendWarningOpen(false);
+  }, []);
+
+  const onConfirmFrontendWarning = useCallback(() => {
+    setFrontendWarningOpen(false);
+    onBroadcastModeChange('frontend');
+  }, [onBroadcastModeChange]);
 
   return (
     <View style={styles.advanced}>
@@ -117,6 +152,25 @@ export function SendAdvancedDetails({
         </Text>
         <Ionicons name="chevron-down" size={18} color="#86a894" />
       </Pressable>
+
+      <View style={styles.advancedDivider} />
+
+      <View style={styles.broadcastRow}>
+        <View style={styles.broadcastText}>
+          <Text style={styles.broadcastLabel}>Send from this device</Text>
+          <Text style={styles.broadcastHint}>
+            Skips backend broadcast and {REWARD_POINTS_LABEL}
+          </Text>
+        </View>
+        <Switch
+          accessibilityLabel="Send from this device"
+          trackColor={{ false: '#bbf7d0', true: '#86efac' }}
+          thumbColor={frontendSendEnabled ? '#166534' : '#f0fdf4'}
+          ios_backgroundColor="#bbf7d0"
+          value={frontendSendEnabled}
+          onValueChange={onFrontendSendChange}
+        />
+      </View>
 
       <View style={styles.advancedDivider} />
 
@@ -175,6 +229,12 @@ export function SendAdvancedDetails({
           </Pressable>
         </View>
       </View>
+
+      <FrontendSendRewardsWarningModal
+        visible={frontendWarningOpen}
+        onCancel={onCancelFrontendWarning}
+        onConfirm={onConfirmFrontendWarning}
+      />
 
       {allocations.length === 0 ? (
         <Text style={styles.allocationEmpty}>
@@ -417,6 +477,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
+  },
+  broadcastRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+  },
+  broadcastText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  broadcastLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#166534',
+  },
+  broadcastHint: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: '#86a894',
   },
   strategyRowPressed: {
     opacity: 0.7,

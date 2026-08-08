@@ -1,0 +1,39 @@
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
+
+export default defineSchema({
+  users: defineTable({
+    externalId: v.optional(v.string()), // Privy DID (e.g. did:privy:...)
+    username: v.optional(v.string()),
+    /** Reversible wallet identity / account number (EVM + Solana). */
+    identityId: v.optional(v.string()),
+    /** Profile photo stored in Convex file storage. */
+    profilePhotoId: v.optional(v.id("_storage")),
+  })
+    .index("by_externalId", ["externalId"])
+    .index("by_username", ["username"])
+    .index("by_identityId", ["identityId"]),
+
+  contacts: defineTable({
+    /** Convex `users` document id of the contact list owner. */
+    ownerId: v.optional(v.id("users")),
+    /** Set when the contact is a registered Cashbox user. */
+    contactUserId: v.optional(v.id("users")),
+    /** Display name for address-book / advanced contacts. */
+    name: v.optional(v.string()),
+    /** Optional chain addresses for address-book / advanced contacts. */
+    evmAddress: v.optional(v.string()),
+    solanaAddress: v.optional(v.string()),
+    /** Farcaster FID when this is a first-class Farcaster contact. */
+    farcasterFid: v.optional(v.number()),
+    /** Farcaster username (without @). */
+    farcasterUsername: v.optional(v.string()),
+    /** Farcaster profile picture URL. */
+    farcasterPfpUrl: v.optional(v.string()),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_owner_and_contact", ["ownerId", "contactUserId"])
+    .index("by_owner_and_evm", ["ownerId", "evmAddress"])
+    .index("by_owner_and_solana", ["ownerId", "solanaAddress"])
+    .index("by_owner_and_fid", ["ownerId", "farcasterFid"]),
+});

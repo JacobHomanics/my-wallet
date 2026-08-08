@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
 import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
@@ -22,19 +23,19 @@ import { TokenPickerModal } from '@/components/TokenPickerModal';
 import { useAppTax } from '@/hooks/useAppTax';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { usePopToSend } from '@/hooks/usePopToSend';
-import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { resetSendDraft, useSendDraft, useSendDraftUi } from '@/hooks/useSendDraft';
+import { useSendAmountRecipientDisplay } from '@/hooks/useSendAmountRecipientDisplay';
 import { useSendForm } from '@/hooks/useSendForm';
 import { useSendPayment } from '@/hooks/useSendPayment';
+import { useSendRecipientUsername } from '@/hooks/useSendRecipientUsername';
 import { useSendStatus } from '@/hooks/useSendStatus';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useSendTip } from '@/hooks/useSendTip';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
-import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { buildPaymentLegsWithTax } from '@/lib/send/buildPaymentLegsWithTax';
 import { formatSendError } from '@/lib/send/formatSendError';
@@ -52,20 +53,18 @@ export function ConfirmSendScreen() {
   const { spendableTokens, availableUsd } = useSpendableTokens(tokens);
   const { sendPayment, sending } = useSendPayment();
   const { error, clearStatus, setError } = useSendStatus();
-  const { copy, isCopied } = useCopyToClipboard();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
-  const {
-    showAdvanced: showRecipientAdvanced,
-    toggleAdvanced: toggleRecipientAdvanced,
-  } = useShowAdvanced();
-  const { accountNumber } = useSendDraft();
+  const { accountNumber, recipientName, recipientProfilePhotoUrl } =
+    useSendDraft();
+  const recipientUsername = useSendRecipientUsername();
   const { tip, tipUsd, setTip, setTipPercent } = useSendTip();
   const {
     evmAddress: taxEvmAddress,
     solanaAddress: taxSolanaAddress,
     rate: taxRate,
   } = useAppTax();
-  const { allocationInputUnit, setAllocationInputUnit } = useSendDraftUi();
+  const { allocationInputUnit, setAllocationInputUnit, broadcastMode, setBroadcastMode } =
+    useSendDraftUi();
   const {
     strategies,
     selectedStrategy,
@@ -100,8 +99,6 @@ export function ConfirmSendScreen() {
     taxFunding,
     allocations,
     allocationInputs,
-    needsEthereumRecipient,
-    needsSolanaRecipient,
     ethereumRecipient,
     solanaRecipient,
     recipientsValid,
@@ -116,7 +113,17 @@ export function ConfirmSendScreen() {
 
   const trimmedEthereum = ethereumRecipient.trim();
   const trimmedSolana = solanaRecipient.trim();
-  const trimmedAccountNumber = accountNumber.trim();
+  const {
+    hasRecipient,
+    primaryLabel,
+    recipientFieldLabel,
+  } = useSendAmountRecipientDisplay({
+    accountNumber,
+    ethereumRecipient,
+    solanaRecipient,
+    username: recipientUsername,
+    name: recipientName,
+  });
 
   const baseUsd =
     requestedUsd != null ? Math.max(0, requestedUsd - tipUsd) : null;
@@ -173,7 +180,7 @@ export function ConfirmSendScreen() {
           taxSolanaAddress,
           taxRate,
         });
-        const results = await sendPayment(
+        const outcome = await sendPayment(
           paymentLegs.map((leg) => ({
             token: leg.token,
             recipient: leg.recipient,
@@ -181,12 +188,19 @@ export function ConfirmSendScreen() {
             amountFormatted: leg.amountFormatted,
             isTax: leg.isTax,
           })),
+          { broadcastMode },
         );
         resetSendDraft();
         refresh();
         navigation.navigate('sent', {
           usdLabel: totalLabel,
-          legs: results.map((result) => ({
+          recipientLabel: primaryLabel ?? undefined,
+          recipientProfilePhotoUrl,
+          recipientUsername,
+          rewardAmount: outcome.rewardAmount,
+          rewardHash: outcome.rewardHash,
+          rewardFailed: outcome.rewardFailed,
+          legs: outcome.legs.map((result) => ({
             hash: result.hash,
             amount: result.amount,
             symbol: result.symbol,
@@ -204,9 +218,13 @@ export function ConfirmSendScreen() {
     })();
   }, [
     allocations,
+    broadcastMode,
     canSend,
     clearStatus,
     navigation,
+    primaryLabel,
+    recipientProfilePhotoUrl,
+    recipientUsername,
     refresh,
     sendPayment,
     sending,
@@ -280,241 +298,28 @@ export function ConfirmSendScreen() {
           <ActivityIndicator color="#166534" style={styles.loader} />
         ) : (
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
-            {trimmedAccountNumber ||
-              needsEthereumRecipient ||
-              needsSolanaRecipient ||
-              trimmedEthereum ||
-              trimmedSolana ? (
+            {hasRecipient && primaryLabel ? (
               <View style={styles.toSection}>
-                {trimmedAccountNumber ? (
-                  <>
-                    <Text style={styles.recipientLabel}>To</Text>
-                    <View style={styles.recipientValueRow}>
-                      <Text style={styles.recipientValue} selectable>
-                        {formatWalletAddress(trimmedAccountNumber, 10, 8)}
-                      </Text>
-                      <Pressable
-                        accessibilityLabel={
-                          isCopied('account-number')
-                            ? 'Account number copied'
-                            : 'Copy account number'
-                        }
-                        accessibilityRole="button"
-                        hitSlop={8}
-                        onPress={() => {
-                          void copy(trimmedAccountNumber, 'account-number');
-                        }}
-                        style={({ pressed }) => [
-                          styles.copyButton,
-                          pressed && styles.copyButtonPressed,
-                        ]}
-                      >
-                        <Ionicons
-                          name={
-                            isCopied('account-number')
-                              ? 'checkmark'
-                              : 'copy-outline'
-                          }
-                          size={18}
-                          color={
-                            isCopied('account-number') ? '#15803d' : '#166534'
-                          }
-                        />
-                      </Pressable>
-                    </View>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityState={{ expanded: showRecipientAdvanced }}
-                      onPress={toggleRecipientAdvanced}
-                      style={({ pressed }) => [
-                        styles.recipientAdvancedToggle,
-                        pressed && styles.advancedTogglePressed,
-                      ]}
-                    >
-                      <Text style={styles.recipientAdvancedToggleText}>
-                        Advanced
-                      </Text>
-                      <Ionicons
-                        name={
-                          showRecipientAdvanced ? 'chevron-up' : 'chevron-down'
-                        }
-                        size={16}
-                        color="#5a7d6a"
-                      />
-                    </Pressable>
-                    {showRecipientAdvanced ? (
-                      <View style={styles.decodedCard}>
-                        {needsEthereumRecipient || trimmedEthereum ? (
-                          <View style={styles.decodedGroup}>
-                            <Text style={styles.decodedLabel}>EVM</Text>
-                            <View style={styles.decodedValueRow}>
-                              <Text style={styles.decodedValue} selectable>
-                                {trimmedEthereum || '—'}
-                              </Text>
-                              {trimmedEthereum ? (
-                                <Pressable
-                                  accessibilityLabel={
-                                    isCopied('evm')
-                                      ? 'EVM address copied'
-                                      : 'Copy EVM address'
-                                  }
-                                  accessibilityRole="button"
-                                  hitSlop={8}
-                                  onPress={() => {
-                                    void copy(trimmedEthereum, 'evm');
-                                  }}
-                                  style={({ pressed }) => [
-                                    styles.copyButton,
-                                    pressed && styles.copyButtonPressed,
-                                  ]}
-                                >
-                                  <Ionicons
-                                    name={
-                                      isCopied('evm')
-                                        ? 'checkmark'
-                                        : 'copy-outline'
-                                    }
-                                    size={18}
-                                    color={
-                                      isCopied('evm') ? '#15803d' : '#5a7d6a'
-                                    }
-                                  />
-                                </Pressable>
-                              ) : null}
-                            </View>
-                          </View>
-                        ) : null}
-                        {(needsEthereumRecipient || trimmedEthereum) &&
-                          (needsSolanaRecipient || trimmedSolana) ? (
-                          <View style={styles.decodedDivider} />
-                        ) : null}
-                        {needsSolanaRecipient || trimmedSolana ? (
-                          <View style={styles.decodedGroup}>
-                            <Text style={styles.decodedLabel}>Solana</Text>
-                            <View style={styles.decodedValueRow}>
-                              <Text style={styles.decodedValue} selectable>
-                                {trimmedSolana || '—'}
-                              </Text>
-                              {trimmedSolana ? (
-                                <Pressable
-                                  accessibilityLabel={
-                                    isCopied('solana')
-                                      ? 'Solana address copied'
-                                      : 'Copy Solana address'
-                                  }
-                                  accessibilityRole="button"
-                                  hitSlop={8}
-                                  onPress={() => {
-                                    void copy(trimmedSolana, 'solana');
-                                  }}
-                                  style={({ pressed }) => [
-                                    styles.copyButton,
-                                    pressed && styles.copyButtonPressed,
-                                  ]}
-                                >
-                                  <Ionicons
-                                    name={
-                                      isCopied('solana')
-                                        ? 'checkmark'
-                                        : 'copy-outline'
-                                    }
-                                    size={18}
-                                    color={
-                                      isCopied('solana') ? '#15803d' : '#5a7d6a'
-                                    }
-                                  />
-                                </Pressable>
-                              ) : null}
-                            </View>
-                          </View>
-                        ) : null}
-                      </View>
-                    ) : null}
-                  </>
-                ) : (
-                  <>
-                    <Text style={styles.toLabel}>To</Text>
-                    {needsEthereumRecipient || trimmedEthereum ? (
-                      <View style={styles.toAddressRow}>
-                        <Text style={styles.toChainLabel}>EVM</Text>
-                        <Text style={styles.toAddress} selectable>
-                          {trimmedEthereum
-                            ? formatWalletAddress(trimmedEthereum)
-                            : '—'}
-                        </Text>
-                        {trimmedEthereum ? (
-                          <Pressable
-                            accessibilityLabel={
-                              isCopied('evm')
-                                ? 'EVM address copied'
-                                : 'Copy EVM address'
-                            }
-                            accessibilityRole="button"
-                            hitSlop={8}
-                            onPress={() => {
-                              void copy(trimmedEthereum, 'evm');
-                            }}
-                            style={({ pressed }) => [
-                              styles.copyButton,
-                              pressed && styles.copyButtonPressed,
-                            ]}
-                          >
-                            <Ionicons
-                              name={
-                                isCopied('evm') ? 'checkmark' : 'copy-outline'
-                              }
-                              size={18}
-                              color={isCopied('evm') ? '#15803d' : '#5a7d6a'}
-                            />
-                          </Pressable>
-                        ) : null}
-                      </View>
-                    ) : null}
-                    {!trimmedAccountNumber && (needsSolanaRecipient || trimmedSolana) ? (
-                      <View style={styles.toAddressRow}>
-                        <Text style={styles.toChainLabel}>Solana</Text>
-                        <Text style={styles.toAddress} selectable>
-                          {trimmedSolana
-                            ? formatWalletAddress(trimmedSolana)
-                            : '—'}
-                        </Text>
-                        {trimmedSolana ? (
-                          <Pressable
-                            accessibilityLabel={
-                              isCopied('solana')
-                                ? 'Solana address copied'
-                                : 'Copy Solana address'
-                            }
-                            accessibilityRole="button"
-                            hitSlop={8}
-                            onPress={() => {
-                              void copy(trimmedSolana, 'solana');
-                            }}
-                            style={({ pressed }) => [
-                              styles.copyButton,
-                              pressed && styles.copyButtonPressed,
-                            ]}
-                          >
-                            <Ionicons
-                              name={
-                                isCopied('solana') ? 'checkmark' : 'copy-outline'
-                              }
-                              size={18}
-                              color={isCopied('solana') ? '#15803d' : '#5a7d6a'}
-                            />
-                          </Pressable>
-                        ) : null}
-                      </View>
-                    ) : null}
-                  </>
-                )}
+                <Text style={styles.recipientLabel}>{recipientFieldLabel}</Text>
+                <View style={styles.recipientRow}>
+                  <Avatar
+                    label={primaryLabel}
+                    photoUrl={recipientProfilePhotoUrl}
+                    seed={recipientUsername ?? primaryLabel}
+                    size={40}
+                  />
+                  <Text
+                    style={styles.recipientValue}
+                    selectable
+                    numberOfLines={1}
+                    ellipsizeMode="middle"
+                  >
+                    {primaryLabel}
+                  </Text>
+                </View>
               </View>
             ) : null}
-            {trimmedAccountNumber ||
-              needsEthereumRecipient ||
-              needsSolanaRecipient ||
-              trimmedEthereum ||
-              trimmedSolana ? (
+            {hasRecipient && primaryLabel ? (
               <View style={styles.toDivider} />
             ) : null}
 
@@ -604,12 +409,14 @@ export function ConfirmSendScreen() {
                 allocationInputUnit={allocationInputUnit}
                 allocationInputs={allocationInputs}
                 allocations={allocations}
+                broadcastMode={broadcastMode}
                 canAddToken={canAddToken}
                 onAddToken={() => {
                   setTokenPickerOpen(true);
                 }}
                 onAllocationAmountChange={setAllocationAmount}
                 onAllocationInputUnitChange={setAllocationInputUnit}
+                onBroadcastModeChange={setBroadcastMode}
                 onOpenStrategyPicker={openStrategyPicker}
                 onRemoveAllocation={removeAllocation}
                 selectedStrategy={selectedStrategy}
@@ -875,10 +682,10 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  recipientValueRow: {
+  recipientRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   recipientValue: {
     flex: 1,
@@ -887,101 +694,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#166534',
     fontVariant: ['tabular-nums'],
-  },
-  recipientAdvancedToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 6,
-  },
-  recipientAdvancedToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    marginRight: 4,
-  },
-  decodedCard: {
-    marginTop: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#d1fae5',
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  decodedGroup: {
-    gap: 8,
-  },
-  decodedValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 52,
-    paddingLeft: 12,
-    paddingRight: 4,
-    borderWidth: 1,
-    borderColor: '#d1fae5',
-    borderRadius: 10,
-    backgroundColor: '#f8fffa',
-  },
-  decodedLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#86a894',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  decodedValue: {
-    flex: 1,
-    minWidth: 0,
-    paddingVertical: 12,
-    paddingRight: 8,
-    fontSize: 14,
-    color: '#166534',
-    fontVariant: ['tabular-nums'],
-  },
-  decodedDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
-    marginVertical: 10,
-  },
-  toLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  toChainLabel: {
-    flexShrink: 0,
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#86a894',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  toAddress: {
-    flexShrink: 1,
-    minWidth: 0,
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#166534',
-    fontVariant: ['tabular-nums'],
-  },
-  toAddressRow: {
-    marginTop: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 10,
-  },
-  copyButton: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  copyButtonPressed: {
-    opacity: 0.65,
   },
   advancedToggle: {
     flexDirection: 'row',

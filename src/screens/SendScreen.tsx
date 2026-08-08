@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -17,20 +16,23 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
-import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
-import { StrategyPickerModal } from '@/components/StrategyPickerModal';
-import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
-import { TokenPickerModal } from '@/components/TokenPickerModal';
-import { useFiatDisplay } from '@/hooks/useFiatDisplay';
+import { ContactPickerModal } from '@/components/ContactPickerModal';
+import {
+  RecipientSearchModal,
+  type RecipientSearchSelection,
+} from '@/components/RecipientSearchModal';
+import { useContactPickerModal } from '@/hooks/useContactPickerModal';
+import type { ContactListItem } from '@/hooks/useContacts';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
-import { updateSendDraft, useSendDraftUi } from '@/hooks/useSendDraft';
-import { useSendForm } from '@/hooks/useSendForm';
-import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
-import { useShowAdvanced } from '@/hooks/useShowAdvanced';
-import { useSpendableTokens } from '@/hooks/useSpendableTokens';
-import { useTokenBalances } from '@/hooks/useTokenBalances';
-import { getNetworkChain } from '@/lib/alchemy/networks';
+import { useRecipientSearchModal } from '@/hooks/useRecipientSearchModal';
+import {
+  getSendDraftSnapshot,
+  updateSendDraft,
+} from '@/hooks/useSendDraft';
+import { useSendRecipientReady } from '@/hooks/useSendRecipientReady';
+import { useSendToContact } from '@/hooks/useSendToContact';
+import { useSyncSendRecipientFromDraft } from '@/hooks/useSyncSendRecipientFromDraft';
 import {
   encodeWalletIdentity,
   tryDecodeWalletIdentity,
@@ -38,109 +40,62 @@ import {
 import { isValidRecipientAddress } from '@/lib/validation';
 import type { HomeStackParamList } from '@/navigation/types';
 
+/**
+ * Send step 1 — choose the recipient via search, contacts, or addresses.
+ */
 export function SendScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'send'>>();
-  const { tokens, loading, ready, ethereumAddress, solanaAddress } =
-    useTokenBalances();
-  const { spendableTokens, availableUsd, availableLabel } =
-    useSpendableTokens(tokens);
-  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
-  const { allocationInputUnit, setAllocationInputUnit } = useSendDraftUi();
-  const {
-    strategies,
-    selectedStrategy,
-    selectedStrategyId,
-    pickerOpen: strategyPickerOpen,
-    openPicker: openStrategyPicker,
-    closePicker: closeStrategyPicker,
-    onSelectStrategy,
-  } = useSendStrategyPicker();
-  const [tokenPickerOpen, setTokenPickerOpen] = useState(false);
-  const [showDecodedAddresses, setShowDecodedAddresses] = useState(false);
-  const { currencySymbol, formatFromUsd, defaultFormattedZero } =
-    useFiatDisplay();
+  const goHome = usePopToHome();
+  const { pickerOpen, openPicker, closePicker } = useContactPickerModal();
+  const { searchOpen, openSearch, closeSearch } = useRecipientSearchModal();
+  const { sendToContact } = useSendToContact();
 
-  const form = useSendForm(
-    spendableTokens,
-    selectedStrategyId,
-    route.params?.tokenId,
-    allocationInputUnit,
-    availableUsd,
+  const initialDraft = getSendDraftSnapshot();
+  const [ethereumRecipient, setEthereumRecipientState] = useState(
+    initialDraft.ethereumRecipient,
   );
-  const {
-    amount,
-    taxUsd,
-    payerTotalUsd,
-    taxFunding,
-    allocations,
-    allocationInputs,
-    needsEthereumRecipient,
-    needsSolanaRecipient,
-    ethereumRecipient,
-    solanaRecipient,
-    insufficientFunds,
-    canContinue,
-    setEthereumRecipient,
-    setSolanaRecipient,
-    setAmount,
-    setAllocationAmount,
-    removeAllocation,
-    addAllocation,
-  } = form;
+  const [solanaRecipient, setSolanaRecipientState] = useState(
+    initialDraft.solanaRecipient,
+  );
   const [accountNumber, setAccountNumberState] = useState(() => {
-    if (!ethereumRecipient.trim() || !solanaRecipient.trim()) {
+    if (initialDraft.accountNumber.trim()) {
+      return initialDraft.accountNumber;
+    }
+    if (
+      !initialDraft.ethereumRecipient.trim() ||
+      !initialDraft.solanaRecipient.trim()
+    ) {
       return '';
     }
 
     try {
       return encodeWalletIdentity(
-        ethereumRecipient.trim(),
-        solanaRecipient.trim(),
+        initialDraft.ethereumRecipient.trim(),
+        initialDraft.solanaRecipient.trim(),
       );
     } catch {
       return '';
     }
   });
+  const [showDecodedAddresses, setShowDecodedAddresses] = useState(false);
 
-  const totalLabel = availableLabel;
-  const hasWallet = Boolean(ethereumAddress || solanaAddress);
-
-  const taxLabel = formatFromUsd(taxUsd) ?? defaultFormattedZero;
-  const payerTotalLabel =
-    (payerTotalUsd != null ? formatFromUsd(payerTotalUsd) : null) ??
-    defaultFormattedZero;
-  const taxFundingChain = taxFunding
-    ? getNetworkChain(taxFunding.token.network)
-    : null;
-  const showTaxEvm =
-    taxFundingChain != null
-      ? taxFundingChain === 'ethereum'
-      : needsEthereumRecipient || Boolean(ethereumAddress);
-  const showTaxSolana =
-    taxFundingChain != null
-      ? taxFundingChain === 'solana'
-      : needsSolanaRecipient || Boolean(solanaAddress);
-
-  const amountError =
-    amount.trim() && insufficientFunds
-      ? 'Insufficient funds for this amount (including service fee)'
-      : amount.trim() && !form.amountValid
-        ? 'Enter a valid amount'
-        : null;
-
-  const decodedAccountNumber = useMemo(
-    () => tryDecodeWalletIdentity(accountNumber),
-    [accountNumber],
+  const { canContinue } = useSendRecipientReady(
+    accountNumber,
+    ethereumRecipient,
+    solanaRecipient,
   );
 
-  const accountNumberError =
-    accountNumber.trim() && !decodedAccountNumber
-      ? 'Enter a valid account number'
-      : null;
+  const setEthereumRecipient = useCallback((value: string) => {
+    setEthereumRecipientState(value);
+  }, []);
+
+  const setSolanaRecipient = useCallback((value: string) => {
+    setSolanaRecipientState(value);
+  }, []);
 
   const syncAccountNumberFromAddresses = useCallback(
     (nextEvm: string, nextSolana: string) => {
@@ -173,13 +128,7 @@ export function SendScreen() {
       setAccountNumberState(value);
 
       const decoded = tryDecodeWalletIdentity(value);
-      if (!value.trim()) {
-        setEthereumRecipient('');
-        setSolanaRecipient('');
-        return;
-      }
-
-      if (!decoded) {
+      if (!value.trim() || !decoded) {
         setEthereumRecipient('');
         setSolanaRecipient('');
         return;
@@ -207,47 +156,133 @@ export function SendScreen() {
     [ethereumRecipient, setSolanaRecipient, syncAccountNumberFromAddresses],
   );
 
+  useSyncSendRecipientFromDraft({
+    setAccountNumber: setAccountNumberState,
+    setEthereumRecipient: setEthereumRecipientState,
+    setSolanaRecipient: setSolanaRecipientState,
+    setShowDecodedAddresses,
+  });
+
   useEffect(() => {
-    updateSendDraft({ accountNumber: accountNumber.trim() });
-  }, [accountNumber]);
+    updateSendDraft({
+      accountNumber: accountNumber.trim(),
+      ethereumRecipient,
+      solanaRecipient,
+    });
+  }, [accountNumber, ethereumRecipient, solanaRecipient]);
 
   const onContinue = useCallback(() => {
-    if (!canContinue || allocations.length === 0) {
+    if (!canContinue) {
       return;
     }
 
-    navigation.navigate('confirmSend', {
-      usdAmount: amount,
-      ethereumRecipient: ethereumRecipient.trim() || undefined,
-      solanaRecipient: solanaRecipient.trim() || undefined,
-      legs: allocations.map((leg) => ({
-        tokenId: leg.token.id,
-        amount: leg.amountFormatted,
-      })),
+    navigation.navigate('sendAmount', {
+      tokenId: route.params?.tokenId,
+      usdAmount: route.params?.usdAmount,
     });
-  }, [
-    allocations,
-    amount,
-    canContinue,
-    ethereumRecipient,
-    navigation,
-    solanaRecipient,
-  ]);
+  }, [canContinue, navigation, route.params?.tokenId, route.params?.usdAmount]);
 
-  const goHome = usePopToHome();
+  const onSelectContact = useCallback(
+    (contact: ContactListItem) => {
+      if (contact.identityId) {
+        setAccountNumber(contact.identityId);
+      } else {
+        const nextEvm = contact.evmAddress?.trim() ?? '';
+        const nextSolana = contact.solanaAddress?.trim() ?? '';
+        setEthereumRecipient(nextEvm);
+        setSolanaRecipient(nextSolana);
+        syncAccountNumberFromAddresses(nextEvm, nextSolana);
+        if (nextEvm || nextSolana) {
+          setShowDecodedAddresses(true);
+        }
+      }
 
-  const onAddToken = useCallback(
-    (tokenId: string) => {
-      addAllocation(tokenId);
-      setTokenPickerOpen(false);
+      closePicker();
+      sendToContact(contact, {
+        tokenId: route.params?.tokenId,
+        usdAmount: route.params?.usdAmount,
+      });
     },
-    [addAllocation],
+    [
+      closePicker,
+      route.params?.tokenId,
+      route.params?.usdAmount,
+      sendToContact,
+      setAccountNumber,
+      setEthereumRecipient,
+      setSolanaRecipient,
+      syncAccountNumberFromAddresses,
+    ],
   );
 
-  const allocatedTokenIds = allocations.map((leg) => leg.token.id);
-  const canAddToken = spendableTokens.some(
-    (token) =>
-      token.rawBalance > 0n && !allocatedTokenIds.includes(token.id),
+  const onSelectSearchHit = useCallback(
+    (selection: RecipientSearchSelection) => {
+      if (selection.kind === 'cashbox') {
+        const hit = selection.hit;
+        if (!hit.identityId) {
+          return;
+        }
+
+        setAccountNumber(hit.identityId);
+        closeSearch();
+        sendToContact(
+          {
+            identityId: hit.identityId,
+            evmAddress: null,
+            solanaAddress: null,
+            username: hit.username,
+            name: null,
+            profilePhotoUrl: hit.profilePhotoUrl,
+          },
+          {
+            tokenId: route.params?.tokenId,
+            usdAmount: route.params?.usdAmount,
+          },
+        );
+        return;
+      }
+
+      const hit = selection.hit;
+      if (!hit.hasAddress) {
+        return;
+      }
+
+      const nextEvm = hit.evmAddress?.trim() ?? '';
+      const nextSolana = hit.solanaAddress?.trim() ?? '';
+      setEthereumRecipient(nextEvm);
+      setSolanaRecipient(nextSolana);
+      syncAccountNumberFromAddresses(nextEvm, nextSolana);
+      if (nextEvm || nextSolana) {
+        setShowDecodedAddresses(true);
+      }
+
+      closeSearch();
+      sendToContact(
+        {
+          identityId: null,
+          evmAddress: hit.evmAddress,
+          solanaAddress: hit.solanaAddress,
+          username: hit.username,
+          name: hit.displayName,
+          profilePhotoUrl: hit.pfpUrl,
+        },
+        {
+          tokenId: route.params?.tokenId,
+          usdAmount: route.params?.usdAmount,
+        },
+      );
+    },
+    [
+      closeSearch,
+      route.params?.tokenId,
+      route.params?.usdAmount,
+      sendToContact,
+      setAccountNumber,
+      setEthereumRecipient,
+      setSolanaRecipient,
+      setShowDecodedAddresses,
+      syncAccountNumberFromAddresses,
+    ],
   );
 
   return (
@@ -277,269 +312,162 @@ export function SendScreen() {
                 onPress={goHome}
               />
             )}
-            <Text style={styles.topBarTitle}>Send</Text>
+            <Text style={styles.topBarTitle}>Recipient</Text>
             <View style={styles.topBarSpacer} />
           </View>
 
-          {!ready || (loading && tokens.length === 0) ? (
-            <ActivityIndicator color="#166534" style={styles.loader} />
-          ) : !hasWallet ? (
-            <Text style={styles.empty}>Creating your wallets…</Text>
-          ) : (
-            <ScrollView
-              contentContainerStyle={[
-                styles.form,
-                { paddingBottom: Math.max(insets.bottom, 16) + 40 },
-              ]}
-              keyboardShouldPersistTaps="handled"
-              style={styles.flex}
-            >
-              <View style={styles.formBody}>
-                <Text style={styles.label}>Account Number</Text>
-                <View
-                  style={[
-                    styles.fieldRow,
-                    accountNumberError ? styles.fieldRowError : null,
-                  ]}
-                >
-                  <TextInput
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    onChangeText={setAccountNumber}
-                    placeholder="AXQtNcxmNM...IfzT3I3cs"
-                    placeholderTextColor="#86a894"
-                    style={styles.fieldInput}
-                    value={accountNumber}
-                  />
-                  {accountNumber.trim() ? (
-                    <Pressable
-                      accessibilityLabel="Clear account number"
-                      accessibilityRole="button"
-                      hitSlop={8}
-                      onPress={() => {
-                        setAccountNumber('');
-                      }}
-                      style={styles.clearButton}
-                    >
-                      <Ionicons
-                        name="close-circle"
-                        size={20}
-                        color="#86a894"
+          <ScrollView
+            contentContainerStyle={[
+              styles.form,
+              { paddingBottom: Math.max(insets.bottom, 16) + 40 },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            style={styles.flex}
+          >
+            <View style={styles.formBody}>
+              <Pressable
+                accessibilityLabel="Search usernames and account numbers"
+                accessibilityRole="button"
+                onPress={openSearch}
+                style={({ pressed }) => [
+                  styles.contactsButton,
+                  pressed && styles.contactsButtonPressed,
+                ]}
+              >
+                <Ionicons name="search-outline" size={20} color="#166534" />
+                <Text style={styles.contactsButtonText}>Search</Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityLabel="Choose from contacts"
+                accessibilityRole="button"
+                onPress={openPicker}
+                style={({ pressed }) => [
+                  styles.contactsButton,
+                  styles.secondaryButtonSpacing,
+                  pressed && styles.contactsButtonPressed,
+                ]}
+              >
+                <Ionicons name="people-outline" size={20} color="#166534" />
+                <Text style={styles.contactsButtonText}>Contacts</Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityLabel={
+                  showDecodedAddresses ? 'Hide advanced' : 'Show advanced'
+                }
+                accessibilityRole="button"
+                accessibilityState={{ expanded: showDecodedAddresses }}
+                onPress={() => {
+                  setShowDecodedAddresses((open) => !open);
+                }}
+                style={({ pressed }) => [
+                  styles.decodedToggle,
+                  pressed && styles.advancedTogglePressed,
+                ]}
+              >
+                <Text style={styles.decodedToggleText}>Advanced</Text>
+                <Ionicons
+                  name={showDecodedAddresses ? 'chevron-up' : 'chevron-down'}
+                  size={16}
+                  color="#5a7d6a"
+                />
+              </Pressable>
+              {showDecodedAddresses ? (
+                <View style={styles.decodedCard}>
+                  <View style={styles.decodedGroup}>
+                    <Text style={styles.decodedLabel}>EVM</Text>
+                    <View style={styles.decodedInputRow}>
+                      <TextInput
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        onChangeText={setDecodedEthereumRecipient}
+                        placeholder="0x…"
+                        placeholderTextColor="#86a894"
+                        style={styles.decodedInput}
+                        value={ethereumRecipient}
                       />
-                    </Pressable>
-                  ) : null}
-                </View>
-                {accountNumberError ? (
-                  <Text style={styles.fieldError}>{accountNumberError}</Text>
-                ) : null}
-                <Pressable
-                  accessibilityLabel={
-                    showDecodedAddresses
-                      ? 'Hide advanced'
-                      : 'Show advanced'
-                  }
-                  accessibilityRole="button"
-                  accessibilityState={{ expanded: showDecodedAddresses }}
-                  onPress={() => {
-                    setShowDecodedAddresses((open) => !open);
-                  }}
-                  style={({ pressed }) => [
-                    styles.decodedToggle,
-                    pressed && styles.advancedTogglePressed,
-                  ]}
-                >
-                  <Text style={styles.decodedToggleText}>Advanced</Text>
-                  <Ionicons
-                    name={showDecodedAddresses ? 'chevron-up' : 'chevron-down'}
-                    size={16}
-                    color="#5a7d6a"
-                  />
-                </Pressable>
-                {showDecodedAddresses ? (
-                  <View style={styles.decodedCard}>
-                    <View style={styles.decodedGroup}>
-                      <Text style={styles.decodedLabel}>EVM</Text>
-                      <View style={styles.decodedInputRow}>
-                        <TextInput
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                          onChangeText={setDecodedEthereumRecipient}
-                          placeholder="Enter a valid account number"
-                          placeholderTextColor="#86a894"
-                          style={styles.decodedInput}
-                          value={ethereumRecipient}
-                        />
-                        {ethereumRecipient.trim() ? (
-                          <Pressable
-                            accessibilityLabel="Clear EVM address"
-                            accessibilityRole="button"
-                            hitSlop={8}
-                            onPress={() => {
-                              setDecodedEthereumRecipient('');
-                            }}
-                            style={styles.clearButton}
-                          >
-                            <Ionicons
-                              name="close-circle"
-                              size={20}
-                              color="#86a894"
-                            />
-                          </Pressable>
-                        ) : null}
-                      </View>
-                    </View>
-                    <View style={styles.decodedDivider} />
-                    <View style={styles.decodedGroup}>
-                      <Text style={styles.decodedLabel}>Solana</Text>
-                      <View style={styles.decodedInputRow}>
-                        <TextInput
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                          onChangeText={setDecodedSolanaRecipient}
-                          placeholder="Enter a valid account number"
-                          placeholderTextColor="#86a894"
-                          style={styles.decodedInput}
-                          value={solanaRecipient}
-                        />
-                        {solanaRecipient.trim() ? (
-                          <Pressable
-                            accessibilityLabel="Clear Solana address"
-                            accessibilityRole="button"
-                            hitSlop={8}
-                            onPress={() => {
-                              setDecodedSolanaRecipient('');
-                            }}
-                            style={styles.clearButton}
-                          >
-                            <Ionicons
-                              name="close-circle"
-                              size={20}
-                              color="#86a894"
-                            />
-                          </Pressable>
-                        ) : null}
-                      </View>
+                      {ethereumRecipient.trim() ? (
+                        <Pressable
+                          accessibilityLabel="Clear EVM address"
+                          accessibilityRole="button"
+                          hitSlop={8}
+                          onPress={() => {
+                            setDecodedEthereumRecipient('');
+                          }}
+                          style={styles.clearButton}
+                        >
+                          <Ionicons
+                            name="close-circle"
+                            size={20}
+                            color="#86a894"
+                          />
+                        </Pressable>
+                      ) : null}
                     </View>
                   </View>
-                ) : null}
-
-                <View style={styles.balanceDivider} />
-                <View
-                  accessibilityLabel={`Available Balance: ${totalLabel}`}
-                  style={[styles.fieldRow, styles.fieldRowDisabled, styles.balanceRow]}
-                >
-                  <Text style={styles.balanceLabel}>Available Balance:</Text>
-                  <Text style={styles.balanceValue}>{totalLabel}</Text>
+                  <View style={styles.decodedDivider} />
+                  <View style={styles.decodedGroup}>
+                    <Text style={styles.decodedLabel}>Solana</Text>
+                    <View style={styles.decodedInputRow}>
+                      <TextInput
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        onChangeText={setDecodedSolanaRecipient}
+                        placeholder="Solana address"
+                        placeholderTextColor="#86a894"
+                        style={styles.decodedInput}
+                        value={solanaRecipient}
+                      />
+                      {solanaRecipient.trim() ? (
+                        <Pressable
+                          accessibilityLabel="Clear Solana address"
+                          accessibilityRole="button"
+                          hitSlop={8}
+                          onPress={() => {
+                            setDecodedSolanaRecipient('');
+                          }}
+                          style={styles.clearButton}
+                        >
+                          <Ionicons
+                            name="close-circle"
+                            size={20}
+                            color="#86a894"
+                          />
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  </View>
                 </View>
+              ) : null}
 
-                <Text style={styles.label}>Amount</Text>
-                <View
-                  style={[
-                    styles.fieldRow,
-                    amountError ? styles.fieldRowError : null,
-                  ]}
-                >
-                  <Text style={styles.amountPrefix}>{currencySymbol}</Text>
-                  <TextInput
-                    keyboardType="decimal-pad"
-                    onChangeText={setAmount}
-                    placeholder="0"
-                    placeholderTextColor="#86a894"
-                    style={styles.fieldInput}
-                    value={amount}
-                  />
-                </View>
-                {amountError ? (
-                  <Text style={styles.fieldError}>{amountError}</Text>
-                ) : null}
-
-                <TaxDetailsCollapsible
-                  showEvm={showTaxEvm}
-                  showSolana={showTaxSolana}
-                  style={styles.taxSection}
-                  taxLabel={taxLabel}
-                />
-                <View style={styles.payerTotalRow}>
-                  <Text style={styles.payerTotalLabel}>Total</Text>
-                  <Text style={styles.payerTotalValue}>
-                    {payerTotalLabel}
-                  </Text>
-                </View>
-
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityState={{ expanded: showAdvanced }}
-                  onPress={toggleAdvanced}
-                  style={({ pressed }) => [
-                    styles.advancedToggle,
-                    pressed && styles.advancedTogglePressed,
-                  ]}
-                >
-                  <Text style={styles.advancedToggleText}>
-                    {showAdvanced
-                      ? 'Hide advanced details'
-                      : 'Show advanced details'}
-                  </Text>
-                  <Ionicons
-                    name={showAdvanced ? 'chevron-up' : 'chevron-down'}
-                    size={16}
-                    color="#5a7d6a"
-                  />
-                </Pressable>
-
-                {showAdvanced ? (
-                  <SendAdvancedDetails
-                    allocationInputUnit={allocationInputUnit}
-                    allocationInputs={allocationInputs}
-                    allocations={allocations}
-                    canAddToken={canAddToken}
-                    onAddToken={() => {
-                      setTokenPickerOpen(true);
-                    }}
-                    onAllocationAmountChange={setAllocationAmount}
-                    onAllocationInputUnitChange={setAllocationInputUnit}
-                    onOpenStrategyPicker={openStrategyPicker}
-                    onRemoveAllocation={removeAllocation}
-                    selectedStrategy={selectedStrategy}
-                    spendableTokens={spendableTokens}
-                    taxFunding={taxFunding}
-                  />
-                ) : null}
-
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={!canContinue}
-                  onPress={onContinue}
-                  style={({ pressed }) => [
-                    styles.continueButton,
-                    !canContinue && styles.continueButtonDisabled,
-                    pressed && canContinue && styles.continueButtonPressed,
-                  ]}
-                >
-                  <Text style={styles.continueButtonText}>Continue</Text>
-                </Pressable>
-              </View>
-            </ScrollView>
-          )}
+              <Pressable
+                accessibilityRole="button"
+                disabled={!canContinue}
+                onPress={onContinue}
+                style={({ pressed }) => [
+                  styles.continueButton,
+                  !canContinue && styles.continueButtonDisabled,
+                  pressed && canContinue && styles.continueButtonPressed,
+                ]}
+              >
+                <Text style={styles.continueButtonText}>Continue</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
         </View>
       </KeyboardAvoidingView>
 
-      <StrategyPickerModal
-        onClose={closeStrategyPicker}
-        onSelect={onSelectStrategy}
-        selectedStrategyId={selectedStrategyId}
-        strategies={strategies}
-        visible={strategyPickerOpen}
+      <RecipientSearchModal
+        visible={searchOpen}
+        onClose={closeSearch}
+        onSelect={onSelectSearchHit}
       />
 
-      <TokenPickerModal
-        excludeTokenIds={allocatedTokenIds}
-        onClose={() => {
-          setTokenPickerOpen(false);
-        }}
-        onSelect={onAddToken}
-        tokens={spendableTokens}
-        visible={tokenPickerOpen}
+      <ContactPickerModal
+        visible={pickerOpen}
+        onClose={closePicker}
+        onSelect={onSelectContact}
       />
     </View>
   );
@@ -589,86 +517,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#166534',
   },
-  loader: {
-    marginTop: 48,
-  },
-  empty: {
-    marginTop: 48,
-    paddingHorizontal: 24,
-    fontSize: 15,
-    color: '#86a894',
-    textAlign: 'center',
-  },
   form: {
     flexGrow: 1,
     paddingHorizontal: 24,
-  },
-  balanceRow: {
-    marginTop: 12,
-    paddingRight: 16,
-  },
-  balanceDivider: {
-    marginTop: 10,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#86d4a4',
-  },
-  balanceLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    marginRight: 8,
-  },
-  balanceValue: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#166534',
-    fontVariant: ['tabular-nums'],
-    textAlign: 'right',
   },
   formBody: {
     flex: 1,
     justifyContent: 'center',
     width: '100%',
-  },
-  label: {
-    marginTop: 20,
-    marginBottom: 8,
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  fieldRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#86d4a4',
-    borderRadius: 12,
-    paddingLeft: 16,
-    paddingRight: 8,
-    backgroundColor: '#fff',
-    minHeight: 52,
-  },
-  fieldRowDisabled: {
-    backgroundColor: '#dcfce7',
-  },
-  fieldRowError: {
-    borderColor: '#fca5a5',
-  },
-  fieldInput: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingRight: 8,
-    fontSize: 16,
-    color: '#166534',
-  },
-  amountPrefix: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#166534',
-    marginRight: 4,
   },
   clearButton: {
     width: 36,
@@ -676,61 +532,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  fieldError: {
-    marginTop: 8,
-    fontSize: 13,
-    color: '#b91c1c',
-  },
-  taxSection: {
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: '#86d4a4',
-    borderRadius: 12,
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingVertical: 14,
-    backgroundColor: '#dcfce7',
-  },
-  payerTotalRow: {
-    marginTop: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#86d4a4',
-    borderRadius: 12,
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingVertical: 14,
-    backgroundColor: '#dcfce7',
-  },
-  payerTotalLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#14532d',
-  },
-  payerTotalValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#14532d',
-    fontVariant: ['tabular-nums'],
-  },
-  advancedToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-  },
   advancedTogglePressed: {
     opacity: 0.65,
   },
-  advancedToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    marginRight: 4,
-  },
   decodedToggle: {
+    marginTop: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -772,12 +578,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  decodedValue: {
-    flex: 1,
-    minWidth: 0,
-    fontSize: 14,
-    color: '#166534',
-  },
   decodedInput: {
     flex: 1,
     minWidth: 0,
@@ -790,8 +590,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#d1fae5',
     marginVertical: 10,
   },
+  contactsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#d1fae5',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 10,
+  },
+  secondaryButtonSpacing: {
+    marginTop: 12,
+  },
+  contactsButtonPressed: {
+    opacity: 0.85,
+  },
+  contactsButtonText: {
+    color: '#166534',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   continueButton: {
-    marginTop: 32,
+    marginTop: 24,
     alignItems: 'center',
     backgroundColor: '#166534',
     paddingHorizontal: 20,
