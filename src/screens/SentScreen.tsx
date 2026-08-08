@@ -78,12 +78,14 @@ export function SentScreen() {
             </View>
           ) : null}
 
-          <View style={styles.rewardSection}>
-            <Text style={styles.rewardLabel}>Rewards</Text>
-            <Text style={styles.rewardValue}>
-              {rewardAmount} {REWARD_TOKEN_SYMBOL} rewarded
-            </Text>
-          </View>
+          {rewardAmount ? (
+            <View style={styles.rewardSection}>
+              <Text style={styles.rewardLabel}>Rewards</Text>
+              <Text style={styles.rewardValue}>
+                {rewardAmount} {REWARD_TOKEN_SYMBOL} rewarded
+              </Text>
+            </View>
+          ) : null}
 
           <Pressable
             accessibilityRole="button"

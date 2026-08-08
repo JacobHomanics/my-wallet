@@ -54,7 +54,8 @@ export function SendAmountScreen() {
   const { spendableTokens, availableUsd, availableLabel } =
     useSpendableTokens(tokens);
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
-  const { allocationInputUnit, setAllocationInputUnit } = useSendDraftUi();
+  const { allocationInputUnit, setAllocationInputUnit, broadcastMode, setBroadcastMode } =
+    useSendDraftUi();
   const { accountNumber, recipientName, recipientProfilePhotoUrl } =
     useSendDraft();
   const recipientUsername = useSendRecipientUsername();
@@ -320,12 +321,14 @@ export function SendAmountScreen() {
                     allocationInputUnit={allocationInputUnit}
                     allocationInputs={allocationInputs}
                     allocations={allocations}
+                    broadcastMode={broadcastMode}
                     canAddToken={canAddToken}
                     onAddToken={() => {
                       setTokenPickerOpen(true);
                     }}
                     onAllocationAmountChange={setAllocationAmount}
                     onAllocationInputUnitChange={setAllocationInputUnit}
+                    onBroadcastModeChange={setBroadcastMode}
                     onOpenStrategyPicker={openStrategyPicker}
                     onRemoveAllocation={removeAllocation}
                     selectedStrategy={selectedStrategy}

@@ -3,6 +3,7 @@ import { useCallback, useSyncExternalStore } from 'react';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import type { PaymentStrategyId } from '@/lib/strategies';
 import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
+import type { SendBroadcastMode } from '@/lib/send/broadcastMode';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
 import { tryDecodeWalletIdentity } from '@/lib/walletIdentity';
 
@@ -34,6 +35,11 @@ export type SendDraft = {
   allocationInputUnit: AllocationInputUnit;
   /** When set, overrides the default strategy for this send only. */
   strategyId: PaymentStrategyId | null;
+  /**
+   * Where payment legs are broadcast: Convex backend (rewards) or device
+   * wallets (no rewards).
+   */
+  broadcastMode: SendBroadcastMode;
 };
 
 type DraftListener = () => void;
@@ -51,6 +57,7 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   allocationInputs: {},
   allocationInputUnit: 'token',
   strategyId: null,
+  broadcastMode: 'backend',
 };
 
 let sendDraft: SendDraft = { ...DEFAULT_SEND_DRAFT };
@@ -176,8 +183,14 @@ export function useSendDraftUi() {
     updateSendDraft({ allocationInputUnit });
   }, []);
 
+  const setBroadcastMode = useCallback((broadcastMode: SendBroadcastMode) => {
+    updateSendDraft({ broadcastMode });
+  }, []);
+
   return {
     allocationInputUnit: draft.allocationInputUnit,
     setAllocationInputUnit,
+    broadcastMode: draft.broadcastMode,
+    setBroadcastMode,
   };
 }

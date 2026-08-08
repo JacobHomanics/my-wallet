@@ -8,7 +8,11 @@ import type {
 } from '@/hooks/useSendTransaction.shared';
 import { useSendTransaction } from '@/hooks/useSendTransaction';
 import { useUserWallets } from '@/hooks/useUserWallets';
-import { isNativeTokenAddress } from '@/lib/alchemy/tokenLogos';
+import { getNetworkChain } from '@/lib/alchemy/networks';
+import type { SendBroadcastMode } from '@/lib/send/broadcastMode';
+import { createEvmNonceAllocator } from '@/lib/send/evmNonce';
+import { waitForEvmReceipt } from '@/lib/send/waitForEvmReceipt';
+import { isGasToken } from '@/lib/strategies/gasTokens';
 
 export type SendPaymentLegResult = {
   hash: string;
@@ -25,8 +29,13 @@ export type SendPaymentLegResult = {
 
 export type SendPaymentOutcome = {
   legs: SendPaymentLegResult[];
-  rewardAmount: string;
-  rewardHash: string;
+  /** Null when broadcast on-device (no treasury reward). */
+  rewardAmount: string | null;
+  rewardHash: string | null;
+};
+
+export type SendPaymentOptions = {
+  broadcastMode?: SendBroadcastMode;
 };
 
 export type SendPaymentResult = {
@@ -37,15 +46,32 @@ export type SendPaymentResult = {
       amountFormatted: string;
       isTax?: boolean;
     })[],
+    options?: SendPaymentOptions,
   ) => Promise<SendPaymentOutcome>;
 };
 
+type PaymentLeg = SendTokenParams & {
+  amountFormatted: string;
+  isTax?: boolean;
+};
+
+function orderPaymentLegs(legs: PaymentLeg[]): PaymentLeg[] {
+  return [...legs].sort((a, b) => {
+    const aGas = isGasToken(a.token) ? 1 : 0;
+    const bGas = isGasToken(b.token) ? 1 : 0;
+    return aGas - bGas;
+  });
+}
+
 /**
- * Simulates locally, then broadcasts payment legs via Convex (`@privy-io/node`).
- * On success the backend also sends a treasury reward token transfer.
+ * Simulates locally, then broadcasts payment legs via Convex (backend) or
+ * Privy client wallets (frontend). Backend mode also sends a treasury reward.
+ *
+ * Frontend EVM legs use sequential pending nonces and wait for prior
+ * same-network receipts to avoid "replacement transaction underpriced".
  */
 export function useSendPayment(): SendPaymentResult {
-  const { ready: txReady, simulatePayment } = useSendTransaction();
+  const { ready: txReady, send, simulatePayment } = useSendTransaction();
   const { ready: walletsReady, wallets } = useUserWallets();
   const sendPaymentAction = useAction(api.send.sendPayment);
   const [sending, setSending] = useState(false);
@@ -57,33 +83,18 @@ export function useSendPayment(): SendPaymentResult {
 
   const sendPayment = useCallback(
     async (
-      legs: (SendTokenParams & {
-        amountFormatted: string;
-        isTax?: boolean;
-      })[],
+      legs: PaymentLeg[],
+      options?: SendPaymentOptions,
     ): Promise<SendPaymentOutcome> => {
       if (legs.length === 0) {
         throw new Error('Nothing to send');
       }
-      if (!ethereumWallet?.address) {
-        throw new Error('No Ethereum wallet available');
-      }
 
-      const needsSolana = legs.some(
-        (leg) => leg.token.network === 'solana-mainnet',
-      );
-      if (needsSolana && !solanaWallet?.address) {
-        throw new Error('No Solana wallet available');
-      }
+      const broadcastMode = options?.broadcastMode ?? 'backend';
+      const orderedLegs = orderPaymentLegs(legs);
 
       setSending(true);
       try {
-        const orderedLegs = [...legs].sort((a, b) => {
-          const aGas = isNativeTokenAddress(a.token.tokenAddress) ? 1 : 0;
-          const bGas = isNativeTokenAddress(b.token.tokenAddress) ? 1 : 0;
-          return aGas - bGas;
-        });
-
         await simulatePayment(
           orderedLegs.map((leg) => ({
             token: leg.token,
@@ -91,6 +102,74 @@ export function useSendPayment(): SendPaymentResult {
             amountRaw: leg.amountRaw,
           })),
         );
+
+        if (broadcastMode === 'frontend') {
+          const ethereumFrom = ethereumWallet?.address ?? null;
+          const results: SendPaymentLegResult[] = [];
+          /** Last broadcast hash per EVM network — confirm before next on same net. */
+          const lastEvmHashByNetwork = new Map<string, string>();
+          const nonceAllocator = ethereumFrom
+            ? createEvmNonceAllocator(ethereumFrom)
+            : null;
+
+          for (const leg of orderedLegs) {
+            const chain = getNetworkChain(leg.token.network);
+            let nonce: `0x${string}` | undefined;
+
+            if (chain === 'ethereum') {
+              const previousHash = lastEvmHashByNetwork.get(leg.token.network);
+              if (previousHash) {
+                await waitForEvmReceipt(leg.token.network, previousHash);
+                // Re-read pending nonce after confirmation in case Privy ignored
+                // the nonce we passed on the prior leg.
+                nonceAllocator?.invalidate(leg.token.network);
+              }
+              if (nonceAllocator) {
+                nonce = await nonceAllocator.take(leg.token.network);
+              }
+            }
+
+            const result = await send({
+              token: leg.token,
+              recipient: leg.recipient,
+              amountRaw: leg.amountRaw,
+              nonce,
+            });
+
+            if (result.chain === 'ethereum') {
+              lastEvmHashByNetwork.set(leg.token.network, result.hash);
+            }
+
+            results.push({
+              hash: result.hash,
+              chain: result.chain,
+              tokenId: leg.token.id,
+              symbol: leg.token.symbol,
+              amount: leg.amountFormatted,
+              network: leg.token.network,
+              networkLabel: leg.token.networkLabel,
+              tokenName: leg.token.name,
+              logoUrl: leg.token.logoUrl,
+              isTax: leg.isTax === true,
+            });
+          }
+          return {
+            legs: results,
+            rewardAmount: null,
+            rewardHash: null,
+          };
+        }
+
+        if (!ethereumWallet?.address) {
+          throw new Error('No Ethereum wallet available');
+        }
+
+        const needsSolana = orderedLegs.some(
+          (leg) => leg.token.network === 'solana-mainnet',
+        );
+        if (needsSolana && !solanaWallet?.address) {
+          throw new Error('No Solana wallet available');
+        }
 
         const result = await sendPaymentAction({
           ethereumWalletId: ethereumWallet.id ?? '',
@@ -133,7 +212,13 @@ export function useSendPayment(): SendPaymentResult {
         setSending(false);
       }
     },
-    [ethereumWallet, sendPaymentAction, simulatePayment, solanaWallet],
+    [
+      ethereumWallet,
+      send,
+      sendPaymentAction,
+      simulatePayment,
+      solanaWallet,
+    ],
   );
 
   return { ready, sending, sendPayment };
