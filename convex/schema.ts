@@ -24,9 +24,16 @@ export default defineSchema({
     /** Optional chain addresses for address-book / advanced contacts. */
     evmAddress: v.optional(v.string()),
     solanaAddress: v.optional(v.string()),
+    /** Farcaster FID when this is a first-class Farcaster contact. */
+    farcasterFid: v.optional(v.number()),
+    /** Farcaster username (without @). */
+    farcasterUsername: v.optional(v.string()),
+    /** Farcaster profile picture URL. */
+    farcasterPfpUrl: v.optional(v.string()),
   })
     .index("by_owner", ["ownerId"])
     .index("by_owner_and_contact", ["ownerId", "contactUserId"])
     .index("by_owner_and_evm", ["ownerId", "evmAddress"])
-    .index("by_owner_and_solana", ["ownerId", "solanaAddress"]),
+    .index("by_owner_and_solana", ["ownerId", "solanaAddress"])
+    .index("by_owner_and_fid", ["ownerId", "farcasterFid"]),
 });

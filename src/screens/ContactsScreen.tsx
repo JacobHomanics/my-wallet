@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -76,6 +77,7 @@ function CollapsibleSection({
   onDeleteContact,
   onRowOpen,
   onRowClose,
+  nested = false,
 }: {
   title: string;
   expanded: boolean;
@@ -85,6 +87,52 @@ function CollapsibleSection({
   onDeleteContact: (contactId: string, label: string) => void;
   onRowOpen: (contactId: string, ref: Swipeable) => void;
   onRowClose: (contactId: string) => void;
+  nested?: boolean;
+}) {
+  return (
+    <View style={[styles.section, nested && styles.nestedSection]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        onPress={onToggle}
+        style={({ pressed }) => [
+          styles.sectionHeader,
+          nested && styles.nestedSectionHeader,
+          pressed && styles.sectionHeaderPressed,
+        ]}
+      >
+        <Text style={[styles.sectionTitle, nested && styles.nestedSectionTitle]}>
+          {title}
+        </Text>
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={16}
+          color="#5a7d6a"
+        />
+      </Pressable>
+      {expanded ? (
+        <ContactRows
+          contacts={contacts}
+          onPressContact={onPressContact}
+          onDeleteContact={onDeleteContact}
+          onRowOpen={onRowOpen}
+          onRowClose={onRowClose}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+function CollapsibleGroup({
+  title,
+  expanded,
+  onToggle,
+  children,
+}: {
+  title: string;
+  expanded: boolean;
+  onToggle: () => void;
+  children: ReactNode;
 }) {
   return (
     <View style={styles.section}>
@@ -104,15 +152,7 @@ function CollapsibleSection({
           color="#5a7d6a"
         />
       </Pressable>
-      {expanded ? (
-        <ContactRows
-          contacts={contacts}
-          onPressContact={onPressContact}
-          onDeleteContact={onDeleteContact}
-          onRowOpen={onRowOpen}
-          onRowClose={onRowClose}
-        />
-      ) : null}
+      {expanded ? <View style={styles.groupBody}>{children}</View> : null}
     </View>
   );
 }
@@ -146,14 +186,16 @@ export function ContactsScreen() {
   const goHome = usePopToHome();
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const { userContacts, externalContacts, isLoading } = useContacts();
+  const { userContacts, farcasterContacts, externalContacts, isLoading } =
+    useContacts();
   const {
     query,
     setQuery,
     filteredUserContacts,
+    filteredFarcasterContacts,
     filteredExternalContacts,
     hasActiveQuery,
-  } = useContactsFilter({ userContacts, externalContacts });
+  } = useContactsFilter({ userContacts, farcasterContacts, externalContacts });
   const {
     selectedTab,
     isAllTab,
@@ -165,9 +207,13 @@ export function ContactsScreen() {
   } = useContactsTab();
   const {
     contactsExpanded,
-    externalExpanded,
+    externalGroupExpanded,
+    walletsExpanded,
+    farcasterExpanded,
     toggleContacts,
-    toggleExternal,
+    toggleExternalGroup,
+    toggleWallets,
+    toggleFarcaster,
   } = useContactsAllSections();
   const {
     confirmVisible,
@@ -191,19 +237,24 @@ export function ContactsScreen() {
   };
 
   const hasAnyContacts =
-    userContacts.length > 0 || externalContacts.length > 0;
+    userContacts.length > 0 ||
+    farcasterContacts.length > 0 ||
+    externalContacts.length > 0;
 
   const hasSourceContacts = isAllTab
     ? hasAnyContacts
     : isContactsTab
       ? userContacts.length > 0
-      : externalContacts.length > 0;
+      : externalContacts.length > 0 || farcasterContacts.length > 0;
 
   const hasFilteredResults = isAllTab
-    ? filteredUserContacts.length > 0 || filteredExternalContacts.length > 0
+    ? filteredUserContacts.length > 0 ||
+      filteredFarcasterContacts.length > 0 ||
+      filteredExternalContacts.length > 0
     : isContactsTab
       ? filteredUserContacts.length > 0
-      : filteredExternalContacts.length > 0;
+      : filteredExternalContacts.length > 0 ||
+        filteredFarcasterContacts.length > 0;
 
   const searchPlaceholder =
     selectedTab === 'all'
@@ -306,7 +357,44 @@ export function ContactsScreen() {
               <ActivityIndicator color="#166534" style={styles.loader} />
             ) : !hasFilteredResults ? (
               <Text style={styles.empty}>{emptyMessage}</Text>
-            ) : isAllTab ? (
+            ) : isContactsTab ? (
+              <View style={styles.section}>
+                <ContactRows
+                  contacts={filteredUserContacts}
+                  onPressContact={openContact}
+                  onDeleteContact={deleteContact}
+                  onRowOpen={onRowOpen}
+                  onRowClose={onRowClose}
+                />
+              </View>
+            ) : isExternalTab ? (
+              <>
+                {filteredExternalContacts.length > 0 ? (
+                  <CollapsibleSection
+                    title="Wallets"
+                    expanded={walletsExpanded}
+                    onToggle={toggleWallets}
+                    contacts={filteredExternalContacts}
+                    onPressContact={openContact}
+                    onDeleteContact={deleteContact}
+                    onRowOpen={onRowOpen}
+                    onRowClose={onRowClose}
+                  />
+                ) : null}
+                {filteredFarcasterContacts.length > 0 ? (
+                  <CollapsibleSection
+                    title="Farcaster"
+                    expanded={farcasterExpanded}
+                    onToggle={toggleFarcaster}
+                    contacts={filteredFarcasterContacts}
+                    onPressContact={openContact}
+                    onDeleteContact={deleteContact}
+                    onRowOpen={onRowOpen}
+                    onRowClose={onRowClose}
+                  />
+                ) : null}
+              </>
+            ) : (
               <>
                 {filteredUserContacts.length > 0 ? (
                   <CollapsibleSection
@@ -320,33 +408,42 @@ export function ContactsScreen() {
                     onRowClose={onRowClose}
                   />
                 ) : null}
-                {filteredExternalContacts.length > 0 ? (
-                  <CollapsibleSection
+                {filteredExternalContacts.length > 0 ||
+                filteredFarcasterContacts.length > 0 ? (
+                  <CollapsibleGroup
                     title="External Contacts"
-                    expanded={externalExpanded}
-                    onToggle={toggleExternal}
-                    contacts={filteredExternalContacts}
-                    onPressContact={openContact}
-                    onDeleteContact={deleteContact}
-                    onRowOpen={onRowOpen}
-                    onRowClose={onRowClose}
-                  />
+                    expanded={externalGroupExpanded}
+                    onToggle={toggleExternalGroup}
+                  >
+                    {filteredExternalContacts.length > 0 ? (
+                      <CollapsibleSection
+                        title="Wallets"
+                        expanded={walletsExpanded}
+                        onToggle={toggleWallets}
+                        contacts={filteredExternalContacts}
+                        onPressContact={openContact}
+                        onDeleteContact={deleteContact}
+                        onRowOpen={onRowOpen}
+                        onRowClose={onRowClose}
+                        nested
+                      />
+                    ) : null}
+                    {filteredFarcasterContacts.length > 0 ? (
+                      <CollapsibleSection
+                        title="Farcaster"
+                        expanded={farcasterExpanded}
+                        onToggle={toggleFarcaster}
+                        contacts={filteredFarcasterContacts}
+                        onPressContact={openContact}
+                        onDeleteContact={deleteContact}
+                        onRowOpen={onRowOpen}
+                        onRowClose={onRowClose}
+                        nested
+                      />
+                    ) : null}
+                  </CollapsibleGroup>
                 ) : null}
               </>
-            ) : (
-              <View style={styles.section}>
-                <ContactRows
-                  contacts={
-                    isContactsTab
-                      ? filteredUserContacts
-                      : filteredExternalContacts
-                  }
-                  onPressContact={openContact}
-                  onDeleteContact={deleteContact}
-                  onRowOpen={onRowOpen}
-                  onRowClose={onRowClose}
-                />
-              </View>
             )}
           </ScrollView>
         </GestureHandlerRootView>
@@ -482,6 +579,12 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     marginTop: 8,
   },
+  nestedSection: {
+    marginTop: 4,
+  },
+  groupBody: {
+    paddingLeft: 8,
+  },
   sectionHeader: {
     marginTop: 16,
     marginBottom: 4,
@@ -490,6 +593,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
     paddingVertical: 4,
+  },
+  nestedSectionHeader: {
+    marginTop: 8,
   },
   sectionHeaderPressed: {
     opacity: 0.7,
@@ -500,5 +606,9 @@ const styles = StyleSheet.create({
     color: '#5a7d6a',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
+  },
+  nestedSectionTitle: {
+    fontSize: 13,
+    letterSpacing: 0.4,
   },
 });

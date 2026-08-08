@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
@@ -34,7 +34,7 @@ function canSelectContact(contact: ContactListItem): boolean {
 }
 
 function contactDisplayLabel(contact: ContactListItem): string {
-  if (contact.isExternal) {
+  if (contact.isExternal && !contact.isFarcaster) {
     const name = contact.name?.trim();
     return name || contact.label;
   }
@@ -42,7 +42,7 @@ function contactDisplayLabel(contact: ContactListItem): string {
 }
 
 function contactDescription(contact: ContactListItem): string | null {
-  if (contact.isExternal) {
+  if (contact.isFarcaster || contact.isExternal) {
     return null;
   }
   return contact.subtitle;
@@ -140,12 +140,53 @@ function CollapsibleSection({
   onToggle,
   contacts,
   onSelect,
+  nested = false,
 }: {
   title: string;
   expanded: boolean;
   onToggle: () => void;
   contacts: ContactListItem[];
   onSelect: (contact: ContactListItem) => void;
+  nested?: boolean;
+}) {
+  return (
+    <View style={[styles.section, nested && styles.nestedSection]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        onPress={onToggle}
+        style={({ pressed }) => [
+          styles.sectionHeader,
+          nested && styles.nestedSectionHeader,
+          pressed && styles.sectionHeaderPressed,
+        ]}
+      >
+        <Text style={[styles.sectionTitle, nested && styles.nestedSectionTitle]}>
+          {title}
+        </Text>
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={16}
+          color="#5a7d6a"
+        />
+      </Pressable>
+      {expanded ? (
+        <ContactPickerRows contacts={contacts} onSelect={onSelect} />
+      ) : null}
+    </View>
+  );
+}
+
+function CollapsibleGroup({
+  title,
+  expanded,
+  onToggle,
+  children,
+}: {
+  title: string;
+  expanded: boolean;
+  onToggle: () => void;
+  children: ReactNode;
 }) {
   return (
     <View style={styles.section}>
@@ -165,9 +206,7 @@ function CollapsibleSection({
           color="#5a7d6a"
         />
       </Pressable>
-      {expanded ? (
-        <ContactPickerRows contacts={contacts} onSelect={onSelect} />
-      ) : null}
+      {expanded ? <View style={styles.groupBody}>{children}</View> : null}
     </View>
   );
 }
@@ -181,15 +220,17 @@ export function ContactPickerModal({
   onSelect,
 }: ContactPickerModalProps) {
   const insets = useSafeAreaInsets();
-  const { userContacts, externalContacts, isLoading } = useContacts();
+  const { userContacts, farcasterContacts, externalContacts, isLoading } =
+    useContacts();
   const {
     query,
     setQuery,
     clearQuery,
     filteredUserContacts,
+    filteredFarcasterContacts,
     filteredExternalContacts,
     hasActiveQuery,
-  } = useContactsFilter({ userContacts, externalContacts });
+  } = useContactsFilter({ userContacts, farcasterContacts, externalContacts });
   const {
     selectedTab,
     isAllTab,
@@ -201,9 +242,13 @@ export function ContactPickerModal({
   } = useContactsTab();
   const {
     contactsExpanded,
-    externalExpanded,
+    externalGroupExpanded,
+    walletsExpanded,
+    farcasterExpanded,
     toggleContacts,
-    toggleExternal,
+    toggleExternalGroup,
+    toggleWallets,
+    toggleFarcaster,
   } = useContactsAllSections();
 
   useEffect(() => {
@@ -213,19 +258,24 @@ export function ContactPickerModal({
   }, [clearQuery, visible]);
 
   const hasAnyContacts =
-    userContacts.length > 0 || externalContacts.length > 0;
+    userContacts.length > 0 ||
+    farcasterContacts.length > 0 ||
+    externalContacts.length > 0;
 
   const hasSourceContacts = isAllTab
     ? hasAnyContacts
     : isContactsTab
       ? userContacts.length > 0
-      : externalContacts.length > 0;
+      : externalContacts.length > 0 || farcasterContacts.length > 0;
 
   const hasFilteredResults = isAllTab
-    ? filteredUserContacts.length > 0 || filteredExternalContacts.length > 0
+    ? filteredUserContacts.length > 0 ||
+      filteredFarcasterContacts.length > 0 ||
+      filteredExternalContacts.length > 0
     : isContactsTab
       ? filteredUserContacts.length > 0
-      : filteredExternalContacts.length > 0;
+      : filteredExternalContacts.length > 0 ||
+        filteredFarcasterContacts.length > 0;
 
   const searchPlaceholder =
     selectedTab === 'all'
@@ -319,7 +369,35 @@ export function ContactPickerModal({
             <ActivityIndicator color="#166534" style={styles.loader} />
           ) : !hasFilteredResults ? (
             <Text style={styles.empty}>{emptyMessage}</Text>
-          ) : isAllTab ? (
+          ) : isContactsTab ? (
+            <View style={styles.section}>
+              <ContactPickerRows
+                contacts={filteredUserContacts}
+                onSelect={onSelect}
+              />
+            </View>
+          ) : isExternalTab ? (
+            <>
+              {filteredExternalContacts.length > 0 ? (
+                <CollapsibleSection
+                  title="Wallets"
+                  expanded={walletsExpanded}
+                  onToggle={toggleWallets}
+                  contacts={filteredExternalContacts}
+                  onSelect={onSelect}
+                />
+              ) : null}
+              {filteredFarcasterContacts.length > 0 ? (
+                <CollapsibleSection
+                  title="Farcaster"
+                  expanded={farcasterExpanded}
+                  onToggle={toggleFarcaster}
+                  contacts={filteredFarcasterContacts}
+                  onSelect={onSelect}
+                />
+              ) : null}
+            </>
+          ) : (
             <>
               {filteredUserContacts.length > 0 ? (
                 <CollapsibleSection
@@ -330,27 +408,36 @@ export function ContactPickerModal({
                   onSelect={onSelect}
                 />
               ) : null}
-              {filteredExternalContacts.length > 0 ? (
-                <CollapsibleSection
+              {filteredExternalContacts.length > 0 ||
+              filteredFarcasterContacts.length > 0 ? (
+                <CollapsibleGroup
                   title="External Contacts"
-                  expanded={externalExpanded}
-                  onToggle={toggleExternal}
-                  contacts={filteredExternalContacts}
-                  onSelect={onSelect}
-                />
+                  expanded={externalGroupExpanded}
+                  onToggle={toggleExternalGroup}
+                >
+                  {filteredExternalContacts.length > 0 ? (
+                    <CollapsibleSection
+                      title="Wallets"
+                      expanded={walletsExpanded}
+                      onToggle={toggleWallets}
+                      contacts={filteredExternalContacts}
+                      onSelect={onSelect}
+                      nested
+                    />
+                  ) : null}
+                  {filteredFarcasterContacts.length > 0 ? (
+                    <CollapsibleSection
+                      title="Farcaster"
+                      expanded={farcasterExpanded}
+                      onToggle={toggleFarcaster}
+                      contacts={filteredFarcasterContacts}
+                      onSelect={onSelect}
+                      nested
+                    />
+                  ) : null}
+                </CollapsibleGroup>
               ) : null}
             </>
-          ) : (
-            <View style={styles.section}>
-              <ContactPickerRows
-                contacts={
-                  isContactsTab
-                    ? filteredUserContacts
-                    : filteredExternalContacts
-                }
-                onSelect={onSelect}
-              />
-            </View>
           )}
         </ScrollView>
       </View>
@@ -452,6 +539,12 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     marginTop: 8,
   },
+  nestedSection: {
+    marginTop: 4,
+  },
+  groupBody: {
+    paddingLeft: 8,
+  },
   sectionHeader: {
     marginTop: 16,
     marginBottom: 4,
@@ -460,6 +553,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
     paddingVertical: 4,
+  },
+  nestedSectionHeader: {
+    marginTop: 8,
   },
   sectionHeaderPressed: {
     opacity: 0.7,
@@ -470,6 +566,10 @@ const styles = StyleSheet.create({
     color: '#5a7d6a',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
+  },
+  nestedSectionTitle: {
+    fontSize: 13,
+    letterSpacing: 0.4,
   },
   option: {
     flexDirection: 'row',

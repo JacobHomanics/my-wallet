@@ -27,6 +27,8 @@ export type HomeStackParamList = {
   transactions: undefined;
   contacts: undefined;
   newContact: undefined;
+  newFarcasterContact: undefined;
+  newRawAddressContact: undefined;
   contactDetails: {
     contactId: string;
   };

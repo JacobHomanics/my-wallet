@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
-  FlatList,
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -17,15 +17,23 @@ import {
   useContactSearch,
   type ContactSearchHit,
 } from '@/hooks/useContactSearch';
+import {
+  useFarcasterSearch,
+  type FarcasterSearchHit,
+} from '@/hooks/useFarcasterSearch';
+
+export type RecipientSearchSelection =
+  | { kind: 'cashbox'; hit: ContactSearchHit }
+  | { kind: 'farcaster'; hit: FarcasterSearchHit };
 
 type RecipientSearchModalProps = {
   visible: boolean;
   onClose: () => void;
-  onSelect: (hit: ContactSearchHit) => void;
+  onSelect: (selection: RecipientSearchSelection) => void;
 };
 
 /**
- * Page-sheet modal for searching platform usernames and account numbers.
+ * Page-sheet modal for searching Cashbox users and Farcaster profiles.
  */
 export function RecipientSearchModal({
   visible,
@@ -37,16 +45,31 @@ export function RecipientSearchModal({
     query,
     setQuery,
     clearQuery,
-    results,
-    isSearching,
-    showEmpty,
+    results: cashboxResults,
+    isSearching: isCashboxSearching,
+    showEmpty: showCashboxEmpty,
   } = useContactSearch();
+  const {
+    results: farcasterResults,
+    isSearching: isFarcasterSearching,
+    showEmpty: showFarcasterEmpty,
+    errorMessage: farcasterError,
+  } = useFarcasterSearch(query);
 
   useEffect(() => {
     if (!visible) {
       clearQuery();
     }
   }, [clearQuery, visible]);
+
+  const trimmed = query.trim();
+  const isSearching = isCashboxSearching || isFarcasterSearching;
+  const hasResults = cashboxResults.length > 0 || farcasterResults.length > 0;
+  const showEmpty =
+    Boolean(trimmed) &&
+    !isSearching &&
+    !hasResults &&
+    (showCashboxEmpty || showFarcasterEmpty);
 
   return (
     <Modal
@@ -80,18 +103,18 @@ export function RecipientSearchModal({
         <View style={styles.searchRow}>
           <Ionicons name="search" size={18} color="#5a7d6a" />
           <TextInput
-            accessibilityLabel="Search usernames or account numbers"
+            accessibilityLabel="Search usernames, account numbers, or Farcaster"
             autoCapitalize="none"
             autoCorrect={false}
             autoFocus={visible}
             onChangeText={setQuery}
-            placeholder="Username or account number"
+            placeholder="Username, account number, or Farcaster"
             placeholderTextColor="#86a894"
             returnKeyType="search"
             style={styles.searchInput}
             value={query}
           />
-          {query.trim() ? (
+          {trimmed ? (
             <Pressable
               accessibilityLabel="Clear search"
               accessibilityRole="button"
@@ -108,72 +131,130 @@ export function RecipientSearchModal({
         </View>
 
         <Text style={styles.hint}>
-          Search for people by username or account number.
+          Search Cashbox usernames, account numbers, or Farcaster usernames.
         </Text>
 
-        {isSearching ? (
+        {isSearching && !hasResults ? (
           <ActivityIndicator color="#166534" style={styles.loader} />
         ) : (
-          <FlatList
+          <ScrollView
             contentContainerStyle={
-              results.length === 0 ? styles.listEmpty : styles.list
+              !trimmed || showEmpty ? styles.listEmpty : styles.list
             }
-            data={results}
-            keyExtractor={(item) => item.userId}
             keyboardShouldPersistTaps="handled"
-            ListEmptyComponent={
-              showEmpty ? (
-                <Text style={styles.empty}>No accounts found.</Text>
-              ) : query.trim() ? null : (
-                <Text style={styles.empty}>
-                  Start typing a username or account number.
-                </Text>
-              )
-            }
-            renderItem={({ item }) => {
-              const selectable = Boolean(item.identityId);
-              return (
-                <Pressable
-                  accessibilityLabel={`Select ${item.label}`}
-                  accessibilityRole="button"
-                  accessibilityState={{ disabled: !selectable }}
-                  disabled={!selectable}
-                  onPress={() => {
-                    onSelect(item);
-                  }}
-                  style={({ pressed }) => [
-                    styles.option,
-                    pressed && selectable && styles.optionPressed,
-                    !selectable && styles.optionDisabled,
-                  ]}
-                >
-                  <Avatar
-                    label={item.label}
-                    photoUrl={item.profilePhotoUrl}
-                    seed={item.username ?? item.userId}
-                    size={40}
-                  />
-                  <View style={styles.optionText}>
-                    <Text style={styles.optionLabel}>{item.label}</Text>
-                    {item.subtitle ? (
-                      <Text style={styles.optionDescription}>
-                        {item.subtitle}
-                      </Text>
-                    ) : !selectable ? (
-                      <Text style={styles.optionDescription}>
-                        No account number yet
-                      </Text>
-                    ) : null}
+          >
+            {!trimmed ? (
+              <Text style={styles.empty}>
+                Start typing a username, account number, or Farcaster name.
+              </Text>
+            ) : showEmpty ? (
+              <Text style={styles.empty}>No accounts found.</Text>
+            ) : (
+              <>
+                {cashboxResults.length > 0 ? (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Cashbox</Text>
+                    {cashboxResults.map((item) => {
+                      const selectable = Boolean(item.identityId);
+                      return (
+                        <Pressable
+                          key={item.userId}
+                          accessibilityLabel={`Select ${item.label}`}
+                          accessibilityRole="button"
+                          accessibilityState={{ disabled: !selectable }}
+                          disabled={!selectable}
+                          onPress={() => {
+                            onSelect({ kind: 'cashbox', hit: item });
+                          }}
+                          style={({ pressed }) => [
+                            styles.option,
+                            pressed && selectable && styles.optionPressed,
+                            !selectable && styles.optionDisabled,
+                          ]}
+                        >
+                          <Avatar
+                            label={item.label}
+                            photoUrl={item.profilePhotoUrl}
+                            seed={item.username ?? item.userId}
+                            size={40}
+                          />
+                          <View style={styles.optionText}>
+                            <Text style={styles.optionLabel}>{item.label}</Text>
+                            {item.subtitle ? (
+                              <Text style={styles.optionDescription}>
+                                {item.subtitle}
+                              </Text>
+                            ) : !selectable ? (
+                              <Text style={styles.optionDescription}>
+                                No account number yet
+                              </Text>
+                            ) : null}
+                          </View>
+                          <Ionicons
+                            name="chevron-forward"
+                            size={18}
+                            color="#86a894"
+                          />
+                        </Pressable>
+                      );
+                    })}
                   </View>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={18}
-                    color="#86a894"
+                ) : null}
+
+                {farcasterResults.length > 0 ? (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Farcaster</Text>
+                    {farcasterResults.map((item) => {
+                      const selectable = item.hasAddress;
+                      return (
+                        <Pressable
+                          key={item.fid}
+                          accessibilityLabel={`Select ${item.label}`}
+                          accessibilityRole="button"
+                          accessibilityState={{ disabled: !selectable }}
+                          disabled={!selectable}
+                          onPress={() => {
+                            onSelect({ kind: 'farcaster', hit: item });
+                          }}
+                          style={({ pressed }) => [
+                            styles.option,
+                            pressed && selectable && styles.optionPressed,
+                            !selectable && styles.optionDisabled,
+                          ]}
+                        >
+                          <Avatar
+                            label={item.label}
+                            photoUrl={item.pfpUrl}
+                            seed={item.username}
+                            size={40}
+                          />
+                          <View style={styles.optionText}>
+                            <Text style={styles.optionLabel}>{item.label}</Text>
+                          </View>
+                          <Ionicons
+                            name="chevron-forward"
+                            size={18}
+                            color="#86a894"
+                          />
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                ) : null}
+
+                {farcasterError ? (
+                  <Text style={styles.error}>{farcasterError}</Text>
+                ) : null}
+
+                {isSearching ? (
+                  <ActivityIndicator
+                    color="#166534"
+                    style={styles.inlineLoader}
                   />
-                </Pressable>
-              );
-            }}
-          />
+                ) : null}
+              </>
+            )}
+          </ScrollView>
         )}
       </View>
     </Modal>
@@ -250,16 +331,29 @@ const styles = StyleSheet.create({
   loader: {
     marginTop: 40,
   },
+  inlineLoader: {
+    marginTop: 16,
+  },
   list: {
     paddingHorizontal: 16,
     paddingVertical: 16,
-    gap: 12,
+    gap: 16,
   },
   listEmpty: {
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
     paddingTop: 24,
+  },
+  section: {
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
   option: {
     flexDirection: 'row',
@@ -296,6 +390,12 @@ const styles = StyleSheet.create({
   empty: {
     fontSize: 15,
     color: '#86a894',
+    textAlign: 'center',
+  },
+  error: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#b91c1c',
     textAlign: 'center',
   },
 });

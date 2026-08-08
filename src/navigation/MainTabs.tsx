@@ -54,6 +54,8 @@ export function MainTabs() {
             (focusedRoute === 'tokenDetails' ||
               focusedRoute === 'contacts' ||
               focusedRoute === 'newContact' ||
+              focusedRoute === 'newFarcasterContact' ||
+              focusedRoute === 'newRawAddressContact' ||
               focusedRoute === 'contactDetails' ||
               focusedRoute === 'receive' ||
               focusedRoute === 'request' ||

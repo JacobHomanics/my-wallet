@@ -1,16 +1,14 @@
 import { useCallback, useState } from 'react';
 
-import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import {
   isValidEvmAddress,
   isValidSolanaAddress,
 } from '@/lib/validation';
 
 /**
- * Advanced EVM/Solana address fields for adding a contact manually.
+ * EVM/Solana address fields for adding a contact manually.
  */
 export function useNewContactAdvanced() {
-  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const [name, setName] = useState('');
   const [evmAddress, setEvmAddress] = useState('');
   const [solanaAddress, setSolanaAddress] = useState('');
@@ -32,8 +30,6 @@ export function useNewContactAdvanced() {
   }, []);
 
   return {
-    showAdvanced,
-    toggleAdvanced,
     name,
     setName,
     trimmedName,

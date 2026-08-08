@@ -15,6 +15,9 @@ type LegacyContact = {
   name?: string;
   evmAddress?: string;
   solanaAddress?: string;
+  farcasterFid?: number;
+  farcasterUsername?: string;
+  farcasterPfpUrl?: string;
 };
 
 /**
@@ -59,6 +62,15 @@ export const migrateOwnerIds = mutation({
         ...(contact.solanaAddress !== undefined
           ? { solanaAddress: contact.solanaAddress }
           : {}),
+        ...(contact.farcasterFid !== undefined
+          ? { farcasterFid: contact.farcasterFid }
+          : {}),
+        ...(contact.farcasterUsername !== undefined
+          ? { farcasterUsername: contact.farcasterUsername }
+          : {}),
+        ...(contact.farcasterPfpUrl !== undefined
+          ? { farcasterPfpUrl: contact.farcasterPfpUrl }
+          : {}),
       });
       updated += 1;
     }
@@ -78,6 +90,7 @@ export const listForOwner = query({
 
     return await Promise.all(
       contacts.map(async (contact) => {
+        const isFarcaster = contact.farcasterFid != null;
         let username: string | null = null;
         let identityId: string | null = null;
         let profilePhotoUrl: string | null = null;
@@ -89,6 +102,9 @@ export const listForOwner = query({
           profilePhotoUrl = user?.profilePhotoId
             ? await ctx.storage.getUrl(user.profilePhotoId)
             : null;
+        } else if (isFarcaster) {
+          username = contact.farcasterUsername ?? null;
+          profilePhotoUrl = contact.farcasterPfpUrl ?? null;
         }
 
         return {
@@ -97,10 +113,14 @@ export const listForOwner = query({
           name: contact.name ?? null,
           evmAddress: contact.evmAddress ?? null,
           solanaAddress: contact.solanaAddress ?? null,
+          farcasterFid: contact.farcasterFid ?? null,
+          farcasterUsername: contact.farcasterUsername ?? null,
+          farcasterPfpUrl: contact.farcasterPfpUrl ?? null,
           username,
           identityId,
           profilePhotoUrl,
-          isExternal: !contact.contactUserId,
+          isFarcaster,
+          isExternal: !contact.contactUserId && !isFarcaster,
         };
       }),
     );
@@ -119,6 +139,7 @@ export const getForOwner = query({
       return null;
     }
 
+    const isFarcaster = contact.farcasterFid != null;
     let username: string | null = null;
     let identityId: string | null = null;
     let profilePhotoUrl: string | null = null;
@@ -130,6 +151,9 @@ export const getForOwner = query({
       profilePhotoUrl = user?.profilePhotoId
         ? await ctx.storage.getUrl(user.profilePhotoId)
         : null;
+    } else if (isFarcaster) {
+      username = contact.farcasterUsername ?? null;
+      profilePhotoUrl = contact.farcasterPfpUrl ?? null;
     }
 
     return {
@@ -139,9 +163,13 @@ export const getForOwner = query({
       name: contact.name ?? null,
       evmAddress: contact.evmAddress ?? null,
       solanaAddress: contact.solanaAddress ?? null,
+      farcasterFid: contact.farcasterFid ?? null,
+      farcasterUsername: contact.farcasterUsername ?? null,
+      farcasterPfpUrl: contact.farcasterPfpUrl ?? null,
       identityId,
       profilePhotoUrl,
-      isExternal: !contact.contactUserId,
+      isFarcaster,
+      isExternal: !contact.contactUserId && !isFarcaster,
     };
   },
 });
@@ -262,6 +290,91 @@ export const addByAddresses = mutation({
       name: trimmedName,
       evmAddress: evm,
       solanaAddress: solana,
+    });
+  },
+});
+
+/** Add a Farcaster contact by FID (idempotent; refreshes username/pfp/addresses). */
+export const addByFarcaster = mutation({
+  args: {
+    ownerId: v.id("users"),
+    farcasterFid: v.number(),
+    farcasterUsername: v.string(),
+    farcasterPfpUrl: v.optional(v.string()),
+    name: v.optional(v.string()),
+    evmAddress: v.optional(v.string()),
+    solanaAddress: v.optional(v.string()),
+  },
+  handler: async (
+    ctx,
+    {
+      ownerId,
+      farcasterFid,
+      farcasterUsername,
+      farcasterPfpUrl,
+      name,
+      evmAddress,
+      solanaAddress,
+    },
+  ) => {
+    const owner = await ctx.db.get(ownerId);
+    if (!owner) {
+      throw new Error("Owner not found");
+    }
+
+    if (!Number.isInteger(farcasterFid) || farcasterFid < 0) {
+      throw new Error("Invalid Farcaster FID");
+    }
+
+    const username = farcasterUsername.trim().replace(/^@/, "");
+    if (!username) {
+      throw new Error("Enter a Farcaster username");
+    }
+
+    const evm = evmAddress?.trim() || undefined;
+    const solana = solanaAddress?.trim() || undefined;
+
+    if (!evm && !solana) {
+      throw new Error("Farcaster user has no verified addresses");
+    }
+
+    if (evm && !EVM_ADDRESS.test(evm)) {
+      throw new Error("Invalid EVM address");
+    }
+
+    if (solana && !SOLANA_ADDRESS.test(solana)) {
+      throw new Error("Invalid Solana address");
+    }
+
+    const trimmedName = name?.trim() || undefined;
+    const pfpUrl = farcasterPfpUrl?.trim() || undefined;
+
+    const existing = await ctx.db
+      .query("contacts")
+      .withIndex("by_owner_and_fid", (q) =>
+        q.eq("ownerId", ownerId).eq("farcasterFid", farcasterFid),
+      )
+      .unique();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        farcasterUsername: username,
+        ...(pfpUrl !== undefined ? { farcasterPfpUrl: pfpUrl } : {}),
+        ...(trimmedName !== undefined ? { name: trimmedName } : {}),
+        ...(evm ? { evmAddress: evm } : {}),
+        ...(solana ? { solanaAddress: solana } : {}),
+      });
+      return existing._id;
+    }
+
+    return await ctx.db.insert("contacts", {
+      ownerId,
+      farcasterFid,
+      farcasterUsername: username,
+      ...(pfpUrl ? { farcasterPfpUrl: pfpUrl } : {}),
+      ...(trimmedName ? { name: trimmedName } : {}),
+      ...(evm ? { evmAddress: evm } : {}),
+      ...(solana ? { solanaAddress: solana } : {}),
     });
   },
 });

@@ -10,10 +10,12 @@ function contactMatchesQuery(
     contact.label,
     contact.subtitle,
     contact.username,
+    contact.farcasterUsername,
     contact.name,
     contact.identityId,
     contact.evmAddress,
     contact.solanaAddress,
+    contact.farcasterFid != null ? String(contact.farcasterFid) : null,
   ]
     .filter((value): value is string => Boolean(value))
     .map((value) => value.toLowerCase());
@@ -26,6 +28,7 @@ function contactMatchesQuery(
  */
 export function useContactsFilter(contacts: {
   userContacts: ContactListItem[];
+  farcasterContacts: ContactListItem[];
   externalContacts: ContactListItem[];
 }) {
   const [query, setQuery] = useState('');
@@ -40,6 +43,16 @@ export function useContactsFilter(contacts: {
       contactMatchesQuery(contact, normalizedQuery),
     );
   }, [contacts.userContacts, normalizedQuery]);
+
+  const filteredFarcasterContacts = useMemo(() => {
+    if (!normalizedQuery) {
+      return contacts.farcasterContacts;
+    }
+
+    return contacts.farcasterContacts.filter((contact) =>
+      contactMatchesQuery(contact, normalizedQuery),
+    );
+  }, [contacts.farcasterContacts, normalizedQuery]);
 
   const filteredExternalContacts = useMemo(() => {
     if (!normalizedQuery) {
@@ -57,13 +70,16 @@ export function useContactsFilter(contacts: {
 
   const hasActiveQuery = normalizedQuery.length > 0;
   const hasFilteredResults =
-    filteredUserContacts.length > 0 || filteredExternalContacts.length > 0;
+    filteredUserContacts.length > 0 ||
+    filteredFarcasterContacts.length > 0 ||
+    filteredExternalContacts.length > 0;
 
   return {
     query,
     setQuery,
     clearQuery,
     filteredUserContacts,
+    filteredFarcasterContacts,
     filteredExternalContacts,
     hasActiveQuery,
     hasFilteredResults,
