@@ -170,6 +170,7 @@ export function ContactDetailsScreen() {
               <Text style={styles.contactTitle}>{contact.title}</Text>
               {contact.username ||
               contact.name ||
+              contact.farcasterFid != null ||
               contact.evmAddress ||
               contact.solanaAddress ? (
                 <View style={styles.card}>
@@ -178,6 +179,13 @@ export function ContactDetailsScreen() {
                       label="Username"
                       value={`@${contact.username}`}
                       copyKey="username"
+                    />
+                  ) : null}
+                  {contact.isFarcaster && contact.farcasterFid != null ? (
+                    <DetailField
+                      label="Farcaster FID"
+                      value={String(contact.farcasterFid)}
+                      copyKey="fid"
                     />
                   ) : null}
                   {contact.name ? (
@@ -211,6 +219,7 @@ export function ContactDetailsScreen() {
               ) : null}
               {!contact.username &&
               !contact.name &&
+              contact.farcasterFid == null &&
               !contact.evmAddress &&
               !contact.solanaAddress &&
               !contact.identityId ? (

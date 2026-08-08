@@ -14,6 +14,7 @@ import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
 import { useAddContact } from '@/hooks/useAddContact';
 import { useContactSearch } from '@/hooks/useContactSearch';
+import { useFarcasterSearch } from '@/hooks/useFarcasterSearch';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useNewContactAdvanced } from '@/hooks/useNewContactAdvanced';
 import { usePopToContacts } from '@/hooks/usePopToContacts';
@@ -22,9 +23,21 @@ export function NewContactScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goContacts = usePopToContacts();
-  const { query, setQuery, results, isSearching, showEmpty } =
-    useContactSearch();
-  const { add, addAddresses, isAdding, errorMessage } = useAddContact();
+  const {
+    query,
+    setQuery,
+    results: cashboxResults,
+    isSearching: isCashboxSearching,
+    showEmpty: showCashboxEmpty,
+  } = useContactSearch();
+  const {
+    results: farcasterResults,
+    isSearching: isFarcasterSearching,
+    showEmpty: showFarcasterEmpty,
+    errorMessage: farcasterError,
+  } = useFarcasterSearch(query);
+  const { add, addAddresses, addFarcaster, isAdding, errorMessage } =
+    useAddContact();
   const {
     showAdvanced,
     toggleAdvanced,
@@ -41,6 +54,14 @@ export function NewContactScreen() {
     trimmedEvm,
     trimmedSolana,
   } = useNewContactAdvanced();
+
+  const isSearching = isCashboxSearching || isFarcasterSearching;
+  const hasResults = cashboxResults.length > 0 || farcasterResults.length > 0;
+  const showEmpty =
+    Boolean(query.trim()) &&
+    !isSearching &&
+    !hasResults &&
+    (showCashboxEmpty || showFarcasterEmpty);
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -79,32 +100,36 @@ export function NewContactScreen() {
         >
           <Text style={styles.label}>Search</Text>
           <TextInput
-            accessibilityLabel="Search by username"
+            accessibilityLabel="Search by username or Farcaster"
             autoCapitalize="none"
             autoCorrect={false}
             autoComplete="off"
             editable={!isAdding}
             onChangeText={setQuery}
-            placeholder="Username"
+            placeholder="Username or Farcaster"
             placeholderTextColor="#86a894"
             style={styles.input}
             value={query}
           />
           <Text style={styles.hint}>
-            Tap a username to add them to your contacts.
+            Tap a Cashbox or Farcaster user to add them to your contacts.
           </Text>
 
           {errorMessage ? (
             <Text style={styles.error}>{errorMessage}</Text>
+          ) : null}
+          {farcasterError ? (
+            <Text style={styles.error}>{farcasterError}</Text>
           ) : null}
 
           {isSearching || isAdding ? (
             <ActivityIndicator color="#166534" style={styles.loader} />
           ) : null}
 
-          {results.length > 0 ? (
+          {cashboxResults.length > 0 ? (
             <View style={styles.results}>
-              {results.map((hit) => (
+              <Text style={styles.sectionTitle}>Cashbox</Text>
+              {cashboxResults.map((hit) => (
                 <Pressable
                   key={hit.userId}
                   accessibilityLabel={`Add ${hit.label}`}
@@ -139,6 +164,53 @@ export function NewContactScreen() {
                     {hit.subtitle ? (
                       <Text style={styles.resultSubtitle}>{hit.subtitle}</Text>
                     ) : null}
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+
+          {farcasterResults.length > 0 ? (
+            <View style={styles.results}>
+              <Text style={styles.sectionTitle}>Farcaster</Text>
+              {farcasterResults.map((hit) => (
+                <Pressable
+                  key={hit.fid}
+                  accessibilityLabel={`Add ${hit.label}`}
+                  accessibilityRole="button"
+                  disabled={isAdding || !hit.hasAddress}
+                  onPress={() => {
+                    void (async () => {
+                      if (!hit.hasAddress) {
+                        return;
+                      }
+                      const ok = await addFarcaster({
+                        farcasterFid: hit.fid,
+                        farcasterUsername: hit.username,
+                        farcasterPfpUrl: hit.pfpUrl,
+                        name: hit.displayName,
+                        evmAddress: hit.evmAddress,
+                        solanaAddress: hit.solanaAddress,
+                      });
+                      if (ok) {
+                        goContacts();
+                      }
+                    })();
+                  }}
+                  style={({ pressed }) => [
+                    styles.resultCard,
+                    pressed && styles.resultCardPressed,
+                    (isAdding || !hit.hasAddress) && styles.resultCardDisabled,
+                  ]}
+                >
+                  <Avatar
+                    label={hit.label}
+                    photoUrl={hit.pfpUrl}
+                    seed={hit.username}
+                    size={40}
+                  />
+                  <View style={styles.resultText}>
+                    <Text style={styles.resultLabel}>{hit.label}</Text>
                   </View>
                 </Pressable>
               ))}
@@ -356,6 +428,14 @@ const styles = StyleSheet.create({
   results: {
     marginTop: 12,
     gap: 8,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 4,
   },
   resultCard: {
     flexDirection: 'row',

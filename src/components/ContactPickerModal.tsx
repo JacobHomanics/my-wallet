@@ -34,7 +34,7 @@ function canSelectContact(contact: ContactListItem): boolean {
 }
 
 function contactDisplayLabel(contact: ContactListItem): string {
-  if (contact.isExternal) {
+  if (contact.isExternal && !contact.isFarcaster) {
     const name = contact.name?.trim();
     return name || contact.label;
   }
@@ -42,7 +42,7 @@ function contactDisplayLabel(contact: ContactListItem): string {
 }
 
 function contactDescription(contact: ContactListItem): string | null {
-  if (contact.isExternal) {
+  if (contact.isExternal && !contact.isFarcaster) {
     return null;
   }
   return contact.subtitle;
@@ -181,28 +181,34 @@ export function ContactPickerModal({
   onSelect,
 }: ContactPickerModalProps) {
   const insets = useSafeAreaInsets();
-  const { userContacts, externalContacts, isLoading } = useContacts();
+  const { userContacts, farcasterContacts, externalContacts, isLoading } =
+    useContacts();
   const {
     query,
     setQuery,
     clearQuery,
     filteredUserContacts,
+    filteredFarcasterContacts,
     filteredExternalContacts,
     hasActiveQuery,
-  } = useContactsFilter({ userContacts, externalContacts });
+  } = useContactsFilter({ userContacts, farcasterContacts, externalContacts });
   const {
     selectedTab,
     isAllTab,
     isContactsTab,
+    isFarcasterTab,
     isExternalTab,
     selectAll,
     selectContacts,
+    selectFarcaster,
     selectExternal,
   } = useContactsTab();
   const {
     contactsExpanded,
+    farcasterExpanded,
     externalExpanded,
     toggleContacts,
+    toggleFarcaster,
     toggleExternal,
   } = useContactsAllSections();
 
@@ -213,39 +219,58 @@ export function ContactPickerModal({
   }, [clearQuery, visible]);
 
   const hasAnyContacts =
-    userContacts.length > 0 || externalContacts.length > 0;
+    userContacts.length > 0 ||
+    farcasterContacts.length > 0 ||
+    externalContacts.length > 0;
 
   const hasSourceContacts = isAllTab
     ? hasAnyContacts
     : isContactsTab
       ? userContacts.length > 0
-      : externalContacts.length > 0;
+      : isFarcasterTab
+        ? farcasterContacts.length > 0
+        : externalContacts.length > 0;
 
   const hasFilteredResults = isAllTab
-    ? filteredUserContacts.length > 0 || filteredExternalContacts.length > 0
+    ? filteredUserContacts.length > 0 ||
+      filteredFarcasterContacts.length > 0 ||
+      filteredExternalContacts.length > 0
     : isContactsTab
       ? filteredUserContacts.length > 0
-      : filteredExternalContacts.length > 0;
+      : isFarcasterTab
+        ? filteredFarcasterContacts.length > 0
+        : filteredExternalContacts.length > 0;
 
   const searchPlaceholder =
     selectedTab === 'all'
       ? 'Search contacts'
       : selectedTab === 'contacts'
         ? '@username'
-        : 'Search external contacts';
+        : selectedTab === 'farcaster'
+          ? '@farcaster'
+          : 'Search external contacts';
 
   const emptyMessage = !hasSourceContacts
     ? selectedTab === 'external'
       ? 'No external contacts yet.'
-      : selectedTab === 'contacts'
-        ? 'No contacts yet.'
-        : 'No contacts yet.'
+      : selectedTab === 'farcaster'
+        ? 'No Farcaster contacts yet.'
+        : selectedTab === 'contacts'
+          ? 'No contacts yet.'
+          : 'No contacts yet.'
     : hasActiveQuery
       ? 'No contacts match your search.'
       : selectedTab === 'external'
         ? 'No external contacts yet.'
-        : 'No contacts yet.';
+        : selectedTab === 'farcaster'
+          ? 'No Farcaster contacts yet.'
+          : 'No contacts yet.';
 
+  const tabContacts = isContactsTab
+    ? filteredUserContacts
+    : isFarcasterTab
+      ? filteredFarcasterContacts
+      : filteredExternalContacts;
   return (
     <Modal
       animationType="slide"
@@ -285,6 +310,11 @@ export function ContactPickerModal({
             label="Contacts"
             selected={isContactsTab}
             onPress={selectContacts}
+          />
+          <ContactsTabChip
+            label="Farcaster"
+            selected={isFarcasterTab}
+            onPress={selectFarcaster}
           />
           <ContactsTabChip
             label="External"
@@ -330,6 +360,15 @@ export function ContactPickerModal({
                   onSelect={onSelect}
                 />
               ) : null}
+              {filteredFarcasterContacts.length > 0 ? (
+                <CollapsibleSection
+                  title="Farcaster"
+                  expanded={farcasterExpanded}
+                  onToggle={toggleFarcaster}
+                  contacts={filteredFarcasterContacts}
+                  onSelect={onSelect}
+                />
+              ) : null}
               {filteredExternalContacts.length > 0 ? (
                 <CollapsibleSection
                   title="External Contacts"
@@ -342,14 +381,7 @@ export function ContactPickerModal({
             </>
           ) : (
             <View style={styles.section}>
-              <ContactPickerRows
-                contacts={
-                  isContactsTab
-                    ? filteredUserContacts
-                    : filteredExternalContacts
-                }
-                onSelect={onSelect}
-              />
+              <ContactPickerRows contacts={tabContacts} onSelect={onSelect} />
             </View>
           )}
         </ScrollView>
@@ -413,7 +445,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   tabChipText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     color: '#5a7d6a',
     textAlign: 'center',

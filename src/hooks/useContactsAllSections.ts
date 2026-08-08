@@ -1,14 +1,19 @@
 import { useCallback, useState } from 'react';
 
 /**
- * Collapse state for the All-tab Contacts / External Contacts sections.
+ * Collapse state for the All-tab Contacts / Farcaster / External sections.
  */
 export function useContactsAllSections(initialExpanded = true) {
   const [contactsExpanded, setContactsExpanded] = useState(initialExpanded);
+  const [farcasterExpanded, setFarcasterExpanded] = useState(initialExpanded);
   const [externalExpanded, setExternalExpanded] = useState(initialExpanded);
 
   const toggleContacts = useCallback(() => {
     setContactsExpanded((open) => !open);
+  }, []);
+
+  const toggleFarcaster = useCallback(() => {
+    setFarcasterExpanded((open) => !open);
   }, []);
 
   const toggleExternal = useCallback(() => {
@@ -17,8 +22,10 @@ export function useContactsAllSections(initialExpanded = true) {
 
   return {
     contactsExpanded,
+    farcasterExpanded,
     externalExpanded,
     toggleContacts,
+    toggleFarcaster,
     toggleExternal,
   };
 }

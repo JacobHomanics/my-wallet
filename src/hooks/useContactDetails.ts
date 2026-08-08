@@ -13,7 +13,10 @@ export type ContactDetails = {
   solanaAddress: string | null;
   identityId: string | null;
   profilePhotoUrl: string | null;
+  farcasterFid: number | null;
+  farcasterUsername: string | null;
   isExternal: boolean;
+  isFarcaster: boolean;
   title: string;
 };
 
@@ -53,7 +56,10 @@ export function useContactDetails(contactId: string | undefined): {
     return { contact: null, isLoading: false, notFound: true };
   }
 
-  const username = row.username;
+  const isFarcaster = Boolean(row.isFarcaster || row.farcasterFid != null);
+  const username = isFarcaster
+    ? (row.farcasterUsername ?? row.username)
+    : row.username;
   const name = row.name;
   const identityId = row.identityId;
   const title = username
@@ -71,7 +77,10 @@ export function useContactDetails(contactId: string | undefined): {
       solanaAddress: row.solanaAddress,
       identityId,
       profilePhotoUrl: row.profilePhotoUrl ?? null,
-      isExternal: row.contactUserId == null,
+      farcasterFid: row.farcasterFid ?? null,
+      farcasterUsername: row.farcasterUsername ?? null,
+      isExternal: !row.contactUserId && !isFarcaster,
+      isFarcaster,
       title,
     },
     isLoading: false,

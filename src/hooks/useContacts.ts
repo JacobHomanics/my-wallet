@@ -14,9 +14,12 @@ export type ContactListItem = {
   solanaAddress: string | null;
   identityId: string | null;
   profilePhotoUrl: string | null;
+  farcasterFid: number | null;
+  farcasterUsername: string | null;
   label: string;
   subtitle: string | null;
   isExternal: boolean;
+  isFarcaster: boolean;
 };
 
 function buildAddressSubtitle(
@@ -79,6 +82,7 @@ function buildContactLabel(params: {
 export function useContacts(): {
   contacts: ContactListItem[];
   userContacts: ContactListItem[];
+  farcasterContacts: ContactListItem[];
   externalContacts: ContactListItem[];
   isLoading: boolean;
 } {
@@ -95,13 +99,15 @@ export function useContacts(): {
     }
 
     return rows.map((row) => {
-      const username = row.username ?? null;
+      const isFarcaster = Boolean(row.isFarcaster || row.farcasterFid != null);
+      const username = isFarcaster
+        ? (row.farcasterUsername ?? row.username ?? null)
+        : (row.username ?? null);
       const name = row.name ?? null;
       const evmAddress = row.evmAddress ?? null;
       const solanaAddress = row.solanaAddress ?? null;
       const identityId = row.identityId ?? null;
-      // Platform contacts are linked users — never classify by username.
-      const isExternal = row.contactUserId == null;
+      const isExternal = !row.contactUserId && !isFarcaster;
       const accountNumber = resolveAccountNumber(
         identityId,
         evmAddress,
@@ -115,6 +121,17 @@ export function useContacts(): {
         addressSubtitle,
       });
 
+      let subtitle: string | null = null;
+      if (isFarcaster) {
+        const parts = ['Farcaster'];
+        if (addressSubtitle) {
+          parts.push(addressSubtitle);
+        }
+        subtitle = parts.join(' · ');
+      } else if (!isExternal) {
+        subtitle = addressSubtitle;
+      }
+
       return {
         id: row._id,
         username,
@@ -123,15 +140,23 @@ export function useContacts(): {
         solanaAddress,
         identityId: accountNumber,
         profilePhotoUrl: row.profilePhotoUrl ?? null,
+        farcasterFid: row.farcasterFid ?? null,
+        farcasterUsername: row.farcasterUsername ?? null,
         isExternal,
+        isFarcaster,
         label,
-        subtitle: isExternal ? null : addressSubtitle,
+        subtitle,
       };
     });
   }, [rows]);
 
   const userContacts = useMemo(
-    () => contacts.filter((contact) => !contact.isExternal),
+    () => contacts.filter((contact) => !contact.isExternal && !contact.isFarcaster),
+    [contacts],
+  );
+
+  const farcasterContacts = useMemo(
+    () => contacts.filter((contact) => contact.isFarcaster),
     [contacts],
   );
 
@@ -143,6 +168,7 @@ export function useContacts(): {
   return {
     contacts,
     userContacts,
+    farcasterContacts,
     externalContacts,
     isLoading: userIdLoading || (userId != null && rows === undefined),
   };

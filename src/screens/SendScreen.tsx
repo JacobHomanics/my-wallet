@@ -17,9 +17,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { ContactPickerModal } from '@/components/ContactPickerModal';
-import { RecipientSearchModal } from '@/components/RecipientSearchModal';
+import {
+  RecipientSearchModal,
+  type RecipientSearchSelection,
+} from '@/components/RecipientSearchModal';
 import { useContactPickerModal } from '@/hooks/useContactPickerModal';
-import type { ContactSearchHit } from '@/hooks/useContactSearch';
 import type { ContactListItem } from '@/hooks/useContacts';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
@@ -214,21 +216,55 @@ export function SendScreen() {
   );
 
   const onSelectSearchHit = useCallback(
-    (hit: ContactSearchHit) => {
-      if (!hit.identityId) {
+    (selection: RecipientSearchSelection) => {
+      if (selection.kind === 'cashbox') {
+        const hit = selection.hit;
+        if (!hit.identityId) {
+          return;
+        }
+
+        setAccountNumber(hit.identityId);
+        closeSearch();
+        sendToContact(
+          {
+            identityId: hit.identityId,
+            evmAddress: null,
+            solanaAddress: null,
+            username: hit.username,
+            name: null,
+            profilePhotoUrl: hit.profilePhotoUrl,
+          },
+          {
+            tokenId: route.params?.tokenId,
+            usdAmount: route.params?.usdAmount,
+          },
+        );
         return;
       }
 
-      setAccountNumber(hit.identityId);
+      const hit = selection.hit;
+      if (!hit.hasAddress) {
+        return;
+      }
+
+      const nextEvm = hit.evmAddress?.trim() ?? '';
+      const nextSolana = hit.solanaAddress?.trim() ?? '';
+      setEthereumRecipient(nextEvm);
+      setSolanaRecipient(nextSolana);
+      syncAccountNumberFromAddresses(nextEvm, nextSolana);
+      if (nextEvm || nextSolana) {
+        setShowDecodedAddresses(true);
+      }
+
       closeSearch();
       sendToContact(
         {
-          identityId: hit.identityId,
-          evmAddress: null,
-          solanaAddress: null,
+          identityId: null,
+          evmAddress: hit.evmAddress,
+          solanaAddress: hit.solanaAddress,
           username: hit.username,
-          name: null,
-          profilePhotoUrl: hit.profilePhotoUrl,
+          name: hit.displayName,
+          profilePhotoUrl: hit.pfpUrl,
         },
         {
           tokenId: route.params?.tokenId,
@@ -242,6 +278,10 @@ export function SendScreen() {
       route.params?.usdAmount,
       sendToContact,
       setAccountNumber,
+      setEthereumRecipient,
+      setSolanaRecipient,
+      setShowDecodedAddresses,
+      syncAccountNumberFromAddresses,
     ],
   );
 
