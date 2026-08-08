@@ -63,6 +63,8 @@ export type HomeStackParamList = {
     legs: SentLeg[];
     /** Whole-token treasury reward amount; omitted for frontend (device) sends. */
     rewardAmount?: string | null;
+    /** Treasury reward tx hash when a reward was sent. */
+    rewardHash?: string | null;
     /** Display label for the recipient (username, name, or truncated address). */
     recipientLabel?: string;
     recipientProfilePhotoUrl?: string | null;

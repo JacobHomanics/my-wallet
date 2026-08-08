@@ -15,7 +15,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/Avatar';
 import { TokenIcon } from '@/components/TokenIcon';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
-import { REWARD_TOKEN_SYMBOL } from '@/lib/rewardToken';
+import { getNetworkLabel } from '@/lib/alchemy/networks';
+import {
+  REWARD_TOKEN_NETWORK,
+  REWARD_TOKEN_SYMBOL,
+} from '@/lib/rewardToken';
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
@@ -30,6 +34,7 @@ export function SentScreen() {
     usdLabel,
     legs,
     rewardAmount,
+    rewardHash,
     recipientLabel,
     recipientProfilePhotoUrl,
     recipientUsername,
@@ -135,6 +140,32 @@ export function SentScreen() {
                   />
                 </View>
               ))}
+              {rewardAmount && rewardHash ? (
+                <View key={`reward-${rewardHash}`}>
+                  {legs.length > 0 ? <View style={styles.divider} /> : null}
+                  <View style={styles.tokenRow}>
+                    <TokenIcon
+                      logoUrl={null}
+                      network={REWARD_TOKEN_NETWORK}
+                      size={36}
+                      symbol={REWARD_TOKEN_SYMBOL}
+                    />
+                    <View style={styles.tokenText}>
+                      <Text style={styles.tokenSymbol}>
+                        {rewardAmount} {REWARD_TOKEN_SYMBOL} (reward)
+                      </Text>
+                      <Text style={styles.tokenMeta}>
+                        {getNetworkLabel(REWARD_TOKEN_NETWORK)}
+                      </Text>
+                    </View>
+                  </View>
+                  <SummaryRow
+                    label="Transaction"
+                    value={formatWalletAddress(rewardHash, 10, 10)}
+                    mono
+                  />
+                </View>
+              ) : null}
             </View>
           ) : null}
 

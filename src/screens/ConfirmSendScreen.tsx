@@ -198,6 +198,7 @@ export function ConfirmSendScreen() {
           recipientProfilePhotoUrl,
           recipientUsername,
           rewardAmount: outcome.rewardAmount,
+          rewardHash: outcome.rewardHash,
           legs: outcome.legs.map((result) => ({
             hash: result.hash,
             amount: result.amount,
