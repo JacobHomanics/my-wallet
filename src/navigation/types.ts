@@ -66,6 +66,7 @@ export type HomeStackParamList = {
     recipientLabel?: string;
     recipientProfilePhotoUrl?: string | null;
     recipientUsername?: string | null;
+    recipientIsFarcaster?: boolean;
   };
 };
 

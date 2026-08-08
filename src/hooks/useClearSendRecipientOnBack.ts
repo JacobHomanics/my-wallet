@@ -13,6 +13,7 @@ function clearSendRecipientFields() {
     recipientUsername: null,
     recipientName: null,
     recipientProfilePhotoUrl: null,
+    recipientIsFarcaster: false,
   });
 }
 

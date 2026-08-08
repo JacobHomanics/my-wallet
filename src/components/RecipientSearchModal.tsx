@@ -227,6 +227,7 @@ export function RecipientSearchModal({
                             photoUrl={item.pfpUrl}
                             seed={item.username}
                             size={40}
+                            showFarcasterBadge
                           />
                           <View style={styles.optionText}>
                             <Text style={styles.optionLabel}>{item.label}</Text>
