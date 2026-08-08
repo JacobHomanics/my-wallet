@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/Avatar';
 import { TokenIcon } from '@/components/TokenIcon';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
+import { REWARD_TOKEN_SYMBOL } from '@/lib/rewardToken';
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
@@ -28,6 +29,7 @@ export function SentScreen() {
   const {
     usdLabel,
     legs,
+    rewardAmount,
     recipientLabel,
     recipientProfilePhotoUrl,
     recipientUsername,
@@ -75,6 +77,13 @@ export function SentScreen() {
               </View>
             </View>
           ) : null}
+
+          <View style={styles.rewardSection}>
+            <Text style={styles.rewardLabel}>Rewards</Text>
+            <Text style={styles.rewardValue}>
+              {rewardAmount} {REWARD_TOKEN_SYMBOL} rewarded
+            </Text>
+          </View>
 
           <Pressable
             accessibilityRole="button"
@@ -244,6 +253,25 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#166534',
+    fontVariant: ['tabular-nums'],
+  },
+  rewardSection: {
+    marginTop: 24,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+  },
+  rewardLabel: {
+    marginBottom: 10,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  rewardValue: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#15803d',
     fontVariant: ['tabular-nums'],
   },
   advancedToggle: {

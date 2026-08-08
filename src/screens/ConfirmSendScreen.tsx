@@ -179,7 +179,7 @@ export function ConfirmSendScreen() {
           taxSolanaAddress,
           taxRate,
         });
-        const results = await sendPayment(
+        const outcome = await sendPayment(
           paymentLegs.map((leg) => ({
             token: leg.token,
             recipient: leg.recipient,
@@ -195,7 +195,8 @@ export function ConfirmSendScreen() {
           recipientLabel: primaryLabel ?? undefined,
           recipientProfilePhotoUrl,
           recipientUsername,
-          legs: results.map((result) => ({
+          rewardAmount: outcome.rewardAmount,
+          legs: outcome.legs.map((result) => ({
             hash: result.hash,
             amount: result.amount,
             symbol: result.symbol,

@@ -61,6 +61,8 @@ export type HomeStackParamList = {
   sent: {
     usdLabel: string;
     legs: SentLeg[];
+    /** Whole-token treasury reward amount sent after the payment. */
+    rewardAmount: string;
     /** Display label for the recipient (username, name, or truncated address). */
     recipientLabel?: string;
     recipientProfilePhotoUrl?: string | null;

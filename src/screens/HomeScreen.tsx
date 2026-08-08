@@ -15,6 +15,7 @@ import {
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
+import { useRewardTokenBalance } from '@/hooks/useRewardTokenBalance';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import type { HomeStackParamList } from '@/navigation/types';
 
@@ -33,6 +34,10 @@ export function HomeScreen() {
     refresh,
     poll,
   } = useTokenBalances();
+  const {
+    balanceFormatted: rewardBalance,
+    symbol: rewardSymbol,
+  } = useRewardTokenBalance();
 
   usePollTokenBalances(poll, {
     enabled: ready && Boolean(ethereumAddress || solanaAddress),
@@ -86,6 +91,12 @@ export function HomeScreen() {
             <Text style={styles.total} accessibilityRole="header">
               {totalLabel}
             </Text>
+            <View style={styles.rewardSection}>
+              <Text style={styles.rewardLabel}>Rewards</Text>
+              <Text style={styles.rewardBalance}>
+                {rewardBalance} {rewardSymbol}
+              </Text>
+            </View>
             {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
             {showActions ? (
               <>
@@ -206,6 +217,24 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
+  },
+  rewardSection: {
+    marginTop: 16,
+    alignItems: 'center',
+    gap: 4,
+  },
+  rewardLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  rewardBalance: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#15803d',
+    fontVariant: ['tabular-nums'],
   },
   empty: {
     fontSize: 15,
