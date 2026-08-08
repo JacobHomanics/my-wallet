@@ -23,6 +23,7 @@ export type SentLeg = {
 export type HomeStackParamList = {
   index: undefined;
   tokenDetails: undefined;
+  rewards: undefined;
   transactions: undefined;
   contacts: undefined;
   newContact: undefined;

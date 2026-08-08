@@ -23,6 +23,7 @@ export function HomeStack() {
         name="tokenDetails"
         component={homeStackScreens.tokenDetails}
       />
+      <NativeStack.Screen name="rewards" component={homeStackScreens.rewards} />
       <NativeStack.Screen
         name="transactions"
         component={homeStackScreens.transactions}

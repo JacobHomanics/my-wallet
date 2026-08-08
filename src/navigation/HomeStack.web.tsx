@@ -32,6 +32,7 @@ export function HomeStack() {
         name="tokenDetails"
         component={homeStackScreens.tokenDetails}
       />
+      <WebStack.Screen name="rewards" component={homeStackScreens.rewards} />
       <WebStack.Screen
         name="transactions"
         component={homeStackScreens.transactions}
