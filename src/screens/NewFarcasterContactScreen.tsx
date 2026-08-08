@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -15,22 +15,32 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
 import { useAddContact } from '@/hooks/useAddContact';
-import { useContactSearch } from '@/hooks/useContactSearch';
+import { useFarcasterSearch } from '@/hooks/useFarcasterSearch';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToContacts } from '@/hooks/usePopToContacts';
-import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import type { HomeStackParamList } from '@/navigation/types';
 
-export function NewContactScreen() {
+/**
+ * Search and add a Farcaster user as a contact.
+ */
+export function NewFarcasterContactScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goContacts = usePopToContacts();
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const { query, setQuery, results, isSearching, showEmpty } =
-    useContactSearch();
-  const { add, isAdding, errorMessage } = useAddContact();
-  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const [query, setQuery] = useState('');
+  const { results, isSearching, showEmpty, errorMessage: searchError } =
+    useFarcasterSearch(query);
+  const { addFarcaster, isAdding, errorMessage } = useAddContact();
+
+  const goBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate('newContact');
+  };
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -38,10 +48,10 @@ export function NewContactScreen() {
         <View style={styles.topBar}>
           {isDesktopWeb ? (
             <Pressable
-              accessibilityLabel="Back to contacts"
+              accessibilityLabel="Back"
               accessibilityRole="button"
               hitSlop={8}
-              onPress={goContacts}
+              onPress={goBack}
               style={({ pressed }) => [
                 styles.webBack,
                 pressed && styles.webBackPressed,
@@ -50,12 +60,9 @@ export function NewContactScreen() {
               <Text style={styles.webBackText}>Back</Text>
             </Pressable>
           ) : (
-            <BackButton
-              accessibilityLabel="Back to contacts"
-              onPress={goContacts}
-            />
+            <BackButton accessibilityLabel="Back" onPress={goBack} />
           )}
-          <Text style={styles.topBarTitle}>New Contact</Text>
+          <Text style={styles.topBarTitle}>Farcaster</Text>
           <View style={styles.topBarSpacer} />
         </View>
 
@@ -69,24 +76,25 @@ export function NewContactScreen() {
         >
           <Text style={styles.label}>Search</Text>
           <TextInput
-            accessibilityLabel="Search by username"
+            accessibilityLabel="Search Farcaster username"
             autoCapitalize="none"
             autoCorrect={false}
             autoComplete="off"
             editable={!isAdding}
             onChangeText={setQuery}
-            placeholder="Username"
+            placeholder="Farcaster username"
             placeholderTextColor="#86a894"
             style={styles.input}
             value={query}
           />
           <Text style={styles.hint}>
-            Tap a username to add them to your contacts.
+            Tap a Farcaster user to add them to your contacts.
           </Text>
 
           {errorMessage ? (
             <Text style={styles.error}>{errorMessage}</Text>
           ) : null}
+          {searchError ? <Text style={styles.error}>{searchError}</Text> : null}
 
           {isSearching || isAdding ? (
             <ActivityIndicator color="#166534" style={styles.loader} />
@@ -96,16 +104,23 @@ export function NewContactScreen() {
             <View style={styles.results}>
               {results.map((hit) => (
                 <Pressable
-                  key={hit.userId}
+                  key={hit.fid}
                   accessibilityLabel={`Add ${hit.label}`}
                   accessibilityRole="button"
-                  disabled={isAdding || (!hit.username && !hit.identityId)}
+                  disabled={isAdding || !hit.hasAddress}
                   onPress={() => {
                     void (async () => {
-                      if (!hit.username && !hit.identityId) {
+                      if (!hit.hasAddress) {
                         return;
                       }
-                      const ok = await add(hit.userId);
+                      const ok = await addFarcaster({
+                        farcasterFid: hit.fid,
+                        farcasterUsername: hit.username,
+                        farcasterPfpUrl: hit.pfpUrl,
+                        name: hit.displayName,
+                        evmAddress: hit.evmAddress,
+                        solanaAddress: hit.solanaAddress,
+                      });
                       if (ok) {
                         goContacts();
                       }
@@ -114,14 +129,13 @@ export function NewContactScreen() {
                   style={({ pressed }) => [
                     styles.resultCard,
                     pressed && styles.resultCardPressed,
-                    (isAdding || (!hit.username && !hit.identityId)) &&
-                      styles.resultCardDisabled,
+                    (isAdding || !hit.hasAddress) && styles.resultCardDisabled,
                   ]}
                 >
                   <Avatar
                     label={hit.label}
-                    photoUrl={hit.profilePhotoUrl}
-                    seed={hit.username ?? hit.userId}
+                    photoUrl={hit.pfpUrl}
+                    seed={hit.username}
                     size={40}
                   />
                   <View style={styles.resultText}>
@@ -133,62 +147,7 @@ export function NewContactScreen() {
           ) : null}
 
           {showEmpty ? (
-            <Text style={styles.empty}>No accounts found.</Text>
-          ) : null}
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ expanded: showAdvanced }}
-            onPress={toggleAdvanced}
-            style={({ pressed }) => [
-              styles.advancedToggle,
-              pressed && styles.advancedTogglePressed,
-            ]}
-          >
-            <Text style={styles.advancedToggleText}>
-              {showAdvanced
-                ? 'Hide advanced details'
-                : 'Show advanced details'}
-            </Text>
-            <Ionicons
-              name={showAdvanced ? 'chevron-up' : 'chevron-down'}
-              size={16}
-              color="#5a7d6a"
-            />
-          </Pressable>
-
-          {showAdvanced ? (
-            <View style={styles.advancedCard}>
-              <Pressable
-                accessibilityLabel="Add Farcaster contact"
-                accessibilityRole="button"
-                onPress={() => {
-                  navigation.navigate('newFarcasterContact');
-                }}
-                style={({ pressed }) => [
-                  styles.advancedButton,
-                  pressed && styles.advancedButtonPressed,
-                ]}
-              >
-                <Text style={styles.advancedButtonText}>Farcaster</Text>
-                <Ionicons name="chevron-forward" size={18} color="#86a894" />
-              </Pressable>
-              <View style={styles.advancedDivider} />
-              <Pressable
-                accessibilityLabel="Add contact by raw addresses"
-                accessibilityRole="button"
-                onPress={() => {
-                  navigation.navigate('newRawAddressContact');
-                }}
-                style={({ pressed }) => [
-                  styles.advancedButton,
-                  pressed && styles.advancedButtonPressed,
-                ]}
-              >
-                <Text style={styles.advancedButtonText}>Raw address(es)</Text>
-                <Ionicons name="chevron-forward" size={18} color="#86a894" />
-              </Pressable>
-            </View>
+            <Text style={styles.empty}>No Farcaster users found.</Text>
           ) : null}
         </ScrollView>
       </View>
@@ -309,51 +268,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#86a894',
     textAlign: 'center',
-  },
-  advancedToggle: {
-    marginTop: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    alignSelf: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
-  advancedTogglePressed: {
-    opacity: 0.65,
-  },
-  advancedToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#5a7d6a',
-  },
-  advancedCard: {
-    marginTop: 4,
-    backgroundColor: '#ffffff',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  advancedButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  advancedButtonPressed: {
-    backgroundColor: '#f0fdf4',
-  },
-  advancedButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#166534',
-  },
-  advancedDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
-    marginHorizontal: 16,
   },
 });

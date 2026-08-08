@@ -37,6 +37,14 @@ export function HomeStack() {
         component={homeStackScreens.newContact}
       />
       <NativeStack.Screen
+        name="newFarcasterContact"
+        component={homeStackScreens.newFarcasterContact}
+      />
+      <NativeStack.Screen
+        name="newRawAddressContact"
+        component={homeStackScreens.newRawAddressContact}
+      />
+      <NativeStack.Screen
         name="contactDetails"
         component={homeStackScreens.contactDetails}
       />

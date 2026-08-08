@@ -93,6 +93,8 @@ const HOME_STACK_HISTORY: Partial<Record<keyof HomeStackParamList, string[]>> =
     transactions: ['index'],
     contacts: ['index'],
     newContact: ['index', 'contacts'],
+    newFarcasterContact: ['index', 'contacts', 'newContact'],
+    newRawAddressContact: ['index', 'contacts', 'newContact'],
     contactDetails: ['index', 'contacts'],
     receive: ['index'],
     request: ['index'],
@@ -254,6 +256,8 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               transactions: '/transactions',
               contacts: '/contacts',
               newContact: '/contacts/new',
+              newFarcasterContact: '/contacts/new/farcaster',
+              newRawAddressContact: '/contacts/new/addresses',
               contactDetails: {
                 path: '/contacts/:contactId',
                 parse: {

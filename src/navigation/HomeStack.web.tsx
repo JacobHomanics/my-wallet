@@ -46,6 +46,14 @@ export function HomeStack() {
         component={homeStackScreens.newContact}
       />
       <WebStack.Screen
+        name="newFarcasterContact"
+        component={homeStackScreens.newFarcasterContact}
+      />
+      <WebStack.Screen
+        name="newRawAddressContact"
+        component={homeStackScreens.newRawAddressContact}
+      />
+      <WebStack.Screen
         name="contactDetails"
         component={homeStackScreens.contactDetails}
       />
