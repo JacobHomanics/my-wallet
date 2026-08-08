@@ -11,6 +11,7 @@ export type ContactSearchHit = {
   userId: Id<'users'>;
   username: string | null;
   identityId: string | null;
+  profilePhotoUrl: string | null;
   label: string;
   subtitle: string | null;
 };
@@ -54,6 +55,8 @@ export function useContactSearch() {
         userId: hit._id,
         username,
         identityId,
+        profilePhotoUrl:
+          typeof hit.profilePhotoUrl === 'string' ? hit.profilePhotoUrl : null,
         label: username ? `@${username}` : (identityId ?? 'User'),
         subtitle:
           username && identityId

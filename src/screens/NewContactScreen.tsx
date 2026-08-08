@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
 import { useAddContact } from '@/hooks/useAddContact';
 import { useContactSearch } from '@/hooks/useContactSearch';
@@ -127,10 +128,18 @@ export function NewContactScreen() {
                       styles.resultCardDisabled,
                   ]}
                 >
-                  <Text style={styles.resultLabel}>{hit.label}</Text>
-                  {hit.subtitle ? (
-                    <Text style={styles.resultSubtitle}>{hit.subtitle}</Text>
-                  ) : null}
+                  <Avatar
+                    label={hit.label}
+                    photoUrl={hit.profilePhotoUrl}
+                    seed={hit.username ?? hit.userId}
+                    size={40}
+                  />
+                  <View style={styles.resultText}>
+                    <Text style={styles.resultLabel}>{hit.label}</Text>
+                    {hit.subtitle ? (
+                      <Text style={styles.resultSubtitle}>{hit.subtitle}</Text>
+                    ) : null}
+                  </View>
                 </Pressable>
               ))}
             </View>
@@ -349,6 +358,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   resultCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#d1fae5',
@@ -362,6 +374,10 @@ const styles = StyleSheet.create({
   },
   resultCardDisabled: {
     opacity: 0.55,
+  },
+  resultText: {
+    flex: 1,
+    minWidth: 0,
   },
   resultLabel: {
     fontSize: 16,

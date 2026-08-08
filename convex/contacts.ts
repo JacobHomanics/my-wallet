@@ -80,11 +80,15 @@ export const listForOwner = query({
       contacts.map(async (contact) => {
         let username: string | null = null;
         let identityId: string | null = null;
+        let profilePhotoUrl: string | null = null;
 
         if (contact.contactUserId) {
           const user = await ctx.db.get(contact.contactUserId);
           username = user?.username ?? null;
           identityId = user?.identityId ?? null;
+          profilePhotoUrl = user?.profilePhotoId
+            ? await ctx.storage.getUrl(user.profilePhotoId)
+            : null;
         }
 
         return {
@@ -95,6 +99,7 @@ export const listForOwner = query({
           solanaAddress: contact.solanaAddress ?? null,
           username,
           identityId,
+          profilePhotoUrl,
           isExternal: !contact.contactUserId,
         };
       }),
@@ -116,11 +121,15 @@ export const getForOwner = query({
 
     let username: string | null = null;
     let identityId: string | null = null;
+    let profilePhotoUrl: string | null = null;
 
     if (contact.contactUserId) {
       const user = await ctx.db.get(contact.contactUserId);
       username = user?.username ?? null;
       identityId = user?.identityId ?? null;
+      profilePhotoUrl = user?.profilePhotoId
+        ? await ctx.storage.getUrl(user.profilePhotoId)
+        : null;
     }
 
     return {
@@ -131,6 +140,7 @@ export const getForOwner = query({
       evmAddress: contact.evmAddress ?? null,
       solanaAddress: contact.solanaAddress ?? null,
       identityId,
+      profilePhotoUrl,
       isExternal: !contact.contactUserId,
     };
   },

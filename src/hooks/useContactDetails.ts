@@ -12,6 +12,7 @@ export type ContactDetails = {
   evmAddress: string | null;
   solanaAddress: string | null;
   identityId: string | null;
+  profilePhotoUrl: string | null;
   isExternal: boolean;
   title: string;
 };
@@ -69,6 +70,7 @@ export function useContactDetails(contactId: string | undefined): {
       evmAddress: row.evmAddress,
       solanaAddress: row.solanaAddress,
       identityId,
+      profilePhotoUrl: row.profilePhotoUrl ?? null,
       isExternal: row.contactUserId == null,
       title,
     },

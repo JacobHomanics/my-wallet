@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AccountNumber } from '@/components/AccountNumber';
+import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
 import { ConfirmDeleteContactModal } from '@/components/ConfirmDeleteContactModal';
 import { useConfirmDeleteContact } from '@/hooks/useConfirmDeleteContact';
@@ -159,6 +160,14 @@ export function ContactDetailsScreen() {
             <Text style={styles.empty}>Contact not found.</Text>
           ) : (
             <>
+              <Avatar
+                label={contact.title}
+                photoUrl={contact.profilePhotoUrl}
+                seed={contact.username ?? contact.id}
+                size={88}
+                style={styles.avatar}
+              />
+              <Text style={styles.contactTitle}>{contact.title}</Text>
               {contact.username ||
               contact.name ||
               contact.evmAddress ||
@@ -299,6 +308,16 @@ const styles = StyleSheet.create({
   body: {
     paddingHorizontal: 24,
     alignItems: 'center',
+  },
+  avatar: {
+    marginTop: 24,
+  },
+  contactTitle: {
+    marginTop: 16,
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#166534',
+    textAlign: 'center',
   },
   loader: {
     marginTop: 48,

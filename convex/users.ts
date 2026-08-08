@@ -96,7 +96,20 @@ export const search = query({
       }
     }
 
-    return Array.from(byId.values()).slice(0, 20);
+    const users = Array.from(byId.values()).slice(0, 20);
+
+    return await Promise.all(
+      users.map(async (user) => {
+        const profilePhotoUrl = user.profilePhotoId
+          ? await ctx.storage.getUrl(user.profilePhotoId)
+          : null;
+
+        return {
+          ...user,
+          profilePhotoUrl,
+        };
+      }),
+    );
   },
 });
 

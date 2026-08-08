@@ -7,6 +7,7 @@ import {
 } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 
+import { Avatar } from '@/components/Avatar';
 import type { ContactListItem } from '@/hooks/useContacts';
 
 const DELETE_WIDTH = 72;
@@ -85,6 +86,12 @@ export function SwipeableContactRow({
         onPress={onPress}
         style={styles.contactRow}
       >
+        <Avatar
+          label={contact.label}
+          photoUrl={contact.profilePhotoUrl}
+          seed={contact.username ?? contact.id}
+          size={40}
+        />
         <View style={styles.contactRowText}>
           <Text style={styles.contactLabel}>{contact.label}</Text>
           {contact.subtitle ? (

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Avatar } from '@/components/Avatar';
 import { useContactsAllSections } from '@/hooks/useContactsAllSections';
 import { useContactsFilter } from '@/hooks/useContactsFilter';
 import { useContactsTab } from '@/hooks/useContactsTab';
@@ -96,6 +97,12 @@ function ContactPickerRow({
         !selectable && styles.optionDisabled,
       ]}
     >
+      <Avatar
+        label={label}
+        photoUrl={contact.profilePhotoUrl}
+        seed={contact.username ?? contact.id}
+        size={40}
+      />
       <View style={styles.optionText}>
         <Text style={styles.optionLabel}>{label}</Text>
         {description ? (

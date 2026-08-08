@@ -13,6 +13,7 @@ export type ContactListItem = {
   evmAddress: string | null;
   solanaAddress: string | null;
   identityId: string | null;
+  profilePhotoUrl: string | null;
   label: string;
   subtitle: string | null;
   isExternal: boolean;
@@ -121,6 +122,7 @@ export function useContacts(): {
         evmAddress,
         solanaAddress,
         identityId: accountNumber,
+        profilePhotoUrl: row.profilePhotoUrl ?? null,
         isExternal,
         label,
         subtitle: isExternal ? null : addressSubtitle,

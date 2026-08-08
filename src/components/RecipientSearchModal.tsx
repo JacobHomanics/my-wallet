@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Avatar } from '@/components/Avatar';
 import {
   useContactSearch,
   type ContactSearchHit,
@@ -146,6 +147,12 @@ export function RecipientSearchModal({
                     !selectable && styles.optionDisabled,
                   ]}
                 >
+                  <Avatar
+                    label={item.label}
+                    photoUrl={item.profilePhotoUrl}
+                    seed={item.username ?? item.userId}
+                    size={40}
+                  />
                   <View style={styles.optionText}>
                     <Text style={styles.optionLabel}>{item.label}</Text>
                     {item.subtitle ? (
