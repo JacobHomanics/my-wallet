@@ -17,7 +17,6 @@ export async function loadTreasuryPrivateKey(): Promise<Hex> {
   let keystore: object;
   try {
     // Bundled into the Convex Node action — file must exist at deploy time.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     keystore = require("../keystores/treasury.json") as object;
   } catch {
     throw new Error(

@@ -95,7 +95,9 @@ export function SentScreen() {
           ) : rewardFailed ? (
             <View style={styles.rewardSection}>
               <Text style={styles.rewardFailedText}>
-                Your money was sent! However, we weren't able to send{' '}
+                {
+                  "Your money was sent! However, we weren't able to send "
+                }
                 {REWARD_POINTS_LABEL}. Sorry!
               </Text>
             </View>
