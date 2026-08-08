@@ -1,5 +1,5 @@
 import { useAction } from 'convex/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { api } from '../../convex/_generated/api';
 
@@ -24,6 +24,7 @@ export function useFarcasterSearch(query: string) {
   const [results, setResults] = useState<FarcasterSearchHit[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [resolvedQuery, setResolvedQuery] = useState('');
   const requestIdRef = useRef(0);
 
   const trimmed = query.trim().replace(/^@/, '');
@@ -32,17 +33,15 @@ export function useFarcasterSearch(query: string) {
   useEffect(() => {
     if (!shouldSearch) {
       requestIdRef.current += 1;
-      setResults([]);
-      setIsSearching(false);
-      setErrorMessage(null);
       return;
     }
 
     const requestId = ++requestIdRef.current;
-    setIsSearching(true);
-    setErrorMessage(null);
 
     const timer = setTimeout(() => {
+      setIsSearching(true);
+      setErrorMessage(null);
+
       void (async () => {
         try {
           const hits = await search({ query: trimmed, limit: 8 });
@@ -60,6 +59,8 @@ export function useFarcasterSearch(query: string) {
               };
             }),
           );
+          setResolvedQuery(trimmed);
+          setErrorMessage(null);
         } catch (error) {
           if (requestId !== requestIdRef.current) {
             return;
@@ -70,6 +71,7 @@ export function useFarcasterSearch(query: string) {
               : 'Failed to search Farcaster';
           setErrorMessage(message);
           setResults([]);
+          setResolvedQuery(trimmed);
         } finally {
           if (requestId === requestIdRef.current) {
             setIsSearching(false);
@@ -88,16 +90,32 @@ export function useFarcasterSearch(query: string) {
     setResults([]);
     setIsSearching(false);
     setErrorMessage(null);
+    setResolvedQuery('');
   }, []);
 
+  const visibleResults = useMemo(() => {
+    if (!shouldSearch || resolvedQuery !== trimmed) {
+      return [];
+    }
+    return results;
+  }, [results, resolvedQuery, shouldSearch, trimmed]);
+
+  const visibleError =
+    shouldSearch && resolvedQuery === trimmed ? errorMessage : null;
+  const visibleSearching = shouldSearch && isSearching;
+
   const showEmpty =
-    shouldSearch && !isSearching && results.length === 0 && !errorMessage;
+    shouldSearch &&
+    !visibleSearching &&
+    resolvedQuery === trimmed &&
+    visibleResults.length === 0 &&
+    !visibleError;
 
   return {
-    results,
-    isSearching,
+    results: visibleResults,
+    isSearching: visibleSearching,
     showEmpty,
-    errorMessage,
+    errorMessage: visibleError,
     clearResults,
   };
 }
