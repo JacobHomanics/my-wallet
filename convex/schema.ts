@@ -9,6 +9,11 @@ export default defineSchema({
     identityId: v.optional(v.string()),
     /** Profile photo stored in Convex file storage. */
     profilePhotoId: v.optional(v.id("_storage")),
+    /**
+     * Explicit `false` for newly created users until they finish or skip
+     * onboarding. Missing/true means onboarding is not required.
+     */
+    onboardingCompleted: v.optional(v.boolean()),
   })
     .index("by_externalId", ["externalId"])
     .index("by_username", ["username"])

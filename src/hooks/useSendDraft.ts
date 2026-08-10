@@ -24,6 +24,8 @@ export type SendDraft = {
   recipientName: string | null;
   /** Profile photo URL for the recipient when known. */
   recipientProfilePhotoUrl: string | null;
+  /** True when the recipient is a Farcaster profile. */
+  recipientIsFarcaster: boolean;
   amount: string;
   /**
    * When true (e.g. receive QR payment request), editing token legs must not
@@ -51,6 +53,7 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   recipientUsername: null,
   recipientName: null,
   recipientProfilePhotoUrl: null,
+  recipientIsFarcaster: false,
   amount: '',
   amountLocked: false,
   manualLegs: null,
@@ -97,6 +100,7 @@ export function hydrateSendDraftFromConfirmParams(params: {
   recipientUsername?: string | null;
   recipientName?: string | null;
   recipientProfilePhotoUrl?: string | null;
+  recipientIsFarcaster?: boolean;
 }): void {
   const amount = params.usdAmount?.trim() ?? '';
   const decoded = tryDecodeWalletIdentity(params.identity);
@@ -113,6 +117,7 @@ export function hydrateSendDraftFromConfirmParams(params: {
     recipientUsername: username,
     recipientName: name,
     recipientProfilePhotoUrl: profilePhotoUrl,
+    recipientIsFarcaster: Boolean(params.recipientIsFarcaster),
     amount,
     amountLocked: amount.length > 0,
   };

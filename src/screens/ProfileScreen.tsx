@@ -13,11 +13,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AccountNumber } from '@/components/AccountNumber';
 import { Avatar } from '@/components/Avatar';
+import { ConfirmExportPrivateKeyModal } from '@/components/ConfirmExportPrivateKeyModal';
 import { ExportPrivateKeyWebView } from '@/components/ExportPrivateKeyWebView';
 import { WalletDebitCard } from '@/components/WalletDebitCard';
+import { useConfirmExportPrivateKey } from '@/hooks/useConfirmExportPrivateKey';
 import { useConvexUsername } from '@/hooks/useConvexUsername';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
-import { useExportPrivateKey } from '@/hooks/useExportPrivateKey';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useProfilePhoto } from '@/hooks/useProfilePhoto';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
@@ -37,10 +38,14 @@ export function ProfileScreen() {
   const { ready, wallets } = useUserWallets();
   const { copy, isCopied } = useCopyToClipboard();
   const {
-    exportPrivateKey,
+    pendingWallet,
+    confirmVisible,
+    requestExport,
+    cancelConfirm,
+    confirmExport,
     exportWebViewUri,
     closeExportWebView,
-  } = useExportPrivateKey();
+  } = useConfirmExportPrivateKey();
 
   return (
     <View style={styles.container}>
@@ -139,9 +144,7 @@ export function ProfileScreen() {
                       void copy(wallet.address, walletKey);
                     }}
                     onExport={() => {
-                      void exportPrivateKey(wallet).catch((error) => {
-                        console.error(error);
-                      });
+                      requestExport(wallet);
                     }}
                   />
                 );
@@ -150,6 +153,13 @@ export function ProfileScreen() {
           </View>
         ) : null}
       </ScrollView>
+
+      <ConfirmExportPrivateKeyModal
+        visible={confirmVisible}
+        walletLabel={pendingWallet?.label ?? ''}
+        onCancel={cancelConfirm}
+        onConfirm={confirmExport}
+      />
 
       <ExportPrivateKeyWebView
         onClose={closeExportWebView}

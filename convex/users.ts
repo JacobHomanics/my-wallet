@@ -140,7 +140,32 @@ export const ensureByExternalId = mutation({
     return await ctx.db.insert("users", {
       externalId,
       identityId: normalizedIdentity,
+      onboardingCompleted: false,
     });
+  },
+});
+
+/** Mark first-time profile onboarding as finished (Continue or Skip). */
+export const completeOnboarding = mutation({
+  args: {
+    externalId: v.string(),
+  },
+  handler: async (ctx, { externalId }) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_externalId", (q) => q.eq("externalId", externalId))
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.onboardingCompleted === true) {
+      return user._id;
+    }
+
+    await ctx.db.patch(user._id, { onboardingCompleted: true });
+    return user._id;
   },
 });
 

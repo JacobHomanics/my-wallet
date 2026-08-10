@@ -165,6 +165,7 @@ export function ContactDetailsScreen() {
                 photoUrl={contact.profilePhotoUrl}
                 seed={contact.username ?? contact.id}
                 size={88}
+                showFarcasterBadge={contact.isFarcaster}
                 style={styles.avatar}
               />
               <Text style={styles.contactTitle}>{contact.title}</Text>

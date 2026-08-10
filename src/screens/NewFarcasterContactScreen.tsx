@@ -137,6 +137,7 @@ export function NewFarcasterContactScreen() {
                     photoUrl={hit.pfpUrl}
                     seed={hit.username}
                     size={40}
+                    showFarcasterBadge
                   />
                   <View style={styles.resultText}>
                     <Text style={styles.resultLabel}>{hit.label}</Text>

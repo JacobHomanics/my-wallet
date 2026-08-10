@@ -51,13 +51,13 @@ export function useUsernameSettings() {
 
   const save = useCallback(async () => {
     if (!canSave) {
-      return;
+      return false;
     }
 
     const externalId = isReady ? getPrivyExternalId(user) : null;
     if (!externalId) {
       setErrorMessage('Not signed in');
-      return;
+      return false;
     }
 
     setIsSaving(true);
@@ -69,10 +69,12 @@ export function useUsernameSettings() {
         username: normalizedDraft.length > 0 ? normalizedDraft : undefined,
       });
       syncedFromRef.current = normalizedDraft;
+      return true;
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Failed to save username';
       setErrorMessage(message);
+      return false;
     } finally {
       setIsSaving(false);
     }

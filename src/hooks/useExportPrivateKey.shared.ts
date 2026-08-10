@@ -1,5 +1,3 @@
-import { Alert, Platform } from 'react-native';
-
 import type { UserWallet } from '@/hooks/useUserWallets.shared';
 import { createShareableAppURL } from '@/navigation/linking';
 
@@ -22,31 +20,6 @@ export function buildExportWalletUrl(wallet: UserWallet): string {
   return createShareableAppURL('export', {
     address: wallet.address,
     chain: wallet.chain,
-  });
-}
-
-/**
- * Confirm before revealing a private key. Uses `window.confirm` on web because
- * RN Web's multi-button Alert is unreliable.
- */
-export function confirmExportPrivateKey(wallet: UserWallet): Promise<boolean> {
-  const message =
-    `Export your ${wallet.label} private key? Anyone with this key can ` +
-    'control the funds in this wallet.';
-
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    return Promise.resolve(window.confirm(message));
-  }
-
-  return new Promise((resolve) => {
-    Alert.alert('Export private key', message, [
-      { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-      {
-        text: 'Export',
-        style: 'destructive',
-        onPress: () => resolve(true),
-      },
-    ]);
   });
 }
 

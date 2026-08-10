@@ -102,6 +102,7 @@ function ContactPickerRow({
         photoUrl={contact.profilePhotoUrl}
         seed={contact.username ?? contact.id}
         size={40}
+        showFarcasterBadge={contact.isFarcaster}
       />
       <View style={styles.optionText}>
         <Text style={styles.optionLabel}>{label}</Text>

@@ -91,6 +91,7 @@ export function SwipeableContactRow({
           photoUrl={contact.profilePhotoUrl}
           seed={contact.username ?? contact.id}
           size={40}
+          showFarcasterBadge={contact.isFarcaster}
         />
         <View style={styles.contactRowText}>
           <Text style={styles.contactLabel}>{contact.label}</Text>

@@ -3,7 +3,6 @@ import { Alert } from 'react-native';
 
 import {
   buildExportWalletUrl,
-  confirmExportPrivateKey,
   type ExportPrivateKeyResult,
 } from '@/hooks/useExportPrivateKey.shared';
 import type { UserWallet } from '@/hooks/useUserWallets.shared';
@@ -11,7 +10,8 @@ import { getShareableAppOrigin } from '@/navigation/linking';
 
 /**
  * Native key export opens a hosted web page in a WebView (Privy requires a
- * browser context for `exportWallet`).
+ * browser context for `exportWallet`). Confirmation UI lives in
+ * `useConfirmExportPrivateKey`.
  * @see https://docs.privy.io/recipes/mobile-key-export
  */
 export function useExportPrivateKey(): ExportPrivateKeyResult {
@@ -22,7 +22,7 @@ export function useExportPrivateKey(): ExportPrivateKeyResult {
   }, []);
 
   const exportPrivateKey = useCallback(
-    async (wallet: UserWallet, options?: { skipConfirm?: boolean }) => {
+    async (wallet: UserWallet, _options?: { skipConfirm?: boolean }) => {
       const origin = getShareableAppOrigin();
       if (!origin.startsWith('http://') && !origin.startsWith('https://')) {
         Alert.alert(
@@ -30,13 +30,6 @@ export function useExportPrivateKey(): ExportPrivateKeyResult {
           'Set EXPO_PUBLIC_APP_ORIGIN to your published web app URL to export private keys on mobile.',
         );
         return;
-      }
-
-      if (!options?.skipConfirm) {
-        const confirmed = await confirmExportPrivateKey(wallet);
-        if (!confirmed) {
-          return;
-        }
       }
 
       setExportWebViewUri(buildExportWalletUrl(wallet));

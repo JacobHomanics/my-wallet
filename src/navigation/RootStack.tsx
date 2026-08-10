@@ -29,6 +29,10 @@ export function RootStack() {
         name="exportWallet"
         component={rootStackScreens.exportWallet}
       />
+      <NativeStack.Screen
+        name="onboarding"
+        component={rootStackScreens.onboarding}
+      />
       <NativeStack.Screen name="main" component={rootStackScreens.main} />
     </NativeStack.Navigator>
   );

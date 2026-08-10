@@ -8,6 +8,7 @@ import {
 import { ExportWalletScreen } from '@/screens/ExportWalletScreen';
 import { LoginScreen } from '@/screens/LoginScreen';
 import { LoginVerifyScreen } from '@/screens/LoginVerifyScreen';
+import { OnboardingScreen } from '@/screens/OnboardingScreen';
 import { SplashScreen } from '@/screens/SplashScreen';
 import { WelcomeScreen } from '@/screens/WelcomeScreen';
 
@@ -19,5 +20,6 @@ export const rootStackScreens = {
   login: LoginScreen,
   loginVerify: LoginVerifyScreen,
   exportWallet: ExportWalletScreen,
+  onboarding: OnboardingScreen,
   main: MainTabs,
 } as const satisfies Record<keyof RootStackParamList, ComponentType<object>>;

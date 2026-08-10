@@ -265,6 +265,7 @@ export function SendScreen() {
           username: hit.username,
           name: hit.displayName,
           profilePhotoUrl: hit.pfpUrl,
+          isFarcaster: true,
         },
         {
           tokenId: route.params?.tokenId,

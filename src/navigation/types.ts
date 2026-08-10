@@ -66,6 +66,7 @@ export type HomeStackParamList = {
     recipientLabel?: string;
     recipientProfilePhotoUrl?: string | null;
     recipientUsername?: string | null;
+    recipientIsFarcaster?: boolean;
   };
 };
 
@@ -116,6 +117,7 @@ export type RootStackParamList = {
     chain?: 'ethereum' | 'solana';
   };
   exportWallet: ExportWalletParams;
+  onboarding: undefined;
   main: NavigatorScreenParams<MainTabParamList> | undefined;
 };
 

@@ -54,8 +54,12 @@ export function ConfirmSendScreen() {
   const { sendPayment, sending } = useSendPayment();
   const { error, clearStatus, setError } = useSendStatus();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
-  const { accountNumber, recipientName, recipientProfilePhotoUrl } =
-    useSendDraft();
+  const {
+    accountNumber,
+    recipientName,
+    recipientProfilePhotoUrl,
+    recipientIsFarcaster,
+  } = useSendDraft();
   const recipientUsername = useSendRecipientUsername();
   const { tip, tipUsd, setTip, setTipPercent } = useSendTip();
   const {
@@ -197,6 +201,7 @@ export function ConfirmSendScreen() {
           recipientLabel: primaryLabel ?? undefined,
           recipientProfilePhotoUrl,
           recipientUsername,
+          recipientIsFarcaster,
           rewardAmount: outcome.rewardAmount,
           rewardHash: outcome.rewardHash,
           rewardFailed: outcome.rewardFailed,
@@ -223,6 +228,7 @@ export function ConfirmSendScreen() {
     clearStatus,
     navigation,
     primaryLabel,
+    recipientIsFarcaster,
     recipientProfilePhotoUrl,
     recipientUsername,
     refresh,
@@ -307,6 +313,7 @@ export function ConfirmSendScreen() {
                     photoUrl={recipientProfilePhotoUrl}
                     seed={recipientUsername ?? primaryLabel}
                     size={40}
+                    showFarcasterBadge={recipientIsFarcaster}
                   />
                   <Text
                     style={styles.recipientValue}

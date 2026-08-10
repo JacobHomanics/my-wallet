@@ -15,6 +15,7 @@ export type SendableContact = {
   username?: string | null;
   name?: string | null;
   profilePhotoUrl?: string | null;
+  isFarcaster?: boolean;
 };
 
 type SendToContactOptions = {
@@ -47,6 +48,7 @@ export function useSendToContact() {
           recipientUsername: contact.username,
           recipientName: contact.name,
           recipientProfilePhotoUrl: contact.profilePhotoUrl,
+          recipientIsFarcaster: contact.isFarcaster,
           usdAmount: options?.usdAmount,
         });
       } else {
@@ -56,6 +58,7 @@ export function useSendToContact() {
           recipientUsername: contact.username,
           recipientName: contact.name,
           recipientProfilePhotoUrl: contact.profilePhotoUrl,
+          recipientIsFarcaster: contact.isFarcaster,
           usdAmount: options?.usdAmount,
         });
       }
