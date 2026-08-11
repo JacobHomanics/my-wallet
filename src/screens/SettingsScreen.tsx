@@ -12,14 +12,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
+import { ConfirmLogoutModal } from '@/components/ConfirmLogoutModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
+import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToProfile } from '@/hooks/usePopToProfile';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
-import { useSignOut } from '@/hooks/useSignOut';
 import type { ProfileStackParamList } from '@/navigation/types';
 
 export function SettingsScreen() {
@@ -28,7 +29,13 @@ export function SettingsScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
   const goProfile = usePopToProfile();
-  const { signOut } = useSignOut();
+  const {
+    confirmVisible: logoutConfirmVisible,
+    isSigningOut,
+    requestSignOut,
+    cancelSignOut,
+    confirmSignOut,
+  } = useConfirmSignOut();
   const {
     strategies,
     selectedStrategy,
@@ -191,9 +198,7 @@ export function SettingsScreen() {
 
             <Pressable
               accessibilityRole="button"
-              onPress={() => {
-                void signOut();
-              }}
+              onPress={requestSignOut}
               style={({ pressed }) => [
                 styles.logoutButton,
                 pressed && styles.logoutButtonPressed,
@@ -227,6 +232,15 @@ export function SettingsScreen() {
         options={displayCurrencyOptions}
         selectedDisplayCurrencyId={selectedDisplayCurrencyId}
         visible={displayCurrencyPickerOpen}
+      />
+
+      <ConfirmLogoutModal
+        isSigningOut={isSigningOut}
+        onCancel={cancelSignOut}
+        onConfirm={() => {
+          void confirmSignOut();
+        }}
+        visible={logoutConfirmVisible}
       />
     </View>
   );

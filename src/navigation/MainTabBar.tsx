@@ -107,7 +107,6 @@ function WebTopNav({ state, descriptors, navigation }: BottomTabBarProps) {
       </View>
 
       <ProfileDropdown
-        navigation={navigation as never}
         onOpenProfile={() => {
           navigation.navigate('profile');
         }}
