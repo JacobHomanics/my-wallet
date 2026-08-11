@@ -79,6 +79,7 @@ export type HomeStackParamList = {
     recipientProfilePhotoUrl?: string | null;
     recipientUsername?: string | null;
     recipientIsFarcaster?: boolean;
+    recipientIsEns?: boolean;
   };
 };
 

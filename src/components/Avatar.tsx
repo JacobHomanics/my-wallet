@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { FarcasterIcon } from '@/components/FarcasterIcon';
+import { EnsIcon, ENS_BLUE } from '@/components/EnsIcon';
+import { FarcasterIcon, FARCASTER_PURPLE } from '@/components/FarcasterIcon';
 import { getAvatarColor } from '@/hooks/useProfileIdentity';
 
 type AvatarProps = {
@@ -11,6 +12,8 @@ type AvatarProps = {
   size?: number;
   /** Bottom-right Farcaster brand badge (e.g. Farcaster contacts). */
   showFarcasterBadge?: boolean;
+  /** Bottom-right ENS brand badge (e.g. ENS contacts). */
+  showEnsBadge?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -23,6 +26,7 @@ export function Avatar({
   photoUrl,
   size = 40,
   showFarcasterBadge = false,
+  showEnsBadge = false,
   style,
 }: AvatarProps) {
   const letter = label.trim().charAt(0).toUpperCase() || '?';
@@ -61,15 +65,31 @@ export function Avatar({
       {showFarcasterBadge ? (
         <View
           style={[
-            styles.farcasterBadge,
+            styles.brandBadge,
             {
               width: badgeSize,
               height: badgeSize,
               borderRadius: badgeSize / 2,
+              backgroundColor: FARCASTER_PURPLE,
             },
           ]}
         >
           <FarcasterIcon size={badgeSize} withBackground />
+        </View>
+      ) : null}
+      {showEnsBadge ? (
+        <View
+          style={[
+            styles.brandBadge,
+            {
+              width: badgeSize,
+              height: badgeSize,
+              borderRadius: badgeSize / 2,
+              backgroundColor: ENS_BLUE,
+            },
+          ]}
+        >
+          <EnsIcon size={badgeSize} withBackground />
         </View>
       ) : null}
     </View>
@@ -86,13 +106,12 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontWeight: '700',
   },
-  farcasterBadge: {
+  brandBadge: {
     position: 'absolute',
     right: -2,
     bottom: -2,
     overflow: 'hidden',
     borderWidth: 1.5,
     borderColor: '#ffffff',
-    backgroundColor: '#855DCD',
   },
 });

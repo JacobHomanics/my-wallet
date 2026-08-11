@@ -133,6 +133,7 @@ export function NewEnsContactScreen() {
                   photoUrl={result.avatarUrl}
                   seed={result.name}
                   size={40}
+                  showEnsBadge
                 />
                 <View style={styles.resultText}>
                   <Text style={styles.resultLabel}>{result.label}</Text>

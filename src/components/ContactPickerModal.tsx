@@ -107,6 +107,7 @@ function ContactPickerRow({
         seed={contact.username ?? contact.ensName ?? contact.id}
         size={40}
         showFarcasterBadge={contact.isFarcaster}
+        showEnsBadge={contact.isEns}
       />
       <View style={styles.optionText}>
         <Text style={styles.optionLabel}>{label}</Text>

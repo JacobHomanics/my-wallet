@@ -41,6 +41,7 @@ export function SentScreen() {
     recipientProfilePhotoUrl,
     recipientUsername,
     recipientIsFarcaster,
+    recipientIsEns,
   } = route.params;
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -74,6 +75,7 @@ export function SentScreen() {
                   seed={recipientUsername ?? recipientLabel}
                   size={40}
                   showFarcasterBadge={recipientIsFarcaster}
+                  showEnsBadge={recipientIsEns}
                 />
                 <Text
                   style={styles.recipientValue}

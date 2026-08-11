@@ -56,7 +56,7 @@ export function SendAmountScreen() {
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const { allocationInputUnit, setAllocationInputUnit, broadcastMode, setBroadcastMode } =
     useSendDraftUi();
-  const { accountNumber, recipientName, recipientProfilePhotoUrl, recipientIsFarcaster } =
+  const { accountNumber, recipientName, recipientProfilePhotoUrl, recipientIsFarcaster, recipientIsEns } =
     useSendDraft();
   const recipientUsername = useSendRecipientUsername();
   const {
@@ -236,6 +236,7 @@ export function SendAmountScreen() {
                         seed={recipientUsername ?? primaryLabel}
                         size={32}
                         showFarcasterBadge={recipientIsFarcaster}
+                        showEnsBadge={recipientIsEns}
                         style={styles.recipientAvatar}
                       />
                       <Text

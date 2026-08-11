@@ -166,6 +166,7 @@ export function ContactDetailsScreen() {
                 seed={contact.username ?? contact.ensName ?? contact.id}
                 size={88}
                 showFarcasterBadge={contact.isFarcaster}
+                showEnsBadge={contact.isEns}
                 style={styles.avatar}
               />
               <Text style={styles.contactTitle}>{contact.title}</Text>

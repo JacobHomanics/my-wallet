@@ -59,6 +59,7 @@ export function ConfirmSendScreen() {
     recipientName,
     recipientProfilePhotoUrl,
     recipientIsFarcaster,
+    recipientIsEns,
   } = useSendDraft();
   const recipientUsername = useSendRecipientUsername();
   const { tip, tipUsd, setTip, setTipPercent } = useSendTip();
@@ -202,6 +203,7 @@ export function ConfirmSendScreen() {
           recipientProfilePhotoUrl,
           recipientUsername,
           recipientIsFarcaster,
+          recipientIsEns,
           rewardAmount: outcome.rewardAmount,
           rewardHash: outcome.rewardHash,
           rewardFailed: outcome.rewardFailed,
@@ -229,6 +231,7 @@ export function ConfirmSendScreen() {
     navigation,
     primaryLabel,
     recipientIsFarcaster,
+    recipientIsEns,
     recipientProfilePhotoUrl,
     recipientUsername,
     refresh,
@@ -314,6 +317,7 @@ export function ConfirmSendScreen() {
                     seed={recipientUsername ?? primaryLabel}
                     size={40}
                     showFarcasterBadge={recipientIsFarcaster}
+                    showEnsBadge={recipientIsEns}
                   />
                   <Text
                     style={styles.recipientValue}

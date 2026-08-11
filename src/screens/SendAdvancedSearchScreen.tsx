@@ -336,6 +336,7 @@ export function SendAdvancedSearchScreen() {
                           solanaAddress: null,
                           name: ensResult.name,
                           profilePhotoUrl: ensResult.avatarUrl,
+                          isEns: true,
                         },
                         { tokenId, usdAmount },
                       );
@@ -350,6 +351,7 @@ export function SendAdvancedSearchScreen() {
                       photoUrl={ensResult.avatarUrl}
                       seed={ensResult.name}
                       size={40}
+                      showEnsBadge
                     />
                     <View style={styles.resultText}>
                       <Text style={styles.resultLabel}>{ensResult.label}</Text>

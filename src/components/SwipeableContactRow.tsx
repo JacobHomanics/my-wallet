@@ -92,6 +92,7 @@ export function SwipeableContactRow({
           seed={contact.username ?? contact.ensName ?? contact.id}
           size={40}
           showFarcasterBadge={contact.isFarcaster}
+          showEnsBadge={contact.isEns}
         />
         <View style={styles.contactRowText}>
           <Text style={styles.contactLabel}>{contact.label}</Text>

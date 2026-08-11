@@ -14,6 +14,7 @@ function clearSendRecipientFields() {
     recipientName: null,
     recipientProfilePhotoUrl: null,
     recipientIsFarcaster: false,
+    recipientIsEns: false,
   });
 }
 
