@@ -59,13 +59,7 @@ export function useContactSearch() {
           typeof hit.profilePhotoUrl === 'string' ? hit.profilePhotoUrl : null,
         label: username ? `@${username}` : (identityId ?? 'User'),
         subtitle:
-          username && identityId
-            ? identitySubtitle(identityId)
-            : username
-              ? null
-              : identityId
-                ? identitySubtitle(identityId)
-                : null,
+          !username && identityId ? identitySubtitle(identityId) : null,
       };
     });
   }, [convexUsers]);
