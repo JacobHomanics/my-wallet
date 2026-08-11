@@ -11,6 +11,7 @@ export const EVM_CHAIN_IDS: Record<AlchemyEvmNetwork, number> = {
   'arb-mainnet': 42161,
   'opt-mainnet': 10,
   'polygon-mainnet': 137,
+  'avax-mainnet': 43114,
 };
 
 const NATIVE_CURRENCY: Record<
@@ -22,6 +23,7 @@ const NATIVE_CURRENCY: Record<
   'arb-mainnet': { name: 'Ether', symbol: 'ETH', decimals: 18 },
   'opt-mainnet': { name: 'Ether', symbol: 'ETH', decimals: 18 },
   'polygon-mainnet': { name: 'POL', symbol: 'POL', decimals: 18 },
+  'avax-mainnet': { name: 'Avalanche', symbol: 'AVAX', decimals: 18 },
 };
 
 export function isAlchemyEvmNetwork(

@@ -36,7 +36,7 @@ function getStripeSecretKey(): string {
 
 /**
  * Mint a Stripe Crypto Onramp session for the user's EVM wallet.
- * Defaults to Base ETH; users can also buy USDC (Base / Ethereum).
+ * Defaults to Base ETH; users can also choose USDC / ETH on Avalanche.
  * @see https://docs.stripe.com/api/crypto/onramp_sessions/create
  */
 export async function createCryptoOnrampSession(
@@ -45,10 +45,11 @@ export async function createCryptoOnrampSession(
   const secret = getStripeSecretKey();
   const body = new URLSearchParams();
 
-  // Prefill the same EVM address for ethereum + Base. Stripe requires every
+  // Prefill the same EVM address for Ethereum, Base, and Avalanche. Stripe requires every
   // wallet_addresses network key to appear in destination_networks.
   body.set("wallet_addresses[ethereum]", params.walletAddress);
   body.set("wallet_addresses[base_network]", params.walletAddress);
+  body.set("wallet_addresses[avalanche]", params.walletAddress);
   body.set("lock_wallet_address", "true");
   body.set("destination_currency", "eth");
   body.set("destination_network", "base");
@@ -56,6 +57,7 @@ export async function createCryptoOnrampSession(
   body.set("destination_currencies[1]", "usdc");
   body.set("destination_networks[0]", "base");
   body.set("destination_networks[1]", "ethereum");
+  body.set("destination_networks[2]", "avalanche");
   body.set("source_currency", params.sourceCurrency ?? "usd");
 
   if (params.sourceAmount?.trim()) {

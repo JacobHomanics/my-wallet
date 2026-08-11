@@ -19,7 +19,7 @@ export const createSession = action({
   handler: async (_ctx, args) => {
     const walletAddress = args.walletAddress.trim();
     if (!EVM_ADDRESS_RE.test(walletAddress)) {
-      throw new Error("Invalid Ethereum wallet address.");
+      throw new Error("Invalid EVM wallet address.");
     }
 
     return await createCryptoOnrampSession({

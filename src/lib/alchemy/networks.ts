@@ -4,6 +4,7 @@ export const ALCHEMY_EVM_NETWORKS = [
   'arb-mainnet',
   'opt-mainnet',
   'polygon-mainnet',
+  'avax-mainnet',
 ] as const;
 
 /** Data API network enum is `solana-mainnet` (not `sol-mainnet`). */
@@ -19,6 +20,7 @@ const NETWORK_LABELS: Record<AlchemyNetwork, string> = {
   'arb-mainnet': 'Arbitrum',
   'opt-mainnet': 'Optimism',
   'polygon-mainnet': 'Polygon',
+  'avax-mainnet': 'Avalanche',
   'solana-mainnet': 'Solana',
 };
 
@@ -31,6 +33,7 @@ const NATIVE_TOKEN_FALLBACK: Record<
   'arb-mainnet': { symbol: 'ETH', name: 'Ether', decimals: 18 },
   'opt-mainnet': { symbol: 'ETH', name: 'Ether', decimals: 18 },
   'polygon-mainnet': { symbol: 'POL', name: 'POL', decimals: 18 },
+  'avax-mainnet': { symbol: 'AVAX', name: 'Avalanche', decimals: 18 },
   'solana-mainnet': { symbol: 'SOL', name: 'Solana', decimals: 9 },
 };
 
