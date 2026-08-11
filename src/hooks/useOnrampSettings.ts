@@ -1,17 +1,26 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
 import {
-  DEFAULT_ONRAMP_DESTINATION_ID,
-  getOnrampDestinationOption,
-  ONRAMP_DESTINATION_OPTIONS,
-  type OnrampDestinationId,
-  type OnrampDestinationOption,
+  DEFAULT_ONRAMP_CURRENCY_ID,
+  DEFAULT_ONRAMP_NETWORK_ID,
+  formatOnrampDestinationLabel,
+  getDefaultOnrampCurrencyForNetwork,
+  getOnrampCurrencyOption,
+  getOnrampCurrencyOptionsForNetwork,
+  getOnrampNetworkOption,
+  isOnrampCurrencySupportedOnNetwork,
+  ONRAMP_NETWORK_OPTIONS,
+  type OnrampCurrencyOption,
+  type OnrampDestinationCurrency,
+  type OnrampDestinationNetwork,
+  type OnrampNetworkOption,
 } from '@/lib/onrampSettings';
 
 type OnrampSettingsListener = () => void;
 
-let selectedOnrampDestinationId: OnrampDestinationId =
-  DEFAULT_ONRAMP_DESTINATION_ID;
+let selectedOnrampNetworkId: OnrampDestinationNetwork = DEFAULT_ONRAMP_NETWORK_ID;
+let selectedOnrampCurrencyId: OnrampDestinationCurrency =
+  DEFAULT_ONRAMP_CURRENCY_ID;
 const listeners = new Set<OnrampSettingsListener>();
 
 function subscribe(listener: OnrampSettingsListener): () => void {
@@ -21,47 +30,92 @@ function subscribe(listener: OnrampSettingsListener): () => void {
   };
 }
 
-function getSnapshot(): OnrampDestinationId {
-  return selectedOnrampDestinationId;
+function getSnapshot(): `${OnrampDestinationNetwork}|${OnrampDestinationCurrency}` {
+  return `${selectedOnrampNetworkId}|${selectedOnrampCurrencyId}`;
 }
 
-function setSelectedOnrampDestinationId(id: OnrampDestinationId): void {
-  if (id === selectedOnrampDestinationId) {
-    return;
-  }
-  selectedOnrampDestinationId = id;
+function emitChange(): void {
   listeners.forEach((listener) => {
     listener();
   });
+}
+
+function setSelectedOnrampNetworkId(id: OnrampDestinationNetwork): void {
+  if (id === selectedOnrampNetworkId) {
+    return;
+  }
+  selectedOnrampNetworkId = id;
+  if (!isOnrampCurrencySupportedOnNetwork(id, selectedOnrampCurrencyId)) {
+    selectedOnrampCurrencyId = getDefaultOnrampCurrencyForNetwork(id);
+  }
+  emitChange();
+}
+
+function setSelectedOnrampCurrencyId(id: OnrampDestinationCurrency): void {
+  if (
+    id === selectedOnrampCurrencyId ||
+    !isOnrampCurrencySupportedOnNetwork(selectedOnrampNetworkId, id)
+  ) {
+    return;
+  }
+  selectedOnrampCurrencyId = id;
+  emitChange();
 }
 
 /**
  * Default onramp destination used to preselect the Stripe widget.
  */
 export function useOnrampSettings(): {
-  options: readonly OnrampDestinationOption[];
-  selectedDestinationId: OnrampDestinationId;
-  selectedDestination: OnrampDestinationOption;
-  setOnrampDestination: (id: OnrampDestinationId) => void;
+  networkOptions: readonly OnrampNetworkOption[];
+  currencyOptions: readonly OnrampCurrencyOption[];
+  selectedNetworkId: OnrampDestinationNetwork;
+  selectedNetwork: OnrampNetworkOption;
+  selectedCurrencyId: OnrampDestinationCurrency;
+  selectedCurrency: OnrampCurrencyOption;
+  selectedDestinationLabel: string;
+  setOnrampNetwork: (id: OnrampDestinationNetwork) => void;
+  setOnrampCurrency: (id: OnrampDestinationCurrency) => void;
 } {
-  const selectedId = useSyncExternalStore(
+  const snapshot = useSyncExternalStore(
     subscribe,
     getSnapshot,
     getSnapshot,
   );
+  const [networkId, currencyId] = snapshot.split('|') as [
+    OnrampDestinationNetwork,
+    OnrampDestinationCurrency,
+  ];
 
-  const setOnrampDestination = useCallback((id: OnrampDestinationId) => {
-    setSelectedOnrampDestinationId(id);
+  const setOnrampNetwork = useCallback((id: OnrampDestinationNetwork) => {
+    setSelectedOnrampNetworkId(id);
   }, []);
 
-  const selectedDestination =
-    getOnrampDestinationOption(selectedId) ??
-    getOnrampDestinationOption(DEFAULT_ONRAMP_DESTINATION_ID)!;
+  const setOnrampCurrency = useCallback((id: OnrampDestinationCurrency) => {
+    setSelectedOnrampCurrencyId(id);
+  }, []);
+
+  const selectedNetwork =
+    getOnrampNetworkOption(networkId) ??
+    getOnrampNetworkOption(DEFAULT_ONRAMP_NETWORK_ID)!;
+  const selectedCurrency =
+    getOnrampCurrencyOption(currencyId) ??
+    getOnrampCurrencyOption(
+      getDefaultOnrampCurrencyForNetwork(selectedNetwork.id),
+    )!;
+  const currencyOptions = getOnrampCurrencyOptionsForNetwork(selectedNetwork.id);
 
   return {
-    options: ONRAMP_DESTINATION_OPTIONS,
-    selectedDestinationId: selectedDestination.id,
-    selectedDestination,
-    setOnrampDestination,
+    networkOptions: ONRAMP_NETWORK_OPTIONS,
+    currencyOptions,
+    selectedNetworkId: selectedNetwork.id,
+    selectedNetwork,
+    selectedCurrencyId: selectedCurrency.id,
+    selectedCurrency,
+    selectedDestinationLabel: formatOnrampDestinationLabel({
+      network: selectedNetwork.id,
+      currency: selectedCurrency.id,
+    }),
+    setOnrampNetwork,
+    setOnrampCurrency,
   };
 }

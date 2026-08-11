@@ -1,71 +1,103 @@
-export type OnrampDestinationId =
-  | 'base-eth'
-  | 'base-usdc'
-  | 'ethereum-eth'
-  | 'ethereum-usdc'
-  | 'avalanche-avax'
-  | 'avalanche-usdc';
-
 export type OnrampDestinationNetwork = 'base' | 'ethereum' | 'avalanche';
 export type OnrampDestinationCurrency = 'eth' | 'usdc' | 'avax';
 
-export type OnrampDestinationOption = {
-  id: OnrampDestinationId;
+export type OnrampNetworkOption = {
+  id: OnrampDestinationNetwork;
   label: string;
   description: string;
-  network: OnrampDestinationNetwork;
-  currency: OnrampDestinationCurrency;
 };
 
-export const ONRAMP_DESTINATION_OPTIONS = [
-  {
-    id: 'base-eth',
-    label: 'Base ETH',
-    description: 'Buy ETH on Base.',
-    network: 'base',
-    currency: 'eth',
-  },
-  {
-    id: 'base-usdc',
-    label: 'Base USDC',
-    description: 'Buy USDC on Base.',
-    network: 'base',
-    currency: 'usdc',
-  },
-  {
-    id: 'ethereum-eth',
-    label: 'Ethereum ETH',
-    description: 'Buy ETH on Ethereum.',
-    network: 'ethereum',
-    currency: 'eth',
-  },
-  {
-    id: 'ethereum-usdc',
-    label: 'Ethereum USDC',
-    description: 'Buy USDC on Ethereum.',
-    network: 'ethereum',
-    currency: 'usdc',
-  },
-  {
-    id: 'avalanche-avax',
-    label: 'Avalanche AVAX',
-    description: 'Buy AVAX on Avalanche.',
-    network: 'avalanche',
-    currency: 'avax',
-  },
-  {
-    id: 'avalanche-usdc',
-    label: 'Avalanche USDC',
-    description: 'Buy USDC on Avalanche.',
-    network: 'avalanche',
-    currency: 'usdc',
-  },
-] as const satisfies readonly OnrampDestinationOption[];
+export type OnrampCurrencyOption = {
+  id: OnrampDestinationCurrency;
+  label: string;
+  description: string;
+  networks: readonly OnrampDestinationNetwork[];
+};
 
-export const DEFAULT_ONRAMP_DESTINATION_ID: OnrampDestinationId = 'base-eth';
+export const ONRAMP_NETWORK_OPTIONS = [
+  {
+    id: 'base',
+    label: 'Base',
+    description: 'Low-fee Ethereum L2.',
+  },
+  {
+    id: 'ethereum',
+    label: 'Ethereum',
+    description: 'Main Ethereum network.',
+  },
+  {
+    id: 'avalanche',
+    label: 'Avalanche',
+    description: 'Avalanche C-Chain.',
+  },
+] as const satisfies readonly OnrampNetworkOption[];
 
-export function getOnrampDestinationOption(
-  id: OnrampDestinationId,
-): OnrampDestinationOption | null {
-  return ONRAMP_DESTINATION_OPTIONS.find((option) => option.id === id) ?? null;
+export const ONRAMP_CURRENCY_OPTIONS = [
+  {
+    id: 'eth',
+    label: 'ETH',
+    description: 'Ether.',
+    networks: ['base', 'ethereum'],
+  },
+  {
+    id: 'usdc',
+    label: 'USDC',
+    description: 'USD Coin.',
+    networks: ['base', 'ethereum', 'avalanche'],
+  },
+  {
+    id: 'avax',
+    label: 'AVAX',
+    description: 'Avalanche native token.',
+    networks: ['avalanche'],
+  },
+] as const satisfies readonly OnrampCurrencyOption[];
+
+export const DEFAULT_ONRAMP_NETWORK_ID: OnrampDestinationNetwork = 'base';
+export const DEFAULT_ONRAMP_CURRENCY_ID: OnrampDestinationCurrency = 'eth';
+
+export function getOnrampNetworkOption(
+  id: OnrampDestinationNetwork,
+): OnrampNetworkOption | null {
+  return ONRAMP_NETWORK_OPTIONS.find((option) => option.id === id) ?? null;
+}
+
+export function getOnrampCurrencyOption(
+  id: OnrampDestinationCurrency,
+): OnrampCurrencyOption | null {
+  return ONRAMP_CURRENCY_OPTIONS.find((option) => option.id === id) ?? null;
+}
+
+export function getOnrampCurrencyOptionsForNetwork(
+  network: OnrampDestinationNetwork,
+): OnrampCurrencyOption[] {
+  return ONRAMP_CURRENCY_OPTIONS.filter((option) =>
+    (option.networks as readonly OnrampDestinationNetwork[]).includes(network),
+  );
+}
+
+export function isOnrampCurrencySupportedOnNetwork(
+  network: OnrampDestinationNetwork,
+  currency: OnrampDestinationCurrency,
+): boolean {
+  return getOnrampCurrencyOptionsForNetwork(network).some(
+    (option) => option.id === currency,
+  );
+}
+
+export function getDefaultOnrampCurrencyForNetwork(
+  network: OnrampDestinationNetwork,
+): OnrampDestinationCurrency {
+  const first = getOnrampCurrencyOptionsForNetwork(network)[0];
+  return first?.id ?? DEFAULT_ONRAMP_CURRENCY_ID;
+}
+
+export function formatOnrampDestinationLabel(params: {
+  network: OnrampDestinationNetwork;
+  currency: OnrampDestinationCurrency;
+}): string {
+  const network = getOnrampNetworkOption(params.network)?.label ?? params.network;
+  const currency =
+    getOnrampCurrencyOption(params.currency)?.label ?? params.currency.toUpperCase();
+  return `${network} ${currency}`;
 }

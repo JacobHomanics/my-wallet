@@ -20,7 +20,7 @@ export type UseCreateStripeOnrampSessionResult = {
 export function useCreateStripeOnrampSession(): UseCreateStripeOnrampSessionResult {
   const createSessionAction = useAction(api.onramp.createSession);
   const { wallets } = useUserWallets();
-  const { selectedDestination } = useOnrampSettings();
+  const { selectedNetwork, selectedCurrency } = useOnrampSettings();
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,8 +46,8 @@ export function useCreateStripeOnrampSession(): UseCreateStripeOnrampSessionResu
         walletAddress: ethereumAddress,
         sourceAmount: ONRAMP_DEFAULT_SOURCE_AMOUNT,
         sourceCurrency: 'usd',
-        destinationCurrency: selectedDestination.currency,
-        destinationNetwork: selectedDestination.network,
+        destinationCurrency: selectedCurrency.id,
+        destinationNetwork: selectedNetwork.id,
       });
       return {
         clientSecret: session.clientSecret,
@@ -67,8 +67,8 @@ export function useCreateStripeOnrampSession(): UseCreateStripeOnrampSessionResu
     createSessionAction,
     ethereumAddress,
     hasPublishableKey,
-    selectedDestination.currency,
-    selectedDestination.network,
+    selectedCurrency.id,
+    selectedNetwork.id,
   ]);
 
   return { isAvailable, isCreating, error, createSession };

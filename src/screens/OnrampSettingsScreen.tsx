@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { OnrampOptionPickerModal } from '@/components/OnrampOptionPickerModal';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useOnrampSettings } from '@/hooks/useOnrampSettings';
 import { usePopToSettings } from '@/hooks/usePopToSettings';
@@ -14,11 +16,18 @@ export function OnrampSettingsScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goSettings = usePopToSettings();
+  const [networkPickerOpen, setNetworkPickerOpen] = useState(false);
+  const [currencyPickerOpen, setCurrencyPickerOpen] = useState(false);
   const {
-    options,
-    selectedDestination,
-    selectedDestinationId,
-    setOnrampDestination,
+    networkOptions,
+    currencyOptions,
+    selectedNetwork,
+    selectedNetworkId,
+    selectedCurrency,
+    selectedCurrencyId,
+    selectedDestinationLabel,
+    setOnrampNetwork,
+    setOnrampCurrency,
   } = useOnrampSettings();
 
   return (
@@ -59,49 +68,89 @@ export function OnrampSettingsScreen() {
 
         <Text style={styles.title}>Onramp settings</Text>
         <Text style={styles.subtitle}>
-          Choose the default asset and network Stripe should preselect when you
-          open deposits.
+          Choose a default network first, then pick the onramp currency you want
+          Stripe to preselect on that network.
         </Text>
 
         <View style={styles.section}>
-          {options.map((option) => {
-            const selected = option.id === selectedDestinationId;
-            return (
-              <Pressable
-                key={option.id}
-                accessibilityLabel={option.label}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: selected }}
-                onPress={() => {
-                  setOnrampDestination(option.id);
-                }}
-                style={({ pressed }) => [
-                  styles.optionRow,
-                  selected && styles.optionRowSelected,
-                  pressed && styles.optionRowPressed,
-                ]}
-              >
-                <View style={styles.optionText}>
-                  <Text style={styles.optionLabel}>{option.label}</Text>
-                  <Text style={styles.optionDescription}>
-                    {option.description}
-                  </Text>
-                </View>
-                <Ionicons
-                  name={selected ? 'checkmark-circle' : 'ellipse-outline'}
-                  size={22}
-                  color={selected ? '#166534' : '#86a894'}
-                />
-              </Pressable>
-            );
-          })}
+          <Text style={styles.sectionTitle}>Network</Text>
+          <Pressable
+            accessibilityLabel={`Onramp network ${selectedNetwork.label}`}
+            accessibilityRole="button"
+            onPress={() => {
+              setNetworkPickerOpen(true);
+            }}
+            style={({ pressed }) => [
+              styles.optionRow,
+              pressed && styles.optionRowPressed,
+            ]}
+          >
+            <View style={styles.optionText}>
+              <Text style={styles.optionLabel}>{selectedNetwork.label}</Text>
+              <Text style={styles.optionDescription}>
+                {selectedNetwork.description}
+              </Text>
+            </View>
+            <Ionicons name="chevron-down" size={18} color="#86a894" />
+          </Pressable>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Default currency</Text>
+          <Pressable
+            accessibilityLabel={`Onramp currency ${selectedCurrency.label}`}
+            accessibilityRole="button"
+            onPress={() => {
+              setCurrencyPickerOpen(true);
+            }}
+            style={({ pressed }) => [
+              styles.optionRow,
+              pressed && styles.optionRowPressed,
+            ]}
+          >
+            <View style={styles.optionText}>
+              <Text style={styles.optionLabel}>{selectedCurrency.label}</Text>
+              <Text style={styles.optionDescription}>
+                {selectedCurrency.description}
+              </Text>
+            </View>
+            <Ionicons name="chevron-down" size={18} color="#86a894" />
+          </Pressable>
         </View>
 
         <Text style={styles.note}>
-          Current default: {selectedDestination.label}. Other supported choices
+          Current default: {selectedDestinationLabel}. Other supported choices
           may still be available inside Stripe if supported for your region.
         </Text>
       </ScrollView>
+
+      <OnrampOptionPickerModal
+        onClose={() => {
+          setNetworkPickerOpen(false);
+        }}
+        onSelect={(option) => {
+          setOnrampNetwork(option.id);
+          setNetworkPickerOpen(false);
+        }}
+        options={networkOptions}
+        selectedId={selectedNetworkId}
+        title="Onramp network"
+        visible={networkPickerOpen}
+      />
+
+      <OnrampOptionPickerModal
+        onClose={() => {
+          setCurrencyPickerOpen(false);
+        }}
+        onSelect={(option) => {
+          setOnrampCurrency(option.id);
+          setCurrencyPickerOpen(false);
+        }}
+        options={currencyOptions}
+        selectedId={selectedCurrencyId}
+        title={`${selectedNetwork.label} currency`}
+        visible={currencyPickerOpen}
+      />
     </View>
   );
 }
@@ -160,6 +209,13 @@ const styles = StyleSheet.create({
     marginTop: 28,
     gap: 12,
   },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -170,10 +226,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-  },
-  optionRowSelected: {
-    borderColor: '#86efac',
-    backgroundColor: '#f7fee7',
   },
   optionRowPressed: {
     opacity: 0.85,

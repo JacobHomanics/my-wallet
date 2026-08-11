@@ -64,7 +64,7 @@ export function SettingsScreen() {
     closePicker: closeDisplayCurrencyPicker,
     onSelectOption: onSelectDisplayCurrency,
   } = useDisplayCurrencyPicker();
-  const { selectedDestination } = useOnrampSettings();
+  const { selectedDestinationLabel } = useOnrampSettings();
 
   return (
     <View style={styles.container}>
@@ -145,7 +145,7 @@ export function SettingsScreen() {
                 <View style={styles.strategyRowText}>
                   <Text style={styles.strategyLabel}>Onramp settings</Text>
                   <Text style={styles.strategyDescription}>
-                    Default destination: {selectedDestination.label}
+                    Default destination: {selectedDestinationLabel}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color="#86a894" />
