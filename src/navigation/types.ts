@@ -41,6 +41,11 @@ export type HomeStackParamList = {
     ethereumRecipient?: string;
     solanaRecipient?: string;
   } | undefined;
+  /** Cashbox username / account number search during send. */
+  sendSearch: {
+    tokenId?: string;
+    usdAmount?: string;
+  } | undefined;
   /** Farcaster username search + raw wallet entry during send. */
   sendAdvancedSearch: {
     tokenId?: string;

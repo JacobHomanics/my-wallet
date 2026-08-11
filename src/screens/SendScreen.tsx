@@ -17,15 +17,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { ContactPickerModal } from '@/components/ContactPickerModal';
-import {
-  RecipientSearchModal,
-  type RecipientSearchSelection,
-} from '@/components/RecipientSearchModal';
 import { useContactPickerModal } from '@/hooks/useContactPickerModal';
 import type { ContactListItem } from '@/hooks/useContacts';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
-import { useRecipientSearchModal } from '@/hooks/useRecipientSearchModal';
 import {
   getSendDraftSnapshot,
   updateSendDraft,
@@ -51,7 +46,6 @@ export function SendScreen() {
   const route = useRoute<RouteProp<HomeStackParamList, 'send'>>();
   const goHome = usePopToHome();
   const { pickerOpen, openPicker, closePicker } = useContactPickerModal();
-  const { searchOpen, openSearch, closeSearch } = useRecipientSearchModal();
   const { sendToContact } = useSendToContact();
 
   const initialDraft = getSendDraftSnapshot();
@@ -215,51 +209,6 @@ export function SendScreen() {
     ],
   );
 
-  const onSelectSearchHit = useCallback(
-    (hit: RecipientSearchSelection) => {
-      if (!hit.identityId) {
-        return;
-      }
-
-      setAccountNumber(hit.identityId);
-      closeSearch();
-      sendToContact(
-        {
-          identityId: hit.identityId,
-          evmAddress: null,
-          solanaAddress: null,
-          username: hit.username,
-          name: null,
-          profilePhotoUrl: hit.profilePhotoUrl,
-        },
-        {
-          tokenId: route.params?.tokenId,
-          usdAmount: route.params?.usdAmount,
-        },
-      );
-    },
-    [
-      closeSearch,
-      route.params?.tokenId,
-      route.params?.usdAmount,
-      sendToContact,
-      setAccountNumber,
-    ],
-  );
-
-  const onAdvancedSearch = useCallback(() => {
-    closeSearch();
-    navigation.navigate('sendAdvancedSearch', {
-      tokenId: route.params?.tokenId,
-      usdAmount: route.params?.usdAmount,
-    });
-  }, [
-    closeSearch,
-    navigation,
-    route.params?.tokenId,
-    route.params?.usdAmount,
-  ]);
-
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
       <KeyboardAvoidingView
@@ -303,7 +252,12 @@ export function SendScreen() {
               <Pressable
                 accessibilityLabel="Search usernames and account numbers"
                 accessibilityRole="button"
-                onPress={openSearch}
+                onPress={() => {
+                  navigation.navigate('sendSearch', {
+                    tokenId: route.params?.tokenId,
+                    usdAmount: route.params?.usdAmount,
+                  });
+                }}
                 style={({ pressed }) => [
                   styles.contactsButton,
                   pressed && styles.contactsButtonPressed,
@@ -432,13 +386,6 @@ export function SendScreen() {
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
-
-      <RecipientSearchModal
-        visible={searchOpen}
-        onClose={closeSearch}
-        onSelect={onSelectSearchHit}
-        onAdvancedSearch={onAdvancedSearch}
-      />
 
       <ContactPickerModal
         visible={pickerOpen}

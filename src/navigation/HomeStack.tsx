@@ -39,6 +39,10 @@ export function HomeStack() {
       />
       <NativeStack.Screen name="send" component={homeStackScreens.send} />
       <NativeStack.Screen
+        name="sendSearch"
+        component={homeStackScreens.sendSearch}
+      />
+      <NativeStack.Screen
         name="sendAdvancedSearch"
         component={homeStackScreens.sendAdvancedSearch}
       />

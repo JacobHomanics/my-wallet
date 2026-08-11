@@ -57,7 +57,7 @@ export function SendAdvancedSearchScreen() {
       navigation.goBack();
       return;
     }
-    navigation.navigate('send', { tokenId, usdAmount });
+    navigation.navigate('sendSearch', { tokenId, usdAmount });
   }, [navigation, tokenId, usdAmount]);
 
   const onContinueWallets = useCallback(() => {
