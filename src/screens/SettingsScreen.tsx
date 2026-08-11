@@ -19,6 +19,7 @@ import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
 import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useOnrampSettings } from '@/hooks/useOnrampSettings';
 import { usePopToProfile } from '@/hooks/usePopToProfile';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import type { ProfileStackParamList } from '@/navigation/types';
@@ -63,6 +64,7 @@ export function SettingsScreen() {
     closePicker: closeDisplayCurrencyPicker,
     onSelectOption: onSelectDisplayCurrency,
   } = useDisplayCurrencyPicker();
+  const { selectedDestination } = useOnrampSettings();
 
   return (
     <View style={styles.container}>
@@ -121,6 +123,29 @@ export function SettingsScreen() {
                   <Text style={styles.strategyLabel}>Profile settings</Text>
                   <Text style={styles.strategyDescription}>
                     Username and profile photo
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#86a894" />
+              </Pressable>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Onramp</Text>
+              <Pressable
+                accessibilityLabel="Onramp settings"
+                accessibilityRole="button"
+                onPress={() => {
+                  navigation.navigate('onrampSettings');
+                }}
+                style={({ pressed }) => [
+                  styles.strategyRow,
+                  pressed && styles.strategyRowPressed,
+                ]}
+              >
+                <View style={styles.strategyRowText}>
+                  <Text style={styles.strategyLabel}>Onramp settings</Text>
+                  <Text style={styles.strategyDescription}>
+                    Default destination: {selectedDestination.label}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color="#86a894" />

@@ -6,6 +6,8 @@ export type CreateCryptoOnrampSessionParams = {
   sourceAmount?: string;
   sourceCurrency?: string;
   customerIpAddress?: string;
+  destinationCurrency?: string;
+  destinationNetwork?: string;
 };
 
 export type CryptoOnrampSessionResult = {
@@ -24,6 +26,26 @@ type StripeOnrampSessionResponse = {
   };
 };
 
+const SUPPORTED_DESTINATION_CURRENCIES = ["eth", "usdc", "avax"] as const;
+const SUPPORTED_DESTINATION_NETWORKS = [
+  "base",
+  "ethereum",
+  "avalanche",
+] as const;
+
+function normalizeSupportedValue<T extends string>(
+  value: string | undefined,
+  supported: readonly T[],
+): T | null {
+  if (!value) {
+    return null;
+  }
+  const normalized = value.trim().toLowerCase();
+  return (supported as readonly string[]).includes(normalized)
+    ? (normalized as T)
+    : null;
+}
+
 function getStripeSecretKey(): string {
   const key = process.env.STRIPE_SECRET_KEY?.trim();
   if (!key) {
@@ -36,7 +58,8 @@ function getStripeSecretKey(): string {
 
 /**
  * Mint a Stripe Crypto Onramp session for the user's EVM wallet.
- * Defaults to Base ETH; users can also choose USDC / ETH on Avalanche.
+ * Uses the caller's preferred default destination while keeping the broader
+ * supported list available in the widget.
  * @see https://docs.stripe.com/api/crypto/onramp_sessions/create
  */
 export async function createCryptoOnrampSession(
@@ -44,6 +67,14 @@ export async function createCryptoOnrampSession(
 ): Promise<CryptoOnrampSessionResult> {
   const secret = getStripeSecretKey();
   const body = new URLSearchParams();
+  const destinationCurrency = normalizeSupportedValue(
+    params.destinationCurrency,
+    SUPPORTED_DESTINATION_CURRENCIES,
+  );
+  const destinationNetwork = normalizeSupportedValue(
+    params.destinationNetwork,
+    SUPPORTED_DESTINATION_NETWORKS,
+  );
 
   // Prefill the same EVM address for Ethereum, Base, and Avalanche. Stripe requires every
   // wallet_addresses network key to appear in destination_networks.
@@ -51,10 +82,12 @@ export async function createCryptoOnrampSession(
   body.set("wallet_addresses[base_network]", params.walletAddress);
   body.set("wallet_addresses[avalanche]", params.walletAddress);
   body.set("lock_wallet_address", "true");
-  // Important: omit the singular `destination_currency/destination_network`
-  // defaults to avoid pinning the widget and hiding other networks.
-  //
-  // Stripe's Avalanche C-Chain supports AVAX and USDC as destination assets.
+  if (destinationCurrency) {
+    body.set("destination_currency", destinationCurrency);
+  }
+  if (destinationNetwork) {
+    body.set("destination_network", destinationNetwork);
+  }
   body.set("destination_currencies[0]", "eth");
   body.set("destination_currencies[1]", "usdc");
   body.set("destination_currencies[2]", "avax");

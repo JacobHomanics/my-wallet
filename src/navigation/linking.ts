@@ -415,6 +415,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               index: '',
               settings: 'settings',
               profileSettings: 'settings/profile',
+              onrampSettings: 'settings/onramp',
             },
           },
         },

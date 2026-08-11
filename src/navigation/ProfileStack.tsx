@@ -27,6 +27,10 @@ export function ProfileStack() {
         name="profileSettings"
         component={profileStackScreens.profileSettings}
       />
+      <NativeStack.Screen
+        name="onrampSettings"
+        component={profileStackScreens.onrampSettings}
+      />
     </NativeStack.Navigator>
   );
 }
