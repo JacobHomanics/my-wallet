@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useCallback } from 'react';
+import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,22 +13,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
-import { ContactPickerModal } from '@/components/ContactPickerModal';
-import { useContactPickerModal } from '@/hooks/useContactPickerModal';
+import { ContactPickerContent } from '@/components/ContactPickerContent';
+import { SendSearchContent } from '@/components/SendSearchContent';
 import type { ContactListItem } from '@/hooks/useContacts';
+import { useContactSearch } from '@/hooks/useContactSearch';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
-import {
-  getSendDraftSnapshot,
-  updateSendDraft,
-} from '@/hooks/useSendDraft';
 import { useSendToContact } from '@/hooks/useSendToContact';
-import { useSyncSendRecipientFromDraft } from '@/hooks/useSyncSendRecipientFromDraft';
-import {
-  encodeWalletIdentity,
-  tryDecodeWalletIdentity,
-} from '@/lib/walletIdentity';
-import { isValidRecipientAddress } from '@/lib/validation';
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
@@ -39,134 +28,20 @@ import type { HomeStackParamList } from '@/navigation/types';
 export function SendScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'send'>>();
   const goHome = usePopToHome();
-  const { pickerOpen, openPicker, closePicker } = useContactPickerModal();
   const { sendToContact } = useSendToContact();
+  const search = useContactSearch();
 
-  const initialDraft = getSendDraftSnapshot();
-  const [ethereumRecipient, setEthereumRecipientState] = useState(
-    initialDraft.ethereumRecipient,
-  );
-  const [solanaRecipient, setSolanaRecipientState] = useState(
-    initialDraft.solanaRecipient,
-  );
-  const [accountNumber, setAccountNumberState] = useState(() => {
-    if (initialDraft.accountNumber.trim()) {
-      return initialDraft.accountNumber;
-    }
-    if (
-      !initialDraft.ethereumRecipient.trim() ||
-      !initialDraft.solanaRecipient.trim()
-    ) {
-      return '';
-    }
-
-    try {
-      return encodeWalletIdentity(
-        initialDraft.ethereumRecipient.trim(),
-        initialDraft.solanaRecipient.trim(),
-      );
-    } catch {
-      return '';
-    }
-  });
-
-  const setEthereumRecipient = useCallback((value: string) => {
-    setEthereumRecipientState(value);
-  }, []);
-
-  const setSolanaRecipient = useCallback((value: string) => {
-    setSolanaRecipientState(value);
-  }, []);
-
-  const syncAccountNumberFromAddresses = useCallback(
-    (nextEvm: string, nextSolana: string) => {
-      const trimmedEvm = nextEvm.trim();
-      const trimmedSolana = nextSolana.trim();
-      const evmValid = isValidRecipientAddress(trimmedEvm, 'ethereum');
-      const solanaValid = isValidRecipientAddress(trimmedSolana, 'solana');
-
-      if (!trimmedEvm && !trimmedSolana) {
-        setAccountNumberState('');
-        return;
-      }
-
-      if (!evmValid || !solanaValid) {
-        setAccountNumberState('');
-        return;
-      }
-
-      try {
-        setAccountNumberState(encodeWalletIdentity(trimmedEvm, trimmedSolana));
-      } catch {
-        setAccountNumberState('');
-      }
-    },
-    [],
-  );
-
-  const setAccountNumber = useCallback(
-    (value: string) => {
-      setAccountNumberState(value);
-
-      const decoded = tryDecodeWalletIdentity(value);
-      if (!value.trim() || !decoded) {
-        setEthereumRecipient('');
-        setSolanaRecipient('');
-        return;
-      }
-
-      setEthereumRecipient(decoded.evmAddress);
-      setSolanaRecipient(decoded.solanaAddress);
-    },
-    [setEthereumRecipient, setSolanaRecipient],
-  );
-
-  useSyncSendRecipientFromDraft({
-    setAccountNumber: setAccountNumberState,
-    setEthereumRecipient: setEthereumRecipientState,
-    setSolanaRecipient: setSolanaRecipientState,
-  });
-
-  useEffect(() => {
-    updateSendDraft({
-      accountNumber: accountNumber.trim(),
-      ethereumRecipient,
-      solanaRecipient,
-    });
-  }, [accountNumber, ethereumRecipient, solanaRecipient]);
+  const tokenId = route.params?.tokenId;
+  const usdAmount = route.params?.usdAmount;
+  const showContacts = !search.query.trim();
 
   const onSelectContact = useCallback(
     (contact: ContactListItem) => {
-      if (contact.identityId) {
-        setAccountNumber(contact.identityId);
-      } else {
-        const nextEvm = contact.evmAddress?.trim() ?? '';
-        const nextSolana = contact.solanaAddress?.trim() ?? '';
-        setEthereumRecipient(nextEvm);
-        setSolanaRecipient(nextSolana);
-        syncAccountNumberFromAddresses(nextEvm, nextSolana);
-      }
-
-      closePicker();
-      sendToContact(contact, {
-        tokenId: route.params?.tokenId,
-        usdAmount: route.params?.usdAmount,
-      });
+      sendToContact(contact, { tokenId, usdAmount });
     },
-    [
-      closePicker,
-      route.params?.tokenId,
-      route.params?.usdAmount,
-      sendToContact,
-      setAccountNumber,
-      setEthereumRecipient,
-      setSolanaRecipient,
-      syncAccountNumberFromAddresses,
-    ],
+    [sendToContact, tokenId, usdAmount],
   );
 
   return (
@@ -201,56 +76,32 @@ export function SendScreen() {
           </View>
 
           <ScrollView
-            contentContainerStyle={[
-              styles.form,
-              { paddingBottom: Math.max(insets.bottom, 16) + 40 },
-            ]}
+            contentContainerStyle={{
+              paddingBottom: Math.max(insets.bottom, 24) + 24,
+            }}
             keyboardShouldPersistTaps="handled"
             style={styles.flex}
           >
-            <View style={styles.formBody}>
-              <View style={styles.buttonRow}>
-                <Pressable
-                  accessibilityLabel="Search usernames and account numbers"
-                  accessibilityRole="button"
-                  onPress={() => {
-                    navigation.navigate('sendSearch', {
-                      tokenId: route.params?.tokenId,
-                      usdAmount: route.params?.usdAmount,
-                    });
-                  }}
-                  style={({ pressed }) => [
-                    styles.contactsButton,
-                    pressed && styles.contactsButtonPressed,
-                  ]}
-                >
-                  <Ionicons name="search-outline" size={20} color="#166534" />
-                  <Text style={styles.contactsButtonText}>Search</Text>
-                </Pressable>
+            <SendSearchContent
+              tokenId={tokenId}
+              usdAmount={usdAmount}
+              query={search.query}
+              setQuery={search.setQuery}
+              clearQuery={search.clearQuery}
+              results={search.results}
+              isSearching={search.isSearching}
+              showEmpty={search.showEmpty}
+            />
 
-                <Pressable
-                  accessibilityLabel="Choose from contacts"
-                  accessibilityRole="button"
-                  onPress={openPicker}
-                  style={({ pressed }) => [
-                    styles.contactsButton,
-                    pressed && styles.contactsButtonPressed,
-                  ]}
-                >
-                  <Ionicons name="people-outline" size={20} color="#166534" />
-                  <Text style={styles.contactsButtonText}>Contacts</Text>
-                </Pressable>
+            {showContacts ? (
+              <View style={styles.contactsSection}>
+                <Text style={styles.contactsTitle}>Contacts</Text>
+                <ContactPickerContent onSelect={onSelectContact} />
               </View>
-            </View>
+            ) : null}
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
-
-      <ContactPickerModal
-        visible={pickerOpen}
-        onClose={closePicker}
-        onSelect={onSelectContact}
-      />
     </View>
   );
 }
@@ -299,37 +150,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#166534',
   },
-  form: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
+  contactsSection: {
+    marginTop: 24,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#d1fae5',
+    paddingTop: 8,
   },
-  formBody: {
-    flex: 1,
-    justifyContent: 'center',
-    width: '100%',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  contactsButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    minHeight: 108,
-    backgroundColor: '#d1fae5',
-    paddingHorizontal: 20,
-    paddingVertical: 36,
-    borderRadius: 10,
-  },
-  contactsButtonPressed: {
-    opacity: 0.85,
-  },
-  contactsButtonText: {
-    color: '#166534',
-    fontSize: 16,
+  contactsTitle: {
+    textAlign: 'center',
+    fontSize: 17,
     fontWeight: '600',
+    color: '#166534',
+    paddingVertical: 8,
   },
 });

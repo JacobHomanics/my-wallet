@@ -1,16 +1,14 @@
-import { useEffect, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
-  Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { useContactsAllSections } from '@/hooks/useContactsAllSections';
@@ -22,10 +20,10 @@ import {
   type ContactListItem,
 } from '@/hooks/useContacts';
 
-type ContactPickerModalProps = {
-  visible: boolean;
-  onClose: () => void;
+type ContactPickerContentProps = {
   onSelect: (contact: ContactListItem) => void;
+  /** When false, clears the filter query (e.g. modal closed). Defaults to true. */
+  active?: boolean;
 };
 
 function canSelectContact(contact: ContactListItem): boolean {
@@ -269,14 +267,12 @@ function CollapsibleGroup({
 }
 
 /**
- * Page-sheet modal for picking a contact as the send recipient.
+ * Contacts picker body (tabs + list) shared by the modal and Recipient screen.
  */
-export function ContactPickerModal({
-  visible,
-  onClose,
+export function ContactPickerContent({
   onSelect,
-}: ContactPickerModalProps) {
-  const insets = useSafeAreaInsets();
+  active = true,
+}: ContactPickerContentProps) {
   const { userContacts, farcasterContacts, ensContacts, externalContacts, isLoading } =
     useContacts();
   const {
@@ -323,10 +319,10 @@ export function ContactPickerModal({
   } = useContactsAllSections();
 
   useEffect(() => {
-    if (!visible) {
+    if (!active) {
       clearQuery();
     }
-  }, [clearQuery, visible]);
+  }, [active, clearQuery]);
 
   const hasAnyContacts =
     userContacts.length > 0 ||
@@ -373,107 +369,152 @@ export function ContactPickerModal({
         : 'No contacts yet.';
 
   return (
-    <Modal
-      animationType="slide"
-      onRequestClose={onClose}
-      presentationStyle="pageSheet"
-      visible={visible}
-    >
-      <View
-        style={[
-          styles.modalContainer,
-          { paddingTop: Math.max(insets.top, 12) },
-        ]}
-      >
-        <View style={styles.modalTopBar}>
-          <Text style={styles.modalTitle}>Contacts</Text>
-          <Pressable
-            accessibilityLabel="Close"
-            accessibilityRole="button"
-            hitSlop={8}
-            onPress={onClose}
-            style={({ pressed }) => [
-              styles.modalClose,
-              pressed && styles.modalClosePressed,
-            ]}
-          >
-            <Ionicons name="close" size={22} color="#166534" />
-          </Pressable>
-        </View>
+    <View style={styles.root}>
+      <View style={styles.tabs}>
+        <ContactsTabChip
+          label="All"
+          selected={isAllTab}
+          onPress={selectAll}
+        />
+        <ContactsTabChip
+          label="Contacts"
+          selected={isContactsTab}
+          onPress={selectContacts}
+        />
+        <ContactsTabChip
+          label="External"
+          selected={isExternalTab}
+          onPress={selectExternal}
+        />
+      </View>
 
-        <View style={styles.tabs}>
-          <ContactsTabChip
-            label="All"
-            selected={isAllTab}
-            onPress={selectAll}
+      <View style={styles.list}>
+        {hasAnyContacts ? (
+          <TextInput
+            accessibilityLabel="Search contacts"
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="off"
+            onChangeText={setQuery}
+            placeholder={searchPlaceholder}
+            placeholderTextColor="#86a894"
+            style={styles.searchInput}
+            value={query}
           />
-          <ContactsTabChip
-            label="Contacts"
-            selected={isContactsTab}
-            onPress={selectContacts}
-          />
-          <ContactsTabChip
-            label="External"
-            selected={isExternalTab}
-            onPress={selectExternal}
-          />
-        </View>
+        ) : null}
 
-        <ScrollView
-          contentContainerStyle={[
-            styles.list,
-            { paddingBottom: Math.max(insets.bottom, 24) + 24 },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {hasAnyContacts ? (
-            <TextInput
-              accessibilityLabel="Search contacts"
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="off"
-              onChangeText={setQuery}
-              placeholder={searchPlaceholder}
-              placeholderTextColor="#86a894"
-              style={styles.searchInput}
-              value={query}
+        {isLoading ? (
+          <ActivityIndicator color="#166534" style={styles.loader} />
+        ) : !hasFilteredResults ? (
+          <Text style={styles.empty}>{emptyMessage}</Text>
+        ) : isContactsTab ? (
+          <View style={styles.section}>
+            <ContactPickerRows
+              contacts={filteredUserContacts}
+              onSelect={onSelect}
             />
-          ) : null}
-
-          {isLoading ? (
-            <ActivityIndicator color="#166534" style={styles.loader} />
-          ) : !hasFilteredResults ? (
-            <Text style={styles.empty}>{emptyMessage}</Text>
-          ) : isContactsTab ? (
-            <View style={styles.section}>
-              <ContactPickerRows
+          </View>
+        ) : isExternalTab ? (
+          <>
+            {filteredExternalContacts.length > 0 ? (
+              <View style={styles.section}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: walletsExpanded }}
+                  onPress={toggleWallets}
+                  style={({ pressed }) => [
+                    styles.sectionHeader,
+                    pressed && styles.sectionHeaderPressed,
+                  ]}
+                >
+                  <Text style={styles.sectionTitle}>Wallets</Text>
+                  <Ionicons
+                    name={walletsExpanded ? 'chevron-up' : 'chevron-down'}
+                    size={16}
+                    color="#5a7d6a"
+                  />
+                </Pressable>
+                {walletsExpanded ? (
+                  <View style={styles.groupBody}>
+                    <WalletChainSections
+                      contacts={filteredExternalContacts}
+                      evmExpanded={walletsEvmExpanded}
+                      solanaExpanded={walletsSolanaExpanded}
+                      multiChainExpanded={walletsMultiChainExpanded}
+                      onToggleEvm={toggleWalletsEvm}
+                      onToggleSolana={toggleWalletsSolana}
+                      onToggleMultiChain={toggleWalletsMultiChain}
+                      onSelect={onSelect}
+                    />
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
+            {filteredFarcasterContacts.length > 0 ? (
+              <CollapsibleSection
+                title="Farcaster"
+                expanded={farcasterExpanded}
+                onToggle={toggleFarcaster}
+                contacts={filteredFarcasterContacts}
+                onSelect={onSelect}
+              />
+            ) : null}
+            {filteredEnsContacts.length > 0 ? (
+              <CollapsibleSection
+                title="ENS"
+                expanded={ensExpanded}
+                onToggle={toggleEns}
+                contacts={filteredEnsContacts}
+                onSelect={onSelect}
+              />
+            ) : null}
+          </>
+        ) : (
+          <>
+            {filteredUserContacts.length > 0 ? (
+              <CollapsibleSection
+                title="Contacts"
+                expanded={contactsExpanded}
+                onToggle={toggleContacts}
                 contacts={filteredUserContacts}
                 onSelect={onSelect}
               />
-            </View>
-          ) : isExternalTab ? (
-            <>
-              {filteredExternalContacts.length > 0 ? (
-                <View style={styles.section}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityState={{ expanded: walletsExpanded }}
-                    onPress={toggleWallets}
-                    style={({ pressed }) => [
-                      styles.sectionHeader,
-                      pressed && styles.sectionHeaderPressed,
-                    ]}
-                  >
-                    <Text style={styles.sectionTitle}>Wallets</Text>
-                    <Ionicons
-                      name={walletsExpanded ? 'chevron-up' : 'chevron-down'}
-                      size={16}
-                      color="#5a7d6a"
-                    />
-                  </Pressable>
-                  {walletsExpanded ? (
-                    <View style={styles.groupBody}>
+            ) : null}
+            {filteredExternalContacts.length > 0 ||
+            filteredFarcasterContacts.length > 0 ||
+            filteredEnsContacts.length > 0 ? (
+              <CollapsibleGroup
+                title="External Contacts"
+                expanded={externalGroupExpanded}
+                onToggle={toggleExternalGroup}
+              >
+                {filteredExternalContacts.length > 0 ? (
+                  <View style={styles.nestedSection}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: walletsExpanded }}
+                      onPress={toggleWallets}
+                      style={({ pressed }) => [
+                        styles.sectionHeader,
+                        styles.nestedSectionHeader,
+                        pressed && styles.sectionHeaderPressed,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.sectionTitle,
+                          styles.nestedSectionTitle,
+                        ]}
+                      >
+                        Wallets
+                      </Text>
+                      <Ionicons
+                        name={walletsExpanded ? 'chevron-up' : 'chevron-down'}
+                        size={16}
+                        color="#5a7d6a"
+                      />
+                    </Pressable>
+                    {walletsExpanded ? (
                       <WalletChainSections
                         contacts={filteredExternalContacts}
                         evmExpanded={walletsEvmExpanded}
@@ -484,148 +525,41 @@ export function ContactPickerModal({
                         onToggleMultiChain={toggleWalletsMultiChain}
                         onSelect={onSelect}
                       />
-                    </View>
-                  ) : null}
-                </View>
-              ) : null}
-              {filteredFarcasterContacts.length > 0 ? (
-                <CollapsibleSection
-                  title="Farcaster"
-                  expanded={farcasterExpanded}
-                  onToggle={toggleFarcaster}
-                  contacts={filteredFarcasterContacts}
-                  onSelect={onSelect}
-                />
-              ) : null}
-              {filteredEnsContacts.length > 0 ? (
-                <CollapsibleSection
-                  title="ENS"
-                  expanded={ensExpanded}
-                  onToggle={toggleEns}
-                  contacts={filteredEnsContacts}
-                  onSelect={onSelect}
-                />
-              ) : null}
-            </>
-          ) : (
-            <>
-              {filteredUserContacts.length > 0 ? (
-                <CollapsibleSection
-                  title="Contacts"
-                  expanded={contactsExpanded}
-                  onToggle={toggleContacts}
-                  contacts={filteredUserContacts}
-                  onSelect={onSelect}
-                />
-              ) : null}
-              {filteredExternalContacts.length > 0 ||
-              filteredFarcasterContacts.length > 0 ||
-              filteredEnsContacts.length > 0 ? (
-                <CollapsibleGroup
-                  title="External Contacts"
-                  expanded={externalGroupExpanded}
-                  onToggle={toggleExternalGroup}
-                >
-                  {filteredExternalContacts.length > 0 ? (
-                    <View style={styles.nestedSection}>
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityState={{ expanded: walletsExpanded }}
-                        onPress={toggleWallets}
-                        style={({ pressed }) => [
-                          styles.sectionHeader,
-                          styles.nestedSectionHeader,
-                          pressed && styles.sectionHeaderPressed,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.sectionTitle,
-                            styles.nestedSectionTitle,
-                          ]}
-                        >
-                          Wallets
-                        </Text>
-                        <Ionicons
-                          name={walletsExpanded ? 'chevron-up' : 'chevron-down'}
-                          size={16}
-                          color="#5a7d6a"
-                        />
-                      </Pressable>
-                      {walletsExpanded ? (
-                        <WalletChainSections
-                          contacts={filteredExternalContacts}
-                          evmExpanded={walletsEvmExpanded}
-                          solanaExpanded={walletsSolanaExpanded}
-                          multiChainExpanded={walletsMultiChainExpanded}
-                          onToggleEvm={toggleWalletsEvm}
-                          onToggleSolana={toggleWalletsSolana}
-                          onToggleMultiChain={toggleWalletsMultiChain}
-                          onSelect={onSelect}
-                        />
-                      ) : null}
-                    </View>
-                  ) : null}
-                  {filteredFarcasterContacts.length > 0 ? (
-                    <CollapsibleSection
-                      title="Farcaster"
-                      expanded={farcasterExpanded}
-                      onToggle={toggleFarcaster}
-                      contacts={filteredFarcasterContacts}
-                      onSelect={onSelect}
-                      nested
-                    />
-                  ) : null}
-                  {filteredEnsContacts.length > 0 ? (
-                    <CollapsibleSection
-                      title="ENS"
-                      expanded={ensExpanded}
-                      onToggle={toggleEns}
-                      contacts={filteredEnsContacts}
-                      onSelect={onSelect}
-                      nested
-                    />
-                  ) : null}
-                </CollapsibleGroup>
-              ) : null}
-            </>
-          )}
-        </ScrollView>
+                    ) : null}
+                  </View>
+                ) : null}
+                {filteredFarcasterContacts.length > 0 ? (
+                  <CollapsibleSection
+                    title="Farcaster"
+                    expanded={farcasterExpanded}
+                    onToggle={toggleFarcaster}
+                    contacts={filteredFarcasterContacts}
+                    onSelect={onSelect}
+                    nested
+                  />
+                ) : null}
+                {filteredEnsContacts.length > 0 ? (
+                  <CollapsibleSection
+                    title="ENS"
+                    expanded={ensExpanded}
+                    onToggle={toggleEns}
+                    contacts={filteredEnsContacts}
+                    onSelect={onSelect}
+                    nested
+                  />
+                ) : null}
+              </CollapsibleGroup>
+            ) : null}
+          </>
+        )}
       </View>
-    </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#f0fdf4',
-  },
-  modalTopBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#d1fae5',
-  },
-  modalTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#166534',
-    paddingLeft: 40,
-  },
-  modalClose: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalClosePressed: {
-    opacity: 0.6,
+  root: {
+    width: '100%',
   },
   tabs: {
     flexDirection: 'row',
