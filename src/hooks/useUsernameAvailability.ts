@@ -36,7 +36,6 @@ export function useUsernameAvailability(draft: string): {
 
   useEffect(() => {
     if (!formatOk) {
-      setDebounced('');
       return;
     }
 
