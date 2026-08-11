@@ -63,10 +63,10 @@ export function LoginVerifyScreen() {
           ],
         });
       } else {
-        // New users land on onboarding; RootNavigator sends completed users to main.
+        // RootNavigator redirects to onboarding when still needed.
         navigation.reset({
           index: 0,
-          routes: [{ name: 'onboarding' }],
+          routes: [{ name: 'main' }],
         });
       }
     } catch (error) {

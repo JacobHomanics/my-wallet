@@ -122,7 +122,10 @@ export function MainTabs() {
         options={({ route }) => {
           const focusedRoute =
             getFocusedRouteNameFromRoute(route) ?? 'index';
-          const hideTabBar = !isDesktopWeb && focusedRoute === 'settings';
+          const hideTabBar =
+            !isDesktopWeb &&
+            (focusedRoute === 'settings' ||
+              focusedRoute === 'profileSettings');
 
           return {
             title: 'Profile',

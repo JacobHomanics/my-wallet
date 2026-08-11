@@ -75,6 +75,19 @@ export function RootNavigator() {
           routes: [{ name: 'onboarding' }],
         }),
       );
+      return;
+    }
+
+    if (
+      onboardingStatus === 'done' &&
+      activeRootRoute.name === 'onboarding'
+    ) {
+      navigationRef.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'main' }],
+        }),
+      );
     }
   }, [isAuthenticated, isReady, navigationRef, onboardingStatus]);
 

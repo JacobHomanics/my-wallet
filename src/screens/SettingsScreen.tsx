@@ -1,16 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
 import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
@@ -19,36 +18,17 @@ import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToProfile } from '@/hooks/usePopToProfile';
-import { useProfileIdentity } from '@/hooks/useProfileIdentity';
-import { useProfilePhotoSettings } from '@/hooks/useProfilePhotoSettings';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useSignOut } from '@/hooks/useSignOut';
-import { useUsernameSettings } from '@/hooks/useUsernameSettings';
+import type { ProfileStackParamList } from '@/navigation/types';
 
 export function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
   const goProfile = usePopToProfile();
-  const { displayName, avatarSeed } = useProfileIdentity();
   const { signOut } = useSignOut();
-  const {
-    profilePhotoUrl,
-    isUploading: isUploadingPhoto,
-    errorMessage: photoError,
-    pickAndUpload,
-    remove: removePhoto,
-    canRemove: canRemovePhoto,
-  } = useProfilePhotoSettings();
-  const {
-    draft: usernameDraft,
-    onChangeDraft: onChangeUsername,
-    save: saveUsername,
-    canSave: canSaveUsername,
-    isSaving: isSavingUsername,
-    errorMessage: usernameError,
-    isDirty: usernameDirty,
-    isValid: usernameValid,
-  } = useUsernameSettings();
   const {
     strategies,
     selectedStrategy,
@@ -118,100 +98,25 @@ export function SettingsScreen() {
 
           <View style={styles.sections}>
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Profile photo</Text>
-              <View style={styles.photoRow}>
-                <Avatar
-                  label={displayName}
-                  photoUrl={profilePhotoUrl}
-                  seed={avatarSeed}
-                  size={72}
-                />
-                <View style={styles.photoActions}>
-                  <Pressable
-                    accessibilityRole="button"
-                    disabled={isUploadingPhoto}
-                    onPress={() => {
-                      void pickAndUpload();
-                    }}
-                    style={({ pressed }) => [
-                      styles.saveButton,
-                      isUploadingPhoto && styles.saveButtonDisabled,
-                      pressed && !isUploadingPhoto && styles.saveButtonPressed,
-                    ]}
-                  >
-                    {isUploadingPhoto ? (
-                      <ActivityIndicator color="#f0fdf4" />
-                    ) : (
-                      <Text style={styles.saveButtonText}>
-                        {profilePhotoUrl ? 'Change photo' : 'Upload photo'}
-                      </Text>
-                    )}
-                  </Pressable>
-                  {canRemovePhoto ? (
-                    <Pressable
-                      accessibilityRole="button"
-                      disabled={isUploadingPhoto}
-                      onPress={() => {
-                        void removePhoto();
-                      }}
-                      style={({ pressed }) => [
-                        styles.removePhotoButton,
-                        pressed && styles.removePhotoButtonPressed,
-                      ]}
-                    >
-                      <Text style={styles.removePhotoButtonText}>Remove</Text>
-                    </Pressable>
-                  ) : null}
-                </View>
-              </View>
-              <Text style={styles.hint}>
-                Square photos work best. Max 5MB.
-              </Text>
-              {photoError ? (
-                <Text style={styles.error}>{photoError}</Text>
-              ) : null}
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Username</Text>
-              <TextInput
-                accessibilityLabel="Username"
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="username"
-                editable={!isSavingUsername}
-                onChangeText={onChangeUsername}
-                placeholder="Choose a username"
-                placeholderTextColor="#86a894"
-                style={styles.input}
-                value={usernameDraft}
-              />
-              <Text style={styles.hint}>
-                3–24 characters: letters, numbers, or underscores.
-              </Text>
-              {usernameDirty && !usernameValid ? (
-                <Text style={styles.error}>Enter a valid username.</Text>
-              ) : null}
-              {usernameError ? (
-                <Text style={styles.error}>{usernameError}</Text>
-              ) : null}
+              <Text style={styles.sectionTitle}>Profile</Text>
               <Pressable
+                accessibilityLabel="Profile settings"
                 accessibilityRole="button"
-                disabled={!canSaveUsername}
                 onPress={() => {
-                  void saveUsername();
+                  navigation.navigate('profileSettings');
                 }}
                 style={({ pressed }) => [
-                  styles.saveButton,
-                  !canSaveUsername && styles.saveButtonDisabled,
-                  pressed && canSaveUsername && styles.saveButtonPressed,
+                  styles.strategyRow,
+                  pressed && styles.strategyRowPressed,
                 ]}
               >
-                {isSavingUsername ? (
-                  <ActivityIndicator color="#f0fdf4" />
-                ) : (
-                  <Text style={styles.saveButtonText}>Save username</Text>
-                )}
+                <View style={styles.strategyRowText}>
+                  <Text style={styles.strategyLabel}>Profile settings</Text>
+                  <Text style={styles.strategyDescription}>
+                    Username and profile photo
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#86a894" />
               </Pressable>
             </View>
 
@@ -390,69 +295,6 @@ const styles = StyleSheet.create({
     color: '#5a7d6a',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
-  },
-  photoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  photoActions: {
-    flex: 1,
-    gap: 8,
-  },
-  removePhotoButton: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  removePhotoButtonPressed: {
-    opacity: 0.7,
-  },
-  removePhotoButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#b91c1c',
-  },
-  input: {
-    width: '100%',
-    backgroundColor: '#ffffff',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#166534',
-  },
-  hint: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#86a894',
-  },
-  error: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#b91c1c',
-  },
-  saveButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#166534',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    minWidth: 140,
-    alignItems: 'center',
-  },
-  saveButtonDisabled: {
-    opacity: 0.45,
-  },
-  saveButtonPressed: {
-    opacity: 0.85,
-  },
-  saveButtonText: {
-    color: '#f0fdf4',
-    fontSize: 15,
-    fontWeight: '600',
   },
   strategyRow: {
     flexDirection: 'row',
