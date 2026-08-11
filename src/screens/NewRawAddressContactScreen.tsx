@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -11,11 +13,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
 import { useAddContact } from '@/hooks/useAddContact';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
-import { useNewContactAdvanced } from '@/hooks/useNewContactAdvanced';
 import { usePopToContacts } from '@/hooks/usePopToContacts';
+import { useWalletBalanceSearch } from '@/hooks/useWalletBalanceSearch';
+import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import type { ContactsStackParamList } from '@/navigation/types';
 
 /**
@@ -28,20 +32,16 @@ export function NewRawAddressContactScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<ContactsStackParamList>>();
   const { addAddresses, isAdding, errorMessage } = useAddContact();
+  const [name, setName] = useState('');
+  const [walletQuery, setWalletQuery] = useState('');
+  const trimmedName = name.trim();
   const {
-    name,
-    setName,
-    trimmedName,
-    evmAddress,
-    setEvmAddress,
-    solanaAddress,
-    setSolanaAddress,
-    canSubmit,
-    evmValid,
-    solanaValid,
-    trimmedEvm,
-    trimmedSolana,
-  } = useNewContactAdvanced();
+    result: walletResult,
+    isSearching,
+    showEmpty,
+    errorMessage: walletErrorMessage,
+  } = useWalletBalanceSearch(walletQuery);
+  const canSubmit = trimmedName.length > 0 && walletResult != null;
 
   const goBack = () => {
     if (navigation.canGoBack()) {
@@ -106,46 +106,80 @@ export function NewRawAddressContactScreen() {
             <View style={styles.divider} />
 
             <View style={styles.group}>
-              <Text style={styles.fieldLabel}>EVM</Text>
-              <TextInput
-                accessibilityLabel="EVM address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isAdding}
-                onChangeText={setEvmAddress}
-                placeholder="0x…"
-                placeholderTextColor="#86a894"
-                style={[
-                  styles.input,
-                  trimmedEvm && !evmValid ? styles.inputError : null,
-                ]}
-                value={evmAddress}
-              />
-              {trimmedEvm && !evmValid ? (
-                <Text style={styles.error}>Enter a valid EVM address.</Text>
+              <Text style={styles.fieldLabel}>Wallet</Text>
+              <View style={styles.searchRow}>
+                <TextInput
+                  accessibilityLabel="Wallet address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!isAdding}
+                  onChangeText={setWalletQuery}
+                  placeholder="Wallet address"
+                  placeholderTextColor="#86a894"
+                  style={styles.searchInput}
+                  value={walletQuery}
+                />
+                {walletQuery.trim() ? (
+                  <Pressable
+                    accessibilityLabel="Clear wallet search"
+                    accessibilityRole="button"
+                    hitSlop={8}
+                    onPress={() => {
+                      setWalletQuery('');
+                    }}
+                    style={({ pressed }) => [
+                      styles.clearSearchButton,
+                      pressed && styles.clearSearchButtonPressed,
+                    ]}
+                  >
+                    <Ionicons name="close-circle" size={18} color="#5a7d6a" />
+                  </Pressable>
+                ) : null}
+              </View>
+
+              {walletErrorMessage ? (
+                <Text style={styles.error}>{walletErrorMessage}</Text>
               ) : null}
-            </View>
 
-            <View style={styles.divider} />
+              {isSearching ? (
+                <ActivityIndicator color="#166534" style={styles.loader} />
+              ) : null}
 
-            <View style={styles.group}>
-              <Text style={styles.fieldLabel}>Solana</Text>
-              <TextInput
-                accessibilityLabel="Solana address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isAdding}
-                onChangeText={setSolanaAddress}
-                placeholder="Solana address"
-                placeholderTextColor="#86a894"
-                style={[
-                  styles.input,
-                  trimmedSolana && !solanaValid ? styles.inputError : null,
-                ]}
-                value={solanaAddress}
-              />
-              {trimmedSolana && !solanaValid ? (
-                <Text style={styles.error}>Enter a valid Solana address.</Text>
+              {walletResult ? (
+                <View style={styles.resultCard}>
+                  <Avatar
+                    label={walletResult.address}
+                    seed={walletResult.address}
+                    size={40}
+                  />
+                  <View style={styles.resultText}>
+                    <Text style={styles.resultLabel}>
+                      {walletResult.totalUsdLabel ??
+                        formatWalletAddress(walletResult.address, 8, 6)}
+                    </Text>
+                    <Text style={styles.resultDescription}>
+                      {walletResult.chain === 'ethereum'
+                        ? 'EVM wallet'
+                        : 'Solana wallet'}
+                    </Text>
+                    {walletResult.balances.map((balance) => (
+                      <Text
+                        key={`${balance.network}:${balance.symbol}`}
+                        style={styles.resultDescription}
+                      >
+                        {balance.networkLabel}: {balance.balanceLabel}
+                        {balance.usdLabel ? ` (${balance.usdLabel})` : ''}
+                      </Text>
+                    ))}
+                  </View>
+                </View>
+              ) : null}
+
+              {showEmpty ? (
+                <Text style={styles.empty}>
+                  This wallet resolved, but no token balances were found on the
+                  supported networks.
+                </Text>
               ) : null}
             </View>
 
@@ -153,11 +187,20 @@ export function NewRawAddressContactScreen() {
               accessibilityRole="button"
               disabled={!canSubmit || isAdding}
               onPress={() => {
+                if (!walletResult) {
+                  return;
+                }
                 void (async () => {
                   const ok = await addAddresses({
                     name: trimmedName,
-                    evmAddress: trimmedEvm || undefined,
-                    solanaAddress: trimmedSolana || undefined,
+                    evmAddress:
+                      walletResult.chain === 'ethereum'
+                        ? walletResult.address
+                        : undefined,
+                    solanaAddress:
+                      walletResult.chain === 'solana'
+                        ? walletResult.address
+                        : undefined,
                   });
                   if (ok) {
                     goContacts();
@@ -229,10 +272,18 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     gap: 10,
   },
+  loader: {
+    marginTop: 8,
+  },
   error: {
     fontSize: 13,
     lineHeight: 18,
     color: '#b91c1c',
+  },
+  empty: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#86a894',
   },
   card: {
     backgroundColor: '#ffffff',
@@ -263,12 +314,61 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#166534',
   },
-  inputError: {
-    borderColor: '#fca5a5',
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    width: '100%',
+    backgroundColor: '#f0fdf4',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#d1fae5',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+  },
+  searchInput: {
+    flex: 1,
+    minHeight: 48,
+    fontSize: 15,
+    color: '#166534',
+  },
+  clearSearchButton: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clearSearchButtonPressed: {
+    opacity: 0.7,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: '#d1fae5',
+  },
+  resultCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#f0fdf4',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#d1fae5',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  resultText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  resultLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#166534',
+  },
+  resultDescription: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#5a7d6a',
   },
   addButton: {
     marginTop: 4,
