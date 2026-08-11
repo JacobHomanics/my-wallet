@@ -17,6 +17,7 @@ import { BackButton } from '@/components/BackButton';
 import { AccountNumber } from '@/components/AccountNumber';
 import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { useAppTax } from '@/hooks/useAppTax';
+import { useConvexUsername } from '@/hooks/useConvexUsername';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -32,6 +33,7 @@ export function ReceiveQrScreen() {
   const usdAmount = route.params.usdAmount;
   const { ready, url, identityId, ethereumAddress, solanaAddress } =
     useReceivePaymentUrl(usdAmount);
+  const { username } = useConvexUsername();
   const { copy, isCopied } = useCopyToClipboard();
   const { formatFromUsd, parseDisplayInputToUsd, currencySymbol } =
     useFiatDisplay();
@@ -94,17 +96,27 @@ export function ReceiveQrScreen() {
                 <QRCodeStyled
                   data={url}
                   padding={16}
-                  size={220}
+                  size={200}
                   color="#166534"
                   style={styles.qr}
                 />
               </View>
 
-              {identityId ? (
-                <AccountNumber
-                  identityId={identityId}
-                  style={styles.accountNumber}
-                />
+              {username || identityId ? (
+                <View style={styles.identitySection}>
+                  {username ? (
+                    <AccountNumber
+                      username={username}
+                      style={styles.accountNumber}
+                    />
+                  ) : null}
+                  {identityId ? (
+                    <AccountNumber
+                      identityId={identityId}
+                      style={styles.accountNumber}
+                    />
+                  ) : null}
+                </View>
               ) : null}
 
               <Pressable
@@ -216,8 +228,14 @@ const styles = StyleSheet.create({
   qr: {
     backgroundColor: '#ffffff',
   },
-  accountNumber: {
+  identitySection: {
+    width: '100%',
     marginTop: 20,
+    gap: 10,
+    alignItems: 'center',
+  },
+  accountNumber: {
+    marginTop: 0,
   },
   copyLinkButton: {
     marginTop: 20,

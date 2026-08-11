@@ -13,75 +13,104 @@ import { useAccountNumberInfoModal } from '@/hooks/useAccountNumberInfoModal';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 
 type AccountNumberProps = {
-  identityId: string;
+  identityId?: string | null;
+  username?: string | null;
   style?: StyleProp<ViewStyle>;
 };
 
 /**
- * Account number with copy and help actions.
+ * Account number or username with copy (and help for account numbers).
  */
 export function AccountNumber({
   identityId,
+  username,
   style,
 }: AccountNumberProps) {
   const { copy, isCopied } = useCopyToClipboard();
   const { infoOpen, openInfo, closeInfo } = useAccountNumberInfoModal();
 
+  const trimmedUsername = username?.trim() || null;
+  const showUsername = Boolean(trimmedUsername);
+  const value = showUsername
+    ? `@${trimmedUsername}`
+    : (identityId?.trim() || '');
+  const copyKey = showUsername ? 'username' : 'account-number';
+  const label = showUsername ? 'Username' : 'Account Number';
+  const compact = !showUsername;
+
+  if (!value) {
+    return null;
+  }
+
   return (
     <View style={[styles.wrap, style]}>
-      <View style={styles.card}>
+      <View style={[styles.card, compact && styles.cardCompact]}>
         <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Text style={styles.label}>Account Number</Text>
-            <Text style={styles.value} selectable numberOfLines={1} ellipsizeMode="middle">
-              {identityId}
+          <View style={[styles.headerText, compact && styles.headerTextCompact]}>
+            <Text style={[styles.label, compact && styles.labelCompact]}>
+              {label}
+            </Text>
+            <Text
+              style={[styles.value, compact && styles.valueCompact]}
+              selectable
+              numberOfLines={1}
+              ellipsizeMode="middle"
+            >
+              {value}
             </Text>
           </View>
-          <Pressable
-            accessibilityLabel="About account number"
-            accessibilityRole="button"
-            hitSlop={8}
-            onPress={openInfo}
-            style={({ pressed }) => [
-              styles.helpButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Ionicons
-              name="help-circle-outline"
-              size={20}
-              color="#5a7d6a"
-            />
-          </Pressable>
+          {!showUsername ? (
+            <Pressable
+              accessibilityLabel="About account number"
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={openInfo}
+              style={({ pressed }) => [
+                styles.helpButton,
+                styles.actionCompact,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Ionicons
+                name="help-circle-outline"
+                size={16}
+                color="#5a7d6a"
+              />
+            </Pressable>
+          ) : null}
           <Pressable
             accessibilityLabel={
-              isCopied('account-number')
-                ? 'Account number copied'
-                : 'Copy account number'
+              isCopied(copyKey)
+                ? showUsername
+                  ? 'Username copied'
+                  : 'Account number copied'
+                : showUsername
+                  ? 'Copy username'
+                  : 'Copy account number'
             }
             accessibilityRole="button"
             hitSlop={8}
             onPress={() => {
-              void copy(identityId, 'account-number');
+              void copy(value, copyKey);
             }}
             style={({ pressed }) => [
               styles.copyButton,
+              compact && styles.actionCompact,
               pressed && styles.pressed,
             ]}
           >
             <Ionicons
-              name={
-                isCopied('account-number') ? 'checkmark' : 'copy-outline'
-              }
-              size={18}
-              color={isCopied('account-number') ? '#15803d' : '#166534'}
+              name={isCopied(copyKey) ? 'checkmark' : 'copy-outline'}
+              size={compact ? 15 : 18}
+              color={isCopied(copyKey) ? '#15803d' : '#166534'}
             />
           </Pressable>
         </View>
-
       </View>
 
-      <AccountNumberInfoModal onClose={closeInfo} visible={infoOpen} />
+      {!showUsername ? (
+        <AccountNumberInfoModal onClose={closeInfo} visible={infoOpen} />
+      ) : null}
     </View>
   );
 }
@@ -104,6 +133,13 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     gap: 12,
   },
+  cardCompact: {
+    borderRadius: 10,
+    paddingLeft: 12,
+    paddingRight: 4,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -114,6 +150,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
     gap: 4,
   },
+  headerTextCompact: {
+    gap: 2,
+  },
   pressed: {
     opacity: 0.75,
   },
@@ -123,6 +162,10 @@ const styles = StyleSheet.create({
     color: '#5a7d6a',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
+  },
+  labelCompact: {
+    fontSize: 10,
+    letterSpacing: 0.5,
   },
   helpButton: {
     width: 32,
@@ -136,10 +179,19 @@ const styles = StyleSheet.create({
     color: '#166534',
     fontVariant: ['tabular-nums'],
   },
+  valueCompact: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#3f6b52',
+  },
   copyButton: {
     width: 32,
     height: 32,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  actionCompact: {
+    width: 28,
+    height: 28,
   },
 });
