@@ -9,7 +9,7 @@ import { useUserWallets } from '@/hooks/useUserWallets';
 import {
   ONRAMP_DEFAULT_SOURCE_AMOUNT,
   PRIVY_ONRAMP_BASE_CHAIN,
-  PRIVY_ONRAMP_BASE_USDC,
+  PRIVY_ONRAMP_BASE_ETH,
 } from '@/lib/privy/onramp';
 
 /**
@@ -43,7 +43,7 @@ export function usePrivyFiatOnramp(): UsePrivyFiatOnrampResult {
           defaultAsset: 'usd',
         },
         destination: {
-          asset: PRIVY_ONRAMP_BASE_USDC,
+          asset: PRIVY_ONRAMP_BASE_ETH,
           chain: PRIVY_ONRAMP_BASE_CHAIN,
           address: ethereumAddress,
         },
