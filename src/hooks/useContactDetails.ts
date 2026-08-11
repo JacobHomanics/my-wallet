@@ -66,21 +66,29 @@ export function useContactDetails(contactId: string | undefined): {
     : row.username;
   const name = isEns ? ensName : row.name;
   const identityId = row.identityId;
+  const evmAddress = row.evmAddress;
+  const solanaAddress = row.solanaAddress;
   const title = isEns && ensName
     ? ensName
     : username
       ? `@${username}`
       : identityId
         ? formatWalletAddress(identityId, 10, 8)
-        : (name ?? 'Contact');
+        : name
+          ? name
+          : evmAddress && !solanaAddress
+            ? formatWalletAddress(evmAddress, 10, 8)
+            : solanaAddress && !evmAddress
+              ? formatWalletAddress(solanaAddress, 10, 8)
+              : 'Contact';
 
   return {
     contact: {
       id: row._id,
       username,
       name,
-      evmAddress: row.evmAddress,
-      solanaAddress: row.solanaAddress,
+      evmAddress,
+      solanaAddress,
       identityId,
       profilePhotoUrl: row.profilePhotoUrl ?? null,
       farcasterFid: row.farcasterFid ?? null,

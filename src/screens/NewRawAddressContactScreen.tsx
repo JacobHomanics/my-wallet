@@ -41,7 +41,7 @@ export function NewRawAddressContactScreen() {
     showEmpty,
     errorMessage: walletErrorMessage,
   } = useWalletBalanceSearch(walletQuery);
-  const canSubmit = trimmedName.length > 0 && walletResult != null;
+  const canSubmit = walletResult != null;
 
   const goBack = () => {
     if (navigation.canGoBack()) {
@@ -96,7 +96,7 @@ export function NewRawAddressContactScreen() {
                 autoCorrect={false}
                 editable={!isAdding}
                 onChangeText={setName}
-                placeholder="Name"
+                placeholder="Name (optional)"
                 placeholderTextColor="#86a894"
                 style={styles.input}
                 value={name}

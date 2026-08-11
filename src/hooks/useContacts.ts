@@ -64,6 +64,8 @@ function buildContactLabel(params: {
   username: string | null;
   name: string | null;
   accountNumber: string | null;
+  evmAddress: string | null;
+  solanaAddress: string | null;
   addressSubtitle: string | null;
 }): string {
   if (params.username) {
@@ -74,6 +76,12 @@ function buildContactLabel(params: {
   }
   if (params.name?.trim()) {
     return params.name.trim();
+  }
+  if (params.evmAddress && !params.solanaAddress) {
+    return formatWalletAddress(params.evmAddress, 10, 8);
+  }
+  if (params.solanaAddress && !params.evmAddress) {
+    return formatWalletAddress(params.solanaAddress, 10, 8);
   }
   return params.addressSubtitle ?? 'Contact';
 }
@@ -125,6 +133,8 @@ export function useContacts(): {
             username,
             name,
             accountNumber,
+            evmAddress,
+            solanaAddress,
             addressSubtitle,
           });
 

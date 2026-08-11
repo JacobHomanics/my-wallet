@@ -47,7 +47,7 @@ export function useAddContact() {
 
   const addAddresses = useCallback(
     async (addresses: {
-      name: string;
+      name?: string;
       evmAddress?: string;
       solanaAddress?: string;
     }) => {
@@ -62,7 +62,7 @@ export function useAddContact() {
       try {
         await addByAddresses({
           ownerId: userId,
-          name: addresses.name,
+          name: addresses.name ?? '',
           evmAddress: addresses.evmAddress,
           solanaAddress: addresses.solanaAddress,
         });

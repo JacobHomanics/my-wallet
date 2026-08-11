@@ -258,10 +258,6 @@ export const addByAddresses = mutation({
     }
 
     const trimmedName = name.trim();
-    if (!trimmedName) {
-      throw new Error("Enter a name for this contact");
-    }
-
     const evm = evmAddress?.trim() || undefined;
     const solana = solanaAddress?.trim() || undefined;
 
@@ -287,7 +283,7 @@ export const addByAddresses = mutation({
       const existingEvm = existingEvmMatches.find(isPlainWalletContact);
       if (existingEvm) {
         await ctx.db.patch(existingEvm._id, {
-          name: trimmedName,
+          ...(trimmedName ? { name: trimmedName } : {}),
           ...(solana && !existingEvm.solanaAddress
             ? { solanaAddress: solana }
             : {}),
@@ -306,7 +302,7 @@ export const addByAddresses = mutation({
       const existingSolana = existingSolanaMatches.find(isPlainWalletContact);
       if (existingSolana) {
         await ctx.db.patch(existingSolana._id, {
-          name: trimmedName,
+          ...(trimmedName ? { name: trimmedName } : {}),
           ...(evm && !existingSolana.evmAddress ? { evmAddress: evm } : {}),
         });
         return existingSolana._id;
@@ -315,7 +311,7 @@ export const addByAddresses = mutation({
 
     return await ctx.db.insert("contacts", {
       ownerId,
-      name: trimmedName,
+      ...(trimmedName ? { name: trimmedName } : {}),
       evmAddress: evm,
       solanaAddress: solana,
     });
