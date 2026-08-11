@@ -181,16 +181,22 @@ export function ContactsScreen() {
   const insets = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<ContactsStackParamList>>();
-  const { userContacts, farcasterContacts, externalContacts, isLoading } =
+  const { userContacts, farcasterContacts, ensContacts, externalContacts, isLoading } =
     useContacts();
   const {
     query,
     setQuery,
     filteredUserContacts,
     filteredFarcasterContacts,
+    filteredEnsContacts,
     filteredExternalContacts,
     hasActiveQuery,
-  } = useContactsFilter({ userContacts, farcasterContacts, externalContacts });
+  } = useContactsFilter({
+    userContacts,
+    farcasterContacts,
+    ensContacts,
+    externalContacts,
+  });
   const {
     selectedTab,
     isAllTab,
@@ -205,10 +211,12 @@ export function ContactsScreen() {
     externalGroupExpanded,
     walletsExpanded,
     farcasterExpanded,
+    ensExpanded,
     toggleContacts,
     toggleExternalGroup,
     toggleWallets,
     toggleFarcaster,
+    toggleEns,
   } = useContactsAllSections();
   const {
     confirmVisible,
@@ -234,22 +242,27 @@ export function ContactsScreen() {
   const hasAnyContacts =
     userContacts.length > 0 ||
     farcasterContacts.length > 0 ||
+    ensContacts.length > 0 ||
     externalContacts.length > 0;
 
   const hasSourceContacts = isAllTab
     ? hasAnyContacts
     : isContactsTab
       ? userContacts.length > 0
-      : externalContacts.length > 0 || farcasterContacts.length > 0;
+      : externalContacts.length > 0 ||
+        farcasterContacts.length > 0 ||
+        ensContacts.length > 0;
 
   const hasFilteredResults = isAllTab
     ? filteredUserContacts.length > 0 ||
       filteredFarcasterContacts.length > 0 ||
+      filteredEnsContacts.length > 0 ||
       filteredExternalContacts.length > 0
     : isContactsTab
       ? filteredUserContacts.length > 0
       : filteredExternalContacts.length > 0 ||
-        filteredFarcasterContacts.length > 0;
+        filteredFarcasterContacts.length > 0 ||
+        filteredEnsContacts.length > 0;
 
   const searchPlaceholder =
     selectedTab === 'all'
@@ -373,6 +386,18 @@ export function ContactsScreen() {
                     onRowClose={onRowClose}
                   />
                 ) : null}
+                {filteredEnsContacts.length > 0 ? (
+                  <CollapsibleSection
+                    title="ENS"
+                    expanded={ensExpanded}
+                    onToggle={toggleEns}
+                    contacts={filteredEnsContacts}
+                    onPressContact={openContact}
+                    onDeleteContact={deleteContact}
+                    onRowOpen={onRowOpen}
+                    onRowClose={onRowClose}
+                  />
+                ) : null}
               </>
             ) : (
               <>
@@ -389,7 +414,8 @@ export function ContactsScreen() {
                   />
                 ) : null}
                 {filteredExternalContacts.length > 0 ||
-                filteredFarcasterContacts.length > 0 ? (
+                filteredFarcasterContacts.length > 0 ||
+                filteredEnsContacts.length > 0 ? (
                   <CollapsibleGroup
                     title="External Contacts"
                     expanded={externalGroupExpanded}
@@ -414,6 +440,19 @@ export function ContactsScreen() {
                         expanded={farcasterExpanded}
                         onToggle={toggleFarcaster}
                         contacts={filteredFarcasterContacts}
+                        onPressContact={openContact}
+                        onDeleteContact={deleteContact}
+                        onRowOpen={onRowOpen}
+                        onRowClose={onRowClose}
+                        nested
+                      />
+                    ) : null}
+                    {filteredEnsContacts.length > 0 ? (
+                      <CollapsibleSection
+                        title="ENS"
+                        expanded={ensExpanded}
+                        onToggle={toggleEns}
+                        contacts={filteredEnsContacts}
                         onPressContact={openContact}
                         onDeleteContact={deleteContact}
                         onRowOpen={onRowOpen}

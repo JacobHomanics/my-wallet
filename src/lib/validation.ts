@@ -33,6 +33,25 @@ export function isValidRecipientAddress(
     : isValidEvmAddress(value);
 }
 
+/** ENS name (e.g. vitalik.eth). Normalizes to lowercase. */
+export function normalizeEnsName(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+/**
+ * Basic ENS name shape check before hitting the resolver.
+ * Supports standard `.eth` names and common subdomains.
+ */
+export function isValidEnsName(value: string): boolean {
+  const normalized = normalizeEnsName(value);
+  if (!normalized.includes('.')) {
+    return false;
+  }
+  return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/.test(
+    normalized,
+  );
+}
+
 /** Lowercase trimmed username for storage / comparison. */
 export function normalizeUsername(value: string): string {
   return value.trim().toLowerCase();

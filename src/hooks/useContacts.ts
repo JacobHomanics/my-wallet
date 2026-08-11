@@ -16,10 +16,12 @@ export type ContactListItem = {
   profilePhotoUrl: string | null;
   farcasterFid: number | null;
   farcasterUsername: string | null;
+  ensName: string | null;
   label: string;
   subtitle: string | null;
   isExternal: boolean;
   isFarcaster: boolean;
+  isEns: boolean;
 };
 
 function buildAddressSubtitle(
@@ -83,6 +85,7 @@ export function useContacts(): {
   contacts: ContactListItem[];
   userContacts: ContactListItem[];
   farcasterContacts: ContactListItem[];
+  ensContacts: ContactListItem[];
   externalContacts: ContactListItem[];
   isLoading: boolean;
 } {
@@ -100,29 +103,33 @@ export function useContacts(): {
 
     return rows.map((row) => {
       const isFarcaster = Boolean(row.isFarcaster || row.farcasterFid != null);
+      const isEns = Boolean(row.isEns || row.ensName?.trim());
+      const ensName = row.ensName?.trim() || null;
       const username = isFarcaster
         ? (row.farcasterUsername ?? row.username ?? null)
         : (row.username ?? null);
-      const name = row.name ?? null;
+      const name = isEns ? ensName : (row.name ?? null);
       const evmAddress = row.evmAddress ?? null;
       const solanaAddress = row.solanaAddress ?? null;
       const identityId = row.identityId ?? null;
-      const isExternal = !row.contactUserId && !isFarcaster;
+      const isExternal = !row.contactUserId && !isFarcaster && !isEns;
       const accountNumber = resolveAccountNumber(
         identityId,
         evmAddress,
         solanaAddress,
       );
       const addressSubtitle = buildAddressSubtitle(evmAddress, solanaAddress);
-      const label = buildContactLabel({
-        username,
-        name,
-        accountNumber,
-        addressSubtitle,
-      });
+      const label = isEns && ensName
+        ? ensName
+        : buildContactLabel({
+            username,
+            name,
+            accountNumber,
+            addressSubtitle,
+          });
 
       let subtitle: string | null = null;
-      if (isFarcaster) {
+      if (isFarcaster || isEns) {
         subtitle = null;
       } else if (!isExternal) {
         subtitle = addressSubtitle;
@@ -138,8 +145,10 @@ export function useContacts(): {
         profilePhotoUrl: row.profilePhotoUrl ?? null,
         farcasterFid: row.farcasterFid ?? null,
         farcasterUsername: row.farcasterUsername ?? null,
+        ensName,
         isExternal,
         isFarcaster,
+        isEns,
         label,
         subtitle,
       };
@@ -147,12 +156,20 @@ export function useContacts(): {
   }, [rows]);
 
   const userContacts = useMemo(
-    () => contacts.filter((contact) => !contact.isExternal && !contact.isFarcaster),
+    () =>
+      contacts.filter(
+        (contact) => !contact.isExternal && !contact.isFarcaster && !contact.isEns,
+      ),
     [contacts],
   );
 
   const farcasterContacts = useMemo(
     () => contacts.filter((contact) => contact.isFarcaster),
+    [contacts],
+  );
+
+  const ensContacts = useMemo(
+    () => contacts.filter((contact) => contact.isEns),
     [contacts],
   );
 
@@ -165,6 +182,7 @@ export function useContacts(): {
     contacts,
     userContacts,
     farcasterContacts,
+    ensContacts,
     externalContacts,
     isLoading: userIdLoading || (userId != null && rows === undefined),
   };

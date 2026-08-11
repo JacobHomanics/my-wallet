@@ -111,6 +111,7 @@ const CONTACTS_STACK_HISTORY: Partial<
 > = {
   newContact: ['index'],
   newFarcasterContact: ['index', 'newContact'],
+  newEnsContact: ['index', 'newContact'],
   newRawAddressContact: ['index', 'newContact'],
   contactDetails: ['index'],
 };
@@ -392,6 +393,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               index: '',
               newContact: 'new',
               newFarcasterContact: 'new/farcaster',
+              newEnsContact: 'new/ens',
               newRawAddressContact: 'new/addresses',
               contactDetails: {
                 path: ':contactId',

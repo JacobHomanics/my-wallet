@@ -11,6 +11,7 @@ function contactMatchesQuery(
     contact.subtitle,
     contact.username,
     contact.farcasterUsername,
+    contact.ensName,
     contact.name,
     contact.identityId,
     contact.evmAddress,
@@ -29,6 +30,7 @@ function contactMatchesQuery(
 export function useContactsFilter(contacts: {
   userContacts: ContactListItem[];
   farcasterContacts: ContactListItem[];
+  ensContacts: ContactListItem[];
   externalContacts: ContactListItem[];
 }) {
   const [query, setQuery] = useState('');
@@ -54,6 +56,16 @@ export function useContactsFilter(contacts: {
     );
   }, [contacts.farcasterContacts, normalizedQuery]);
 
+  const filteredEnsContacts = useMemo(() => {
+    if (!normalizedQuery) {
+      return contacts.ensContacts;
+    }
+
+    return contacts.ensContacts.filter((contact) =>
+      contactMatchesQuery(contact, normalizedQuery),
+    );
+  }, [contacts.ensContacts, normalizedQuery]);
+
   const filteredExternalContacts = useMemo(() => {
     if (!normalizedQuery) {
       return contacts.externalContacts;
@@ -72,6 +84,7 @@ export function useContactsFilter(contacts: {
   const hasFilteredResults =
     filteredUserContacts.length > 0 ||
     filteredFarcasterContacts.length > 0 ||
+    filteredEnsContacts.length > 0 ||
     filteredExternalContacts.length > 0;
 
   return {
@@ -80,6 +93,7 @@ export function useContactsFilter(contacts: {
     clearQuery,
     filteredUserContacts,
     filteredFarcasterContacts,
+    filteredEnsContacts,
     filteredExternalContacts,
     hasActiveQuery,
     hasFilteredResults,

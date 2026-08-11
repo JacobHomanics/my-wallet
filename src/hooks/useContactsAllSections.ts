@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 
 /**
  * Collapse state for All-tab Contacts / External Contacts group /
- * Wallets / Farcaster sections.
+ * Wallets / Farcaster / ENS sections.
  */
 export function useContactsAllSections(initialExpanded = true) {
   const [contactsExpanded, setContactsExpanded] = useState(initialExpanded);
@@ -10,6 +10,7 @@ export function useContactsAllSections(initialExpanded = true) {
     useState(initialExpanded);
   const [walletsExpanded, setWalletsExpanded] = useState(initialExpanded);
   const [farcasterExpanded, setFarcasterExpanded] = useState(initialExpanded);
+  const [ensExpanded, setEnsExpanded] = useState(initialExpanded);
 
   const toggleContacts = useCallback(() => {
     setContactsExpanded((open) => !open);
@@ -27,14 +28,20 @@ export function useContactsAllSections(initialExpanded = true) {
     setFarcasterExpanded((open) => !open);
   }, []);
 
+  const toggleEns = useCallback(() => {
+    setEnsExpanded((open) => !open);
+  }, []);
+
   return {
     contactsExpanded,
     externalGroupExpanded,
     walletsExpanded,
     farcasterExpanded,
+    ensExpanded,
     toggleContacts,
     toggleExternalGroup,
     toggleWallets,
     toggleFarcaster,
+    toggleEns,
   };
 }

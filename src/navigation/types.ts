@@ -46,7 +46,7 @@ export type HomeStackParamList = {
     tokenId?: string;
     usdAmount?: string;
   } | undefined;
-  /** Farcaster username search + raw wallet entry during send. */
+  /** Farcaster username search + ENS + raw wallet entry during send. */
   sendAdvancedSearch: {
     tokenId?: string;
     usdAmount?: string;
@@ -90,6 +90,7 @@ export type ContactsStackParamList = {
   index: undefined;
   newContact: undefined;
   newFarcasterContact: undefined;
+  newEnsContact: undefined;
   newRawAddressContact: undefined;
   contactDetails: {
     contactId: string;

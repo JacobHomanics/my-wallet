@@ -169,11 +169,28 @@ export function ContactDetailsScreen() {
                 style={styles.avatar}
               />
               <Text style={styles.contactTitle}>{contact.title}</Text>
-              {!contact.isFarcaster &&
-              (contact.username ||
-                contact.name ||
-                contact.evmAddress ||
-                contact.solanaAddress) ? (
+              {contact.isEns ? (
+                <View style={styles.card}>
+                  {contact.ensName ? (
+                    <DetailField
+                      label="ENS"
+                      value={contact.ensName}
+                      copyKey="ens"
+                    />
+                  ) : null}
+                  {contact.evmAddress ? (
+                    <DetailField
+                      label="EVM address"
+                      value={contact.evmAddress}
+                      copyKey="evm"
+                    />
+                  ) : null}
+                </View>
+              ) : !contact.isFarcaster &&
+                (contact.username ||
+                  contact.name ||
+                  contact.evmAddress ||
+                  contact.solanaAddress) ? (
                 <View style={styles.card}>
                   {contact.username ? (
                     <DetailField
@@ -205,13 +222,16 @@ export function ContactDetailsScreen() {
                   ) : null}
                 </View>
               ) : null}
-              {!contact.isFarcaster && contact.identityId ? (
+              {!contact.isFarcaster &&
+              !contact.isEns &&
+              contact.identityId ? (
                 <AccountNumber
                   identityId={contact.identityId}
                   style={styles.accountNumber}
                 />
               ) : null}
               {!contact.isFarcaster &&
+              !contact.isEns &&
               !contact.username &&
               !contact.name &&
               !contact.evmAddress &&
