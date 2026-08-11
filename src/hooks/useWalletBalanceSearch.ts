@@ -9,7 +9,7 @@ import {
 } from '@/lib/alchemy/networks';
 import { isValidEvmAddress, isValidSolanaAddress } from '@/lib/validation';
 
-export type WalletUsdcBalance = {
+export type WalletBalanceLine = {
   network: string;
   networkLabel: string;
   symbol: string;
@@ -18,31 +18,31 @@ export type WalletUsdcBalance = {
   usdValue: number | null;
 };
 
-export type WalletUsdcSearchHit = {
+export type WalletBalanceSearchHit = {
   address: string;
   chain: 'ethereum' | 'solana';
-  balances: WalletUsdcBalance[];
+  balances: WalletBalanceLine[];
   totalUsdLabel: string | null;
 };
 
 const DEBOUNCE_MS = 400;
 
-function isUsdcToken(token: OwnedToken): boolean {
-  const symbol = token.symbol.trim().toLowerCase().replace(/[^a-z0-9.]/g, '');
-  const name = token.name.trim().toLowerCase();
-  return (
-    symbol === 'usdc' ||
-    symbol === 'usdbc' ||
-    symbol === 'usdc.e' ||
-    name.includes('usd coin')
-  );
+function toBalanceLine(token: OwnedToken): WalletBalanceLine {
+  return {
+    network: token.network,
+    networkLabel: token.networkLabel,
+    symbol: token.symbol,
+    balanceLabel: `${formatRawTokenBalance(token.rawBalance, token.decimals, 2)} ${token.symbol}`,
+    usdLabel: formatUsdValue(token.usdValue),
+    usdValue: token.usdValue,
+  };
 }
 
 /**
- * Debounced wallet search that resolves per-network USDC balances for a valid address.
+ * Debounced wallet search that resolves portfolio balances for a valid address.
  */
-export function useWalletUsdcSearch(query: string) {
-  const [result, setResult] = useState<WalletUsdcSearchHit | null>(null);
+export function useWalletBalanceSearch(query: string) {
+  const [result, setResult] = useState<WalletBalanceSearchHit | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [resolvedQuery, setResolvedQuery] = useState('');
@@ -91,22 +91,15 @@ export function useWalletUsdcSearch(query: string) {
           }
 
           const balances = tokens
-            .filter(isUsdcToken)
-            .map((token) => ({
-              network: token.network,
-              networkLabel: token.networkLabel,
-              symbol: token.symbol,
-              balanceLabel: `${formatRawTokenBalance(token.rawBalance, token.decimals, 2)} ${token.symbol}`,
-              usdLabel: formatUsdValue(token.usdValue),
-              usdValue: token.usdValue,
-            }))
-            .sort((a, b) => (b.usdValue ?? -1) - (a.usdValue ?? -1));
+            .map(toBalanceLine)
+            .sort((a, b) => (b.usdValue ?? -1) - (a.usdValue ?? -1))
+            .slice(0, 5);
 
-          const totalUsd = balances.reduce<number | null>((sum, balance) => {
-            if (balance.usdValue == null) {
+          const totalUsd = tokens.reduce<number | null>((sum, token) => {
+            if (token.usdValue == null) {
               return sum;
             }
-            return (sum ?? 0) + balance.usdValue;
+            return (sum ?? 0) + token.usdValue;
           }, null);
 
           setResult({

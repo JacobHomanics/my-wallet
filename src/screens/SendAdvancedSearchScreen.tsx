@@ -22,8 +22,8 @@ import { useEnsResolve } from '@/hooks/useEnsResolve';
 import { useFarcasterSearch } from '@/hooks/useFarcasterSearch';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendAdvancedSearchTab } from '@/hooks/useSendAdvancedSearchTab';
+import { useWalletBalanceSearch } from '@/hooks/useWalletBalanceSearch';
 import { useSendToContact } from '@/hooks/useSendToContact';
-import { useWalletUsdcSearch } from '@/hooks/useWalletUsdcSearch';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import type { HomeStackParamList } from '@/navigation/types';
 
@@ -76,7 +76,7 @@ export function SendAdvancedSearchScreen() {
     isSearching: isWalletSearching,
     showEmpty: walletEmpty,
     errorMessage: walletErrorMessage,
-  } = useWalletUsdcSearch(walletQuery);
+  } = useWalletBalanceSearch(walletQuery);
   const {
     selectFarcaster,
     selectEns,
@@ -353,7 +353,7 @@ export function SendAdvancedSearchScreen() {
                   value={walletQuery}
                 />
                 <Text style={styles.hint}>
-                  Search a wallet address and preview its USDC balances.
+                  Search a wallet address and preview its total balance.
                 </Text>
 
                 {walletErrorMessage ? (
@@ -382,7 +382,7 @@ export function SendAdvancedSearchScreen() {
                     <View style={styles.resultText}>
                       <Text style={styles.resultLabel}>
                         {walletResult.totalUsdLabel
-                          ? `${walletResult.totalUsdLabel} USDC`
+                          ? walletResult.totalUsdLabel
                           : formatWalletAddress(walletResult.address, 8, 6)}
                       </Text>
                       <Text style={styles.resultDescription}>
@@ -409,7 +409,7 @@ export function SendAdvancedSearchScreen() {
                     <View style={styles.walletGroup}>
                       <Text style={styles.fieldLabel}>No USDC found</Text>
                       <Text style={styles.hint}>
-                        This wallet resolved, but no USDC balances were found on the supported networks.
+                        This wallet resolved, but no token balances were found on the supported networks.
                       </Text>
                     </View>
                   </View>
