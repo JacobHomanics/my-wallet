@@ -89,6 +89,7 @@ export type ContactsStackParamList = {
 export type ProfileStackParamList = {
   index: undefined;
   settings: undefined;
+  profileSettings: undefined;
 };
 
 export type MainTabParamList = {

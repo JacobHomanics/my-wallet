@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   Pressable,
@@ -8,89 +9,58 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 
 import { Avatar } from '@/components/Avatar';
-import { useNeedsOnboarding } from '@/hooks/useNeedsOnboarding';
-import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
+import { BackButton } from '@/components/BackButton';
+import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { usePopToSettings } from '@/hooks/usePopToSettings';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
-import type { RootStackParamList } from '@/navigation/types';
+import { useProfilePhotoSettings } from '@/hooks/useProfilePhotoSettings';
+import { useUsernameAvailability } from '@/hooks/useUsernameAvailability';
+import { useUsernameSettings } from '@/hooks/useUsernameSettings';
 
 /**
- * First-time setup for username + optional profile photo. Skippable.
+ * Edit profile photo and username (opened from Settings).
+ * Layout mirrors the first-time onboarding screen.
  */
-export function OnboardingScreen() {
+export function ProfileSettingsScreen() {
   const insets = useSafeAreaInsets();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { status: onboardingStatus, isLoading: isOnboardingLoading } =
-    useNeedsOnboarding();
+  const isDesktopWeb = useIsDesktopWeb();
+  const goSettings = usePopToSettings();
   const { displayName, avatarSeed } = useProfileIdentity();
   const {
-    username,
-    photo,
-    availability,
-    canContinue,
-    isContinuing,
-    isSkipping,
-    isBusy,
-    submitError,
-    continueOnboarding,
-    skipOnboarding,
-  } = useOnboardingProfile();
+    profilePhotoUrl,
+    isUploading: isUploadingPhoto,
+    errorMessage: photoError,
+    pickAndUpload,
+    remove: removePhoto,
+    canRemove: canRemovePhoto,
+  } = useProfilePhotoSettings();
+  const {
+    draft: usernameDraft,
+    onChangeDraft: onChangeUsername,
+    save: saveUsername,
+    canSave: canSaveUsername,
+    isSaving: isSavingUsername,
+    errorMessage: usernameError,
+    isDirty: usernameDirty,
+    isValid: usernameValid,
+  } = useUsernameSettings();
+  const availability = useUsernameAvailability(usernameDraft);
 
-  const goMain = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return;
-    }
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'main' }],
-    });
-  };
+  const isBusy = isUploadingPhoto || isSavingUsername;
+  const hasEnteredUsername = usernameDraft.trim().length > 0;
+  const usernameOk =
+    !hasEnteredUsername ||
+    (usernameValid &&
+      (!usernameDirty || availability.isAvailable));
+  const canSave =
+    canSaveUsername &&
+    usernameOk &&
+    !availability.isChecking &&
+    !isBusy;
 
-  const readyForActions =
-    onboardingStatus === 'needed' || onboardingStatus === 'done';
-
-  const continueEnabled = readyForActions && canContinue && !isBusy;
-
-  const onContinue = () => {
-    if (!continueEnabled) {
-      return;
-    }
-    void (async () => {
-      const ok = await continueOnboarding();
-      if (ok) {
-        goMain();
-      }
-    })();
-  };
-
-  const onSkip = () => {
-    if (!readyForActions) {
-      return;
-    }
-    void (async () => {
-      const ok = await skipOnboarding();
-      if (ok) {
-        goMain();
-      }
-    })();
-  };
-
-  const errorMessage =
-    submitError || username.errorMessage || photo.errorMessage;
-
-  if (isOnboardingLoading || onboardingStatus === 'idle') {
-    return (
-      <View style={[styles.container, styles.loading]}>
-        <ActivityIndicator color="#166534" size="large" />
-      </View>
-    );
-  }
+  const errorMessage = usernameError || photoError;
 
   return (
     <View style={styles.container}>
@@ -98,34 +68,54 @@ export function OnboardingScreen() {
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: Math.max(insets.top, 24) + 24,
+            paddingTop: Math.max(insets.top, 12),
             paddingBottom: Math.max(insets.bottom, 24) + 24,
           },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Set up your profile</Text>
-        <Text style={styles.prompt}>
-          Pick a username and set a profile photo so friends can easily find you and send money.
-        </Text>
+        <View style={styles.topBar}>
+          {isDesktopWeb ? (
+            <Pressable
+              accessibilityLabel="Back to settings"
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={goSettings}
+              style={({ pressed }) => [
+                styles.webBack,
+                pressed && styles.webBackPressed,
+              ]}
+            >
+              <Text style={styles.webBackText}>Back</Text>
+            </Pressable>
+          ) : (
+            <BackButton
+              accessibilityLabel="Back to settings"
+              onPress={goSettings}
+            />
+          )}
+          <View style={styles.topBarSpacer} />
+        </View>
+
+        <Text style={styles.title}>Profile settings</Text>
 
         <View style={styles.photoBlock}>
           <View style={styles.avatarWrap}>
             <Avatar
               label={displayName}
-              photoUrl={photo.profilePhotoUrl}
+              photoUrl={profilePhotoUrl}
               seed={avatarSeed}
               size={112}
             />
-            {photo.canRemove ? (
+            {canRemovePhoto ? (
               <Pressable
                 accessibilityLabel="Remove profile photo"
                 accessibilityRole="button"
                 disabled={isBusy}
                 hitSlop={8}
                 onPress={() => {
-                  void photo.remove();
+                  void removePhoto();
                 }}
                 style={({ pressed }) => [
                   styles.removePhotoButton,
@@ -141,7 +131,7 @@ export function OnboardingScreen() {
             accessibilityRole="button"
             disabled={isBusy}
             onPress={() => {
-              void photo.pickAndUpload();
+              void pickAndUpload();
             }}
             style={({ pressed }) => [
               styles.secondaryButton,
@@ -149,11 +139,11 @@ export function OnboardingScreen() {
               pressed && !isBusy && styles.secondaryButtonPressed,
             ]}
           >
-            {photo.isUploading ? (
+            {isUploadingPhoto ? (
               <ActivityIndicator color="#166534" />
             ) : (
               <Text style={styles.secondaryButtonText}>
-                {photo.profilePhotoUrl ? 'Change photo' : 'Add photo'}
+                {profilePhotoUrl ? 'Change photo' : 'Add photo'}
               </Text>
             )}
           </Pressable>
@@ -167,22 +157,22 @@ export function OnboardingScreen() {
             autoCorrect={false}
             autoComplete="username"
             editable={!isBusy}
-            onChangeText={username.onChangeDraft}
+            onChangeText={onChangeUsername}
             placeholder="Choose a username"
             placeholderTextColor="#86a894"
             style={styles.input}
-            value={username.draft}
+            value={usernameDraft}
           />
           <Text style={styles.hint}>
             3–24 characters: letters, numbers, or underscores.
           </Text>
-          {username.draft.trim().length > 0 && !username.isValid ? (
+          {usernameDirty && !usernameValid ? (
             <Text style={styles.error}>Enter a valid username.</Text>
           ) : null}
           {availability.status === 'checking' ? (
             <Text style={styles.hint}>Checking availability…</Text>
           ) : null}
-          {availability.status === 'available' ? (
+          {usernameDirty && availability.status === 'available' ? (
             <Text style={styles.available}>Username is available.</Text>
           ) : null}
           {availability.status === 'taken' ? (
@@ -194,34 +184,20 @@ export function OnboardingScreen() {
 
         <Pressable
           accessibilityRole="button"
-          disabled={!continueEnabled}
-          onPress={onContinue}
+          disabled={!canSave}
+          onPress={() => {
+            void saveUsername();
+          }}
           style={({ pressed }) => [
-            styles.continueButton,
-            !continueEnabled && styles.buttonDisabled,
-            pressed && continueEnabled && styles.continueButtonPressed,
+            styles.saveButton,
+            !canSave && styles.buttonDisabled,
+            pressed && canSave && styles.saveButtonPressed,
           ]}
         >
-          {isContinuing ? (
+          {isSavingUsername ? (
             <ActivityIndicator color="#f0fdf4" />
           ) : (
-            <Text style={styles.continueButtonText}>Continue</Text>
-          )}
-        </Pressable>
-
-        <Pressable
-          accessibilityRole="button"
-          disabled={!readyForActions || isBusy}
-          onPress={onSkip}
-          style={({ pressed }) => [
-            styles.skipButton,
-            pressed && readyForActions && !isBusy && styles.skipButtonPressed,
-          ]}
-        >
-          {isSkipping ? (
-            <ActivityIndicator color="#5a7d6a" />
-          ) : (
-            <Text style={styles.skipButtonText}>Skip for now</Text>
+            <Text style={styles.saveButtonText}>Save username</Text>
           )}
         </Pressable>
       </ScrollView>
@@ -234,10 +210,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f0fdf4',
   },
-  loading: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   content: {
     width: '100%',
     maxWidth: 420,
@@ -245,18 +217,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: 'center',
   },
+  topBar: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  topBarSpacer: {
+    flex: 1,
+  },
+  webBack: {
+    minWidth: 44,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+    justifyContent: 'center',
+  },
+  webBackPressed: {
+    opacity: 0.7,
+  },
+  webBackText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#166534',
+  },
   title: {
     fontSize: 28,
     fontWeight: '700',
     color: '#166534',
     letterSpacing: -0.5,
-    textAlign: 'center',
-  },
-  prompt: {
-    marginTop: 12,
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#3f6b52',
     textAlign: 'center',
   },
   photoBlock: {
@@ -331,25 +319,6 @@ const styles = StyleSheet.create({
     color: '#166534',
     textAlign: 'center',
   },
-  continueButton: {
-    marginTop: 32,
-    width: '100%',
-    backgroundColor: '#166534',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    minHeight: 52,
-    justifyContent: 'center',
-  },
-  continueButtonPressed: {
-    opacity: 0.85,
-  },
-  continueButtonText: {
-    color: '#f0fdf4',
-    fontSize: 16,
-    fontWeight: '600',
-  },
   secondaryButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -366,24 +335,26 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-  buttonDisabled: {
-    opacity: 0.45,
-  },
-  skipButton: {
-    marginTop: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    minHeight: 40,
+  saveButton: {
+    marginTop: 32,
+    width: '100%',
+    backgroundColor: '#166534',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
+    minHeight: 52,
     justifyContent: 'center',
   },
-  skipButtonPressed: {
-    opacity: 0.65,
+  saveButtonPressed: {
+    opacity: 0.85,
   },
-  skipButtonText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#5a7d6a',
-    textDecorationLine: 'underline',
+  saveButtonText: {
+    color: '#f0fdf4',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.45,
   },
 });

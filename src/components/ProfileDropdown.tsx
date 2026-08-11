@@ -8,17 +8,13 @@ import {
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
-import { useAuth } from '@/hooks/useAuth';
+import { ConfirmLogoutModal } from '@/components/ConfirmLogoutModal';
+import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useProfilePhoto } from '@/hooks/useProfilePhoto';
-import {
-  signOutAndReset,
-  type SignOutNavigation,
-} from '@/hooks/useSignOut';
 
 type ProfileDropdownProps = {
-  navigation: SignOutNavigation;
   onOpenProfile?: () => void;
 };
 
@@ -26,12 +22,17 @@ type ProfileDropdownProps = {
  * Scaffold-ETH–style account pill + dropdown for desktop web.
  */
 export function ProfileDropdown({
-  navigation,
   onOpenProfile,
 }: ProfileDropdownProps) {
-  const { logout } = useAuth();
   const { displayName, avatarSeed } = useProfileIdentity();
   const { profilePhotoUrl } = useProfilePhoto();
+  const {
+    confirmVisible: logoutConfirmVisible,
+    isSigningOut,
+    requestSignOut,
+    cancelSignOut,
+    confirmSignOut,
+  } = useConfirmSignOut();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<View | null>(null);
 
@@ -102,7 +103,7 @@ export function ProfileDropdown({
             accessibilityRole="button"
             onPress={() => {
               closeDropdown();
-              void signOutAndReset(logout, navigation);
+              requestSignOut();
             }}
             style={(pressState) => [
               styles.menuItem,
@@ -116,6 +117,15 @@ export function ProfileDropdown({
           </Pressable>
         </View>
       ) : null}
+
+      <ConfirmLogoutModal
+        isSigningOut={isSigningOut}
+        onCancel={cancelSignOut}
+        onConfirm={() => {
+          void confirmSignOut();
+        }}
+        visible={logoutConfirmVisible}
+      />
     </View>
   );
 }

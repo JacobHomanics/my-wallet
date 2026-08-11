@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useProfilePhotoSettings } from '@/hooks/useProfilePhotoSettings';
+import { useUsernameAvailability } from '@/hooks/useUsernameAvailability';
 import { useUsernameSettings } from '@/hooks/useUsernameSettings';
 import { getPrivyExternalId } from '@/lib/convex/getPrivyExternalId';
 import { normalizeUsername } from '@/lib/validation';
@@ -16,13 +17,18 @@ export function useOnboardingProfile() {
   const { user, isReady } = useAuth();
   const completeOnboarding = useMutation(api.users.completeOnboarding);
   const username = useUsernameSettings();
+  const availability = useUsernameAvailability(username.draft);
   const photo = useProfilePhotoSettings();
   const [isContinuing, setIsContinuing] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const normalizedDraft = normalizeUsername(username.draft);
+  const hasEnteredUsername = normalizedDraft.length > 0;
   const hasUsername = normalizedDraft.length >= 3 && username.isValid;
+  // Username is optional: empty allows Continue; a draft must be valid + unique.
+  const canContinue =
+    !hasEnteredUsername || (hasUsername && availability.isAvailable);
   const isBusy =
     isContinuing || isSkipping || photo.isUploading || username.isSaving;
 
@@ -35,7 +41,7 @@ export function useOnboardingProfile() {
   }, [completeOnboarding, isReady, user]);
 
   const continueOnboarding = useCallback(async () => {
-    if (!hasUsername || isBusy) {
+    if (!canContinue || isBusy) {
       return false;
     }
 
@@ -60,7 +66,7 @@ export function useOnboardingProfile() {
     } finally {
       setIsContinuing(false);
     }
-  }, [finishOnboarding, hasUsername, isBusy, username]);
+  }, [canContinue, finishOnboarding, isBusy, username]);
 
   const skipOnboarding = useCallback(async () => {
     if (isBusy) {
@@ -86,7 +92,9 @@ export function useOnboardingProfile() {
   return {
     username,
     photo,
+    availability,
     hasUsername,
+    canContinue,
     isContinuing,
     isSkipping,
     isBusy,

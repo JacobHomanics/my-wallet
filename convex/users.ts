@@ -171,6 +171,38 @@ export const completeOnboarding = mutation({
 
 const USERNAME_PATTERN = /^[a-z0-9_]{3,24}$/;
 
+/**
+ * Check whether a username is free. Treats the caller's current username as
+ * available so edits that keep the same name still pass.
+ */
+export const isUsernameAvailable = query({
+  args: {
+    username: v.string(),
+    excludeExternalId: v.optional(v.string()),
+  },
+  handler: async (ctx, { username, excludeExternalId }) => {
+    const normalized = username.trim().toLowerCase();
+    if (!USERNAME_PATTERN.test(normalized)) {
+      return { available: false as const, reason: "invalid" as const };
+    }
+
+    const taken = await ctx.db
+      .query("users")
+      .withIndex("by_username", (q) => q.eq("username", normalized))
+      .unique();
+
+    if (!taken) {
+      return { available: true as const, reason: "free" as const };
+    }
+
+    if (excludeExternalId && taken.externalId === excludeExternalId) {
+      return { available: true as const, reason: "own" as const };
+    }
+
+    return { available: false as const, reason: "taken" as const };
+  },
+});
+
 /** Set or clear the username for a Privy user. Enforces uniqueness. */
 export const setUsername = mutation({
   args: {

@@ -396,6 +396,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
             screens: {
               index: '',
               settings: 'settings',
+              profileSettings: 'settings/profile',
             },
           },
         },

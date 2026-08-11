@@ -23,6 +23,10 @@ export function ProfileStack() {
         name="settings"
         component={profileStackScreens.settings}
       />
+      <NativeStack.Screen
+        name="profileSettings"
+        component={profileStackScreens.profileSettings}
+      />
     </NativeStack.Navigator>
   );
 }

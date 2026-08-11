@@ -30,6 +30,10 @@ export function ProfileStack() {
         name="settings"
         component={profileStackScreens.settings}
       />
+      <WebStack.Screen
+        name="profileSettings"
+        component={profileStackScreens.profileSettings}
+      />
     </WebStack.Navigator>
   );
 }
