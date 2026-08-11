@@ -91,10 +91,10 @@ export const TokenIcon = memo(function TokenIcon({
 
 const styles = StyleSheet.create({
   logo: {
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#F5BFA9',
   },
   logoFallback: {
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#F5BFA9',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -109,6 +109,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1.5,
     borderColor: '#ffffff',
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
 });

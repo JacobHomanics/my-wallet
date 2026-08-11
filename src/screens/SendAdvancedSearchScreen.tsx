@@ -186,7 +186,7 @@ export function SendAdvancedSearchScreen() {
                     autoComplete="off"
                     onChangeText={setFarcasterQuery}
                     placeholder="Farcaster username"
-                    placeholderTextColor="#86a894"
+                    placeholderTextColor="#C37A7A"
                     style={styles.searchInput}
                     value={farcasterQuery}
                   />
@@ -203,7 +203,7 @@ export function SendAdvancedSearchScreen() {
                         pressed && styles.clearSearchButtonPressed,
                       ]}
                     >
-                      <Ionicons name="close-circle" size={18} color="#5a7d6a" />
+                      <Ionicons name="close-circle" size={18} color="#9B5A5A" />
                     </Pressable>
                   ) : null}
                 </View>
@@ -212,7 +212,7 @@ export function SendAdvancedSearchScreen() {
                 ) : null}
 
                 {isSearching ? (
-                  <ActivityIndicator color="#166534" style={styles.loader} />
+                  <ActivityIndicator color="#D33D3D" style={styles.loader} />
                 ) : null}
 
                 {results.length > 0 ? (
@@ -271,7 +271,7 @@ export function SendAdvancedSearchScreen() {
                           <Ionicons
                             name="chevron-forward"
                             size={18}
-                            color="#86a894"
+                            color="#C37A7A"
                           />
                         </Pressable>
                       );
@@ -295,7 +295,7 @@ export function SendAdvancedSearchScreen() {
                     autoComplete="off"
                     onChangeText={setEnsQuery}
                     placeholder="name.eth"
-                    placeholderTextColor="#86a894"
+                    placeholderTextColor="#C37A7A"
                     style={styles.searchInput}
                     value={ensQuery}
                   />
@@ -312,7 +312,7 @@ export function SendAdvancedSearchScreen() {
                         pressed && styles.clearSearchButtonPressed,
                       ]}
                     >
-                      <Ionicons name="close-circle" size={18} color="#5a7d6a" />
+                      <Ionicons name="close-circle" size={18} color="#9B5A5A" />
                     </Pressable>
                   ) : null}
                 </View>
@@ -321,7 +321,7 @@ export function SendAdvancedSearchScreen() {
                 ) : null}
 
                 {isEnsResolving ? (
-                  <ActivityIndicator color="#166534" style={styles.loader} />
+                  <ActivityIndicator color="#D33D3D" style={styles.loader} />
                 ) : null}
 
                 {ensResult ? (
@@ -357,7 +357,7 @@ export function SendAdvancedSearchScreen() {
                         {ensResult.address}
                       </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color="#86a894" />
+                    <Ionicons name="chevron-forward" size={18} color="#C37A7A" />
                   </Pressable>
                 ) : null}
 
@@ -377,7 +377,7 @@ export function SendAdvancedSearchScreen() {
                     autoComplete="off"
                     onChangeText={setWalletQuery}
                     placeholder="Wallet address"
-                    placeholderTextColor="#86a894"
+                    placeholderTextColor="#C37A7A"
                     style={styles.searchInput}
                     value={walletQuery}
                   />
@@ -394,7 +394,7 @@ export function SendAdvancedSearchScreen() {
                         pressed && styles.clearSearchButtonPressed,
                       ]}
                     >
-                      <Ionicons name="close-circle" size={18} color="#5a7d6a" />
+                      <Ionicons name="close-circle" size={18} color="#9B5A5A" />
                     </Pressable>
                   ) : null}
                 </View>
@@ -403,7 +403,7 @@ export function SendAdvancedSearchScreen() {
                 ) : null}
 
                 {isWalletSearching ? (
-                  <ActivityIndicator color="#166534" style={styles.loader} />
+                  <ActivityIndicator color="#D33D3D" style={styles.loader} />
                 ) : null}
 
                 {walletResult ? (
@@ -442,7 +442,7 @@ export function SendAdvancedSearchScreen() {
                         </Text>
                       ))}
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color="#86a894" />
+                    <Ionicons name="chevron-forward" size={18} color="#C37A7A" />
                   </Pressable>
                 ) : null}
 
@@ -468,7 +468,7 @@ export function SendAdvancedSearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   flex: {
     flex: 1,
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   topBarSpacer: {
     width: 44,
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   tabs: {
     flexDirection: 'row',
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     padding: 4,
     gap: 4,
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#FFDCC8',
     borderRadius: 12,
   },
   tabChip: {
@@ -532,11 +532,11 @@ const styles = StyleSheet.create({
   tabChipText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textAlign: 'center',
   },
   tabChipTextSelected: {
-    color: '#166534',
+    color: '#D33D3D',
   },
   body: {
     paddingHorizontal: 24,
@@ -547,12 +547,12 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#166534',
+    color: '#D33D3D',
   },
   searchRow: {
     flexDirection: 'row',
@@ -561,7 +561,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
   },
@@ -569,7 +569,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 48,
     fontSize: 16,
-    color: '#166534',
+    color: '#D33D3D',
   },
   clearSearchButton: {
     width: 24,
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
   hint: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#86a894',
+    color: '#C37A7A',
   },
   error: {
     fontSize: 13,
@@ -603,14 +603,14 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
   resultCardPressed: {
     opacity: 0.85,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   resultCardDisabled: {
     opacity: 0.55,
@@ -623,24 +623,24 @@ const styles = StyleSheet.create({
   resultLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   resultDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#5a7d6a',
+    color: '#9B5A5A',
   },
   empty: {
     marginTop: 4,
     fontSize: 15,
-    color: '#86a894',
+    color: '#C37A7A',
     textAlign: 'center',
   },
   walletCard: {
     marginTop: 4,
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -652,13 +652,13 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
   walletInput: {
     fontSize: 15,
-    color: '#166534',
+    color: '#D33D3D',
     paddingVertical: 4,
   },
   inputError: {
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
   },
   walletDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#F5BFA9',
     marginHorizontal: 16,
   },
 });

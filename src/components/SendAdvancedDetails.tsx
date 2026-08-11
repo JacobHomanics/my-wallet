@@ -150,7 +150,7 @@ export function SendAdvancedDetails({
         <Text style={styles.strategyRowValue} numberOfLines={1}>
           {selectedStrategy.label}
         </Text>
-        <Ionicons name="chevron-down" size={18} color="#86a894" />
+        <Ionicons name="chevron-down" size={18} color="#C37A7A" />
       </Pressable>
 
       <View style={styles.advancedDivider} />
@@ -165,7 +165,7 @@ export function SendAdvancedDetails({
         <Switch
           accessibilityLabel="Send from this device"
           trackColor={{ false: '#bbf7d0', true: '#86efac' }}
-          thumbColor={frontendSendEnabled ? '#166534' : '#f0fdf4'}
+          thumbColor={frontendSendEnabled ? '#D33D3D' : '#FFF4E6'}
           ios_backgroundColor="#bbf7d0"
           value={frontendSendEnabled}
           onValueChange={onFrontendSendChange}
@@ -320,7 +320,7 @@ export function SendAdvancedDetails({
                     onAllocationAmountChange(leg.token.id, value);
                   }}
                   placeholder="0"
-                  placeholderTextColor="#86a894"
+                  placeholderTextColor="#C37A7A"
                   style={[
                     styles.allocationInput,
                     exceeds ? styles.allocationInputError : null,
@@ -402,7 +402,7 @@ export function SendAdvancedDetails({
             pressed && styles.addTokenButtonPressed,
           ]}
         >
-          <Ionicons name="add" size={18} color="#166534" />
+          <Ionicons name="add" size={18} color="#D33D3D" />
           <Text style={styles.addTokenButtonText}>Add token</Text>
         </Pressable>
       ) : null}
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     alignSelf: 'stretch',
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     backgroundColor: '#fff',
     paddingHorizontal: 14,
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
   unitToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#FFDCC8',
     borderRadius: 8,
     padding: 2,
   },
@@ -464,14 +464,14 @@ const styles = StyleSheet.create({
   unitToggleText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
   },
   unitToggleTextActive: {
-    color: '#166534',
+    color: '#D33D3D',
   },
   advancedDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#F5BFA9',
   },
   strategyRow: {
     flexDirection: 'row',
@@ -492,12 +492,12 @@ const styles = StyleSheet.create({
   broadcastLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   broadcastHint: {
     fontSize: 12,
     lineHeight: 16,
-    color: '#86a894',
+    color: '#C37A7A',
   },
   strategyRowPressed: {
     opacity: 0.7,
@@ -505,7 +505,7 @@ const styles = StyleSheet.create({
   strategyRowLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     marginRight: 12,
   },
   strategyRowValue: {
@@ -513,12 +513,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     fontSize: 14,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     marginRight: 8,
   },
   allocationEmpty: {
     fontSize: 14,
-    color: '#86a894',
+    color: '#C37A7A',
     paddingVertical: 10,
   },
   allocationRow: {
@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
   },
   taxAllocationRow: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#d1fae5',
+    borderTopColor: '#F5BFA9',
     marginTop: 4,
     paddingTop: 12,
   },
@@ -550,25 +550,25 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   taxBadge: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
   allocationMeta: {
     marginTop: 2,
     fontSize: 12,
-    color: '#86a894',
+    color: '#C37A7A',
   },
   allocationBalance: {
     flexShrink: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     fontVariant: ['tabular-nums'],
   },
   allocationControls: {
@@ -579,22 +579,22 @@ const styles = StyleSheet.create({
   allocationInputPrefix: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   allocationInput: {
     flex: 1,
     minWidth: 0,
     height: 40,
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: '#F3A089',
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 0,
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     textAlign: 'right',
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
     fontVariant: ['tabular-nums'],
   },
   allocationInputError: {
@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
     height: 40,
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 10,
     paddingHorizontal: 10,
     justifyContent: 'center',
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
   taxAmountText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textAlign: 'right',
     fontVariant: ['tabular-nums'],
   },
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     fontVariant: ['tabular-nums'],
   },
   allocationRemove: {
@@ -643,10 +643,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: '#F3A089',
     borderStyle: 'dashed',
     borderRadius: 10,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   addTokenButtonPressed: {
     opacity: 0.7,
@@ -655,6 +655,6 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontSize: 14,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
 });

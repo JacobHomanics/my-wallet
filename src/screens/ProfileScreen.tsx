@@ -65,7 +65,7 @@ export function ProfileScreen() {
           pressed && styles.settingsButtonPressed,
         ]}
       >
-        <Ionicons name="settings-outline" size={24} color="#166534" />
+        <Ionicons name="settings-outline" size={24} color="#D33D3D" />
       </Pressable>
 
       <ScrollView
@@ -124,7 +124,7 @@ export function ProfileScreen() {
           <Ionicons
             name={showAdvanced ? 'chevron-up' : 'chevron-down'}
             size={16}
-            color="#5a7d6a"
+            color="#9B5A5A"
           />
         </Pressable>
 
@@ -132,7 +132,7 @@ export function ProfileScreen() {
           <View style={styles.advancedSection}>
             <Text style={styles.sectionTitle}>Wallet</Text>
             {!ready ? (
-              <ActivityIndicator color="#166534" style={styles.loader} />
+              <ActivityIndicator color="#D33D3D" style={styles.loader} />
             ) : wallets.length === 0 ? (
               <Text style={styles.empty}>Creating your wallet…</Text>
             ) : (
@@ -177,7 +177,7 @@ export function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   settingsButton: {
     position: 'absolute',
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#166534',
+    color: '#D33D3D',
     letterSpacing: -0.5,
   },
   subtitle: {
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   advancedToggleText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
   },
   advancedSection: {
     width: '100%',
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -258,6 +258,6 @@ const styles = StyleSheet.create({
   },
   empty: {
     fontSize: 15,
-    color: '#86a894',
+    color: '#C37A7A',
   },
 });

@@ -20,7 +20,7 @@ export function RewardsStack() {
         animation: isDesktopWeb ? 'none' : 'slide_from_right',
         cardStyle: {
           flex: 1,
-          backgroundColor: '#f0fdf4',
+          backgroundColor: '#FFF4E6',
           height: '100%',
         },
       }}

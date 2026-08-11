@@ -17,7 +17,7 @@ type WalletDebitCardProps = {
 
 const CARD_THEME = {
   ethereum: {
-    background: '#166534',
+    background: '#D33D3D',
     accent: '#38bdf8',
     chip: '#365c45',
   },
@@ -62,7 +62,7 @@ export function WalletDebitCard({
             <Ionicons
               name={copied ? 'checkmark' : 'copy-outline'}
               size={18}
-              color={copied ? '#86efac' : '#d1fae5'}
+              color={copied ? '#F19C7E' : '#F5BFA9'}
             />
           </Pressable>
         </View>
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
     fontSize: 20,
     fontWeight: '600',
-    color: '#f0fdf4',
+    color: '#FFF4E6',
     letterSpacing: 1.4,
     fontVariant: ['tabular-nums'],
   },
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
     fontSize: 12,
     fontWeight: '500',
-    color: '#d1fae5',
+    color: '#F5BFA9',
   },
   chainLabel: {
     flexShrink: 0,

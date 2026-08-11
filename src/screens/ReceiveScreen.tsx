@@ -62,7 +62,7 @@ export function ReceiveScreen() {
           style={styles.flex}
         >
           {!ready || !url ? (
-            <ActivityIndicator color="#166534" style={styles.loader} />
+            <ActivityIndicator color="#D33D3D" style={styles.loader} />
           ) : (
             <>
               <View style={styles.qrWrap}>
@@ -70,7 +70,7 @@ export function ReceiveScreen() {
                   data={url}
                   padding={16}
                   size={180}
-                  color="#166534"
+                  color="#D33D3D"
                   style={styles.qr}
                 />
               </View>
@@ -108,7 +108,7 @@ export function ReceiveScreen() {
                 <Ionicons
                   name={isCopied('url') ? 'checkmark' : 'link-outline'}
                   size={18}
-                  color={isCopied('url') ? '#15803d' : '#166534'}
+                  color={isCopied('url') ? '#15803d' : '#D33D3D'}
                 />
                 <Text
                   style={[
@@ -130,7 +130,7 @@ export function ReceiveScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   flex: {
     flex: 1,
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   topBarSpacer: {
     width: 44,
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#166534',
+    color: '#D33D3D',
   },
   body: {
     alignItems: 'center',
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#FFDCC8',
   },
   copyLinkButtonPressed: {
     opacity: 0.85,
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   copyLinkText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   copyLinkTextCopied: {
     color: '#15803d',

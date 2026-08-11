@@ -74,7 +74,7 @@ export function AccountNumber({
               <Ionicons
                 name="help-circle-outline"
                 size={16}
-                color="#5a7d6a"
+                color="#9B5A5A"
               />
             </Pressable>
           ) : null}
@@ -102,7 +102,7 @@ export function AccountNumber({
             <Ionicons
               name={isCopied(copyKey) ? 'checkmark' : 'copy-outline'}
               size={compact ? 15 : 18}
-              color={isCopied(copyKey) ? '#15803d' : '#166534'}
+              color={isCopied(copyKey) ? '#15803d' : '#D33D3D'}
             />
           </Pressable>
         </View>
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 8,
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     fontVariant: ['tabular-nums'],
   },
   valueCompact: {

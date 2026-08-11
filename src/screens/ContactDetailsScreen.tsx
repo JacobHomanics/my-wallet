@@ -54,7 +54,7 @@ function DetailField({
           <Ionicons
             name={isCopied(copyKey) ? 'checkmark' : 'copy-outline'}
             size={18}
-            color="#5a7d6a"
+            color="#9B5A5A"
           />
         </Pressable>
       </View>
@@ -155,7 +155,7 @@ export function ContactDetailsScreen() {
           showsVerticalScrollIndicator={false}
         >
           {isLoading ? (
-            <ActivityIndicator color="#166534" style={styles.loader} />
+            <ActivityIndicator color="#D33D3D" style={styles.loader} />
           ) : notFound || !contact ? (
             <Text style={styles.empty}>Contact not found.</Text>
           ) : (
@@ -249,7 +249,7 @@ export function ContactDetailsScreen() {
                     pressed && styles.sendButtonPressed,
                   ]}
                 >
-                  <Ionicons name="send" size={18} color="#f0fdf4" />
+                  <Ionicons name="send" size={18} color="#FFF4E6" />
                   <Text style={styles.sendButtonText}>Send</Text>
                 </Pressable>
               ) : null}
@@ -275,7 +275,7 @@ export function ContactDetailsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   content: {
     flex: 1,
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   topBarSpacer: {
     width: 44,
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   body: {
     paddingHorizontal: 24,
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 22,
     fontWeight: '700',
-    color: '#166534',
+    color: '#D33D3D',
     textAlign: 'center',
   },
   loader: {
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   empty: {
     marginTop: 48,
     fontSize: 15,
-    color: '#86a894',
+    color: '#C37A7A',
     textAlign: 'center',
   },
   card: {
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 16,
     lineHeight: 22,
-    color: '#166534',
+    color: '#D33D3D',
   },
   accountNumber: {
     width: '100%',
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 12,
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   sendButtonText: {
-    color: '#f0fdf4',
+    color: '#FFF4E6',
     fontSize: 16,
     fontWeight: '600',
   },

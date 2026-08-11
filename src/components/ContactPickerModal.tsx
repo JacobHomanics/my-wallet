@@ -114,7 +114,7 @@ function ContactPickerRow({
           <Text style={styles.optionDescription}>{description}</Text>
         ) : null}
       </View>
-      <Ionicons name="chevron-forward" size={18} color="#86a894" />
+      <Ionicons name="chevron-forward" size={18} color="#C37A7A" />
     </Pressable>
   );
 }
@@ -172,7 +172,7 @@ function CollapsibleSection({
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={16}
-          color="#5a7d6a"
+          color="#9B5A5A"
         />
       </Pressable>
       {expanded ? (
@@ -259,7 +259,7 @@ function CollapsibleGroup({
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={16}
-          color="#5a7d6a"
+          color="#9B5A5A"
         />
       </Pressable>
       {expanded ? <View style={styles.groupBody}>{children}</View> : null}
@@ -396,7 +396,7 @@ export function ContactPickerModal({
               pressed && styles.modalClosePressed,
             ]}
           >
-            <Ionicons name="close" size={22} color="#166534" />
+            <Ionicons name="close" size={22} color="#D33D3D" />
           </Pressable>
         </View>
 
@@ -434,14 +434,14 @@ export function ContactPickerModal({
               autoComplete="off"
               onChangeText={setQuery}
               placeholder={searchPlaceholder}
-              placeholderTextColor="#86a894"
+              placeholderTextColor="#C37A7A"
               style={styles.searchInput}
               value={query}
             />
           ) : null}
 
           {isLoading ? (
-            <ActivityIndicator color="#166534" style={styles.loader} />
+            <ActivityIndicator color="#D33D3D" style={styles.loader} />
           ) : !hasFilteredResults ? (
             <Text style={styles.empty}>{emptyMessage}</Text>
           ) : isContactsTab ? (
@@ -468,7 +468,7 @@ export function ContactPickerModal({
                     <Ionicons
                       name={walletsExpanded ? 'chevron-up' : 'chevron-down'}
                       size={16}
-                      color="#5a7d6a"
+                      color="#9B5A5A"
                     />
                   </Pressable>
                   {walletsExpanded ? (
@@ -548,7 +548,7 @@ export function ContactPickerModal({
                         <Ionicons
                           name={walletsExpanded ? 'chevron-up' : 'chevron-down'}
                           size={16}
-                          color="#5a7d6a"
+                          color="#9B5A5A"
                         />
                       </Pressable>
                       {walletsExpanded ? (
@@ -598,7 +598,7 @@ export function ContactPickerModal({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   modalTopBar: {
     flexDirection: 'row',
@@ -607,14 +607,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#d1fae5',
+    borderBottomColor: '#F5BFA9',
   },
   modalTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     paddingLeft: 40,
   },
   modalClose: {
@@ -635,7 +635,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     padding: 4,
     gap: 4,
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#FFDCC8',
     borderRadius: 12,
   },
   tabChip: {
@@ -652,11 +652,11 @@ const styles = StyleSheet.create({
   tabChipText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textAlign: 'center',
   },
   tabChipTextSelected: {
-    color: '#166534',
+    color: '#D33D3D',
   },
   list: {
     paddingHorizontal: 24,
@@ -668,12 +668,12 @@ const styles = StyleSheet.create({
     marginTop: 16,
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#166534',
+    color: '#D33D3D',
   },
   loader: {
     marginTop: 48,
@@ -681,7 +681,7 @@ const styles = StyleSheet.create({
   empty: {
     marginTop: 48,
     fontSize: 15,
-    color: '#86a894',
+    color: '#C37A7A',
     textAlign: 'center',
   },
   section: {
@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -731,7 +731,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -750,11 +750,11 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   optionDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#5a7d6a',
+    color: '#9B5A5A',
   },
 });

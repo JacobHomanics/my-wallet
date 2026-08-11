@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#166534',
+    color: '#D33D3D',
     marginBottom: 8,
   },
   paragraph: {
@@ -106,13 +106,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#FFDCC8',
   },
   confirmButton: {
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
   },
   buttonPressed: {
     opacity: 0.85,
@@ -120,11 +120,11 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   confirmButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#f0fdf4',
+    color: '#FFF4E6',
   },
 });

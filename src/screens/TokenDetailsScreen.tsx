@@ -130,7 +130,7 @@ export function TokenDetailsScreen() {
         </View>
 
         {!hasWallet || loading ? (
-          <ActivityIndicator color="#166534" style={styles.loader} />
+          <ActivityIndicator color="#D33D3D" style={styles.loader} />
         ) : error && tokens.length === 0 ? (
           <View style={styles.errorBlock}>
             <Text style={styles.errorText}>{error}</Text>
@@ -164,7 +164,7 @@ export function TokenDetailsScreen() {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                tintColor="#166534"
+                tintColor="#D33D3D"
               />
             }
             renderItem={renderChainSection}
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     minHeight: 0,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   content: {
     flex: 1,
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   topBarSpacer: {
     width: 44,
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   summary: {
     paddingHorizontal: 24,
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -240,13 +240,13 @@ const styles = StyleSheet.create({
   balanceLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
   },
   balanceValue: {
     flexShrink: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     fontVariant: ['tabular-nums'],
     textAlign: 'right',
   },
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     marginTop: 48,
     paddingHorizontal: 24,
     fontSize: 15,
-    color: '#86a894',
+    color: '#C37A7A',
     textAlign: 'center',
   },
   errorBlock: {
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
     color: '#b91c1c',
   },
   retryButton: {
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   retryButtonText: {
-    color: '#f0fdf4',
+    color: '#FFF4E6',
     fontSize: 15,
     fontWeight: '600',
   },

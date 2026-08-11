@@ -39,7 +39,7 @@ export function ExportPrivateKeyWebView({
               pressed && styles.closeButtonPressed,
             ]}
           >
-            <Ionicons name="close" size={22} color="#166534" />
+            <Ionicons name="close" size={22} color="#D33D3D" />
           </Pressable>
         </View>
 
@@ -72,7 +72,7 @@ export function ExportPrivateKeyWebView({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   header: {
     flexDirection: 'row',
@@ -81,12 +81,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#d1fae5',
+    borderBottomColor: '#F5BFA9',
   },
   title: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   closeButton: {
     padding: 4,
@@ -96,6 +96,6 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
 });

@@ -68,7 +68,11 @@ export function DisplayCurrencyPickerModal({
             <Text style={styles.optionDescription}>{item.description}</Text>
           </View>
           {selected ? (
-            <Ionicons name="checkmark-circle" size={22} color="#166534" />
+            <Ionicons
+              name="checkmark-circle"
+              size={22}
+              color="#D33D3D"
+            />
           ) : (
             <View style={styles.optionSpacer} />
           )}
@@ -103,19 +107,19 @@ export function DisplayCurrencyPickerModal({
               pressed && styles.modalClosePressed,
             ]}
           >
-            <Ionicons name="close" size={22} color="#166534" />
+            <Ionicons name="close" size={22} color="#D33D3D" />
           </Pressable>
         </View>
 
         <View style={styles.searchRow}>
-          <Ionicons name="search" size={18} color="#5a7d6a" />
+          <Ionicons name="search" size={18} color="#9B5A5A" />
           <TextInput
             accessibilityLabel="Search display currencies"
             autoCapitalize="none"
             autoCorrect={false}
             onChangeText={setQuery}
             placeholder="Search by name or code"
-            placeholderTextColor="#86a894"
+            placeholderTextColor="#C37A7A"
             returnKeyType="search"
             style={styles.searchInput}
             value={query}
@@ -131,7 +135,7 @@ export function DisplayCurrencyPickerModal({
                 pressed && styles.clearSearchButtonPressed,
               ]}
             >
-              <Ionicons name="close-circle" size={18} color="#5a7d6a" />
+          <Ionicons name="close-circle" size={18} color="#9B5A5A" />
             </Pressable>
           ) : null}
         </View>
@@ -156,7 +160,7 @@ export function DisplayCurrencyPickerModal({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   modalTopBar: {
     flexDirection: 'row',
@@ -165,14 +169,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#d1fae5',
+    borderBottomColor: '#F5BFA9',
   },
   modalTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     paddingLeft: 40,
   },
   modalClose: {
@@ -193,7 +197,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     gap: 10,
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     backgroundColor: '#ffffff',
   },
@@ -201,7 +205,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 48,
     fontSize: 15,
-    color: '#166534',
+    color: '#D33D3D',
   },
   clearSearchButton: {
     width: 24,
@@ -223,13 +227,13 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
   optionSelected: {
-    borderColor: '#166534',
+    borderColor: '#D33D3D',
   },
   optionPressed: {
     opacity: 0.85,
@@ -242,12 +246,12 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   optionDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#5a7d6a',
+    color: '#9B5A5A',
   },
   optionSpacer: {
     width: 22,
@@ -255,7 +259,7 @@ const styles = StyleSheet.create({
   empty: {
     paddingTop: 24,
     fontSize: 15,
-    color: '#86a894',
+    color: '#C37A7A',
     textAlign: 'center',
   },
   emptyQuery: {

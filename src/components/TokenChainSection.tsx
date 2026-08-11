@@ -154,7 +154,7 @@ const ChainHeader = memo(function ChainHeader({
         <Ionicons
           name={expanded ? 'chevron-down' : 'chevron-forward'}
           size={compact ? 14 : 16}
-          color="#86a894"
+          color="#C37A7A"
         />
       </View>
     </Pressable>
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   chainDivider: {
     marginTop: 12,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#F5BFA9',
   },
   unknownSubgroups: {
     gap: 8,
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     overflow: 'hidden',
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#F5BFA9',
   },
   nestedChainIconImage: {
     width: 18,
@@ -311,14 +311,14 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     overflow: 'hidden',
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#F5BFA9',
     alignItems: 'center',
     justifyContent: 'center',
   },
   nestedChainIconFallbackText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#3f6b52',
+    color: '#7A3B3B',
   },
   chainHeader: {
     flexDirection: 'row',
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     overflow: 'hidden',
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#F5BFA9',
   },
   chainIconImage: {
     width: 22,
@@ -353,14 +353,14 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     overflow: 'hidden',
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#F5BFA9',
     alignItems: 'center',
     justifyContent: 'center',
   },
   chainIconFallbackText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#3f6b52',
+    color: '#7A3B3B',
   },
   chainHeaderText: {
     flex: 1,
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   },
   chainMeta: {
     fontSize: 12,
-    color: '#86a894',
+    color: '#C37A7A',
   },
   chainHeaderRight: {
     flexDirection: 'row',
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   chainUsd: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     fontVariant: ['tabular-nums'],
   },
   chainTokens: {
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   tokenRowSelected: {
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#F5BFA9',
   },
   tokenRowPressed: {
     opacity: 0.65,
@@ -422,11 +422,11 @@ const styles = StyleSheet.create({
   tokenSymbol: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   tokenMeta: {
     fontSize: 13,
-    color: '#86a894',
+    color: '#C37A7A',
   },
   tokenRight: {
     alignItems: 'flex-end',
@@ -436,12 +436,12 @@ const styles = StyleSheet.create({
   tokenBalance: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     fontVariant: ['tabular-nums'],
   },
   tokenUsd: {
     fontSize: 13,
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     fontVariant: ['tabular-nums'],
   },
 });

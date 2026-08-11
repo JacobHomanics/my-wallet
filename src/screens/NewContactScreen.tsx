@@ -76,7 +76,7 @@ export function NewContactScreen() {
             editable={!isAdding}
             onChangeText={setQuery}
             placeholder="Username"
-            placeholderTextColor="#86a894"
+            placeholderTextColor="#C37A7A"
             style={styles.input}
             value={query}
           />
@@ -89,7 +89,7 @@ export function NewContactScreen() {
           ) : null}
 
           {isSearching || isAdding ? (
-            <ActivityIndicator color="#166534" style={styles.loader} />
+            <ActivityIndicator color="#D33D3D" style={styles.loader} />
           ) : null}
 
           {results.length > 0 ? (
@@ -153,7 +153,7 @@ export function NewContactScreen() {
             <Ionicons
               name={showAdvanced ? 'chevron-up' : 'chevron-down'}
               size={16}
-              color="#5a7d6a"
+              color="#9B5A5A"
             />
           </Pressable>
 
@@ -171,7 +171,7 @@ export function NewContactScreen() {
                 ]}
               >
                 <Text style={styles.advancedButtonText}>Farcaster</Text>
-                <Ionicons name="chevron-forward" size={18} color="#86a894" />
+                <Ionicons name="chevron-forward" size={18} color="#C37A7A" />
               </Pressable>
               <View style={styles.advancedDivider} />
               <Pressable
@@ -186,7 +186,7 @@ export function NewContactScreen() {
                 ]}
               >
                 <Text style={styles.advancedButtonText}>ENS</Text>
-                <Ionicons name="chevron-forward" size={18} color="#86a894" />
+                <Ionicons name="chevron-forward" size={18} color="#C37A7A" />
               </Pressable>
               <View style={styles.advancedDivider} />
               <Pressable
@@ -201,7 +201,11 @@ export function NewContactScreen() {
                 ]}
               >
                 <Text style={styles.advancedButtonText}>Raw address(es)</Text>
-                <Ionicons name="chevron-forward" size={18} color="#86a894" />
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color="#C37A7A"
+                />
               </Pressable>
             </View>
           ) : null}
@@ -214,7 +218,7 @@ export function NewContactScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   content: {
     flex: 1,
@@ -233,7 +237,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   topBarSpacer: {
     width: 44,
@@ -250,7 +254,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   body: {
     paddingHorizontal: 24,
@@ -260,7 +264,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -268,17 +272,17 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#166534',
+    color: '#D33D3D',
   },
   hint: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#86a894',
+    color: '#C37A7A',
   },
   error: {
     fontSize: 13,
@@ -298,14 +302,14 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
   resultCardPressed: {
     opacity: 0.85,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   resultCardDisabled: {
     opacity: 0.55,
@@ -317,12 +321,12 @@ const styles = StyleSheet.create({
   resultLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   empty: {
     marginTop: 16,
     fontSize: 15,
-    color: '#86a894',
+    color: '#C37A7A',
     textAlign: 'center',
   },
   advancedToggle: {
@@ -341,13 +345,13 @@ const styles = StyleSheet.create({
   advancedToggleText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
   },
   advancedCard: {
     marginTop: 4,
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -359,16 +363,16 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   advancedButtonPressed: {
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   advancedButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   advancedDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#F5BFA9',
     marginHorizontal: 16,
   },
 });

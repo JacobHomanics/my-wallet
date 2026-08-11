@@ -40,7 +40,7 @@ export function BackButton({
         pressed && styles.backButtonPressed,
       ]}
     >
-      <Ionicons name="chevron-back" size={28} color="#166534" />
+      <Ionicons name="chevron-back" size={28} color="#D33D3D" />
     </Pressable>
   );
 }

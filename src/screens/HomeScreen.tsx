@@ -59,14 +59,14 @@ export function HomeScreen() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor="#166534"
+          tintColor="#D33D3D"
         />
       }
       style={styles.container}
     >
       <View style={styles.hero}>
         {!ready || loading ? (
-          <ActivityIndicator color="#166534" />
+          <ActivityIndicator color="#D33D3D" />
         ) : !hasWallet ? (
           <Text style={styles.empty}>Creating your wallets…</Text>
         ) : error && tokens.length === 0 ? (
@@ -100,7 +100,7 @@ export function HomeScreen() {
                       pressed && styles.actionButtonPressed,
                     ]}
                   >
-                    <Ionicons name="arrow-up" size={18} color="#f0fdf4" />
+                    <Ionicons name="arrow-up" size={18} color="#FFF4E6" />
                     <Text style={styles.actionButtonText}>Pay</Text>
                   </Pressable>
                   <Pressable
@@ -113,7 +113,7 @@ export function HomeScreen() {
                       pressed && styles.actionButtonPressed,
                     ]}
                   >
-                    <Ionicons name="arrow-down" size={18} color="#f0fdf4" />
+                    <Ionicons name="arrow-down" size={18} color="#FFF4E6" />
                     <Text style={styles.actionButtonText}>Receive</Text>
                   </Pressable>
                   <Pressable
@@ -126,7 +126,7 @@ export function HomeScreen() {
                       pressed && styles.actionButtonPressed,
                     ]}
                   >
-                    <Ionicons name="cash-outline" size={18} color="#f0fdf4" />
+                    <Ionicons name="cash-outline" size={18} color="#FFF4E6" />
                     <Text style={styles.actionButtonText}>Request</Text>
                   </Pressable>
                   {canDeposit ? (
@@ -187,7 +187,7 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   content: {
     flexGrow: 1,
@@ -203,14 +203,14 @@ const styles = StyleSheet.create({
   total: {
     fontSize: 48,
     fontWeight: '700',
-    color: '#166534',
+    color: '#D33D3D',
     letterSpacing: -1,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
   },
   empty: {
     fontSize: 15,
-    color: '#86a894',
+    color: '#C37A7A',
     textAlign: 'center',
   },
   errorBlock: {
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   retryButton: {
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   retryButtonText: {
-    color: '#f0fdf4',
+    color: '#FFF4E6',
     fontSize: 15,
     fontWeight: '600',
   },
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 10,
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   actionButtonText: {
-    color: '#f0fdf4',
+    color: '#FFF4E6',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   detailsLinkText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textDecorationLine: 'underline',
   },
 });

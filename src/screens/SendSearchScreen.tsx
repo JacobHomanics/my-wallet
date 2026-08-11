@@ -85,14 +85,14 @@ export function SendSearchScreen() {
           </View>
 
           <View style={styles.searchRow}>
-            <Ionicons name="search" size={18} color="#5a7d6a" />
+            <Ionicons name="search" size={18} color="#9B5A5A" />
             <TextInput
               accessibilityLabel="Search usernames or account numbers"
               autoCapitalize="none"
               autoCorrect={false}
               onChangeText={setQuery}
               placeholder="Username or account number"
-              placeholderTextColor="#86a894"
+              placeholderTextColor="#C37A7A"
               returnKeyType="search"
               style={styles.searchInput}
               value={query}
@@ -108,7 +108,7 @@ export function SendSearchScreen() {
                   pressed && styles.clearSearchButtonPressed,
                 ]}
               >
-                <Ionicons name="close-circle" size={18} color="#5a7d6a" />
+                <Ionicons name="close-circle" size={18} color="#9B5A5A" />
               </Pressable>
             ) : null}
           </View>
@@ -129,7 +129,7 @@ export function SendSearchScreen() {
 
           {showResults ? (
             isSearching && !hasResults ? (
-              <ActivityIndicator color="#166534" style={styles.loader} />
+              <ActivityIndicator color="#D33D3D" style={styles.loader} />
             ) : (
               <ScrollView
                 contentContainerStyle={[
@@ -195,7 +195,7 @@ export function SendSearchScreen() {
                           <Ionicons
                             name="chevron-forward"
                             size={18}
-                            color="#86a894"
+                            color="#C37A7A"
                           />
                         </Pressable>
                       );
@@ -203,7 +203,7 @@ export function SendSearchScreen() {
 
                     {isSearching ? (
                       <ActivityIndicator
-                        color="#166534"
+                        color="#D33D3D"
                         style={styles.inlineLoader}
                       />
                     ) : null}
@@ -221,7 +221,7 @@ export function SendSearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   flex: {
     flex: 1,
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   topBarSpacer: {
     width: 44,
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   searchRow: {
     flexDirection: 'row',
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     gap: 10,
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     backgroundColor: '#ffffff',
   },
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 48,
     fontSize: 15,
-    color: '#166534',
+    color: '#D33D3D',
   },
   clearSearchButton: {
     width: 24,
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -330,16 +330,16 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   optionDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#5a7d6a',
+    color: '#9B5A5A',
   },
   empty: {
     fontSize: 15,
-    color: '#86a894',
+    color: '#C37A7A',
     textAlign: 'center',
   },
   advancedSearch: {
@@ -354,6 +354,6 @@ const styles = StyleSheet.create({
   advancedSearchText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
   },
 });

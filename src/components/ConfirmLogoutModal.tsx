@@ -91,12 +91,12 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 16,
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
   },
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#166534',
+    color: '#D33D3D',
     marginBottom: 10,
   },
   paragraph: {
@@ -114,12 +114,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#F5BFA9',
   },
   cancelButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   logoutButton: {
     paddingHorizontal: 14,

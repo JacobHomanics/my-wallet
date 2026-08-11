@@ -211,7 +211,7 @@ export function SendAmountScreen() {
           </View>
 
           {!ready || (loading && tokens.length === 0) ? (
-            <ActivityIndicator color="#166534" style={styles.loader} />
+            <ActivityIndicator color="#D33D3D" style={styles.loader} />
           ) : !hasWallet ? (
             <Text style={styles.empty}>Creating your wallets…</Text>
           ) : (
@@ -274,7 +274,7 @@ export function SendAmountScreen() {
                     keyboardType="decimal-pad"
                     onChangeText={setAmount}
                     placeholder="0"
-                    placeholderTextColor="#86a894"
+                    placeholderTextColor="#C37A7A"
                     style={styles.fieldInput}
                     value={amount}
                   />
@@ -313,7 +313,7 @@ export function SendAmountScreen() {
                   <Ionicons
                     name={showAdvanced ? 'chevron-up' : 'chevron-down'}
                     size={16}
-                    color="#5a7d6a"
+                    color="#9B5A5A"
                   />
                 </Pressable>
 
@@ -380,7 +380,7 @@ export function SendAmountScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   flex: {
     flex: 1,
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   topBarSpacer: {
     width: 44,
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   loader: {
     marginTop: 48,
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
     marginTop: 48,
     paddingHorizontal: 24,
     fontSize: 15,
-    color: '#86a894',
+    color: '#C37A7A',
     textAlign: 'center',
   },
   form: {
@@ -442,14 +442,14 @@ const styles = StyleSheet.create({
   balanceLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     marginRight: 8,
   },
   balanceValue: {
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     fontVariant: ['tabular-nums'],
     textAlign: 'right',
   },
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     fontVariant: ['tabular-nums'],
   },
   label: {
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: '#F3A089',
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 8,
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   fieldRowDisabled: {
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#FFDCC8',
   },
   fieldRowError: {
     borderColor: '#fca5a5',
@@ -506,12 +506,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingRight: 8,
     fontSize: 16,
-    color: '#166534',
+    color: '#D33D3D',
   },
   amountPrefix: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     marginRight: 4,
   },
   fieldError: {
@@ -522,12 +522,12 @@ const styles = StyleSheet.create({
   taxSection: {
     marginTop: 16,
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: '#F3A089',
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 16,
     paddingVertical: 14,
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#FFDCC8',
   },
   payerTotalRow: {
     marginTop: 10,
@@ -535,22 +535,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: '#F3A089',
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 16,
     paddingVertical: 14,
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#FFDCC8',
   },
   payerTotalLabel: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#14532d',
+    color: '#4A1E1E',
   },
   payerTotalValue: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#14532d',
+    color: '#4A1E1E',
     fontVariant: ['tabular-nums'],
   },
   advancedToggle: {
@@ -565,13 +565,13 @@ const styles = StyleSheet.create({
   advancedToggleText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     marginRight: 4,
   },
   continueButton: {
     marginTop: 32,
     alignItems: 'center',
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   continueButtonText: {
-    color: '#f0fdf4',
+    color: '#FFF4E6',
     fontSize: 16,
     fontWeight: '600',
   },

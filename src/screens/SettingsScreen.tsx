@@ -125,7 +125,7 @@ export function SettingsScreen() {
                     Username and profile photo
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#86a894" />
+                <Ionicons name="chevron-forward" size={18} color="#C37A7A" />
               </Pressable>
             </View>
 
@@ -148,7 +148,7 @@ export function SettingsScreen() {
                     Default destination: {selectedDestinationLabel}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#86a894" />
+                <Ionicons name="chevron-forward" size={18} color="#C37A7A" />
               </Pressable>
             </View>
 
@@ -171,7 +171,7 @@ export function SettingsScreen() {
                     {selectedCurrency.description}
                   </Text>
                 </View>
-                <Ionicons name="chevron-down" size={18} color="#86a894" />
+                <Ionicons name="chevron-down" size={18} color="#C37A7A" />
               </Pressable>
             </View>
 
@@ -194,7 +194,7 @@ export function SettingsScreen() {
                     {selectedStrategy.description}
                   </Text>
                 </View>
-                <Ionicons name="chevron-down" size={18} color="#86a894" />
+                <Ionicons name="chevron-down" size={18} color="#C37A7A" />
               </Pressable>
             </View>
 
@@ -217,7 +217,7 @@ export function SettingsScreen() {
                     {selectedChainPriority.description}
                   </Text>
                 </View>
-                <Ionicons name="chevron-down" size={18} color="#86a894" />
+                <Ionicons name="chevron-down" size={18} color="#C37A7A" />
               </Pressable>
             </View>
 
@@ -274,7 +274,7 @@ export function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   scroll: {
     flex: 1,
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   topBarSpacer: {
     width: 44,
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   sections: {
     paddingHorizontal: 24,
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -357,18 +357,18 @@ const styles = StyleSheet.create({
   strategyLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   strategyDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#86a894',
+    color: '#C37A7A',
   },
   logoutButton: {
     width: '100%',
     maxWidth: 420,
     marginTop: 32,
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   logoutButtonText: {
-    color: '#f0fdf4',
+    color: '#FFF4E6',
     fontSize: 16,
     fontWeight: '600',
   },

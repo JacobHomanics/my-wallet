@@ -99,7 +99,7 @@ export function SwipeableContactRow({
             <Text style={styles.contactSubtitle}>{contact.subtitle}</Text>
           ) : null}
         </View>
-        <Ionicons name="chevron-forward" size={18} color="#86a894" />
+        <Ionicons name="chevron-forward" size={18} color="#C37A7A" />
       </TouchableOpacity>
     </Swipeable>
   );
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -128,13 +128,13 @@ const styles = StyleSheet.create({
   contactLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   contactSubtitle: {
     marginTop: 4,
     fontSize: 13,
     lineHeight: 18,
-    color: '#86a894',
+    color: '#C37A7A',
   },
   deleteSlot: {
     width: DELETE_WIDTH,

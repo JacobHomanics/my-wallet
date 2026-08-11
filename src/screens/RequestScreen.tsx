@@ -92,7 +92,7 @@ export function RequestScreen() {
                   keyboardType="decimal-pad"
                   onChangeText={setAmount}
                   placeholder="0"
-                  placeholderTextColor="#86a894"
+                placeholderTextColor="#C37A7A"
                   style={styles.fieldInput}
                   value={amount}
                 />
@@ -124,7 +124,7 @@ export function RequestScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   flex: {
     flex: 1,
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   topBarSpacer: {
     width: 44,
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#166534',
+    color: '#D33D3D',
   },
   form: {
     flexGrow: 1,
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: '#F3A089',
     borderRadius: 12,
     backgroundColor: '#ffffff',
     paddingHorizontal: 14,
@@ -194,14 +194,14 @@ const styles = StyleSheet.create({
   amountPrefix: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     marginRight: 4,
   },
   fieldInput: {
     flex: 1,
     fontSize: 20,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     paddingVertical: 12,
   },
   fieldError: {
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     marginTop: 28,
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   continueButtonText: {
-    color: '#f0fdf4',
+    color: '#FFF4E6',
     fontSize: 16,
     fontWeight: '600',
   },

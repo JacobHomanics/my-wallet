@@ -95,7 +95,7 @@ export function OnrampSettingsScreen() {
                 {selectedNetwork.description}
               </Text>
             </View>
-            <Ionicons name="chevron-down" size={18} color="#86a894" />
+            <Ionicons name="chevron-down" size={18} color="#C37A7A" />
           </Pressable>
         </View>
 
@@ -124,7 +124,7 @@ export function OnrampSettingsScreen() {
                 {selectedCurrency.description}
               </Text>
             </View>
-            <Ionicons name="chevron-down" size={18} color="#86a894" />
+            <Ionicons name="chevron-down" size={18} color="#C37A7A" />
           </Pressable>
         </View>
 
@@ -168,7 +168,7 @@ export function OnrampSettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   content: {
     width: '100%',
@@ -198,12 +198,12 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#166534',
+    color: '#D33D3D',
     letterSpacing: -0.5,
     textAlign: 'center',
   },
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -249,23 +249,23 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   optionLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   optionDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#86a894',
+    color: '#C37A7A',
   },
   note: {
     marginTop: 20,
     fontSize: 13,
     lineHeight: 18,
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textAlign: 'center',
   },
 });

@@ -33,8 +33,8 @@ export function MainTabs() {
           },
         },
         tabBarPosition: isDesktopWeb ? 'top' : 'bottom',
-        tabBarActiveTintColor: '#166534',
-        tabBarInactiveTintColor: '#86a894',
+        tabBarActiveTintColor: '#D33D3D',
+        tabBarInactiveTintColor: '#C37A7A',
         tabBarStyle,
         tabBarLabelStyle: {
           lineHeight: 13,

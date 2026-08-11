@@ -13,13 +13,13 @@ export function useBottomTabBarStyle() {
   if (isDesktopWeb) {
     return {
       backgroundColor: '#ffffff',
-      borderTopColor: '#d1fae5',
+      borderTopColor: '#F5BFA9',
     } as const;
   }
 
   return {
     backgroundColor: '#ffffff',
-    borderTopColor: '#d1fae5',
+    borderTopColor: '#F5BFA9',
     // Custom height replaces UIKit 49 and must include the bottom inset.
     height: TAB_BAR_CONTENT_HEIGHT + insets.bottom,
   } as const;

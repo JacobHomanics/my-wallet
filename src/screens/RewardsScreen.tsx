@@ -68,13 +68,13 @@ export function RewardsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#166534"
+              tintColor="#D33D3D"
             />
           }
           style={styles.flex}
         >
           {loading ? (
-            <ActivityIndicator color="#166534" />
+          <ActivityIndicator color="#D33D3D" />
           ) : !hasWallet ? (
             <Text style={styles.empty}>Creating your wallets…</Text>
           ) : (
@@ -104,7 +104,7 @@ export function RewardsScreen() {
                 <Ionicons
                   name={showAdvanced ? 'chevron-up' : 'chevron-down'}
                   size={16}
-                  color="#5a7d6a"
+                  color="#9B5A5A"
                 />
               </Pressable>
 
@@ -134,7 +134,7 @@ export function RewardsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   flex: {
     flex: 1,
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   topBarSpacer: {
     width: 44,
@@ -173,14 +173,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   balance: {
     fontSize: 56,
     fontWeight: '700',
-    color: '#166534',
+    color: '#D33D3D',
     letterSpacing: -1,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     maxWidth: 320,
     fontSize: 15,
     lineHeight: 22,
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textAlign: 'center',
   },
   advancedToggle: {
@@ -208,13 +208,13 @@ const styles = StyleSheet.create({
   advancedToggleText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
   },
   advanced: {
     marginTop: 8,
     alignSelf: 'stretch',
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     backgroundColor: '#fff',
     paddingHorizontal: 16,
@@ -227,23 +227,23 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   detailValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     fontVariant: ['tabular-nums'],
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#F5BFA9',
   },
   empty: {
     fontSize: 15,
-    color: '#86a894',
+    color: '#C37A7A',
     textAlign: 'center',
   },
 });

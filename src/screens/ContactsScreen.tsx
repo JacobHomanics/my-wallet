@@ -105,7 +105,7 @@ function CollapsibleSection({
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={16}
-          color="#5a7d6a"
+          color="#9B5A5A"
         />
       </Pressable>
       {expanded ? (
@@ -147,7 +147,7 @@ function CollapsibleGroup({
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={16}
-          color="#5a7d6a"
+          color="#9B5A5A"
         />
       </Pressable>
       {expanded ? <View style={styles.groupBody}>{children}</View> : null}
@@ -368,7 +368,7 @@ export function ContactsScreen() {
               pressed && styles.addButtonPressed,
             ]}
           >
-            <Ionicons name="add" size={24} color="#f0fdf4" />
+          <Ionicons name="add" size={24} color="#FFF4E6" />
           </Pressable>
         </View>
 
@@ -407,14 +407,14 @@ export function ContactsScreen() {
                 autoComplete="off"
                 onChangeText={setQuery}
                 placeholder={searchPlaceholder}
-                placeholderTextColor="#86a894"
+                placeholderTextColor="#C37A7A"
                 style={styles.searchInput}
                 value={query}
               />
             ) : null}
 
             {isLoading ? (
-              <ActivityIndicator color="#166534" style={styles.loader} />
+              <ActivityIndicator color="#D33D3D" style={styles.loader} />
             ) : !hasFilteredResults ? (
               <Text style={styles.empty}>{emptyMessage}</Text>
             ) : isContactsTab ? (
@@ -444,7 +444,7 @@ export function ContactsScreen() {
                       <Ionicons
                         name={walletsExpanded ? 'chevron-up' : 'chevron-down'}
                         size={16}
-                        color="#5a7d6a"
+                        color="#9B5A5A"
                       />
                     </Pressable>
                     {walletsExpanded ? (
@@ -536,7 +536,7 @@ export function ContactsScreen() {
                           <Ionicons
                             name={walletsExpanded ? 'chevron-up' : 'chevron-down'}
                             size={16}
-                            color="#5a7d6a"
+                            color="#9B5A5A"
                           />
                         </Pressable>
                         {walletsExpanded ? (
@@ -607,7 +607,7 @@ export function ContactsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   content: {
     flex: 1,
@@ -629,7 +629,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   topBarSpacer: {
     width: 36,
@@ -641,7 +641,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
     borderRadius: 10,
   },
   addButtonPressed: {
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     padding: 4,
     gap: 4,
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#FFDCC8',
     borderRadius: 12,
   },
   tabChip: {
@@ -673,11 +673,11 @@ const styles = StyleSheet.create({
   tabChipText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textAlign: 'center',
   },
   tabChipTextSelected: {
-    color: '#166534',
+    color: '#D33D3D',
   },
   list: {
     paddingHorizontal: 24,
@@ -689,12 +689,12 @@ const styles = StyleSheet.create({
     marginTop: 16,
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#166534',
+    color: '#D33D3D',
   },
   loader: {
     marginTop: 48,
@@ -702,7 +702,7 @@ const styles = StyleSheet.create({
   empty: {
     marginTop: 48,
     fontSize: 15,
-    color: '#86a894',
+    color: '#C37A7A',
     textAlign: 'center',
   },
   section: {
@@ -737,7 +737,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },

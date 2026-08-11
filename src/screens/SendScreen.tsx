@@ -263,7 +263,7 @@ export function SendScreen() {
                   pressed && styles.contactsButtonPressed,
                 ]}
               >
-                <Ionicons name="search-outline" size={20} color="#166534" />
+                <Ionicons name="search-outline" size={20} color="#D33D3D" />
                 <Text style={styles.contactsButtonText}>Search</Text>
               </Pressable>
 
@@ -277,7 +277,7 @@ export function SendScreen() {
                   pressed && styles.contactsButtonPressed,
                 ]}
               >
-                <Ionicons name="people-outline" size={20} color="#166534" />
+                <Ionicons name="people-outline" size={20} color="#D33D3D" />
                 <Text style={styles.contactsButtonText}>Contacts</Text>
               </Pressable>
 
@@ -299,7 +299,7 @@ export function SendScreen() {
                 <Ionicons
                   name={showDecodedAddresses ? 'chevron-up' : 'chevron-down'}
                   size={16}
-                  color="#5a7d6a"
+                  color="#9B5A5A"
                 />
               </Pressable>
               {showDecodedAddresses ? (
@@ -312,7 +312,7 @@ export function SendScreen() {
                         autoCorrect={false}
                         onChangeText={setDecodedEthereumRecipient}
                         placeholder="0x…"
-                        placeholderTextColor="#86a894"
+                        placeholderTextColor="#C37A7A"
                         style={styles.decodedInput}
                         value={ethereumRecipient}
                       />
@@ -329,7 +329,7 @@ export function SendScreen() {
                           <Ionicons
                             name="close-circle"
                             size={20}
-                            color="#86a894"
+                            color="#C37A7A"
                           />
                         </Pressable>
                       ) : null}
@@ -344,7 +344,7 @@ export function SendScreen() {
                         autoCorrect={false}
                         onChangeText={setDecodedSolanaRecipient}
                         placeholder="Solana address"
-                        placeholderTextColor="#86a894"
+                        placeholderTextColor="#C37A7A"
                         style={styles.decodedInput}
                         value={solanaRecipient}
                       />
@@ -361,7 +361,7 @@ export function SendScreen() {
                           <Ionicons
                             name="close-circle"
                             size={20}
-                            color="#86a894"
+                            color="#C37A7A"
                           />
                         </Pressable>
                       ) : null}
@@ -399,7 +399,7 @@ export function SendScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   flex: {
     flex: 1,
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   topBarSpacer: {
     width: 44,
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   form: {
     flexGrow: 1,
@@ -468,14 +468,14 @@ const styles = StyleSheet.create({
   decodedToggleText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     marginRight: 4,
   },
   decodedCard: {
     marginTop: 8,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     backgroundColor: '#ffffff',
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -490,14 +490,14 @@ const styles = StyleSheet.create({
     paddingLeft: 12,
     paddingRight: 4,
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 10,
-    backgroundColor: '#f8fffa',
+    backgroundColor: '#FFF4E6',
   },
   decodedLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#86a894',
+    color: '#C37A7A',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -506,11 +506,11 @@ const styles = StyleSheet.create({
     minWidth: 0,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#166534',
+    color: '#D33D3D',
   },
   decodedDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#FFDCC8',
     marginVertical: 10,
   },
   contactsButton: {
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#FFDCC8',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -530,14 +530,14 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   contactsButtonText: {
-    color: '#166534',
+    color: '#D33D3D',
     fontSize: 16,
     fontWeight: '600',
   },
   continueButton: {
     marginTop: 24,
     alignItems: 'center',
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   continueButtonText: {
-    color: '#f0fdf4',
+    color: '#FFF4E6',
     fontSize: 16,
     fontWeight: '600',
   },

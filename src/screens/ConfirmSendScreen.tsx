@@ -301,7 +301,7 @@ export function ConfirmSendScreen() {
         </View>
 
         {!ready || (loading && tokens.length === 0) ? (
-          <ActivityIndicator color="#166534" style={styles.loader} />
+          <ActivityIndicator color="#D33D3D" style={styles.loader} />
         ) : (
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
             {hasRecipient && primaryLabel ? (
@@ -373,7 +373,7 @@ export function ConfirmSendScreen() {
                   keyboardType="decimal-pad"
                   onChangeText={setTip}
                   placeholder="0"
-                  placeholderTextColor="#86a894"
+                  placeholderTextColor="#C37A7A"
                   style={styles.tipInput}
                   value={tip}
                 />
@@ -407,7 +407,7 @@ export function ConfirmSendScreen() {
               <Ionicons
                 name={showAdvanced ? 'chevron-up' : 'chevron-down'}
                 size={16}
-                color="#5a7d6a"
+                color="#9B5A5A"
               />
             </Pressable>
 
@@ -465,7 +465,7 @@ export function ConfirmSendScreen() {
                 ]}
               >
                 {sending ? (
-                  <ActivityIndicator color="#f0fdf4" />
+                  <ActivityIndicator color="#FFF4E6" />
                 ) : (
                   <Text style={styles.primaryButtonText}>Submit</Text>
                 )}
@@ -538,7 +538,7 @@ export function ConfirmSendScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   flex: {
     flex: 1,
@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   topBarSpacer: {
     width: 44,
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   loader: {
     marginTop: 48,
@@ -592,7 +592,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     fontSize: 36,
     fontWeight: '700',
-    color: '#166534',
+    color: '#D33D3D',
     letterSpacing: -0.6,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
   tipLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: '#F3A089',
     backgroundColor: '#fff',
   },
   tipPercentButtonDisabled: {
@@ -645,13 +645,13 @@ const styles = StyleSheet.create({
   tipPercentButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   tipFieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: '#F3A089',
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 8,
@@ -661,7 +661,7 @@ const styles = StyleSheet.create({
   tipPrefix: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     marginRight: 4,
   },
   tipInput: {
@@ -669,7 +669,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingRight: 8,
     fontSize: 16,
-    color: '#166534',
+    color: '#D33D3D',
   },
   toSection: {
     alignSelf: 'stretch',
@@ -678,14 +678,14 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     marginTop: 12,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#86d4a4',
+    backgroundColor: '#F3A089',
     marginBottom: 28,
   },
   recipientLabel: {
     marginBottom: 8,
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -699,7 +699,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
     fontSize: 18,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     fontVariant: ['tabular-nums'],
   },
   advancedToggle: {
@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
   advancedToggleText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
   },
   error: {
     marginTop: 16,
@@ -738,7 +738,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: '#F3A089',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -750,14 +750,14 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   secondaryButtonText: {
-    color: '#166534',
+    color: '#D33D3D',
     fontSize: 16,
     fontWeight: '600',
   },
   primaryButton: {
     alignItems: 'center',
     alignSelf: 'stretch',
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -773,13 +773,13 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   primaryButtonText: {
-    color: '#f0fdf4',
+    color: '#FFF4E6',
     fontSize: 16,
     fontWeight: '600',
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(22, 101, 52, 0.45)',
+    backgroundColor: 'rgba(211, 61, 61, 0.45)',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
@@ -796,7 +796,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#166534',
+    color: '#D33D3D',
     marginBottom: 8,
   },
   modalBody: {
@@ -815,7 +815,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: '#F3A089',
     backgroundColor: '#fff',
   },
   modalSecondaryButtonPressed: {
@@ -824,14 +824,14 @@ const styles = StyleSheet.create({
   modalSecondaryButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   modalPrimaryButton: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
   },
   modalPrimaryButtonPressed: {
     opacity: 0.85,
@@ -839,6 +839,6 @@ const styles = StyleSheet.create({
   modalPrimaryButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#f0fdf4',
+    color: '#FFF4E6',
   },
 });

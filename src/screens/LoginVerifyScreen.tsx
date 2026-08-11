@@ -97,7 +97,7 @@ export function LoginVerifyScreen() {
           autoComplete="one-time-code"
           keyboardType="number-pad"
           placeholder="123456"
-          placeholderTextColor="#86a894"
+          placeholderTextColor="#C37A7A"
           style={styles.input}
           value={code}
           onChangeText={setCode}
@@ -120,7 +120,7 @@ export function LoginVerifyScreen() {
           ]}
         >
           {isPending ? (
-            <ActivityIndicator color="#f0fdf4" />
+            <ActivityIndicator color="#FFF4E6" />
           ) : (
             <Text style={styles.buttonText}>Verify</Text>
           )}
@@ -133,7 +133,7 @@ export function LoginVerifyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   header: {
     paddingHorizontal: 8,
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#166534',
+    color: '#D33D3D',
     letterSpacing: -0.5,
   },
   subtitle: {
@@ -164,12 +164,12 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 360,
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: '#F3A089',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#166534',
+    color: '#D33D3D',
     backgroundColor: '#fff',
     textAlign: 'center',
     letterSpacing: 4,
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     minWidth: 160,
     alignItems: 'center',
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   buttonText: {
-    color: '#f0fdf4',
+    color: '#FFF4E6',
     fontSize: 16,
     fontWeight: '600',
   },

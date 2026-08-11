@@ -92,7 +92,7 @@ export function ProfileDropdown({
                 pressState.pressed && styles.menuItemPressed,
               ]}
             >
-              <Ionicons name="person-outline" size={18} color="#166534" />
+              <Ionicons name="person-outline" size={18} color="#D33D3D" />
               <Text style={styles.menuItemLabel}>Profile</Text>
             </Pressable>
           ) : null}
@@ -144,19 +144,19 @@ const styles = StyleSheet.create({
     paddingRight: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#FFDCC8',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
-    boxShadow: '0 1px 2px rgba(22, 101, 52, 0.08)',
+    borderColor: '#F5BFA9',
+    boxShadow: '0 1px 2px rgba(211, 61, 61, 0.08)',
   },
   triggerActive: {
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#F5BFA9',
   },
   triggerLabel: {
     flexShrink: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   menu: {
     position: 'absolute',
@@ -168,8 +168,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
-    boxShadow: '0 8px 24px rgba(22, 101, 52, 0.12)',
+    borderColor: '#F5BFA9',
+    boxShadow: '0 8px 24px rgba(211, 61, 61, 0.12)',
     zIndex: 30,
   },
   menuItem: {
@@ -180,19 +180,19 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   menuItemPressed: {
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   menuItemLabel: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#166534',
+    color: '#D33D3D',
   },
   menuItemDanger: {
     color: '#b91c1c',
   },
   separator: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#F5BFA9',
     marginVertical: 4,
     marginHorizontal: 10,
   },

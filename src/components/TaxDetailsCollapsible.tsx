@@ -71,7 +71,7 @@ export function TaxDetailsCollapsible({
             <Ionicons
               name={showTaxDetails ? 'chevron-up' : 'chevron-down'}
               size={16}
-              color="#5a7d6a"
+              color="#9B5A5A"
             />
           </Pressable>
           <Pressable
@@ -84,7 +84,11 @@ export function TaxDetailsCollapsible({
               pressed && styles.helpButtonPressed,
             ]}
           >
-            <Ionicons name="help-circle-outline" size={18} color="#5a7d6a" />
+            <Ionicons
+              name="help-circle-outline"
+              size={18}
+              color="#9B5A5A"
+            />
           </Pressable>
         </View>
         <Pressable
@@ -129,7 +133,7 @@ export function TaxDetailsCollapsible({
                 <Ionicons
                   name={isCopied('tax-evm') ? 'checkmark' : 'copy-outline'}
                   size={18}
-                  color={isCopied('tax-evm') ? '#15803d' : '#5a7d6a'}
+                  color={isCopied('tax-evm') ? '#15803d' : '#9B5A5A'}
                 />
               </Pressable>
             </View>
@@ -159,7 +163,7 @@ export function TaxDetailsCollapsible({
                 <Ionicons
                   name={isCopied('tax-solana') ? 'checkmark' : 'copy-outline'}
                   size={18}
-                  color={isCopied('tax-solana') ? '#15803d' : '#5a7d6a'}
+                  color={isCopied('tax-solana') ? '#15803d' : '#9B5A5A'}
                 />
               </Pressable>
             </View>
@@ -199,7 +203,7 @@ const styles = StyleSheet.create({
   taxLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
   },
   helpButton: {
     width: 28,
@@ -213,7 +217,7 @@ const styles = StyleSheet.create({
   taxValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     fontVariant: ['tabular-nums'],
   },
   taxDetails: {
@@ -224,12 +228,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#b7e4c7',
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   taxDetailsLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#86a894',
+    color: '#C37A7A',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -244,7 +248,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     fontSize: 13,
     fontWeight: '600',
-    color: '#86a894',
+    color: '#C37A7A',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -253,7 +257,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
     fontSize: 16,
     fontWeight: '500',
-    color: '#166534',
+    color: '#D33D3D',
     fontVariant: ['tabular-nums'],
   },
   copyButton: {

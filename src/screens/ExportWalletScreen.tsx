@@ -80,7 +80,7 @@ export function ExportWalletScreen() {
       </Text>
 
       {!isReady ? (
-        <ActivityIndicator color="#166534" style={styles.loader} />
+        <ActivityIndicator color="#D33D3D" style={styles.loader} />
       ) : !isAuthenticated ? (
         <>
           <Text style={styles.hint}>
@@ -117,7 +117,7 @@ export function ExportWalletScreen() {
           ]}
         >
           {isExporting ? (
-            <ActivityIndicator color="#f0fdf4" />
+            <ActivityIndicator color="#FFF4E6" />
           ) : (
             <Text style={styles.buttonText}>Export {wallet.label} key</Text>
           )}
@@ -132,14 +132,14 @@ export function ExportWalletScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#166534',
+    color: '#D33D3D',
     letterSpacing: -0.5,
     textAlign: 'center',
   },
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     fontSize: 13,
     lineHeight: 18,
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     fontSize: 15,
     lineHeight: 22,
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textAlign: 'center',
   },
   loader: {
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 28,
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   buttonText: {
-    color: '#f0fdf4',
+    color: '#FFF4E6',
     fontSize: 16,
     fontWeight: '600',
   },

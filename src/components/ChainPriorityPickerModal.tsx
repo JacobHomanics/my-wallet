@@ -53,7 +53,7 @@ export function ChainPriorityPickerModal({
             <Text style={styles.optionDescription}>{item.description}</Text>
           </View>
           {selected ? (
-            <Ionicons name="checkmark-circle" size={22} color="#166534" />
+            <Ionicons name="checkmark-circle" size={22} color="#D33D3D" />
           ) : (
             <View style={styles.optionSpacer} />
           )}
@@ -88,7 +88,7 @@ export function ChainPriorityPickerModal({
               pressed && styles.modalClosePressed,
             ]}
           >
-            <Ionicons name="close" size={22} color="#166534" />
+            <Ionicons name="close" size={22} color="#D33D3D" />
           </Pressable>
         </View>
 
@@ -106,7 +106,7 @@ export function ChainPriorityPickerModal({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   modalTopBar: {
     flexDirection: 'row',
@@ -115,14 +115,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#d1fae5',
+    borderBottomColor: '#F5BFA9',
   },
   modalTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     paddingLeft: 40,
   },
   modalClose: {
@@ -145,13 +145,13 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
   optionSelected: {
-    borderColor: '#166534',
+    borderColor: '#D33D3D',
   },
   optionPressed: {
     opacity: 0.85,
@@ -164,12 +164,12 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   optionDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#5a7d6a',
+    color: '#9B5A5A',
   },
   optionSpacer: {
     width: 22,

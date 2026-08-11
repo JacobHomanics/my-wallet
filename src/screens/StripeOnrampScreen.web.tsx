@@ -22,7 +22,7 @@ import { useTokenBalances } from '@/hooks/useTokenBalances';
 function DepositLoading({ message }: { message: string }) {
   return (
     <View accessibilityRole="progressbar" style={styles.loadingPanel}>
-      <ActivityIndicator color="#166534" size="large" />
+      <ActivityIndicator color="#D33D3D" size="large" />
       <Text style={styles.loadingText}>{message}</Text>
     </View>
   );
@@ -174,7 +174,7 @@ export function StripeOnrampScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   shell: {
     flex: 1,
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#14532d',
+    color: '#4A1E1E',
   },
   topBarSpacer: {
     width: 64,
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   },
   webBackText: {
     fontSize: 16,
-    color: '#166534',
+    color: '#D33D3D',
     fontWeight: '500',
   },
   body: {
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFill,
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textAlign: 'center',
   },
   errorText: {
@@ -257,12 +257,12 @@ const styles = StyleSheet.create({
   doneBar: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   doneButton: {
     alignItems: 'center',
     alignSelf: 'stretch',
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   doneButtonText: {
-    color: '#f0fdf4',
+    color: '#FFF4E6',
     fontSize: 16,
     fontWeight: '600',
   },

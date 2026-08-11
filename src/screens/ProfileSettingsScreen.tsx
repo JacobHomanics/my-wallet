@@ -140,7 +140,7 @@ export function ProfileSettingsScreen() {
             ]}
           >
             {isUploadingPhoto ? (
-              <ActivityIndicator color="#166534" />
+              <ActivityIndicator color="#D33D3D" />
             ) : (
               <Text style={styles.secondaryButtonText}>
                 {profilePhotoUrl ? 'Change photo' : 'Add photo'}
@@ -159,7 +159,7 @@ export function ProfileSettingsScreen() {
             editable={!isBusy}
             onChangeText={onChangeUsername}
             placeholder="Choose a username"
-            placeholderTextColor="#86a894"
+            placeholderTextColor="#C37A7A"
             style={styles.input}
             value={usernameDraft}
           />
@@ -195,7 +195,7 @@ export function ProfileSettingsScreen() {
           ]}
         >
           {isSavingUsername ? (
-            <ActivityIndicator color="#f0fdf4" />
+            <ActivityIndicator color="#FFF4E6" />
           ) : (
             <Text style={styles.saveButtonText}>Save username</Text>
           )}
@@ -208,7 +208,7 @@ export function ProfileSettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   content: {
     width: '100%',
@@ -238,12 +238,12 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#166534',
+    color: '#D33D3D',
     letterSpacing: -0.5,
     textAlign: 'center',
   },
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -292,17 +292,17 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#166534',
+    color: '#D33D3D',
   },
   hint: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#86a894',
+    color: '#C37A7A',
     textAlign: 'center',
   },
   error: {
@@ -316,14 +316,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 13,
     lineHeight: 18,
-    color: '#166534',
+    color: '#D33D3D',
     textAlign: 'center',
   },
   secondaryButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#FFDCC8',
     minWidth: 140,
     alignItems: 'center',
   },
@@ -331,14 +331,14 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   secondaryButtonText: {
-    color: '#166534',
+    color: '#D33D3D',
     fontSize: 15,
     fontWeight: '600',
   },
   saveButton: {
     marginTop: 32,
     width: '100%',
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 12,
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   saveButtonText: {
-    color: '#f0fdf4',
+    color: '#FFF4E6',
     fontSize: 16,
     fontWeight: '600',
   },

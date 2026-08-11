@@ -97,7 +97,7 @@ export function NewRawAddressContactScreen() {
                 editable={!isAdding}
                 onChangeText={setName}
                 placeholder="Name (optional)"
-                placeholderTextColor="#86a894"
+                placeholderTextColor="#C37A7A"
                 style={styles.input}
                 value={name}
               />
@@ -115,7 +115,7 @@ export function NewRawAddressContactScreen() {
                   editable={!isAdding}
                   onChangeText={setWalletQuery}
                   placeholder="Wallet address"
-                  placeholderTextColor="#86a894"
+                  placeholderTextColor="#C37A7A"
                   style={styles.searchInput}
                   value={walletQuery}
                 />
@@ -132,7 +132,11 @@ export function NewRawAddressContactScreen() {
                       pressed && styles.clearSearchButtonPressed,
                     ]}
                   >
-                    <Ionicons name="close-circle" size={18} color="#5a7d6a" />
+                    <Ionicons
+                      name="close-circle"
+                      size={18}
+                      color="#9B5A5A"
+                    />
                   </Pressable>
                 ) : null}
               </View>
@@ -142,7 +146,7 @@ export function NewRawAddressContactScreen() {
               ) : null}
 
               {isSearching ? (
-                <ActivityIndicator color="#166534" style={styles.loader} />
+                <ActivityIndicator color="#D33D3D" style={styles.loader} />
               ) : null}
 
               {walletResult ? (
@@ -214,7 +218,7 @@ export function NewRawAddressContactScreen() {
               ]}
             >
               {isAdding ? (
-                <ActivityIndicator color="#f0fdf4" />
+                <ActivityIndicator color="#FFF4E6" />
               ) : (
                 <Text style={styles.addButtonText}>Add contact</Text>
               )}
@@ -229,7 +233,7 @@ export function NewRawAddressContactScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   content: {
     flex: 1,
@@ -248,7 +252,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   topBarSpacer: {
     width: 44,
@@ -265,7 +269,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   body: {
     paddingHorizontal: 24,
@@ -283,12 +287,12 @@ const styles = StyleSheet.create({
   empty: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#86a894',
+    color: '#C37A7A',
   },
   card: {
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     padding: 16,
     gap: 14,
@@ -299,29 +303,29 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   input: {
     width: '100%',
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    color: '#166534',
+    color: '#D33D3D',
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     width: '100%',
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 10,
     paddingHorizontal: 14,
   },
@@ -329,7 +333,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 48,
     fontSize: 15,
-    color: '#166534',
+    color: '#D33D3D',
   },
   clearSearchButton: {
     width: 24,
@@ -342,15 +346,15 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#F5BFA9',
   },
   resultCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -363,16 +367,16 @@ const styles = StyleSheet.create({
   resultLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
   },
   resultDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#5a7d6a',
+    color: '#9B5A5A',
   },
   addButton: {
     marginTop: 4,
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 10,
@@ -385,7 +389,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   addButtonText: {
-    color: '#f0fdf4',
+    color: '#FFF4E6',
     fontSize: 15,
     fontWeight: '600',
   },

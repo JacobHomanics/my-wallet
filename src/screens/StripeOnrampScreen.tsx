@@ -28,7 +28,7 @@ export function StripeOnrampScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
     paddingHorizontal: 16,
   },
   topBar: {
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#14532d',
+    color: '#4A1E1E',
   },
   topBarSpacer: {
     width: 40,

@@ -87,7 +87,7 @@ export function OnboardingScreen() {
   if (isOnboardingLoading || onboardingStatus === 'idle') {
     return (
       <View style={[styles.container, styles.loading]}>
-        <ActivityIndicator color="#166534" size="large" />
+        <ActivityIndicator color="#D33D3D" size="large" />
       </View>
     );
   }
@@ -150,7 +150,7 @@ export function OnboardingScreen() {
             ]}
           >
             {photo.isUploading ? (
-              <ActivityIndicator color="#166534" />
+              <ActivityIndicator color="#D33D3D" />
             ) : (
               <Text style={styles.secondaryButtonText}>
                 {photo.profilePhotoUrl ? 'Change photo' : 'Add photo'}
@@ -169,7 +169,7 @@ export function OnboardingScreen() {
             editable={!isBusy}
             onChangeText={username.onChangeDraft}
             placeholder="Choose a username"
-            placeholderTextColor="#86a894"
+            placeholderTextColor="#C37A7A"
             style={styles.input}
             value={username.draft}
           />
@@ -203,7 +203,7 @@ export function OnboardingScreen() {
           ]}
         >
           {isContinuing ? (
-            <ActivityIndicator color="#f0fdf4" />
+            <ActivityIndicator color="#FFF4E6" />
           ) : (
             <Text style={styles.continueButtonText}>Continue</Text>
           )}
@@ -219,7 +219,7 @@ export function OnboardingScreen() {
           ]}
         >
           {isSkipping ? (
-            <ActivityIndicator color="#5a7d6a" />
+            <ActivityIndicator color="#9B5A5A" />
           ) : (
             <Text style={styles.skipButtonText}>Skip for now</Text>
           )}
@@ -232,7 +232,7 @@ export function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   loading: {
     alignItems: 'center',
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#166534',
+    color: '#D33D3D',
     letterSpacing: -0.5,
     textAlign: 'center',
   },
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     lineHeight: 24,
-    color: '#3f6b52',
+    color: '#7A3B3B',
     textAlign: 'center',
   },
   photoBlock: {
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -304,17 +304,17 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: '#F5BFA9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#166534',
+    color: '#D33D3D',
   },
   hint: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#86a894',
+    color: '#C37A7A',
     textAlign: 'center',
   },
   error: {
@@ -328,13 +328,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 13,
     lineHeight: 18,
-    color: '#166534',
+    color: '#D33D3D',
     textAlign: 'center',
   },
   continueButton: {
     marginTop: 32,
     width: '100%',
-    backgroundColor: '#166534',
+    backgroundColor: '#D33D3D',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 12,
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   continueButtonText: {
-    color: '#f0fdf4',
+    color: '#FFF4E6',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#FFDCC8',
     minWidth: 140,
     alignItems: 'center',
   },
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   secondaryButtonText: {
-    color: '#166534',
+    color: '#D33D3D',
     fontSize: 15,
     fontWeight: '600',
   },
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   skipButtonText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#5a7d6a',
+    color: '#9B5A5A',
     textDecorationLine: 'underline',
   },
 });

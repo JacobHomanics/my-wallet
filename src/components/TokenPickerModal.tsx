@@ -92,7 +92,7 @@ export function TokenPickerModal({
               pressed && styles.modalClosePressed,
             ]}
           >
-            <Ionicons name="close" size={22} color="#166534" />
+            <Ionicons name="close" size={22} color="#D33D3D" />
           </Pressable>
         </View>
 
@@ -115,7 +115,7 @@ export function TokenPickerModal({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#FFF4E6',
   },
   modalTopBar: {
     flexDirection: 'row',
@@ -124,14 +124,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#d1fae5',
+    borderBottomColor: '#F5BFA9',
   },
   modalTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: '#D33D3D',
     paddingLeft: 40,
   },
   modalClose: {
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   },
   empty: {
     fontSize: 15,
-    color: '#86a894',
+    color: '#C37A7A',
     textAlign: 'center',
   },
 });
