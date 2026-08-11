@@ -23,7 +23,8 @@ import { useFarcasterSearch } from '@/hooks/useFarcasterSearch';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendAdvancedSearchTab } from '@/hooks/useSendAdvancedSearchTab';
 import { useSendToContact } from '@/hooks/useSendToContact';
-import { useSendWalletRecipient } from '@/hooks/useSendWalletRecipient';
+import { useWalletUsdcSearch } from '@/hooks/useWalletUsdcSearch';
+import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import type { HomeStackParamList } from '@/navigation/types';
 
 function AdvancedSearchTabChip({
@@ -63,6 +64,7 @@ export function SendAdvancedSearchScreen() {
   const [ensQuery, setEnsQuery] = useState('');
   const { results, isSearching, showEmpty, errorMessage } =
     useFarcasterSearch(farcasterQuery);
+  const [walletQuery, setWalletQuery] = useState('');
   const {
     result: ensResult,
     isResolving: isEnsResolving,
@@ -70,16 +72,11 @@ export function SendAdvancedSearchScreen() {
     errorMessage: ensErrorMessage,
   } = useEnsResolve(ensQuery);
   const {
-    evmAddress,
-    setEvmAddress,
-    solanaAddress,
-    setSolanaAddress,
-    trimmedEvm,
-    trimmedSolana,
-    evmValid,
-    solanaValid,
-    canContinue,
-  } = useSendWalletRecipient();
+    result: walletResult,
+    isSearching: isWalletSearching,
+    showEmpty: walletEmpty,
+    errorMessage: walletErrorMessage,
+  } = useWalletUsdcSearch(walletQuery);
   const {
     selectFarcaster,
     selectEns,
@@ -100,16 +97,18 @@ export function SendAdvancedSearchScreen() {
     navigation.navigate('sendSearch', { tokenId, usdAmount });
   }, [navigation, tokenId, usdAmount]);
 
-  const onContinueWallets = useCallback(() => {
-    if (!canContinue) {
+  const onSelectWallet = useCallback(() => {
+    if (!walletResult) {
       return;
     }
 
     sendToContact(
       {
         identityId: null,
-        evmAddress: trimmedEvm || null,
-        solanaAddress: trimmedSolana || null,
+        evmAddress:
+          walletResult.chain === 'ethereum' ? walletResult.address : null,
+        solanaAddress:
+          walletResult.chain === 'solana' ? walletResult.address : null,
         username: null,
         name: null,
         profilePhotoUrl: null,
@@ -117,12 +116,10 @@ export function SendAdvancedSearchScreen() {
       { tokenId, usdAmount },
     );
   }, [
-    canContinue,
     sendToContact,
     tokenId,
-    trimmedEvm,
-    trimmedSolana,
     usdAmount,
+    walletResult,
   ]);
 
   return (
@@ -344,70 +341,79 @@ export function SendAdvancedSearchScreen() {
 
             {isWalletsTab ? (
               <>
+                <TextInput
+                  accessibilityLabel="Wallet address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="off"
+                  onChangeText={setWalletQuery}
+                  placeholder="Wallet address"
+                  placeholderTextColor="#86a894"
+                  style={styles.input}
+                  value={walletQuery}
+                />
                 <Text style={styles.hint}>
-                  Paste an EVM and/or Solana address to continue.
+                  Search a wallet address and preview its USDC balances.
                 </Text>
 
-                <View style={styles.walletCard}>
-                  <View style={styles.walletGroup}>
-                    <Text style={styles.fieldLabel}>EVM</Text>
-                    <TextInput
-                      accessibilityLabel="EVM address"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      onChangeText={setEvmAddress}
-                      placeholder="0x…"
-                      placeholderTextColor="#86a894"
-                      style={[
-                        styles.walletInput,
-                        trimmedEvm && !evmValid ? styles.inputError : null,
-                      ]}
-                      value={evmAddress}
+                {walletErrorMessage ? (
+                  <Text style={styles.error}>{walletErrorMessage}</Text>
+                ) : null}
+
+                {isWalletSearching ? (
+                  <ActivityIndicator color="#166534" style={styles.loader} />
+                ) : null}
+
+                {walletResult ? (
+                  <Pressable
+                    accessibilityLabel={`Select wallet ${formatWalletAddress(walletResult.address, 6, 4)}`}
+                    accessibilityRole="button"
+                    onPress={onSelectWallet}
+                    style={({ pressed }) => [
+                      styles.resultCard,
+                      pressed && styles.resultCardPressed,
+                    ]}
+                  >
+                    <Avatar
+                      label={walletResult.address}
+                      seed={walletResult.address}
+                      size={40}
                     />
-                    {trimmedEvm && !evmValid ? (
-                      <Text style={styles.error}>
-                        Enter a valid EVM address.
+                    <View style={styles.resultText}>
+                      <Text style={styles.resultLabel}>
+                        {walletResult.totalUsdLabel
+                          ? `${walletResult.totalUsdLabel} USDC`
+                          : formatWalletAddress(walletResult.address, 8, 6)}
                       </Text>
-                    ) : null}
-                  </View>
-
-                  <View style={styles.walletDivider} />
-
-                  <View style={styles.walletGroup}>
-                    <Text style={styles.fieldLabel}>Solana</Text>
-                    <TextInput
-                      accessibilityLabel="Solana address"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      onChangeText={setSolanaAddress}
-                      placeholder="Solana address"
-                      placeholderTextColor="#86a894"
-                      style={[
-                        styles.walletInput,
-                        trimmedSolana && !solanaValid ? styles.inputError : null,
-                      ]}
-                      value={solanaAddress}
-                    />
-                    {trimmedSolana && !solanaValid ? (
-                      <Text style={styles.error}>
-                        Enter a valid Solana address.
+                      <Text style={styles.resultDescription}>
+                        {walletResult.chain === 'ethereum'
+                          ? 'EVM wallet'
+                          : 'Solana wallet'}
                       </Text>
-                    ) : null}
-                  </View>
-                </View>
+                      {walletResult.balances.map((balance) => (
+                        <Text
+                          key={`${balance.network}:${balance.symbol}`}
+                          style={styles.resultDescription}
+                        >
+                          {balance.networkLabel}: {balance.balanceLabel}
+                          {balance.usdLabel ? ` (${balance.usdLabel})` : ''}
+                        </Text>
+                      ))}
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color="#86a894" />
+                  </Pressable>
+                ) : null}
 
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={!canContinue}
-                  onPress={onContinueWallets}
-                  style={({ pressed }) => [
-                    styles.continueButton,
-                    !canContinue && styles.continueButtonDisabled,
-                    pressed && canContinue && styles.continueButtonPressed,
-                  ]}
-                >
-                  <Text style={styles.continueButtonText}>Continue</Text>
-                </Pressable>
+                {walletEmpty ? (
+                  <View style={styles.walletCard}>
+                    <View style={styles.walletGroup}>
+                      <Text style={styles.fieldLabel}>No USDC found</Text>
+                      <Text style={styles.hint}>
+                        This wallet resolved, but no USDC balances were found on the supported networks.
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
               </>
             ) : null}
           </ScrollView>
@@ -594,23 +600,5 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: '#d1fae5',
     marginHorizontal: 16,
-  },
-  continueButton: {
-    marginTop: 16,
-    backgroundColor: '#166534',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  continueButtonDisabled: {
-    opacity: 0.45,
-  },
-  continueButtonPressed: {
-    opacity: 0.9,
-  },
-  continueButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#ffffff',
   },
 });
