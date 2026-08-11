@@ -207,10 +207,6 @@ export function SendAdvancedSearchScreen() {
                     </Pressable>
                   ) : null}
                 </View>
-                <Text style={styles.hint}>
-                  Search by Farcaster username to pay a verified wallet.
-                </Text>
-
                 {errorMessage ? (
                   <Text style={styles.error}>{errorMessage}</Text>
                 ) : null}
@@ -320,10 +316,6 @@ export function SendAdvancedSearchScreen() {
                     </Pressable>
                   ) : null}
                 </View>
-                <Text style={styles.hint}>
-                  Resolve an ENS name to pay its Ethereum address.
-                </Text>
-
                 {ensErrorMessage ? (
                   <Text style={styles.error}>{ensErrorMessage}</Text>
                 ) : null}
@@ -406,10 +398,6 @@ export function SendAdvancedSearchScreen() {
                     </Pressable>
                   ) : null}
                 </View>
-                <Text style={styles.hint}>
-                  Search a wallet address and preview its total balance.
-                </Text>
-
                 {walletErrorMessage ? (
                   <Text style={styles.error}>{walletErrorMessage}</Text>
                 ) : null}
