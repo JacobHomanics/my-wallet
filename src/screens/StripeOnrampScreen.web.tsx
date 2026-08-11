@@ -19,6 +19,15 @@ import { usePopToHome } from '@/hooks/usePopToHome';
 import { useStripeOnrampUiReady } from '@/hooks/useStripeOnrampUiReady';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 
+function DepositLoading({ message }: { message: string }) {
+  return (
+    <View accessibilityRole="progressbar" style={styles.loadingPanel}>
+      <ActivityIndicator color="#166534" size="large" />
+      <Text style={styles.loadingText}>{message}</Text>
+    </View>
+  );
+}
+
 /**
  * Web: Stripe embedded Crypto Onramp → ETH / USDC into the Privy EVM wallet.
  */
@@ -63,9 +72,8 @@ export function StripeOnrampScreen() {
   const showSessionLoader =
     isAvailable && !error && (isCreating || !clientSecret);
   const showEmbedLoader = Boolean(clientSecret) && !uiReady;
-  const loadingMessage = !clientSecret
-    ? 'Starting deposit…'
-    : 'Loading…';
+  const loadingMessage = 'Loading...';
+
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -109,21 +117,14 @@ export function StripeOnrampScreen() {
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           {showSessionLoader ? (
-            <View style={styles.loadingPanel} accessibilityRole="progressbar">
-              <ActivityIndicator color="#166534" size="large" />
-              <Text style={styles.loadingText}>{loadingMessage}</Text>
-            </View>
+            <DepositLoading message={loadingMessage} />
           ) : null}
 
           {clientSecret ? (
             <View style={styles.onrampWrap}>
               {showEmbedLoader ? (
-                <View
-                  accessibilityRole="progressbar"
-                  style={styles.loadingOverlay}
-                >
-                  <ActivityIndicator color="#166534" size="large" />
-                  <Text style={styles.loadingText}>{loadingMessage}</Text>
+                <View style={styles.loadingOverlay}>
+                  <DepositLoading message={loadingMessage} />
                 </View>
               ) : null}
               <View
@@ -205,19 +206,16 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
   loadingPanel: {
-    marginTop: 64,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFill,
-    zIndex: 1,
+    minHeight: 640,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
     backgroundColor: '#f0fdf4',
-    minHeight: 640,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 1,
   },
   loadingText: {
     fontSize: 15,
