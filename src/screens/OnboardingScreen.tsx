@@ -10,6 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 
 import { Avatar } from '@/components/Avatar';
 import { useNeedsOnboarding } from '@/hooks/useNeedsOnboarding';
@@ -110,12 +111,32 @@ export function OnboardingScreen() {
         </Text>
 
         <View style={styles.photoBlock}>
-          <Avatar
-            label={displayName}
-            photoUrl={photo.profilePhotoUrl}
-            seed={avatarSeed}
-            size={88}
-          />
+          <View style={styles.avatarWrap}>
+            <Avatar
+              label={displayName}
+              photoUrl={photo.profilePhotoUrl}
+              seed={avatarSeed}
+              size={112}
+            />
+            {photo.canRemove ? (
+              <Pressable
+                accessibilityLabel="Remove profile photo"
+                accessibilityRole="button"
+                disabled={isBusy}
+                hitSlop={8}
+                onPress={() => {
+                  void photo.remove();
+                }}
+                style={({ pressed }) => [
+                  styles.removePhotoButton,
+                  isBusy && styles.buttonDisabled,
+                  pressed && !isBusy && styles.removePhotoButtonPressed,
+                ]}
+              >
+                <Ionicons name="close" size={14} color="#dc2626" />
+              </Pressable>
+            ) : null}
+          </View>
           <Pressable
             accessibilityRole="button"
             disabled={isBusy}
@@ -136,7 +157,6 @@ export function OnboardingScreen() {
               </Text>
             )}
           </Pressable>
-          <Text style={styles.hint}>Optional. Square photos work best.</Text>
         </View>
 
         <View style={styles.field}>
@@ -243,6 +263,30 @@ const styles = StyleSheet.create({
     marginTop: 32,
     alignItems: 'center',
     gap: 12,
+  },
+  avatarWrap: {
+    width: 112,
+    height: 112,
+    marginBottom: 8,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    overflow: 'visible',
+  },
+  removePhotoButton: {
+    position: 'absolute',
+    bottom: -10,
+    alignSelf: 'center',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#ffffff',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#fecaca',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removePhotoButtonPressed: {
+    opacity: 0.7,
   },
   field: {
     width: '100%',
