@@ -34,16 +34,24 @@ export function StripeOnrampComponentsScreen() {
     startedRef.current = true;
     void (async () => {
       const result = await startFund();
+      if (result === 'exited') {
+        goHome();
+        return;
+      }
       if (result === 'confirmed' || result === 'submitted') {
         void refresh();
       }
     })();
-  }, [isAvailable, refresh, startFund]);
+  }, [goHome, isAvailable, refresh, startFund]);
 
   const onRetry = () => {
     startedRef.current = true;
     void (async () => {
       const result = await startFund();
+      if (result === 'exited') {
+        goHome();
+        return;
+      }
       if (result === 'confirmed' || result === 'submitted') {
         void refresh();
       }

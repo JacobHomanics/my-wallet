@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react';
 import { useFiatOnramp } from '@privy-io/react-auth';
 
-import type {
-  PrivyFiatOnrampStatus,
-  UsePrivyFiatOnrampResult,
+import {
+  isPrivyFiatOnrampUserExit,
+  type PrivyFiatOnrampStatus,
+  type UsePrivyFiatOnrampResult,
 } from '@/hooks/usePrivyFiatOnramp.shared';
 import { useUserWallets } from '@/hooks/useUserWallets';
 import {
@@ -54,6 +55,9 @@ export function usePrivyFiatOnramp(): UsePrivyFiatOnrampResult {
       setStatus(result.status);
       return result.status;
     } catch (err) {
+      if (isPrivyFiatOnrampUserExit(err)) {
+        return 'exited';
+      }
       const message =
         err instanceof Error
           ? err.message
