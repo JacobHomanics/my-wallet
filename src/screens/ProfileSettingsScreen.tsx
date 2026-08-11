@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   Pressable,
@@ -8,7 +9,6 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 
 import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
@@ -16,10 +16,12 @@ import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToSettings } from '@/hooks/usePopToSettings';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useProfilePhotoSettings } from '@/hooks/useProfilePhotoSettings';
+import { useUsernameAvailability } from '@/hooks/useUsernameAvailability';
 import { useUsernameSettings } from '@/hooks/useUsernameSettings';
 
 /**
  * Edit profile photo and username (opened from Settings).
+ * Layout mirrors the first-time onboarding screen.
  */
 export function ProfileSettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -44,12 +46,27 @@ export function ProfileSettingsScreen() {
     isDirty: usernameDirty,
     isValid: usernameValid,
   } = useUsernameSettings();
+  const availability = useUsernameAvailability(usernameDraft);
+
+  const isBusy = isUploadingPhoto || isSavingUsername;
+  const hasEnteredUsername = usernameDraft.trim().length > 0;
+  const usernameOk =
+    !hasEnteredUsername ||
+    (usernameValid &&
+      (!usernameDirty || availability.isAvailable));
+  const canSave =
+    canSaveUsername &&
+    usernameOk &&
+    !availability.isChecking &&
+    !isBusy;
+
+  const errorMessage = usernameError || photoError;
 
   return (
     <View style={styles.container}>
       <ScrollView
         contentContainerStyle={[
-          styles.scrollContent,
+          styles.content,
           {
             paddingTop: Math.max(insets.top, 12),
             paddingBottom: Math.max(insets.bottom, 24) + 24,
@@ -57,138 +74,132 @@ export function ProfileSettingsScreen() {
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        style={styles.scroll}
       >
-        <View style={styles.content}>
-          <View style={styles.topBar}>
-            {isDesktopWeb ? (
+        <View style={styles.topBar}>
+          {isDesktopWeb ? (
+            <Pressable
+              accessibilityLabel="Back to settings"
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={goSettings}
+              style={({ pressed }) => [
+                styles.webBack,
+                pressed && styles.webBackPressed,
+              ]}
+            >
+              <Text style={styles.webBackText}>Back</Text>
+            </Pressable>
+          ) : (
+            <BackButton
+              accessibilityLabel="Back to settings"
+              onPress={goSettings}
+            />
+          )}
+          <View style={styles.topBarSpacer} />
+        </View>
+
+        <Text style={styles.title}>Profile settings</Text>
+
+        <View style={styles.photoBlock}>
+          <View style={styles.avatarWrap}>
+            <Avatar
+              label={displayName}
+              photoUrl={profilePhotoUrl}
+              seed={avatarSeed}
+              size={112}
+            />
+            {canRemovePhoto ? (
               <Pressable
-                accessibilityLabel="Back to settings"
+                accessibilityLabel="Remove profile photo"
                 accessibilityRole="button"
+                disabled={isBusy}
                 hitSlop={8}
-                onPress={goSettings}
-                style={({ pressed }) => [
-                  styles.webBack,
-                  pressed && styles.webBackPressed,
-                ]}
-              >
-                <Text style={styles.webBackText}>Back</Text>
-              </Pressable>
-            ) : (
-              <BackButton
-                accessibilityLabel="Back to settings"
-                onPress={goSettings}
-              />
-            )}
-            <Text style={styles.topBarTitle}>Profile Settings</Text>
-            <View style={styles.topBarSpacer} />
-          </View>
-
-          <View style={styles.sections}>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Profile photo</Text>
-              <View style={styles.photoBlock}>
-                <View style={styles.avatarWrap}>
-                  <Avatar
-                    label={displayName}
-                    photoUrl={profilePhotoUrl}
-                    seed={avatarSeed}
-                    size={112}
-                  />
-                  {canRemovePhoto ? (
-                    <Pressable
-                      accessibilityLabel="Remove profile photo"
-                      accessibilityRole="button"
-                      disabled={isUploadingPhoto}
-                      hitSlop={8}
-                      onPress={() => {
-                        void removePhoto();
-                      }}
-                      style={({ pressed }) => [
-                        styles.removePhotoButton,
-                        isUploadingPhoto && styles.saveButtonDisabled,
-                        pressed &&
-                          !isUploadingPhoto &&
-                          styles.removePhotoButtonPressed,
-                      ]}
-                    >
-                      <Ionicons name="close" size={14} color="#dc2626" />
-                    </Pressable>
-                  ) : null}
-                </View>
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={isUploadingPhoto}
-                  onPress={() => {
-                    void pickAndUpload();
-                  }}
-                  style={({ pressed }) => [
-                    styles.photoSaveButton,
-                    isUploadingPhoto && styles.saveButtonDisabled,
-                    pressed && !isUploadingPhoto && styles.saveButtonPressed,
-                  ]}
-                >
-                  {isUploadingPhoto ? (
-                    <ActivityIndicator color="#f0fdf4" />
-                  ) : (
-                    <Text style={styles.saveButtonText}>
-                      {profilePhotoUrl ? 'Change photo' : 'Upload photo'}
-                    </Text>
-                  )}
-                </Pressable>
-              </View>
-              <Text style={styles.hint}>
-                Square photos work best. Max 5MB.
-              </Text>
-              {photoError ? (
-                <Text style={styles.error}>{photoError}</Text>
-              ) : null}
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Username</Text>
-              <TextInput
-                accessibilityLabel="Username"
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="username"
-                editable={!isSavingUsername}
-                onChangeText={onChangeUsername}
-                placeholder="Choose a username"
-                placeholderTextColor="#86a894"
-                style={styles.input}
-                value={usernameDraft}
-              />
-              <Text style={styles.hint}>
-                3–24 characters: letters, numbers, or underscores.
-              </Text>
-              {usernameDirty && !usernameValid ? (
-                <Text style={styles.error}>Enter a valid username.</Text>
-              ) : null}
-              {usernameError ? (
-                <Text style={styles.error}>{usernameError}</Text>
-              ) : null}
-              <Pressable
-                accessibilityRole="button"
-                disabled={!canSaveUsername}
                 onPress={() => {
-                  void saveUsername();
+                  void removePhoto();
                 }}
                 style={({ pressed }) => [
-                  styles.saveButton,
-                  !canSaveUsername && styles.saveButtonDisabled,
-                  pressed && canSaveUsername && styles.saveButtonPressed,
+                  styles.removePhotoButton,
+                  isBusy && styles.buttonDisabled,
+                  pressed && !isBusy && styles.removePhotoButtonPressed,
                 ]}
               >
-                {isSavingUsername ? (
-                  <ActivityIndicator color="#f0fdf4" />
-                ) : (
-                  <Text style={styles.saveButtonText}>Save username</Text>
-                )}
+                <Ionicons name="close" size={14} color="#dc2626" />
               </Pressable>
-            </View>
+            ) : null}
           </View>
+          <Pressable
+            accessibilityRole="button"
+            disabled={isBusy}
+            onPress={() => {
+              void pickAndUpload();
+            }}
+            style={({ pressed }) => [
+              styles.secondaryButton,
+              isBusy && styles.buttonDisabled,
+              pressed && !isBusy && styles.secondaryButtonPressed,
+            ]}
+          >
+            {isUploadingPhoto ? (
+              <ActivityIndicator color="#166534" />
+            ) : (
+              <Text style={styles.secondaryButtonText}>
+                {profilePhotoUrl ? 'Change photo' : 'Add photo'}
+              </Text>
+            )}
+          </Pressable>
         </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Username</Text>
+          <TextInput
+            accessibilityLabel="Username"
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="username"
+            editable={!isBusy}
+            onChangeText={onChangeUsername}
+            placeholder="Choose a username"
+            placeholderTextColor="#86a894"
+            style={styles.input}
+            value={usernameDraft}
+          />
+          <Text style={styles.hint}>
+            3–24 characters: letters, numbers, or underscores.
+          </Text>
+          {usernameDirty && !usernameValid ? (
+            <Text style={styles.error}>Enter a valid username.</Text>
+          ) : null}
+          {availability.status === 'checking' ? (
+            <Text style={styles.hint}>Checking availability…</Text>
+          ) : null}
+          {usernameDirty && availability.status === 'available' ? (
+            <Text style={styles.available}>Username is available.</Text>
+          ) : null}
+          {availability.status === 'taken' ? (
+            <Text style={styles.error}>Username already taken.</Text>
+          ) : null}
+        </View>
+
+        {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+
+        <Pressable
+          accessibilityRole="button"
+          disabled={!canSave}
+          onPress={() => {
+            void saveUsername();
+          }}
+          style={({ pressed }) => [
+            styles.saveButton,
+            !canSave && styles.buttonDisabled,
+            pressed && canSave && styles.saveButtonPressed,
+          ]}
+        >
+          {isSavingUsername ? (
+            <ActivityIndicator color="#f0fdf4" />
+          ) : (
+            <Text style={styles.saveButtonText}>Save username</Text>
+          )}
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -199,33 +210,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f0fdf4',
   },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
   content: {
-    flex: 1,
     width: '100%',
-    maxWidth: 640,
+    maxWidth: 420,
     alignSelf: 'center',
+    paddingHorizontal: 24,
+    alignItems: 'center',
   },
   topBar: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
     marginBottom: 8,
   },
-  topBarTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#166534',
-  },
   topBarSpacer: {
-    width: 44,
+    flex: 1,
   },
   webBack: {
     minWidth: 44,
@@ -241,26 +240,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#166534',
   },
-  sections: {
-    paddingHorizontal: 24,
-    alignItems: 'center',
-  },
-  section: {
-    width: '100%',
-    maxWidth: 420,
-    marginTop: 28,
-    gap: 12,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#166534',
+    letterSpacing: -0.5,
+    textAlign: 'center',
   },
   photoBlock: {
+    marginTop: 32,
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
   },
   avatarWrap: {
     width: 112,
@@ -286,6 +276,18 @@ const styles = StyleSheet.create({
   removePhotoButtonPressed: {
     opacity: 0.7,
   },
+  field: {
+    width: '100%',
+    marginTop: 28,
+    gap: 8,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
   input: {
     width: '100%',
     backgroundColor: '#ffffff',
@@ -301,39 +303,58 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     color: '#86a894',
+    textAlign: 'center',
   },
   error: {
+    marginTop: 8,
     fontSize: 13,
     lineHeight: 18,
     color: '#b91c1c',
+    textAlign: 'center',
+  },
+  available: {
+    marginTop: 8,
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#166534',
+    textAlign: 'center',
+  },
+  secondaryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#dcfce7',
+    minWidth: 140,
+    alignItems: 'center',
+  },
+  secondaryButtonPressed: {
+    opacity: 0.85,
+  },
+  secondaryButtonText: {
+    color: '#166534',
+    fontSize: 15,
+    fontWeight: '600',
   },
   saveButton: {
-    alignSelf: 'flex-start',
+    marginTop: 32,
+    width: '100%',
     backgroundColor: '#166534',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    minWidth: 140,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
-  },
-  photoSaveButton: {
-    alignSelf: 'center',
-    backgroundColor: '#166534',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    minWidth: 140,
-    alignItems: 'center',
-  },
-  saveButtonDisabled: {
-    opacity: 0.45,
+    minHeight: 52,
+    justifyContent: 'center',
   },
   saveButtonPressed: {
     opacity: 0.85,
   },
   saveButtonText: {
     color: '#f0fdf4',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.45,
   },
 });
