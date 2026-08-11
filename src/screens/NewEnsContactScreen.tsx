@@ -115,6 +115,7 @@ export function NewEnsContactScreen() {
                     const ok = await addEns({
                       ensName: result.name,
                       evmAddress: result.address,
+                      ensAvatarUrl: result.avatarUrl,
                     });
                     if (ok) {
                       goContacts();
@@ -127,7 +128,12 @@ export function NewEnsContactScreen() {
                   isAdding && styles.resultCardDisabled,
                 ]}
               >
-                <Avatar label={result.label} seed={result.name} size={40} />
+                <Avatar
+                  label={result.label}
+                  photoUrl={result.avatarUrl}
+                  seed={result.name}
+                  size={40}
+                />
                 <View style={styles.resultText}>
                   <Text style={styles.resultLabel}>{result.label}</Text>
                   <Text style={styles.resultDescription}>{result.address}</Text>

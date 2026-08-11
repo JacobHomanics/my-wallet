@@ -163,7 +163,7 @@ export function ContactDetailsScreen() {
               <Avatar
                 label={contact.title}
                 photoUrl={contact.profilePhotoUrl}
-                seed={contact.username ?? contact.id}
+                seed={contact.username ?? contact.ensName ?? contact.id}
                 size={88}
                 showFarcasterBadge={contact.isFarcaster}
                 style={styles.avatar}

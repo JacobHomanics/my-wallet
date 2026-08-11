@@ -7,6 +7,7 @@ import { api } from '../../convex/_generated/api';
 export type EnsResolveHit = {
   name: string;
   address: string;
+  avatarUrl: string | null;
   label: string;
 };
 
@@ -50,6 +51,7 @@ export function useEnsResolve(query: string) {
               ? {
                   name: hit.name,
                   address: hit.address,
+                  avatarUrl: hit.avatarUrl ?? null,
                   label: hit.name,
                 }
               : null,

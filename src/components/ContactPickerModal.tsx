@@ -103,7 +103,7 @@ function ContactPickerRow({
       <Avatar
         label={label}
         photoUrl={contact.profilePhotoUrl}
-        seed={contact.username ?? contact.id}
+        seed={contact.username ?? contact.ensName ?? contact.id}
         size={40}
         showFarcasterBadge={contact.isFarcaster}
       />

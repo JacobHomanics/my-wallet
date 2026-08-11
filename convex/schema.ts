@@ -37,6 +37,8 @@ export default defineSchema({
     farcasterPfpUrl: v.optional(v.string()),
     /** ENS name when this is a first-class ENS contact (e.g. vitalik.eth). */
     ensName: v.optional(v.string()),
+    /** Resolved ENS avatar URL from the avatar text record. */
+    ensAvatarUrl: v.optional(v.string()),
   })
     .index("by_owner", ["ownerId"])
     .index("by_owner_and_contact", ["ownerId", "contactUserId"])

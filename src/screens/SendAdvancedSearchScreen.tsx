@@ -256,7 +256,7 @@ export function SendAdvancedSearchScreen() {
                       evmAddress: ensResult.address,
                       solanaAddress: null,
                       name: ensResult.name,
-                      profilePhotoUrl: null,
+                      profilePhotoUrl: ensResult.avatarUrl,
                     },
                     { tokenId, usdAmount },
                   );
@@ -266,7 +266,12 @@ export function SendAdvancedSearchScreen() {
                   pressed && styles.resultCardPressed,
                 ]}
               >
-                <Avatar label={ensResult.label} seed={ensResult.name} size={40} />
+                <Avatar
+                  label={ensResult.label}
+                  photoUrl={ensResult.avatarUrl}
+                  seed={ensResult.name}
+                  size={40}
+                />
                 <View style={styles.resultText}>
                   <Text style={styles.resultLabel}>{ensResult.label}</Text>
                   <Text style={styles.resultDescription}>

@@ -7,7 +7,15 @@ import { getAlchemyRpcUrl } from "./networks";
 export type EnsResolveResult = {
   name: string;
   address: string;
+  avatarUrl: string | null;
 };
+
+function createEnsClient() {
+  return createPublicClient({
+    chain: mainnet,
+    transport: http(getAlchemyRpcUrl("eth-mainnet")),
+  });
+}
 
 /**
  * Resolve an ENS name to an Ethereum address via mainnet RPC.
@@ -28,15 +36,19 @@ export async function resolveEnsName(
     return null;
   }
 
-  const client = createPublicClient({
-    chain: mainnet,
-    transport: http(getAlchemyRpcUrl("eth-mainnet")),
-  });
+  const client = createEnsClient();
 
   const address = await client.getEnsAddress({ name: normalized });
   if (!address) {
     return null;
   }
 
-  return { name: normalized, address };
+  let avatarUrl: string | null = null;
+  try {
+    avatarUrl = await client.getEnsAvatar({ name: normalized });
+  } catch {
+    avatarUrl = null;
+  }
+
+  return { name: normalized, address, avatarUrl };
 }

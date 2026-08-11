@@ -19,6 +19,7 @@ type LegacyContact = {
   farcasterUsername?: string;
   farcasterPfpUrl?: string;
   ensName?: string;
+  ensAvatarUrl?: string;
 };
 
 /**
@@ -73,6 +74,9 @@ export const migrateOwnerIds = mutation({
           ? { farcasterPfpUrl: contact.farcasterPfpUrl }
           : {}),
         ...(contact.ensName !== undefined ? { ensName: contact.ensName } : {}),
+        ...(contact.ensAvatarUrl !== undefined
+          ? { ensAvatarUrl: contact.ensAvatarUrl }
+          : {}),
       });
       updated += 1;
     }
@@ -108,6 +112,8 @@ export const listForOwner = query({
         } else if (isFarcaster) {
           username = contact.farcasterUsername ?? null;
           profilePhotoUrl = contact.farcasterPfpUrl ?? null;
+        } else if (isEns) {
+          profilePhotoUrl = contact.ensAvatarUrl ?? null;
         }
 
         return {
@@ -120,6 +126,7 @@ export const listForOwner = query({
           farcasterUsername: contact.farcasterUsername ?? null,
           farcasterPfpUrl: contact.farcasterPfpUrl ?? null,
           ensName: contact.ensName ?? null,
+          ensAvatarUrl: contact.ensAvatarUrl ?? null,
           username,
           identityId,
           profilePhotoUrl,
@@ -160,6 +167,8 @@ export const getForOwner = query({
     } else if (isFarcaster) {
       username = contact.farcasterUsername ?? null;
       profilePhotoUrl = contact.farcasterPfpUrl ?? null;
+    } else if (isEns) {
+      profilePhotoUrl = contact.ensAvatarUrl ?? null;
     }
 
     return {
@@ -173,6 +182,7 @@ export const getForOwner = query({
       farcasterUsername: contact.farcasterUsername ?? null,
       farcasterPfpUrl: contact.farcasterPfpUrl ?? null,
       ensName: contact.ensName ?? null,
+      ensAvatarUrl: contact.ensAvatarUrl ?? null,
       identityId,
       profilePhotoUrl,
       isFarcaster,
@@ -393,8 +403,9 @@ export const addByEns = mutation({
     ownerId: v.id("users"),
     ensName: v.string(),
     evmAddress: v.string(),
+    ensAvatarUrl: v.optional(v.string()),
   },
-  handler: async (ctx, { ownerId, ensName, evmAddress }) => {
+  handler: async (ctx, { ownerId, ensName, evmAddress, ensAvatarUrl }) => {
     const owner = await ctx.db.get(ownerId);
     if (!owner) {
       throw new Error("Owner not found");
@@ -410,6 +421,8 @@ export const addByEns = mutation({
       throw new Error("Invalid EVM address");
     }
 
+    const avatarUrl = ensAvatarUrl?.trim() || undefined;
+
     const existing = await ctx.db
       .query("contacts")
       .withIndex("by_owner_and_ens", (q) =>
@@ -422,6 +435,7 @@ export const addByEns = mutation({
         ensName: name,
         evmAddress: evm,
         name,
+        ...(avatarUrl !== undefined ? { ensAvatarUrl: avatarUrl } : {}),
       });
       return existing._id;
     }
@@ -431,6 +445,7 @@ export const addByEns = mutation({
       ensName: name,
       evmAddress: evm,
       name,
+      ...(avatarUrl ? { ensAvatarUrl: avatarUrl } : {}),
     });
   },
 });

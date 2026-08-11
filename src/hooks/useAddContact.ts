@@ -120,7 +120,11 @@ export function useAddContact() {
   );
 
   const addEns = useCallback(
-    async (profile: { ensName: string; evmAddress: string }) => {
+    async (profile: {
+      ensName: string;
+      evmAddress: string;
+      ensAvatarUrl?: string | null;
+    }) => {
       if (!userId) {
         setErrorMessage('Not signed in');
         return false;
@@ -134,6 +138,7 @@ export function useAddContact() {
           ownerId: userId,
           ensName: profile.ensName,
           evmAddress: profile.evmAddress,
+          ensAvatarUrl: profile.ensAvatarUrl ?? undefined,
         });
         return true;
       } catch (error) {
