@@ -22,14 +22,6 @@ type LegacyContact = {
   ensAvatarUrl?: string;
 };
 
-function isPlainWalletContact(contact: {
-  contactUserId?: Id<"users">;
-  farcasterFid?: number;
-  ensName?: string;
-}) {
-  return !contact.contactUserId && contact.farcasterFid == null && !contact.ensName;
-}
-
 /**
  * One-time cleanup: map legacy `ownerExternalId` → `ownerId` and drop
  * denormalized `contactUsername`.
@@ -243,7 +235,7 @@ export const add = mutation({
   },
 });
 
-/** Add a contact by EVM and/or Solana address (idempotent). */
+/** Add a contact by EVM and/or Solana address. */
 export const addByAddresses = mutation({
   args: {
     ownerId: v.id("users"),
@@ -271,42 +263,6 @@ export const addByAddresses = mutation({
 
     if (solana && !SOLANA_ADDRESS.test(solana)) {
       throw new Error("Invalid Solana address");
-    }
-
-    if (evm) {
-      const existingEvmMatches = await ctx.db
-        .query("contacts")
-        .withIndex("by_owner_and_evm", (q) =>
-          q.eq("ownerId", ownerId).eq("evmAddress", evm),
-        )
-        .collect();
-      const existingEvm = existingEvmMatches.find(isPlainWalletContact);
-      if (existingEvm) {
-        await ctx.db.patch(existingEvm._id, {
-          ...(trimmedName ? { name: trimmedName } : {}),
-          ...(solana && !existingEvm.solanaAddress
-            ? { solanaAddress: solana }
-            : {}),
-        });
-        return existingEvm._id;
-      }
-    }
-
-    if (solana) {
-      const existingSolanaMatches = await ctx.db
-        .query("contacts")
-        .withIndex("by_owner_and_solana", (q) =>
-          q.eq("ownerId", ownerId).eq("solanaAddress", solana),
-        )
-        .collect();
-      const existingSolana = existingSolanaMatches.find(isPlainWalletContact);
-      if (existingSolana) {
-        await ctx.db.patch(existingSolana._id, {
-          ...(trimmedName ? { name: trimmedName } : {}),
-          ...(evm && !existingSolana.evmAddress ? { evmAddress: evm } : {}),
-        });
-        return existingSolana._id;
-      }
     }
 
     return await ctx.db.insert("contacts", {
