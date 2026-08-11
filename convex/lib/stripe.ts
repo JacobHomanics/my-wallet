@@ -51,10 +51,13 @@ export async function createCryptoOnrampSession(
   body.set("wallet_addresses[base_network]", params.walletAddress);
   body.set("wallet_addresses[avalanche]", params.walletAddress);
   body.set("lock_wallet_address", "true");
-  body.set("destination_currency", "eth");
-  body.set("destination_network", "base");
+  // Important: omit the singular `destination_currency/destination_network`
+  // defaults to avoid pinning the widget and hiding other networks.
+  //
+  // Stripe's Avalanche C-Chain supports AVAX and USDC as destination assets.
   body.set("destination_currencies[0]", "eth");
   body.set("destination_currencies[1]", "usdc");
+  body.set("destination_currencies[2]", "avax");
   body.set("destination_networks[0]", "base");
   body.set("destination_networks[1]", "ethereum");
   body.set("destination_networks[2]", "avalanche");
