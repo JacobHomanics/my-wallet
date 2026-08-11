@@ -6,11 +6,11 @@ import {
   type PrivyFiatOnrampStatus,
   type UsePrivyFiatOnrampResult,
 } from '@/hooks/usePrivyFiatOnramp.shared';
+import { useOnrampSettings } from '@/hooks/useOnrampSettings';
 import { useUserWallets } from '@/hooks/useUserWallets';
 import {
+  getPrivyOnrampDestination,
   ONRAMP_DEFAULT_SOURCE_AMOUNT,
-  PRIVY_ONRAMP_BASE_CHAIN,
-  PRIVY_ONRAMP_BASE_ETH,
 } from '@/lib/privy/onramp';
 
 /**
@@ -20,6 +20,7 @@ import {
 export function usePrivyFiatOnramp(): UsePrivyFiatOnrampResult {
   const { fund } = useFiatOnramp();
   const { wallets } = useUserWallets();
+  const { selectedNetwork, selectedCurrency } = useOnrampSettings();
   const [isFunding, setIsFunding] = useState(false);
   const [status, setStatus] = useState<PrivyFiatOnrampStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,14 +39,23 @@ export function usePrivyFiatOnramp(): UsePrivyFiatOnrampResult {
     setStatus(null);
 
     try {
+      const destination = getPrivyOnrampDestination({
+        network: selectedNetwork.id,
+        currency: selectedCurrency.id,
+      });
+      if (!destination) {
+        setError('That asset is not supported on the selected onramp network.');
+        return null;
+      }
+
       const result = await fund({
         source: {
           assets: ['usd'],
           defaultAsset: 'usd',
         },
         destination: {
-          asset: PRIVY_ONRAMP_BASE_ETH,
-          chain: PRIVY_ONRAMP_BASE_CHAIN,
+          asset: destination.asset,
+          chain: destination.chain,
           address: ethereumAddress,
         },
         environment: 'production',
@@ -67,7 +77,12 @@ export function usePrivyFiatOnramp(): UsePrivyFiatOnrampResult {
     } finally {
       setIsFunding(false);
     }
-  }, [ethereumAddress, fund]);
+  }, [
+    ethereumAddress,
+    fund,
+    selectedCurrency.id,
+    selectedNetwork.id,
+  ]);
 
   return { isAvailable, isFunding, status, error, startFund };
 }
