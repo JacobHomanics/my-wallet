@@ -10,8 +10,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PrivyIcon } from '@/components/PrivyIcon';
+import { StripeIcon } from '@/components/StripeIcon';
 import {
   DEPOSIT_METHODS,
+  type DepositMethodId,
   type DepositMethodOption,
 } from '@/lib/stripe/depositMethods';
 
@@ -21,8 +24,15 @@ type DepositMethodPickerModalProps = {
   onSelect: (method: DepositMethodOption) => void;
 };
 
+function DepositMethodIcon({ id }: { id: DepositMethodId }) {
+  if (id === 'stripe-embedded-components') {
+    return <PrivyIcon size={36} />;
+  }
+  return <StripeIcon size={36} />;
+}
+
 /**
- * Page-sheet modal for choosing a Stripe deposit integration.
+ * Page-sheet modal for choosing a deposit onramp provider.
  */
 export function DepositMethodPickerModal({
   visible,
@@ -43,10 +53,8 @@ export function DepositMethodPickerModal({
           pressed && styles.optionPressed,
         ]}
       >
-        <View style={styles.optionText}>
-          <Text style={styles.optionLabel}>{item.label}</Text>
-          <Text style={styles.optionDescription}>{item.description}</Text>
-        </View>
+        <DepositMethodIcon id={item.id} />
+        <Text style={styles.optionLabel}>{item.label}</Text>
         <Ionicons name="chevron-forward" size={20} color="#166534" />
       </Pressable>
     ),
@@ -143,19 +151,11 @@ const styles = StyleSheet.create({
   optionPressed: {
     opacity: 0.85,
   },
-  optionText: {
+  optionLabel: {
     flex: 1,
     minWidth: 0,
-    gap: 4,
-  },
-  optionLabel: {
     fontSize: 16,
     fontWeight: '600',
     color: '#166534',
-  },
-  optionDescription: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#5a7d6a',
   },
 });
