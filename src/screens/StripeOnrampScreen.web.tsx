@@ -16,6 +16,7 @@ import { OnrampElement } from '@/components/stripe/OnrampElement';
 import { useCreateStripeOnrampSession } from '@/hooks/useCreateStripeOnrampSession';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
+import { useStripeOnrampUiReady } from '@/hooks/useStripeOnrampUiReady';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 
 /**
@@ -31,6 +32,7 @@ export function StripeOnrampScreen() {
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const startedRef = useRef(false);
+  const { uiReady, onReady } = useStripeOnrampUiReady(clientSecret);
 
   useEffect(() => {
     if (startedRef.current) {
@@ -57,6 +59,13 @@ export function StripeOnrampScreen() {
     },
     [refresh],
   );
+
+  const showSessionLoader =
+    isAvailable && !error && (isCreating || !clientSecret);
+  const showEmbedLoader = Boolean(clientSecret) && !uiReady;
+  const loadingMessage = !clientSecret
+    ? 'Starting deposit…'
+    : 'Loading…';
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -97,20 +106,39 @@ export function StripeOnrampScreen() {
             </Text>
           ) : null}
 
-          {isCreating || (!clientSecret && !error) ? (
-            <ActivityIndicator color="#166534" style={styles.loader} />
-          ) : null}
-
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
+          {showSessionLoader ? (
+            <View style={styles.loadingPanel} accessibilityRole="progressbar">
+              <ActivityIndicator color="#166534" size="large" />
+              <Text style={styles.loadingText}>{loadingMessage}</Text>
+            </View>
+          ) : null}
+
           {clientSecret ? (
-            <CryptoElements>
-              <OnrampElement
-                appearance={{ theme: 'light' }}
-                clientSecret={clientSecret}
-                onChange={onSessionChange}
-              />
-            </CryptoElements>
+            <View style={styles.onrampWrap}>
+              {showEmbedLoader ? (
+                <View
+                  accessibilityRole="progressbar"
+                  style={styles.loadingOverlay}
+                >
+                  <ActivityIndicator color="#166534" size="large" />
+                  <Text style={styles.loadingText}>{loadingMessage}</Text>
+                </View>
+              ) : null}
+              <View
+                style={uiReady ? styles.onrampVisible : styles.onrampHidden}
+              >
+                <CryptoElements>
+                  <OnrampElement
+                    appearance={{ theme: 'light' }}
+                    clientSecret={clientSecret}
+                    onChange={onSessionChange}
+                    onReady={onReady}
+                  />
+                </CryptoElements>
+              </View>
+            </View>
           ) : null}
         </ScrollView>
       </View>
@@ -165,8 +193,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
   },
-  loader: {
-    marginTop: 48,
+  onrampWrap: {
+    position: 'relative',
+    minHeight: 640,
+    width: '100%',
+  },
+  onrampVisible: {
+    opacity: 1,
+  },
+  onrampHidden: {
+    opacity: 0,
+  },
+  loadingPanel: {
+    marginTop: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    backgroundColor: '#f0fdf4',
+    minHeight: 640,
+  },
+  loadingText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#5a7d6a',
+    textAlign: 'center',
   },
   errorText: {
     marginTop: 24,

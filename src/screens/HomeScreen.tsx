@@ -12,14 +12,11 @@ import {
   View,
 } from 'react-native';
 
-import { DepositMethodPickerModal } from '@/components/DepositMethodPickerModal';
-import { useDepositMethodPicker } from '@/hooks/useDepositMethodPicker';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
-import { useFiatOnrampDeposit } from '@/hooks/useFiatOnrampDeposit';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
+import { useOpenStripeDeposit } from '@/hooks/useOpenStripeDeposit';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
-import type { DepositMethodOption } from '@/lib/privy/onramp';
 import type { HomeStackParamList } from '@/navigation/types';
 
 export function HomeScreen() {
@@ -43,38 +40,12 @@ export function HomeScreen() {
   });
 
   const openFreshSend = useOpenFreshSend();
-  const {
-    isAvailable: canDeposit,
-    isLoading: depositLoading,
-    error: depositError,
-    deposit,
-  } = useFiatOnrampDeposit();
-  const {
-    methods: depositMethods,
-    pickerOpen: depositPickerOpen,
-    openPicker: openDepositPicker,
-    closePicker: closeDepositPicker,
-  } = useDepositMethodPicker();
+  const { canDeposit, openDeposit } = useOpenStripeDeposit();
   const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
 
   const onRefresh = useCallback(() => {
     refresh();
   }, [refresh]);
-
-  const onSelectDepositMethod = useCallback(
-    async (option: DepositMethodOption) => {
-      closeDepositPicker();
-      if (option.id === 'stripe') {
-        navigation.navigate('stripeOnramp');
-        return;
-      }
-      const status = await deposit(option.id);
-      if (status === 'confirmed' || status === 'submitted') {
-        refresh();
-      }
-    },
-    [closeDepositPicker, deposit, navigation, refresh],
-  );
 
   const totalLabel = formatFromUsd(totalUsd) ?? defaultFormattedZero;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
@@ -118,9 +89,6 @@ export function HomeScreen() {
               {totalLabel}
             </Text>
             {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
-            {depositError ? (
-              <Text style={styles.errorBanner}>{depositError}</Text>
-            ) : null}
             {showActions ? (
               <>
                 <View style={styles.actionsRow}>
@@ -164,26 +132,18 @@ export function HomeScreen() {
                   {canDeposit ? (
                     <Pressable
                       accessibilityRole="button"
-                      disabled={depositLoading}
-                      onPress={openDepositPicker}
+                      onPress={openDeposit}
                       style={({ pressed }) => [
                         styles.actionButton,
                         pressed && styles.actionButtonPressed,
-                        depositLoading && styles.actionButtonDisabled,
                       ]}
                     >
-                      {depositLoading ? (
-                        <ActivityIndicator color="#f8fafc" size="small" />
-                      ) : (
-                        <MaterialCommunityIcons
-                          name="archive-arrow-down-outline"
-                          size={18}
-                          color="#f8fafc"
-                        />
-                      )}
-                      <Text style={styles.actionButtonText}>
-                        {depositLoading ? 'Deposit…' : 'Deposit'}
-                      </Text>
+                      <MaterialCommunityIcons
+                        name="archive-arrow-down-outline"
+                        size={18}
+                        color="#f8fafc"
+                      />
+                      <Text style={styles.actionButtonText}>Deposit</Text>
                     </Pressable>
                   ) : null}
                 </View>
@@ -220,15 +180,6 @@ export function HomeScreen() {
           </>
         )}
       </View>
-      {canDeposit ? (
-        <DepositMethodPickerModal
-          disabled={depositLoading}
-          methods={depositMethods}
-          onClose={closeDepositPicker}
-          onSelect={onSelectDepositMethod}
-          visible={depositPickerOpen}
-        />
-      ) : null}
     </ScrollView>
   );
 }
@@ -311,9 +262,6 @@ const styles = StyleSheet.create({
   },
   actionButtonPressed: {
     opacity: 0.85,
-  },
-  actionButtonDisabled: {
-    opacity: 0.6,
   },
   actionButtonText: {
     color: '#f0fdf4',
