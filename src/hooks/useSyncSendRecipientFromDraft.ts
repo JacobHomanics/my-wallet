@@ -7,7 +7,6 @@ type SyncSendRecipientFromDraftArgs = {
   setAccountNumber: (value: string) => void;
   setEthereumRecipient: (value: string) => void;
   setSolanaRecipient: (value: string) => void;
-  setShowDecodedAddresses: (value: boolean) => void;
 };
 
 /**
@@ -17,7 +16,6 @@ export function useSyncSendRecipientFromDraft({
   setAccountNumber,
   setEthereumRecipient,
   setSolanaRecipient,
-  setShowDecodedAddresses,
 }: SyncSendRecipientFromDraftArgs) {
   useFocusEffect(
     useCallback(() => {
@@ -25,19 +23,6 @@ export function useSyncSendRecipientFromDraft({
       setAccountNumber(draft.accountNumber);
       setEthereumRecipient(draft.ethereumRecipient);
       setSolanaRecipient(draft.solanaRecipient);
-
-      if (
-        !draft.accountNumber.trim() &&
-        !draft.ethereumRecipient.trim() &&
-        !draft.solanaRecipient.trim()
-      ) {
-        setShowDecodedAddresses(false);
-      }
-    }, [
-      setAccountNumber,
-      setEthereumRecipient,
-      setSolanaRecipient,
-      setShowDecodedAddresses,
-    ]),
+    }, [setAccountNumber, setEthereumRecipient, setSolanaRecipient]),
   );
 }

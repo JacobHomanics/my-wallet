@@ -10,7 +10,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,7 +24,6 @@ import {
   getSendDraftSnapshot,
   updateSendDraft,
 } from '@/hooks/useSendDraft';
-import { useSendRecipientReady } from '@/hooks/useSendRecipientReady';
 import { useSendToContact } from '@/hooks/useSendToContact';
 import { useSyncSendRecipientFromDraft } from '@/hooks/useSyncSendRecipientFromDraft';
 import {
@@ -36,7 +34,7 @@ import { isValidRecipientAddress } from '@/lib/validation';
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
- * Send step 1 — choose the recipient via search, contacts, or addresses.
+ * Send step 1 — choose the recipient via search or contacts.
  */
 export function SendScreen() {
   const insets = useSafeAreaInsets();
@@ -75,13 +73,6 @@ export function SendScreen() {
       return '';
     }
   });
-  const [showDecodedAddresses, setShowDecodedAddresses] = useState(false);
-
-  const { canContinue } = useSendRecipientReady(
-    accountNumber,
-    ethereumRecipient,
-    solanaRecipient,
-  );
 
   const setEthereumRecipient = useCallback((value: string) => {
     setEthereumRecipientState(value);
@@ -134,27 +125,10 @@ export function SendScreen() {
     [setEthereumRecipient, setSolanaRecipient],
   );
 
-  const setDecodedEthereumRecipient = useCallback(
-    (value: string) => {
-      setEthereumRecipient(value);
-      syncAccountNumberFromAddresses(value, solanaRecipient);
-    },
-    [setEthereumRecipient, solanaRecipient, syncAccountNumberFromAddresses],
-  );
-
-  const setDecodedSolanaRecipient = useCallback(
-    (value: string) => {
-      setSolanaRecipient(value);
-      syncAccountNumberFromAddresses(ethereumRecipient, value);
-    },
-    [ethereumRecipient, setSolanaRecipient, syncAccountNumberFromAddresses],
-  );
-
   useSyncSendRecipientFromDraft({
     setAccountNumber: setAccountNumberState,
     setEthereumRecipient: setEthereumRecipientState,
     setSolanaRecipient: setSolanaRecipientState,
-    setShowDecodedAddresses,
   });
 
   useEffect(() => {
@@ -164,17 +138,6 @@ export function SendScreen() {
       solanaRecipient,
     });
   }, [accountNumber, ethereumRecipient, solanaRecipient]);
-
-  const onContinue = useCallback(() => {
-    if (!canContinue) {
-      return;
-    }
-
-    navigation.navigate('sendAmount', {
-      tokenId: route.params?.tokenId,
-      usdAmount: route.params?.usdAmount,
-    });
-  }, [canContinue, navigation, route.params?.tokenId, route.params?.usdAmount]);
 
   const onSelectContact = useCallback(
     (contact: ContactListItem) => {
@@ -186,9 +149,6 @@ export function SendScreen() {
         setEthereumRecipient(nextEvm);
         setSolanaRecipient(nextSolana);
         syncAccountNumberFromAddresses(nextEvm, nextSolana);
-        if (nextEvm || nextSolana) {
-          setShowDecodedAddresses(true);
-        }
       }
 
       closePicker();
@@ -249,139 +209,38 @@ export function SendScreen() {
             style={styles.flex}
           >
             <View style={styles.formBody}>
-              <Pressable
-                accessibilityLabel="Search usernames and account numbers"
-                accessibilityRole="button"
-                onPress={() => {
-                  navigation.navigate('sendSearch', {
-                    tokenId: route.params?.tokenId,
-                    usdAmount: route.params?.usdAmount,
-                  });
-                }}
-                style={({ pressed }) => [
-                  styles.contactsButton,
-                  pressed && styles.contactsButtonPressed,
-                ]}
-              >
-                <Ionicons name="search-outline" size={20} color="#166534" />
-                <Text style={styles.contactsButtonText}>Search</Text>
-              </Pressable>
+              <View style={styles.buttonRow}>
+                <Pressable
+                  accessibilityLabel="Search usernames and account numbers"
+                  accessibilityRole="button"
+                  onPress={() => {
+                    navigation.navigate('sendSearch', {
+                      tokenId: route.params?.tokenId,
+                      usdAmount: route.params?.usdAmount,
+                    });
+                  }}
+                  style={({ pressed }) => [
+                    styles.contactsButton,
+                    pressed && styles.contactsButtonPressed,
+                  ]}
+                >
+                  <Ionicons name="search-outline" size={20} color="#166534" />
+                  <Text style={styles.contactsButtonText}>Search</Text>
+                </Pressable>
 
-              <Pressable
-                accessibilityLabel="Choose from contacts"
-                accessibilityRole="button"
-                onPress={openPicker}
-                style={({ pressed }) => [
-                  styles.contactsButton,
-                  styles.secondaryButtonSpacing,
-                  pressed && styles.contactsButtonPressed,
-                ]}
-              >
-                <Ionicons name="people-outline" size={20} color="#166534" />
-                <Text style={styles.contactsButtonText}>Contacts</Text>
-              </Pressable>
-
-              <Pressable
-                accessibilityLabel={
-                  showDecodedAddresses ? 'Hide advanced' : 'Show advanced'
-                }
-                accessibilityRole="button"
-                accessibilityState={{ expanded: showDecodedAddresses }}
-                onPress={() => {
-                  setShowDecodedAddresses((open) => !open);
-                }}
-                style={({ pressed }) => [
-                  styles.decodedToggle,
-                  pressed && styles.advancedTogglePressed,
-                ]}
-              >
-                <Text style={styles.decodedToggleText}>Advanced</Text>
-                <Ionicons
-                  name={showDecodedAddresses ? 'chevron-up' : 'chevron-down'}
-                  size={16}
-                  color="#5a7d6a"
-                />
-              </Pressable>
-              {showDecodedAddresses ? (
-                <View style={styles.decodedCard}>
-                  <View style={styles.decodedGroup}>
-                    <Text style={styles.decodedLabel}>EVM</Text>
-                    <View style={styles.decodedInputRow}>
-                      <TextInput
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        onChangeText={setDecodedEthereumRecipient}
-                        placeholder="0x…"
-                        placeholderTextColor="#86a894"
-                        style={styles.decodedInput}
-                        value={ethereumRecipient}
-                      />
-                      {ethereumRecipient.trim() ? (
-                        <Pressable
-                          accessibilityLabel="Clear EVM address"
-                          accessibilityRole="button"
-                          hitSlop={8}
-                          onPress={() => {
-                            setDecodedEthereumRecipient('');
-                          }}
-                          style={styles.clearButton}
-                        >
-                          <Ionicons
-                            name="close-circle"
-                            size={20}
-                            color="#86a894"
-                          />
-                        </Pressable>
-                      ) : null}
-                    </View>
-                  </View>
-                  <View style={styles.decodedDivider} />
-                  <View style={styles.decodedGroup}>
-                    <Text style={styles.decodedLabel}>Solana</Text>
-                    <View style={styles.decodedInputRow}>
-                      <TextInput
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        onChangeText={setDecodedSolanaRecipient}
-                        placeholder="Solana address"
-                        placeholderTextColor="#86a894"
-                        style={styles.decodedInput}
-                        value={solanaRecipient}
-                      />
-                      {solanaRecipient.trim() ? (
-                        <Pressable
-                          accessibilityLabel="Clear Solana address"
-                          accessibilityRole="button"
-                          hitSlop={8}
-                          onPress={() => {
-                            setDecodedSolanaRecipient('');
-                          }}
-                          style={styles.clearButton}
-                        >
-                          <Ionicons
-                            name="close-circle"
-                            size={20}
-                            color="#86a894"
-                          />
-                        </Pressable>
-                      ) : null}
-                    </View>
-                  </View>
-                </View>
-              ) : null}
-
-              <Pressable
-                accessibilityRole="button"
-                disabled={!canContinue}
-                onPress={onContinue}
-                style={({ pressed }) => [
-                  styles.continueButton,
-                  !canContinue && styles.continueButtonDisabled,
-                  pressed && canContinue && styles.continueButtonPressed,
-                ]}
-              >
-                <Text style={styles.continueButtonText}>Continue</Text>
-              </Pressable>
+                <Pressable
+                  accessibilityLabel="Choose from contacts"
+                  accessibilityRole="button"
+                  onPress={openPicker}
+                  style={({ pressed }) => [
+                    styles.contactsButton,
+                    pressed && styles.contactsButtonPressed,
+                  ]}
+                >
+                  <Ionicons name="people-outline" size={20} color="#166534" />
+                  <Text style={styles.contactsButtonText}>Contacts</Text>
+                </Pressable>
+              </View>
             </View>
           </ScrollView>
         </View>
@@ -449,107 +308,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
   },
-  clearButton: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  advancedTogglePressed: {
-    opacity: 0.65,
-  },
-  decodedToggle: {
-    marginTop: 20,
+  buttonRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 6,
-  },
-  decodedToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    marginRight: 4,
-  },
-  decodedCard: {
-    marginTop: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#d1fae5',
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  decodedGroup: {
-    gap: 8,
-  },
-  decodedInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 52,
-    paddingLeft: 12,
-    paddingRight: 4,
-    borderWidth: 1,
-    borderColor: '#d1fae5',
-    borderRadius: 10,
-    backgroundColor: '#f8fffa',
-  },
-  decodedLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#86a894',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  decodedInput: {
-    flex: 1,
-    minWidth: 0,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#166534',
-  },
-  decodedDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
-    marginVertical: 10,
+    gap: 12,
   },
   contactsButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    minHeight: 108,
     backgroundColor: '#d1fae5',
     paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingVertical: 36,
     borderRadius: 10,
-  },
-  secondaryButtonSpacing: {
-    marginTop: 12,
   },
   contactsButtonPressed: {
     opacity: 0.85,
   },
   contactsButtonText: {
     color: '#166534',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  continueButton: {
-    marginTop: 24,
-    alignItems: 'center',
-    backgroundColor: '#166534',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 10,
-  },
-  continueButtonDisabled: {
-    opacity: 0.45,
-  },
-  continueButtonPressed: {
-    opacity: 0.85,
-  },
-  continueButtonText: {
-    color: '#f0fdf4',
     fontSize: 16,
     fontWeight: '600',
   },
