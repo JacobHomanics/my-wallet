@@ -24,6 +24,11 @@ export type ContactListItem = {
   isEns: boolean;
 };
 
+export type WalletContactChainGroup = {
+  title: string;
+  contacts: ContactListItem[];
+};
+
 function buildAddressSubtitle(
   evmAddress: string | null,
   solanaAddress: string | null,
@@ -196,4 +201,24 @@ export function useContacts(): {
     externalContacts,
     isLoading: userIdLoading || (userId != null && rows === undefined),
   };
+}
+
+export function groupWalletContactsByChain(
+  contacts: ContactListItem[],
+): WalletContactChainGroup[] {
+  const evm = contacts.filter(
+    (contact) => Boolean(contact.evmAddress) && !contact.solanaAddress,
+  );
+  const solana = contacts.filter(
+    (contact) => Boolean(contact.solanaAddress) && !contact.evmAddress,
+  );
+  const multiChain = contacts.filter(
+    (contact) => Boolean(contact.evmAddress) && Boolean(contact.solanaAddress),
+  );
+
+  return [
+    { title: 'EVM', contacts: evm },
+    { title: 'Solana', contacts: solana },
+    { title: 'Multi-chain', contacts: multiChain },
+  ].filter((group) => group.contacts.length > 0);
 }

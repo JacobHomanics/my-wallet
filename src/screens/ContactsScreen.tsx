@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ConfirmDeleteContactModal } from '@/components/ConfirmDeleteContactModal';
 import { SwipeableContactRow } from '@/components/SwipeableContactRow';
 import {
+  groupWalletContactsByChain,
   useContacts,
   type ContactListItem,
 } from '@/hooks/useContacts';
@@ -154,6 +155,66 @@ function CollapsibleGroup({
   );
 }
 
+function WalletChainSections({
+  contacts,
+  evmExpanded,
+  solanaExpanded,
+  multiChainExpanded,
+  onToggleEvm,
+  onToggleSolana,
+  onToggleMultiChain,
+  onPressContact,
+  onDeleteContact,
+  onRowOpen,
+  onRowClose,
+}: {
+  contacts: ContactListItem[];
+  evmExpanded: boolean;
+  solanaExpanded: boolean;
+  multiChainExpanded: boolean;
+  onToggleEvm: () => void;
+  onToggleSolana: () => void;
+  onToggleMultiChain: () => void;
+  onPressContact: (contactId: string) => void;
+  onDeleteContact: (contactId: string, label: string) => void;
+  onRowOpen: (contactId: string, ref: Swipeable) => void;
+  onRowClose: (contactId: string) => void;
+}) {
+  const groups = groupWalletContactsByChain(contacts);
+
+  return (
+    <>
+      {groups.map((group) => (
+        <View key={group.title} style={styles.walletChainSection}>
+          <CollapsibleSection
+            title={group.title}
+            expanded={
+              group.title === 'EVM'
+                ? evmExpanded
+                : group.title === 'Solana'
+                  ? solanaExpanded
+                  : multiChainExpanded
+            }
+            onToggle={
+              group.title === 'EVM'
+                ? onToggleEvm
+                : group.title === 'Solana'
+                  ? onToggleSolana
+                  : onToggleMultiChain
+            }
+            contacts={group.contacts}
+            onPressContact={onPressContact}
+            onDeleteContact={onDeleteContact}
+            onRowOpen={onRowOpen}
+            onRowClose={onRowClose}
+            nested
+          />
+        </View>
+      ))}
+    </>
+  );
+}
+
 function ContactsTabChip({
   label,
   selected,
@@ -210,11 +271,17 @@ export function ContactsScreen() {
     contactsExpanded,
     externalGroupExpanded,
     walletsExpanded,
+    walletsEvmExpanded,
+    walletsSolanaExpanded,
+    walletsMultiChainExpanded,
     farcasterExpanded,
     ensExpanded,
     toggleContacts,
     toggleExternalGroup,
     toggleWallets,
+    toggleWalletsEvm,
+    toggleWalletsSolana,
+    toggleWalletsMultiChain,
     toggleFarcaster,
     toggleEns,
   } = useContactsAllSections();
@@ -363,16 +430,41 @@ export function ContactsScreen() {
             ) : isExternalTab ? (
               <>
                 {filteredExternalContacts.length > 0 ? (
-                  <CollapsibleSection
-                    title="Wallets"
-                    expanded={walletsExpanded}
-                    onToggle={toggleWallets}
-                    contacts={filteredExternalContacts}
-                    onPressContact={openContact}
-                    onDeleteContact={deleteContact}
-                    onRowOpen={onRowOpen}
-                    onRowClose={onRowClose}
-                  />
+                  <View style={styles.section}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: walletsExpanded }}
+                      onPress={toggleWallets}
+                      style={({ pressed }) => [
+                        styles.sectionHeader,
+                        pressed && styles.sectionHeaderPressed,
+                      ]}
+                    >
+                      <Text style={styles.sectionTitle}>Wallets</Text>
+                      <Ionicons
+                        name={walletsExpanded ? 'chevron-up' : 'chevron-down'}
+                        size={16}
+                        color="#5a7d6a"
+                      />
+                    </Pressable>
+                    {walletsExpanded ? (
+                      <View style={styles.groupBody}>
+                        <WalletChainSections
+                          contacts={filteredExternalContacts}
+                          evmExpanded={walletsEvmExpanded}
+                          solanaExpanded={walletsSolanaExpanded}
+                          multiChainExpanded={walletsMultiChainExpanded}
+                          onToggleEvm={toggleWalletsEvm}
+                          onToggleSolana={toggleWalletsSolana}
+                          onToggleMultiChain={toggleWalletsMultiChain}
+                          onPressContact={openContact}
+                          onDeleteContact={deleteContact}
+                          onRowOpen={onRowOpen}
+                          onRowClose={onRowClose}
+                        />
+                      </View>
+                    ) : null}
+                  </View>
                 ) : null}
                 {filteredFarcasterContacts.length > 0 ? (
                   <CollapsibleSection
@@ -422,17 +514,47 @@ export function ContactsScreen() {
                     onToggle={toggleExternalGroup}
                   >
                     {filteredExternalContacts.length > 0 ? (
-                      <CollapsibleSection
-                        title="Wallets"
-                        expanded={walletsExpanded}
-                        onToggle={toggleWallets}
-                        contacts={filteredExternalContacts}
-                        onPressContact={openContact}
-                        onDeleteContact={deleteContact}
-                        onRowOpen={onRowOpen}
-                        onRowClose={onRowClose}
-                        nested
-                      />
+                      <View style={styles.nestedSection}>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityState={{ expanded: walletsExpanded }}
+                          onPress={toggleWallets}
+                          style={({ pressed }) => [
+                            styles.sectionHeader,
+                            styles.nestedSectionHeader,
+                            pressed && styles.sectionHeaderPressed,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.sectionTitle,
+                              styles.nestedSectionTitle,
+                            ]}
+                          >
+                            Wallets
+                          </Text>
+                          <Ionicons
+                            name={walletsExpanded ? 'chevron-up' : 'chevron-down'}
+                            size={16}
+                            color="#5a7d6a"
+                          />
+                        </Pressable>
+                        {walletsExpanded ? (
+                          <WalletChainSections
+                            contacts={filteredExternalContacts}
+                            evmExpanded={walletsEvmExpanded}
+                            solanaExpanded={walletsSolanaExpanded}
+                            multiChainExpanded={walletsMultiChainExpanded}
+                            onToggleEvm={toggleWalletsEvm}
+                            onToggleSolana={toggleWalletsSolana}
+                            onToggleMultiChain={toggleWalletsMultiChain}
+                            onPressContact={openContact}
+                            onDeleteContact={deleteContact}
+                            onRowOpen={onRowOpen}
+                            onRowClose={onRowClose}
+                          />
+                        ) : null}
+                      </View>
                     ) : null}
                     {filteredFarcasterContacts.length > 0 ? (
                       <CollapsibleSection
@@ -590,6 +712,9 @@ const styles = StyleSheet.create({
   },
   nestedSection: {
     marginTop: 4,
+  },
+  walletChainSection: {
+    marginLeft: 12,
   },
   groupBody: {
     paddingLeft: 8,

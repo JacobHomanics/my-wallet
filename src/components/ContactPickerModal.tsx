@@ -17,6 +17,7 @@ import { useContactsAllSections } from '@/hooks/useContactsAllSections';
 import { useContactsFilter } from '@/hooks/useContactsFilter';
 import { useContactsTab } from '@/hooks/useContactsTab';
 import {
+  groupWalletContactsByChain,
   useContacts,
   type ContactListItem,
 } from '@/hooks/useContacts';
@@ -181,6 +182,57 @@ function CollapsibleSection({
   );
 }
 
+function WalletChainSections({
+  contacts,
+  evmExpanded,
+  solanaExpanded,
+  multiChainExpanded,
+  onToggleEvm,
+  onToggleSolana,
+  onToggleMultiChain,
+  onSelect,
+}: {
+  contacts: ContactListItem[];
+  evmExpanded: boolean;
+  solanaExpanded: boolean;
+  multiChainExpanded: boolean;
+  onToggleEvm: () => void;
+  onToggleSolana: () => void;
+  onToggleMultiChain: () => void;
+  onSelect: (contact: ContactListItem) => void;
+}) {
+  const groups = groupWalletContactsByChain(contacts);
+
+  return (
+    <>
+      {groups.map((group) => (
+        <View key={group.title} style={styles.walletChainSection}>
+          <CollapsibleSection
+            title={group.title}
+            expanded={
+              group.title === 'EVM'
+                ? evmExpanded
+                : group.title === 'Solana'
+                  ? solanaExpanded
+                  : multiChainExpanded
+            }
+            onToggle={
+              group.title === 'EVM'
+                ? onToggleEvm
+                : group.title === 'Solana'
+                  ? onToggleSolana
+                  : onToggleMultiChain
+            }
+            contacts={group.contacts}
+            onSelect={onSelect}
+            nested
+          />
+        </View>
+      ))}
+    </>
+  );
+}
+
 function CollapsibleGroup({
   title,
   expanded,
@@ -254,11 +306,17 @@ export function ContactPickerModal({
     contactsExpanded,
     externalGroupExpanded,
     walletsExpanded,
+    walletsEvmExpanded,
+    walletsSolanaExpanded,
+    walletsMultiChainExpanded,
     farcasterExpanded,
     ensExpanded,
     toggleContacts,
     toggleExternalGroup,
     toggleWallets,
+    toggleWalletsEvm,
+    toggleWalletsSolana,
+    toggleWalletsMultiChain,
     toggleFarcaster,
     toggleEns,
   } = useContactsAllSections();
@@ -396,13 +454,38 @@ export function ContactPickerModal({
           ) : isExternalTab ? (
             <>
               {filteredExternalContacts.length > 0 ? (
-                <CollapsibleSection
-                  title="Wallets"
-                  expanded={walletsExpanded}
-                  onToggle={toggleWallets}
-                  contacts={filteredExternalContacts}
-                  onSelect={onSelect}
-                />
+                <View style={styles.section}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: walletsExpanded }}
+                    onPress={toggleWallets}
+                    style={({ pressed }) => [
+                      styles.sectionHeader,
+                      pressed && styles.sectionHeaderPressed,
+                    ]}
+                  >
+                    <Text style={styles.sectionTitle}>Wallets</Text>
+                    <Ionicons
+                      name={walletsExpanded ? 'chevron-up' : 'chevron-down'}
+                      size={16}
+                      color="#5a7d6a"
+                    />
+                  </Pressable>
+                  {walletsExpanded ? (
+                    <View style={styles.groupBody}>
+                      <WalletChainSections
+                        contacts={filteredExternalContacts}
+                        evmExpanded={walletsEvmExpanded}
+                        solanaExpanded={walletsSolanaExpanded}
+                        multiChainExpanded={walletsMultiChainExpanded}
+                        onToggleEvm={toggleWalletsEvm}
+                        onToggleSolana={toggleWalletsSolana}
+                        onToggleMultiChain={toggleWalletsMultiChain}
+                        onSelect={onSelect}
+                      />
+                    </View>
+                  ) : null}
+                </View>
               ) : null}
               {filteredFarcasterContacts.length > 0 ? (
                 <CollapsibleSection
@@ -443,14 +526,44 @@ export function ContactPickerModal({
                   onToggle={toggleExternalGroup}
                 >
                   {filteredExternalContacts.length > 0 ? (
-                    <CollapsibleSection
-                      title="Wallets"
-                      expanded={walletsExpanded}
-                      onToggle={toggleWallets}
-                      contacts={filteredExternalContacts}
-                      onSelect={onSelect}
-                      nested
-                    />
+                    <View style={styles.nestedSection}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityState={{ expanded: walletsExpanded }}
+                        onPress={toggleWallets}
+                        style={({ pressed }) => [
+                          styles.sectionHeader,
+                          styles.nestedSectionHeader,
+                          pressed && styles.sectionHeaderPressed,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.sectionTitle,
+                            styles.nestedSectionTitle,
+                          ]}
+                        >
+                          Wallets
+                        </Text>
+                        <Ionicons
+                          name={walletsExpanded ? 'chevron-up' : 'chevron-down'}
+                          size={16}
+                          color="#5a7d6a"
+                        />
+                      </Pressable>
+                      {walletsExpanded ? (
+                        <WalletChainSections
+                          contacts={filteredExternalContacts}
+                          evmExpanded={walletsEvmExpanded}
+                          solanaExpanded={walletsSolanaExpanded}
+                          multiChainExpanded={walletsMultiChainExpanded}
+                          onToggleEvm={toggleWalletsEvm}
+                          onToggleSolana={toggleWalletsSolana}
+                          onToggleMultiChain={toggleWalletsMultiChain}
+                          onSelect={onSelect}
+                        />
+                      ) : null}
+                    </View>
                   ) : null}
                   {filteredFarcasterContacts.length > 0 ? (
                     <CollapsibleSection
@@ -578,6 +691,9 @@ const styles = StyleSheet.create({
   },
   nestedSection: {
     marginTop: 4,
+  },
+  walletChainSection: {
+    marginLeft: 12,
   },
   groupBody: {
     paddingLeft: 8,

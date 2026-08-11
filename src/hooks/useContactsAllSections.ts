@@ -2,13 +2,18 @@ import { useCallback, useState } from 'react';
 
 /**
  * Collapse state for All-tab Contacts / External Contacts group /
- * Wallets / Farcaster / ENS sections.
+ * Wallets / wallet chains / Farcaster / ENS sections.
  */
 export function useContactsAllSections(initialExpanded = true) {
   const [contactsExpanded, setContactsExpanded] = useState(initialExpanded);
   const [externalGroupExpanded, setExternalGroupExpanded] =
     useState(initialExpanded);
   const [walletsExpanded, setWalletsExpanded] = useState(initialExpanded);
+  const [walletsEvmExpanded, setWalletsEvmExpanded] = useState(initialExpanded);
+  const [walletsSolanaExpanded, setWalletsSolanaExpanded] =
+    useState(initialExpanded);
+  const [walletsMultiChainExpanded, setWalletsMultiChainExpanded] =
+    useState(initialExpanded);
   const [farcasterExpanded, setFarcasterExpanded] = useState(initialExpanded);
   const [ensExpanded, setEnsExpanded] = useState(initialExpanded);
 
@@ -24,6 +29,18 @@ export function useContactsAllSections(initialExpanded = true) {
     setWalletsExpanded((open) => !open);
   }, []);
 
+  const toggleWalletsEvm = useCallback(() => {
+    setWalletsEvmExpanded((open) => !open);
+  }, []);
+
+  const toggleWalletsSolana = useCallback(() => {
+    setWalletsSolanaExpanded((open) => !open);
+  }, []);
+
+  const toggleWalletsMultiChain = useCallback(() => {
+    setWalletsMultiChainExpanded((open) => !open);
+  }, []);
+
   const toggleFarcaster = useCallback(() => {
     setFarcasterExpanded((open) => !open);
   }, []);
@@ -36,11 +53,17 @@ export function useContactsAllSections(initialExpanded = true) {
     contactsExpanded,
     externalGroupExpanded,
     walletsExpanded,
+    walletsEvmExpanded,
+    walletsSolanaExpanded,
+    walletsMultiChainExpanded,
     farcasterExpanded,
     ensExpanded,
     toggleContacts,
     toggleExternalGroup,
     toggleWallets,
+    toggleWalletsEvm,
+    toggleWalletsSolana,
+    toggleWalletsMultiChain,
     toggleFarcaster,
     toggleEns,
   };
