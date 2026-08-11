@@ -216,56 +216,21 @@ export function SendScreen() {
   );
 
   const onSelectSearchHit = useCallback(
-    (selection: RecipientSearchSelection) => {
-      if (selection.kind === 'cashbox') {
-        const hit = selection.hit;
-        if (!hit.identityId) {
-          return;
-        }
-
-        setAccountNumber(hit.identityId);
-        closeSearch();
-        sendToContact(
-          {
-            identityId: hit.identityId,
-            evmAddress: null,
-            solanaAddress: null,
-            username: hit.username,
-            name: null,
-            profilePhotoUrl: hit.profilePhotoUrl,
-          },
-          {
-            tokenId: route.params?.tokenId,
-            usdAmount: route.params?.usdAmount,
-          },
-        );
+    (hit: RecipientSearchSelection) => {
+      if (!hit.identityId) {
         return;
       }
 
-      const hit = selection.hit;
-      if (!hit.hasAddress) {
-        return;
-      }
-
-      const nextEvm = hit.evmAddress?.trim() ?? '';
-      const nextSolana = hit.solanaAddress?.trim() ?? '';
-      setEthereumRecipient(nextEvm);
-      setSolanaRecipient(nextSolana);
-      syncAccountNumberFromAddresses(nextEvm, nextSolana);
-      if (nextEvm || nextSolana) {
-        setShowDecodedAddresses(true);
-      }
-
+      setAccountNumber(hit.identityId);
       closeSearch();
       sendToContact(
         {
-          identityId: null,
-          evmAddress: hit.evmAddress,
-          solanaAddress: hit.solanaAddress,
+          identityId: hit.identityId,
+          evmAddress: null,
+          solanaAddress: null,
           username: hit.username,
-          name: hit.displayName,
-          profilePhotoUrl: hit.pfpUrl,
-          isFarcaster: true,
+          name: null,
+          profilePhotoUrl: hit.profilePhotoUrl,
         },
         {
           tokenId: route.params?.tokenId,
@@ -279,12 +244,21 @@ export function SendScreen() {
       route.params?.usdAmount,
       sendToContact,
       setAccountNumber,
-      setEthereumRecipient,
-      setSolanaRecipient,
-      setShowDecodedAddresses,
-      syncAccountNumberFromAddresses,
     ],
   );
+
+  const onAdvancedSearch = useCallback(() => {
+    closeSearch();
+    navigation.navigate('sendAdvancedSearch', {
+      tokenId: route.params?.tokenId,
+      usdAmount: route.params?.usdAmount,
+    });
+  }, [
+    closeSearch,
+    navigation,
+    route.params?.tokenId,
+    route.params?.usdAmount,
+  ]);
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -463,6 +437,7 @@ export function SendScreen() {
         visible={searchOpen}
         onClose={closeSearch}
         onSelect={onSelectSearchHit}
+        onAdvancedSearch={onAdvancedSearch}
       />
 
       <ContactPickerModal

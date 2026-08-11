@@ -100,6 +100,7 @@ const HOME_STACK_HISTORY: Partial<Record<keyof HomeStackParamList, string[]>> =
     stripeOnramp: ['index'],
     receiveQr: ['index', 'request'],
     send: ['index'],
+    sendAdvancedSearch: ['index', 'send'],
     sendAmount: ['index', 'send'],
     confirmSend: ['index', 'send', 'sendAmount'],
   };
@@ -324,6 +325,13 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
                   identity: (value: string) => value || undefined,
                   ethereumRecipient: (value: string) => value || undefined,
                   solanaRecipient: (value: string) => value || undefined,
+                },
+              },
+              sendAdvancedSearch: {
+                path: '/send/advanced-search',
+                parse: {
+                  tokenId: (tokenId: string) => tokenId || undefined,
+                  usdAmount: (usdAmount: string) => usdAmount || undefined,
                 },
               },
               sendAmount: {

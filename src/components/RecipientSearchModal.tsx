@@ -17,44 +17,34 @@ import {
   useContactSearch,
   type ContactSearchHit,
 } from '@/hooks/useContactSearch';
-import {
-  useFarcasterSearch,
-  type FarcasterSearchHit,
-} from '@/hooks/useFarcasterSearch';
 
-export type RecipientSearchSelection =
-  | { kind: 'cashbox'; hit: ContactSearchHit }
-  | { kind: 'farcaster'; hit: FarcasterSearchHit };
+export type RecipientSearchSelection = ContactSearchHit;
 
 type RecipientSearchModalProps = {
   visible: boolean;
   onClose: () => void;
   onSelect: (selection: RecipientSearchSelection) => void;
+  onAdvancedSearch: () => void;
 };
 
 /**
- * Page-sheet modal for searching Cashbox users and Farcaster profiles.
+ * Page-sheet modal for searching Cashbox usernames and account numbers.
  */
 export function RecipientSearchModal({
   visible,
   onClose,
   onSelect,
+  onAdvancedSearch,
 }: RecipientSearchModalProps) {
   const insets = useSafeAreaInsets();
   const {
     query,
     setQuery,
     clearQuery,
-    results: cashboxResults,
-    isSearching: isCashboxSearching,
-    showEmpty: showCashboxEmpty,
+    results,
+    isSearching,
+    showEmpty,
   } = useContactSearch();
-  const {
-    results: farcasterResults,
-    isSearching: isFarcasterSearching,
-    showEmpty: showFarcasterEmpty,
-    errorMessage: farcasterError,
-  } = useFarcasterSearch(query);
 
   useEffect(() => {
     if (!visible) {
@@ -63,13 +53,7 @@ export function RecipientSearchModal({
   }, [clearQuery, visible]);
 
   const trimmed = query.trim();
-  const isSearching = isCashboxSearching || isFarcasterSearching;
-  const hasResults = cashboxResults.length > 0 || farcasterResults.length > 0;
-  const showEmpty =
-    Boolean(trimmed) &&
-    !isSearching &&
-    !hasResults &&
-    (showCashboxEmpty || showFarcasterEmpty);
+  const hasResults = results.length > 0;
 
   return (
     <Modal
@@ -103,12 +87,12 @@ export function RecipientSearchModal({
         <View style={styles.searchRow}>
           <Ionicons name="search" size={18} color="#5a7d6a" />
           <TextInput
-            accessibilityLabel="Search usernames, account numbers, or Farcaster"
+            accessibilityLabel="Search usernames or account numbers"
             autoCapitalize="none"
             autoCorrect={false}
             autoFocus={visible}
             onChangeText={setQuery}
-            placeholder="Username, account number, or Farcaster"
+            placeholder="Username or account number"
             placeholderTextColor="#86a894"
             returnKeyType="search"
             style={styles.searchInput}
@@ -131,121 +115,79 @@ export function RecipientSearchModal({
         </View>
 
         <Text style={styles.hint}>
-          Search Cashbox usernames, account numbers, or Farcaster usernames.
+          Search Cashbox usernames or account numbers.
         </Text>
+
+        <Pressable
+          accessibilityLabel="Advanced search"
+          accessibilityRole="button"
+          onPress={onAdvancedSearch}
+          style={({ pressed }) => [
+            styles.advancedSearch,
+            pressed && styles.advancedSearchPressed,
+          ]}
+        >
+          <Text style={styles.advancedSearchText}>Advanced search</Text>
+        </Pressable>
 
         {isSearching && !hasResults ? (
           <ActivityIndicator color="#166534" style={styles.loader} />
         ) : (
           <ScrollView
-            contentContainerStyle={
-              !trimmed || showEmpty ? styles.listEmpty : styles.list
-            }
+            contentContainerStyle={[
+              !trimmed || showEmpty ? styles.listEmpty : styles.list,
+              { paddingBottom: Math.max(insets.bottom, 16) },
+            ]}
             keyboardShouldPersistTaps="handled"
           >
-            {!trimmed ? (
-              <Text style={styles.empty}>
-                Start typing a username, account number, or Farcaster name.
-              </Text>
-            ) : showEmpty ? (
+            {!trimmed ? null : showEmpty ? (
               <Text style={styles.empty}>No accounts found.</Text>
             ) : (
               <>
-                {cashboxResults.length > 0 ? (
-                  <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Cashbox</Text>
-                    {cashboxResults.map((item) => {
-                      const selectable = Boolean(item.identityId);
-                      return (
-                        <Pressable
-                          key={item.userId}
-                          accessibilityLabel={`Select ${item.label}`}
-                          accessibilityRole="button"
-                          accessibilityState={{ disabled: !selectable }}
-                          disabled={!selectable}
-                          onPress={() => {
-                            onSelect({ kind: 'cashbox', hit: item });
-                          }}
-                          style={({ pressed }) => [
-                            styles.option,
-                            pressed && selectable && styles.optionPressed,
-                            !selectable && styles.optionDisabled,
-                          ]}
-                        >
-                          <Avatar
-                            label={item.label}
-                            photoUrl={item.profilePhotoUrl}
-                            seed={item.username ?? item.userId}
-                            size={40}
-                          />
-                          <View style={styles.optionText}>
-                            <Text style={styles.optionLabel}>{item.label}</Text>
-                            {item.subtitle ? (
-                              <Text style={styles.optionDescription}>
-                                {item.subtitle}
-                              </Text>
-                            ) : !selectable ? (
-                              <Text style={styles.optionDescription}>
-                                No account number yet
-                              </Text>
-                            ) : null}
-                          </View>
-                          <Ionicons
-                            name="chevron-forward"
-                            size={18}
-                            color="#86a894"
-                          />
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                ) : null}
-
-                {farcasterResults.length > 0 ? (
-                  <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Farcaster</Text>
-                    {farcasterResults.map((item) => {
-                      const selectable = item.hasAddress;
-                      return (
-                        <Pressable
-                          key={item.fid}
-                          accessibilityLabel={`Select ${item.label}`}
-                          accessibilityRole="button"
-                          accessibilityState={{ disabled: !selectable }}
-                          disabled={!selectable}
-                          onPress={() => {
-                            onSelect({ kind: 'farcaster', hit: item });
-                          }}
-                          style={({ pressed }) => [
-                            styles.option,
-                            pressed && selectable && styles.optionPressed,
-                            !selectable && styles.optionDisabled,
-                          ]}
-                        >
-                          <Avatar
-                            label={item.label}
-                            photoUrl={item.pfpUrl}
-                            seed={item.username}
-                            size={40}
-                            showFarcasterBadge
-                          />
-                          <View style={styles.optionText}>
-                            <Text style={styles.optionLabel}>{item.label}</Text>
-                          </View>
-                          <Ionicons
-                            name="chevron-forward"
-                            size={18}
-                            color="#86a894"
-                          />
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                ) : null}
-
-                {farcasterError ? (
-                  <Text style={styles.error}>{farcasterError}</Text>
-                ) : null}
+                {results.map((item) => {
+                  const selectable = Boolean(item.identityId);
+                  return (
+                    <Pressable
+                      key={item.userId}
+                      accessibilityLabel={`Select ${item.label}`}
+                      accessibilityRole="button"
+                      accessibilityState={{ disabled: !selectable }}
+                      disabled={!selectable}
+                      onPress={() => {
+                        onSelect(item);
+                      }}
+                      style={({ pressed }) => [
+                        styles.option,
+                        pressed && selectable && styles.optionPressed,
+                        !selectable && styles.optionDisabled,
+                      ]}
+                    >
+                      <Avatar
+                        label={item.label}
+                        photoUrl={item.profilePhotoUrl}
+                        seed={item.username ?? item.userId}
+                        size={40}
+                      />
+                      <View style={styles.optionText}>
+                        <Text style={styles.optionLabel}>{item.label}</Text>
+                        {item.subtitle ? (
+                          <Text style={styles.optionDescription}>
+                            {item.subtitle}
+                          </Text>
+                        ) : !selectable ? (
+                          <Text style={styles.optionDescription}>
+                            No account number yet
+                          </Text>
+                        ) : null}
+                      </View>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={18}
+                        color="#86a894"
+                      />
+                    </Pressable>
+                  );
+                })}
 
                 {isSearching ? (
                   <ActivityIndicator
@@ -338,23 +280,13 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: 16,
     paddingVertical: 16,
-    gap: 16,
+    gap: 12,
   },
   listEmpty: {
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
     paddingTop: 24,
-  },
-  section: {
-    gap: 12,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
   },
   option: {
     flexDirection: 'row',
@@ -393,10 +325,18 @@ const styles = StyleSheet.create({
     color: '#86a894',
     textAlign: 'center',
   },
-  error: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#b91c1c',
-    textAlign: 'center',
+  advancedSearch: {
+    alignItems: 'center',
+    paddingTop: 8,
+    paddingBottom: 4,
+    paddingHorizontal: 24,
+  },
+  advancedSearchPressed: {
+    opacity: 0.65,
+  },
+  advancedSearchText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5a7d6a',
   },
 });

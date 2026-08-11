@@ -41,6 +41,11 @@ export type HomeStackParamList = {
     ethereumRecipient?: string;
     solanaRecipient?: string;
   } | undefined;
+  /** Farcaster username search + raw wallet entry during send. */
+  sendAdvancedSearch: {
+    tokenId?: string;
+    usdAmount?: string;
+  } | undefined;
   sendAmount: {
     tokenId?: string;
     /** Optional when opened with a locked display-currency amount. */
