@@ -22,6 +22,14 @@ type LegacyContact = {
   ensAvatarUrl?: string;
 };
 
+function isPlainWalletContact(contact: {
+  contactUserId?: Id<"users">;
+  farcasterFid?: number;
+  ensName?: string;
+}) {
+  return !contact.contactUserId && contact.farcasterFid == null && !contact.ensName;
+}
+
 /**
  * One-time cleanup: map legacy `ownerExternalId` → `ownerId` and drop
  * denormalized `contactUsername`.
@@ -270,12 +278,13 @@ export const addByAddresses = mutation({
     }
 
     if (evm) {
-      const existingEvm = await ctx.db
+      const existingEvmMatches = await ctx.db
         .query("contacts")
         .withIndex("by_owner_and_evm", (q) =>
           q.eq("ownerId", ownerId).eq("evmAddress", evm),
         )
-        .unique();
+        .collect();
+      const existingEvm = existingEvmMatches.find(isPlainWalletContact);
       if (existingEvm) {
         await ctx.db.patch(existingEvm._id, {
           name: trimmedName,
@@ -288,12 +297,13 @@ export const addByAddresses = mutation({
     }
 
     if (solana) {
-      const existingSolana = await ctx.db
+      const existingSolanaMatches = await ctx.db
         .query("contacts")
         .withIndex("by_owner_and_solana", (q) =>
           q.eq("ownerId", ownerId).eq("solanaAddress", solana),
         )
-        .unique();
+        .collect();
+      const existingSolana = existingSolanaMatches.find(isPlainWalletContact);
       if (existingSolana) {
         await ctx.db.patch(existingSolana._id, {
           name: trimmedName,
