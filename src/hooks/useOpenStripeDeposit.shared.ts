@@ -1,20 +1,9 @@
-import { useCallback } from 'react';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-import type { HomeStackParamList } from '@/navigation/types';
+import type { DepositMethodOption } from '@/lib/stripe/depositMethods';
 
 export type UseOpenStripeDepositResult = {
   canDeposit: boolean;
   openDeposit: () => void;
+  depositPickerOpen: boolean;
+  closeDepositPicker: () => void;
+  onSelectDepositMethod: (method: DepositMethodOption) => void;
 };
-
-/** Navigates to the Stripe embedded onramp screen. */
-export function useNavigateToStripeOnramp() {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-
-  return useCallback(() => {
-    navigation.navigate('stripeOnramp');
-  }, [navigation]);
-}

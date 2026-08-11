@@ -43,6 +43,10 @@ export function HomeStack() {
         component={homeStackScreens.stripeOnramp}
       />
       <WebStack.Screen
+        name="stripeOnrampComponents"
+        component={homeStackScreens.stripeOnrampComponents}
+      />
+      <WebStack.Screen
         name="receiveQr"
         component={homeStackScreens.receiveQr}
       />
