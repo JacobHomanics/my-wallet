@@ -21,9 +21,33 @@ import { BackButton } from '@/components/BackButton';
 import { useEnsResolve } from '@/hooks/useEnsResolve';
 import { useFarcasterSearch } from '@/hooks/useFarcasterSearch';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useSendAdvancedSearchTab } from '@/hooks/useSendAdvancedSearchTab';
 import { useSendToContact } from '@/hooks/useSendToContact';
 import { useSendWalletRecipient } from '@/hooks/useSendWalletRecipient';
 import type { HomeStackParamList } from '@/navigation/types';
+
+function AdvancedSearchTabChip({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={[styles.tabChip, selected && styles.tabChipSelected]}
+    >
+      <Text style={[styles.tabChipText, selected && styles.tabChipTextSelected]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
 
 /**
  * Search Farcaster usernames, resolve ENS names, or enter wallet addresses during send.
@@ -56,6 +80,14 @@ export function SendAdvancedSearchScreen() {
     solanaValid,
     canContinue,
   } = useSendWalletRecipient();
+  const {
+    selectFarcaster,
+    selectEns,
+    selectWallets,
+    isFarcasterTab,
+    isEnsTab,
+    isWalletsTab,
+  } = useSendAdvancedSearchTab();
 
   const tokenId = route.params?.tokenId;
   const usdAmount = route.params?.usdAmount;
@@ -121,6 +153,24 @@ export function SendAdvancedSearchScreen() {
             <View style={styles.topBarSpacer} />
           </View>
 
+          <View style={styles.tabs}>
+            <AdvancedSearchTabChip
+              label="Farcaster"
+              selected={isFarcasterTab}
+              onPress={selectFarcaster}
+            />
+            <AdvancedSearchTabChip
+              label="ENS"
+              selected={isEnsTab}
+              onPress={selectEns}
+            />
+            <AdvancedSearchTabChip
+              label="Wallets"
+              selected={isWalletsTab}
+              onPress={selectWallets}
+            />
+          </View>
+
           <ScrollView
             contentContainerStyle={[
               styles.body,
@@ -129,226 +179,237 @@ export function SendAdvancedSearchScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.label}>Farcaster</Text>
-            <TextInput
-              accessibilityLabel="Search Farcaster username"
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="off"
-              onChangeText={setFarcasterQuery}
-              placeholder="Farcaster username"
-              placeholderTextColor="#86a894"
-              style={styles.input}
-              value={farcasterQuery}
-            />
-            <Text style={styles.hint}>
-              Search by Farcaster username to pay a verified wallet.
-            </Text>
+            {isFarcasterTab ? (
+              <>
+                <TextInput
+                  accessibilityLabel="Search Farcaster username"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="off"
+                  onChangeText={setFarcasterQuery}
+                  placeholder="Farcaster username"
+                  placeholderTextColor="#86a894"
+                  style={styles.input}
+                  value={farcasterQuery}
+                />
+                <Text style={styles.hint}>
+                  Search by Farcaster username to pay a verified wallet.
+                </Text>
 
-            {errorMessage ? (
-              <Text style={styles.error}>{errorMessage}</Text>
+                {errorMessage ? (
+                  <Text style={styles.error}>{errorMessage}</Text>
+                ) : null}
+
+                {isSearching ? (
+                  <ActivityIndicator color="#166534" style={styles.loader} />
+                ) : null}
+
+                {results.length > 0 ? (
+                  <View style={styles.results}>
+                    {results.map((hit) => {
+                      const selectable = hit.hasAddress;
+                      return (
+                        <Pressable
+                          key={hit.fid}
+                          accessibilityLabel={`Select ${hit.label}`}
+                          accessibilityRole="button"
+                          accessibilityState={{ disabled: !selectable }}
+                          disabled={!selectable}
+                          onPress={() => {
+                            if (!selectable) {
+                              return;
+                            }
+                            sendToContact(
+                              {
+                                identityId: null,
+                                evmAddress: hit.evmAddress,
+                                solanaAddress: hit.solanaAddress,
+                                username: hit.username,
+                                name: hit.displayName,
+                                profilePhotoUrl: hit.pfpUrl,
+                                isFarcaster: true,
+                              },
+                              { tokenId, usdAmount },
+                            );
+                          }}
+                          style={({ pressed }) => [
+                            styles.resultCard,
+                            pressed && selectable && styles.resultCardPressed,
+                            !selectable && styles.resultCardDisabled,
+                          ]}
+                        >
+                          <Avatar
+                            label={hit.label}
+                            photoUrl={hit.pfpUrl}
+                            seed={hit.username}
+                            size={40}
+                            showFarcasterBadge
+                          />
+                          <View style={styles.resultText}>
+                            <Text style={styles.resultLabel}>{hit.label}</Text>
+                            {!selectable ? (
+                              <Text style={styles.resultDescription}>
+                                No verified wallet
+                              </Text>
+                            ) : hit.displayName ? (
+                              <Text style={styles.resultDescription}>
+                                {hit.displayName}
+                              </Text>
+                            ) : null}
+                          </View>
+                          <Ionicons
+                            name="chevron-forward"
+                            size={18}
+                            color="#86a894"
+                          />
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                ) : null}
+
+                {showEmpty ? (
+                  <Text style={styles.empty}>No Farcaster users found.</Text>
+                ) : null}
+              </>
             ) : null}
 
-            {isSearching ? (
-              <ActivityIndicator color="#166534" style={styles.loader} />
+            {isEnsTab ? (
+              <>
+                <TextInput
+                  accessibilityLabel="ENS name"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="off"
+                  onChangeText={setEnsQuery}
+                  placeholder="name.eth"
+                  placeholderTextColor="#86a894"
+                  style={styles.input}
+                  value={ensQuery}
+                />
+                <Text style={styles.hint}>
+                  Resolve an ENS name to pay its Ethereum address.
+                </Text>
+
+                {ensErrorMessage ? (
+                  <Text style={styles.error}>{ensErrorMessage}</Text>
+                ) : null}
+
+                {isEnsResolving ? (
+                  <ActivityIndicator color="#166534" style={styles.loader} />
+                ) : null}
+
+                {ensResult ? (
+                  <Pressable
+                    accessibilityLabel={`Select ${ensResult.label}`}
+                    accessibilityRole="button"
+                    onPress={() => {
+                      sendToContact(
+                        {
+                          identityId: null,
+                          evmAddress: ensResult.address,
+                          solanaAddress: null,
+                          name: ensResult.name,
+                          profilePhotoUrl: ensResult.avatarUrl,
+                        },
+                        { tokenId, usdAmount },
+                      );
+                    }}
+                    style={({ pressed }) => [
+                      styles.resultCard,
+                      pressed && styles.resultCardPressed,
+                    ]}
+                  >
+                    <Avatar
+                      label={ensResult.label}
+                      photoUrl={ensResult.avatarUrl}
+                      seed={ensResult.name}
+                      size={40}
+                    />
+                    <View style={styles.resultText}>
+                      <Text style={styles.resultLabel}>{ensResult.label}</Text>
+                      <Text style={styles.resultDescription}>
+                        {ensResult.address}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color="#86a894" />
+                  </Pressable>
+                ) : null}
+
+                {ensNotFound ? (
+                  <Text style={styles.empty}>ENS name not found.</Text>
+                ) : null}
+              </>
             ) : null}
 
-            {results.length > 0 ? (
-              <View style={styles.results}>
-                {results.map((hit) => {
-                  const selectable = hit.hasAddress;
-                  return (
-                    <Pressable
-                      key={hit.fid}
-                      accessibilityLabel={`Select ${hit.label}`}
-                      accessibilityRole="button"
-                      accessibilityState={{ disabled: !selectable }}
-                      disabled={!selectable}
-                      onPress={() => {
-                        if (!selectable) {
-                          return;
-                        }
-                        sendToContact(
-                          {
-                            identityId: null,
-                            evmAddress: hit.evmAddress,
-                            solanaAddress: hit.solanaAddress,
-                            username: hit.username,
-                            name: hit.displayName,
-                            profilePhotoUrl: hit.pfpUrl,
-                            isFarcaster: true,
-                          },
-                          { tokenId, usdAmount },
-                        );
-                      }}
-                      style={({ pressed }) => [
-                        styles.resultCard,
-                        pressed && selectable && styles.resultCardPressed,
-                        !selectable && styles.resultCardDisabled,
+            {isWalletsTab ? (
+              <>
+                <Text style={styles.hint}>
+                  Paste an EVM and/or Solana address to continue.
+                </Text>
+
+                <View style={styles.walletCard}>
+                  <View style={styles.walletGroup}>
+                    <Text style={styles.fieldLabel}>EVM</Text>
+                    <TextInput
+                      accessibilityLabel="EVM address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      onChangeText={setEvmAddress}
+                      placeholder="0x…"
+                      placeholderTextColor="#86a894"
+                      style={[
+                        styles.walletInput,
+                        trimmedEvm && !evmValid ? styles.inputError : null,
                       ]}
-                    >
-                      <Avatar
-                        label={hit.label}
-                        photoUrl={hit.pfpUrl}
-                        seed={hit.username}
-                        size={40}
-                        showFarcasterBadge
-                      />
-                      <View style={styles.resultText}>
-                        <Text style={styles.resultLabel}>{hit.label}</Text>
-                        {!selectable ? (
-                          <Text style={styles.resultDescription}>
-                            No verified wallet
-                          </Text>
-                        ) : hit.displayName ? (
-                          <Text style={styles.resultDescription}>
-                            {hit.displayName}
-                          </Text>
-                        ) : null}
-                      </View>
-                      <Ionicons
-                        name="chevron-forward"
-                        size={18}
-                        color="#86a894"
-                      />
-                    </Pressable>
-                  );
-                })}
-              </View>
-            ) : null}
+                      value={evmAddress}
+                    />
+                    {trimmedEvm && !evmValid ? (
+                      <Text style={styles.error}>
+                        Enter a valid EVM address.
+                      </Text>
+                    ) : null}
+                  </View>
 
-            {showEmpty ? (
-              <Text style={styles.empty}>No Farcaster users found.</Text>
-            ) : null}
+                  <View style={styles.walletDivider} />
 
-            <Text style={[styles.label, styles.ensLabel]}>ENS</Text>
-            <TextInput
-              accessibilityLabel="ENS name"
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="off"
-              onChangeText={setEnsQuery}
-              placeholder="name.eth"
-              placeholderTextColor="#86a894"
-              style={styles.input}
-              value={ensQuery}
-            />
-            <Text style={styles.hint}>
-              Resolve an ENS name to pay its Ethereum address.
-            </Text>
-
-            {ensErrorMessage ? (
-              <Text style={styles.error}>{ensErrorMessage}</Text>
-            ) : null}
-
-            {isEnsResolving ? (
-              <ActivityIndicator color="#166534" style={styles.loader} />
-            ) : null}
-
-            {ensResult ? (
-              <Pressable
-                accessibilityLabel={`Select ${ensResult.label}`}
-                accessibilityRole="button"
-                onPress={() => {
-                  sendToContact(
-                    {
-                      identityId: null,
-                      evmAddress: ensResult.address,
-                      solanaAddress: null,
-                      name: ensResult.name,
-                      profilePhotoUrl: ensResult.avatarUrl,
-                    },
-                    { tokenId, usdAmount },
-                  );
-                }}
-                style={({ pressed }) => [
-                  styles.resultCard,
-                  pressed && styles.resultCardPressed,
-                ]}
-              >
-                <Avatar
-                  label={ensResult.label}
-                  photoUrl={ensResult.avatarUrl}
-                  seed={ensResult.name}
-                  size={40}
-                />
-                <View style={styles.resultText}>
-                  <Text style={styles.resultLabel}>{ensResult.label}</Text>
-                  <Text style={styles.resultDescription}>
-                    {ensResult.address}
-                  </Text>
+                  <View style={styles.walletGroup}>
+                    <Text style={styles.fieldLabel}>Solana</Text>
+                    <TextInput
+                      accessibilityLabel="Solana address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      onChangeText={setSolanaAddress}
+                      placeholder="Solana address"
+                      placeholderTextColor="#86a894"
+                      style={[
+                        styles.walletInput,
+                        trimmedSolana && !solanaValid ? styles.inputError : null,
+                      ]}
+                      value={solanaAddress}
+                    />
+                    {trimmedSolana && !solanaValid ? (
+                      <Text style={styles.error}>
+                        Enter a valid Solana address.
+                      </Text>
+                    ) : null}
+                  </View>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#86a894" />
-              </Pressable>
-            ) : null}
 
-            {ensNotFound ? (
-              <Text style={styles.empty}>ENS name not found.</Text>
-            ) : null}
-
-            <Text style={[styles.label, styles.walletsLabel]}>Wallets</Text>
-            <Text style={styles.hint}>
-              Paste an EVM and/or Solana address to continue.
-            </Text>
-
-            <View style={styles.walletCard}>
-              <View style={styles.walletGroup}>
-                <Text style={styles.fieldLabel}>EVM</Text>
-                <TextInput
-                  accessibilityLabel="EVM address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  onChangeText={setEvmAddress}
-                  placeholder="0x…"
-                  placeholderTextColor="#86a894"
-                  style={[
-                    styles.walletInput,
-                    trimmedEvm && !evmValid ? styles.inputError : null,
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={!canContinue}
+                  onPress={onContinueWallets}
+                  style={({ pressed }) => [
+                    styles.continueButton,
+                    !canContinue && styles.continueButtonDisabled,
+                    pressed && canContinue && styles.continueButtonPressed,
                   ]}
-                  value={evmAddress}
-                />
-                {trimmedEvm && !evmValid ? (
-                  <Text style={styles.error}>Enter a valid EVM address.</Text>
-                ) : null}
-              </View>
-
-              <View style={styles.walletDivider} />
-
-              <View style={styles.walletGroup}>
-                <Text style={styles.fieldLabel}>Solana</Text>
-                <TextInput
-                  accessibilityLabel="Solana address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  onChangeText={setSolanaAddress}
-                  placeholder="Solana address"
-                  placeholderTextColor="#86a894"
-                  style={[
-                    styles.walletInput,
-                    trimmedSolana && !solanaValid ? styles.inputError : null,
-                  ]}
-                  value={solanaAddress}
-                />
-                {trimmedSolana && !solanaValid ? (
-                  <Text style={styles.error}>
-                    Enter a valid Solana address.
-                  </Text>
-                ) : null}
-              </View>
-            </View>
-
-            <Pressable
-              accessibilityRole="button"
-              disabled={!canContinue}
-              onPress={onContinueWallets}
-              style={({ pressed }) => [
-                styles.continueButton,
-                !canContinue && styles.continueButtonDisabled,
-                pressed && canContinue && styles.continueButtonPressed,
-              ]}
-            >
-              <Text style={styles.continueButtonText}>Continue</Text>
-            </Pressable>
+                >
+                  <Text style={styles.continueButtonText}>Continue</Text>
+                </Pressable>
+              </>
+            ) : null}
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
@@ -400,23 +461,39 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#166534',
   },
+  tabs: {
+    flexDirection: 'row',
+    marginHorizontal: 24,
+    marginBottom: 8,
+    padding: 4,
+    gap: 4,
+    backgroundColor: '#dcfce7',
+    borderRadius: 12,
+  },
+  tabChip: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    borderRadius: 10,
+  },
+  tabChipSelected: {
+    backgroundColor: '#ffffff',
+  },
+  tabChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textAlign: 'center',
+  },
+  tabChipTextSelected: {
+    color: '#166534',
+  },
   body: {
     paddingHorizontal: 24,
     paddingTop: 16,
     gap: 10,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  walletsLabel: {
-    marginTop: 24,
-  },
-  ensLabel: {
-    marginTop: 24,
   },
   input: {
     width: '100%',
