@@ -30,7 +30,8 @@ export function OnboardingScreen() {
   const {
     username,
     photo,
-    hasUsername,
+    availability,
+    canContinue,
     isContinuing,
     isSkipping,
     isBusy,
@@ -53,8 +54,10 @@ export function OnboardingScreen() {
   const readyForActions =
     onboardingStatus === 'needed' || onboardingStatus === 'done';
 
+  const continueEnabled = readyForActions && canContinue && !isBusy;
+
   const onContinue = () => {
-    if (!readyForActions) {
+    if (!continueEnabled) {
       return;
     }
     void (async () => {
@@ -156,23 +159,27 @@ export function OnboardingScreen() {
           {username.draft.trim().length > 0 && !username.isValid ? (
             <Text style={styles.error}>Enter a valid username.</Text>
           ) : null}
+          {availability.status === 'checking' ? (
+            <Text style={styles.hint}>Checking availability…</Text>
+          ) : null}
+          {availability.status === 'available' ? (
+            <Text style={styles.available}>Username is available.</Text>
+          ) : null}
+          {availability.status === 'taken' ? (
+            <Text style={styles.error}>Username already taken.</Text>
+          ) : null}
         </View>
 
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
 
         <Pressable
           accessibilityRole="button"
-          disabled={!readyForActions || !hasUsername || isBusy}
+          disabled={!continueEnabled}
           onPress={onContinue}
           style={({ pressed }) => [
             styles.continueButton,
-            (!readyForActions || !hasUsername || isBusy) &&
-            styles.buttonDisabled,
-            pressed &&
-            readyForActions &&
-            hasUsername &&
-            !isBusy &&
-            styles.continueButtonPressed,
+            !continueEnabled && styles.buttonDisabled,
+            pressed && continueEnabled && styles.continueButtonPressed,
           ]}
         >
           {isContinuing ? (
@@ -271,6 +278,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     color: '#b91c1c',
+    textAlign: 'center',
+  },
+  available: {
+    marginTop: 8,
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#166534',
     textAlign: 'center',
   },
   continueButton: {
