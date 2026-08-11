@@ -40,6 +40,7 @@ export function StripeOnrampScreen() {
     useCreateStripeOnrampSession();
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [fulfillmentComplete, setFulfillmentComplete] = useState(false);
   const startedRef = useRef(false);
   const { uiReady, onReady } = useStripeOnrampUiReady(clientSecret);
 
@@ -63,6 +64,7 @@ export function StripeOnrampScreen() {
   const onSessionChange = useCallback(
     ({ session }: { session: OnrampSessionResult }) => {
       if (session.status === 'fulfillment_complete') {
+        setFulfillmentComplete(true);
         void refresh();
       }
     },
@@ -142,6 +144,27 @@ export function StripeOnrampScreen() {
             </View>
           ) : null}
         </ScrollView>
+
+        {fulfillmentComplete && (
+          <View
+            style={[
+              styles.doneBar,
+              { paddingBottom: Math.max(insets.bottom, 16) },
+            ]}
+          >
+            <Pressable
+              accessibilityLabel="Done"
+              accessibilityRole="button"
+              onPress={goHome}
+              style={({ pressed }) => [
+                styles.doneButton,
+                pressed && styles.doneButtonPressed,
+              ]}
+            >
+              <Text style={styles.doneButtonText}>Done</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -229,5 +252,26 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: '#b91c1c',
     textAlign: 'center',
+  },
+  doneBar: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    backgroundColor: '#f0fdf4',
+  },
+  doneButton: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    backgroundColor: '#166534',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 10,
+  },
+  doneButtonPressed: {
+    opacity: 0.85,
+  },
+  doneButtonText: {
+    color: '#f0fdf4',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

@@ -75,7 +75,7 @@ export function OnrampElement({
       ref={containerRef}
       style={{
         width: '100%',
-        minHeight: 640,
+        minHeight: 420,
       }}
     />
   );
