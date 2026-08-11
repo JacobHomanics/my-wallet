@@ -17,7 +17,7 @@ export const DEPOSIT_METHODS: readonly DepositMethodOption[] = [
   },
   {
     id: 'stripe-embedded-components',
-    label: 'Stripe (embedded components)',
+    label: 'Privy (pre-built components)',
     description:
       'Buy crypto via Privy’s fiat onramp (Stripe Embedded Components).',
   },
