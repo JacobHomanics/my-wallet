@@ -178,17 +178,35 @@ export function SendAdvancedSearchScreen() {
           >
             {isFarcasterTab ? (
               <>
-                <TextInput
-                  accessibilityLabel="Search Farcaster username"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="off"
-                  onChangeText={setFarcasterQuery}
-                  placeholder="Farcaster username"
-                  placeholderTextColor="#86a894"
-                  style={styles.input}
-                  value={farcasterQuery}
-                />
+                <View style={styles.searchRow}>
+                  <TextInput
+                    accessibilityLabel="Search Farcaster username"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="off"
+                    onChangeText={setFarcasterQuery}
+                    placeholder="Farcaster username"
+                    placeholderTextColor="#86a894"
+                    style={styles.searchInput}
+                    value={farcasterQuery}
+                  />
+                  {farcasterQuery.trim() ? (
+                    <Pressable
+                      accessibilityLabel="Clear Farcaster search"
+                      accessibilityRole="button"
+                      hitSlop={8}
+                      onPress={() => {
+                        setFarcasterQuery('');
+                      }}
+                      style={({ pressed }) => [
+                        styles.clearSearchButton,
+                        pressed && styles.clearSearchButtonPressed,
+                      ]}
+                    >
+                      <Ionicons name="close-circle" size={18} color="#5a7d6a" />
+                    </Pressable>
+                  ) : null}
+                </View>
                 <Text style={styles.hint}>
                   Search by Farcaster username to pay a verified wallet.
                 </Text>
@@ -273,17 +291,35 @@ export function SendAdvancedSearchScreen() {
 
             {isEnsTab ? (
               <>
-                <TextInput
-                  accessibilityLabel="ENS name"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="off"
-                  onChangeText={setEnsQuery}
-                  placeholder="name.eth"
-                  placeholderTextColor="#86a894"
-                  style={styles.input}
-                  value={ensQuery}
-                />
+                <View style={styles.searchRow}>
+                  <TextInput
+                    accessibilityLabel="ENS name"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="off"
+                    onChangeText={setEnsQuery}
+                    placeholder="name.eth"
+                    placeholderTextColor="#86a894"
+                    style={styles.searchInput}
+                    value={ensQuery}
+                  />
+                  {ensQuery.trim() ? (
+                    <Pressable
+                      accessibilityLabel="Clear ENS search"
+                      accessibilityRole="button"
+                      hitSlop={8}
+                      onPress={() => {
+                        setEnsQuery('');
+                      }}
+                      style={({ pressed }) => [
+                        styles.clearSearchButton,
+                        pressed && styles.clearSearchButtonPressed,
+                      ]}
+                    >
+                      <Ionicons name="close-circle" size={18} color="#5a7d6a" />
+                    </Pressable>
+                  ) : null}
+                </View>
                 <Text style={styles.hint}>
                   Resolve an ENS name to pay its Ethereum address.
                 </Text>
@@ -341,17 +377,35 @@ export function SendAdvancedSearchScreen() {
 
             {isWalletsTab ? (
               <>
-                <TextInput
-                  accessibilityLabel="Wallet address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="off"
-                  onChangeText={setWalletQuery}
-                  placeholder="Wallet address"
-                  placeholderTextColor="#86a894"
-                  style={styles.input}
-                  value={walletQuery}
-                />
+                <View style={styles.searchRow}>
+                  <TextInput
+                    accessibilityLabel="Wallet address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="off"
+                    onChangeText={setWalletQuery}
+                    placeholder="Wallet address"
+                    placeholderTextColor="#86a894"
+                    style={styles.searchInput}
+                    value={walletQuery}
+                  />
+                  {walletQuery.trim() ? (
+                    <Pressable
+                      accessibilityLabel="Clear wallet search"
+                      accessibilityRole="button"
+                      hitSlop={8}
+                      onPress={() => {
+                        setWalletQuery('');
+                      }}
+                      style={({ pressed }) => [
+                        styles.clearSearchButton,
+                        pressed && styles.clearSearchButtonPressed,
+                      ]}
+                    >
+                      <Ionicons name="close-circle" size={18} color="#5a7d6a" />
+                    </Pressable>
+                  ) : null}
+                </View>
                 <Text style={styles.hint}>
                   Search a wallet address and preview its total balance.
                 </Text>
@@ -511,6 +565,32 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontSize: 16,
     color: '#166534',
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    width: '100%',
+    backgroundColor: '#ffffff',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#d1fae5',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+  },
+  searchInput: {
+    flex: 1,
+    minHeight: 48,
+    fontSize: 16,
+    color: '#166534',
+  },
+  clearSearchButton: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clearSearchButtonPressed: {
+    opacity: 0.7,
   },
   hint: {
     fontSize: 13,
