@@ -113,10 +113,6 @@ export function SendSearchScreen() {
             ) : null}
           </View>
 
-          <Text style={styles.hint}>
-            Search Cashbox usernames or account numbers.
-          </Text>
-
           <Pressable
             accessibilityLabel="Advanced search"
             accessibilityRole="button"
@@ -293,14 +289,6 @@ const styles = StyleSheet.create({
   },
   clearSearchButtonPressed: {
     opacity: 0.7,
-  },
-  hint: {
-    marginHorizontal: 24,
-    marginTop: 10,
-    marginBottom: 4,
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#86a894',
   },
   loader: {
     marginTop: 24,
