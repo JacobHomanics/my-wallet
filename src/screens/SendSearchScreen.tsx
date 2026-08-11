@@ -24,7 +24,7 @@ import { useSendToContact } from '@/hooks/useSendToContact';
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
- * Search Cashbox usernames and account numbers during send.
+ * Search Ziti usernames and account numbers during send.
  */
 export function SendSearchScreen() {
   const insets = useSafeAreaInsets();

@@ -5,7 +5,7 @@ export const REWARD_TOKEN_ADDRESS =
 /** On-chain / token icon symbol. */
 export const REWARD_TOKEN_SYMBOL = 'CBR' as const;
 /** User-facing name for reward balance and earn copy. */
-export const REWARD_POINTS_LABEL = 'CashBox Points' as const;
+export const REWARD_POINTS_LABEL = 'Ziti Points' as const;
 export const REWARD_TOKEN_NAME = REWARD_POINTS_LABEL;
 
 export function isRewardToken(

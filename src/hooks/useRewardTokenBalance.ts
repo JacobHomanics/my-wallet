@@ -15,7 +15,7 @@ export type RewardTokenBalanceResult = {
 };
 
 /**
- * User's CashBox Points balance from the Base reward token via Alchemy.
+ * User's Ziti Points balance from the Base reward token via Alchemy.
  */
 export function useRewardTokenBalance(): RewardTokenBalanceResult {
   const { tokens, loading, ready } = useTokenBalances();

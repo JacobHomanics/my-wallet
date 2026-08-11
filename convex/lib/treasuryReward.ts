@@ -15,7 +15,7 @@ import { getAlchemyRpcUrl } from "./networks";
 
 const DEFAULT_REWARD_TOKEN =
   "0x4ed932ac83f77a5d4f3d950ab9ba90882ed06e55" as const;
-/** Whole CashBox Points tokens sent after a successful backend payment. */
+/** Whole Ziti Points tokens sent after a successful backend payment. */
 const REWARD_TOKEN_AMOUNT = "10";
 const DEFAULT_REWARD_CHAIN_ID = 8453;
 

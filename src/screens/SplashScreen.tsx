@@ -1,6 +1,6 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
-import { CashboxIcon } from '@/components/CashboxIcon';
+import { ZitiIcon } from '@/components/ZitiIcon';
 import { useAppBrand } from '@/hooks/useAppBrand';
 import { useSplashRedirect } from '@/hooks/useSplashRedirect';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -15,7 +15,7 @@ export function SplashScreen() {
     <View style={styles.container}>
       <Text style={styles.brand}>{name}</Text>
       <View style={styles.iconBadge}>
-        <CashboxIcon
+        <ZitiIcon
           size={44}
           color={colors.primaryText}
           detailColor={colors.primary}

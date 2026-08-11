@@ -1,5 +1,5 @@
 /**
- * Cashbox light-green palette.
+ * Ziti light-green palette.
  * Soft mint surfaces with deep forest primary actions.
  */
 export const colors = {

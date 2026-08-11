@@ -23,7 +23,7 @@ import {
 } from '@/lib/rewardToken';
 
 /**
- * Shows the user's CashBox Points balance earned from backend payments.
+ * Shows the user's Ziti Points balance earned from backend payments.
  */
 export function RewardsScreen() {
   const insets = useSafeAreaInsets();
@@ -84,7 +84,7 @@ export function RewardsScreen() {
                 {rewardBalance}
               </Text>
               <Text style={styles.hint}>
-                Earn {REWARD_POINTS_LABEL} when you pay through Cashbox.
+                Earn {REWARD_POINTS_LABEL} when you pay through Ziti.
               </Text>
 
               <Pressable
