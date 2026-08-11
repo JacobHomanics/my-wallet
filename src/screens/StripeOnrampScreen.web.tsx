@@ -19,7 +19,7 @@ import { usePopToHome } from '@/hooks/usePopToHome';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 
 /**
- * Web: Stripe embedded Crypto Onramp → Base USDC into the Privy EVM wallet.
+ * Web: Stripe embedded Crypto Onramp → ETH / USDC into the Privy EVM wallet.
  */
 export function StripeOnrampScreen() {
   const insets = useSafeAreaInsets();

@@ -24,7 +24,7 @@ export const DEPOSIT_METHODS: readonly DepositMethodOption[] = [
 ] as const;
 
 /** Default fiat amount prefilled in onramp UIs. */
-export const ONRAMP_DEFAULT_SOURCE_AMOUNT = '50';
+export const ONRAMP_DEFAULT_SOURCE_AMOUNT = '3';
 
 /** Base native USDC — default fiat onramp destination. */
 export const ONRAMP_BASE_USDC = {

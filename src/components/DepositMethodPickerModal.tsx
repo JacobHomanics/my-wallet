@@ -82,7 +82,7 @@ export function DepositMethodPickerModal({
   const body = (
     <>
       <Text style={styles.subtitle}>
-        Choose how to buy Base USDC into your wallet.
+        Choose how to buy crypto into your wallet.
       </Text>
       <FlatList
         contentContainerStyle={styles.optionList}

@@ -35,7 +35,8 @@ function getStripeSecretKey(): string {
 }
 
 /**
- * Mint a Stripe Crypto Onramp session locked to Base USDC + the user's EVM wallet.
+ * Mint a Stripe Crypto Onramp session for the user's EVM wallet.
+ * Defaults to Base ETH; users can also buy USDC (Base / Ethereum).
  * @see https://docs.stripe.com/api/crypto/onramp_sessions/create
  */
 export async function createCryptoOnrampSession(
@@ -49,9 +50,10 @@ export async function createCryptoOnrampSession(
   body.set("wallet_addresses[ethereum]", params.walletAddress);
   body.set("wallet_addresses[base_network]", params.walletAddress);
   body.set("lock_wallet_address", "true");
-  body.set("destination_currency", "usdc");
+  body.set("destination_currency", "eth");
   body.set("destination_network", "base");
-  body.set("destination_currencies[0]", "usdc");
+  body.set("destination_currencies[0]", "eth");
+  body.set("destination_currencies[1]", "usdc");
   body.set("destination_networks[0]", "base");
   body.set("destination_networks[1]", "ethereum");
   body.set("source_currency", params.sourceCurrency ?? "usd");
