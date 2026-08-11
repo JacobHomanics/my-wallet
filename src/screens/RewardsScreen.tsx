@@ -78,13 +78,14 @@ export function RewardsScreen() {
           ) : !hasWallet ? (
             <Text style={styles.empty}>Creating your wallets…</Text>
           ) : (
-            <>
+            <View style={styles.main}>
               <Text style={styles.balanceLabel}>{REWARD_POINTS_LABEL}</Text>
               <Text style={styles.balance} accessibilityRole="header">
                 {rewardBalance}
               </Text>
               <Text style={styles.hint}>
-                Earn {REWARD_POINTS_LABEL} when you pay through Cashbox.
+                Earn {REWARD_POINTS_LABEL} when you send or complete a payment
+                with someone else!
               </Text>
 
               <Pressable
@@ -123,7 +124,7 @@ export function RewardsScreen() {
                   </View>
                 </View>
               ) : null}
-            </>
+            </View>
           )}
         </ScrollView>
       </View>
@@ -169,6 +170,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  main: {
+    width: '100%',
+    alignItems: 'center',
+    position: 'relative',
+  },
   balanceLabel: {
     marginBottom: 12,
     fontSize: 13,
@@ -211,8 +217,11 @@ const styles = StyleSheet.create({
     color: '#5a7d6a',
   },
   advanced: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
     marginTop: 8,
-    alignSelf: 'stretch',
     borderWidth: 1,
     borderColor: '#d1fae5',
     borderRadius: 12,
