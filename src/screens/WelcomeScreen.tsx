@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { ZitiIcon } from '@/components/ZitiIcon';
+import { CashRegisterIcon } from '@/components/CashRegisterIcon';
 import { useAppBrand } from '@/hooks/useAppBrand';
 import type { RootStackParamList } from '@/navigation/types';
 import { colors } from '@/theme/colors';
@@ -16,7 +16,7 @@ export function WelcomeScreen() {
     <View style={styles.container}>
       <Text style={styles.brand}>{name}</Text>
       <View style={styles.iconBadge}>
-        <ZitiIcon
+        <CashRegisterIcon
           size={44}
           color={colors.primaryText}
           detailColor={colors.primary}
