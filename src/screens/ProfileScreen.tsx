@@ -95,7 +95,7 @@ export function ProfileScreen() {
           <Text style={styles.username}>@{username}</Text>
         ) : null}
 
-        {identityId ? (
+        {!username && identityId ? (
           <View style={styles.section}>
             <AccountNumber
               identityId={identityId}
