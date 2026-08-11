@@ -10,8 +10,8 @@ export default defineSchema({
     /** Profile photo stored in Convex file storage. */
     profilePhotoId: v.optional(v.id("_storage")),
     /**
-     * Explicit `false` for newly created users until they finish or skip
-     * onboarding. Missing/true means onboarding is not required.
+     * Explicit `true` after the user finishes or skips onboarding.
+     * Missing/`false` means onboarding is still required.
      */
     onboardingCompleted: v.optional(v.boolean()),
   })

@@ -8,8 +8,7 @@ export type OnboardingStatus = 'idle' | 'loading' | 'needed' | 'done';
 
 /**
  * Whether the signed-in Convex user still needs first-time onboarding.
- * Only users created with `onboardingCompleted: false` need it; legacy users
- * (missing field) are treated as done.
+ * Completed only when `onboardingCompleted` is explicitly `true`.
  */
 export function useNeedsOnboarding(): {
   status: OnboardingStatus;
@@ -33,9 +32,9 @@ export function useNeedsOnboarding(): {
     return { status: 'loading', needsOnboarding: false, isLoading: true };
   }
 
-  if (convexUser.onboardingCompleted === false) {
-    return { status: 'needed', needsOnboarding: true, isLoading: false };
+  if (convexUser.onboardingCompleted === true) {
+    return { status: 'done', needsOnboarding: false, isLoading: false };
   }
 
-  return { status: 'done', needsOnboarding: false, isLoading: false };
+  return { status: 'needed', needsOnboarding: true, isLoading: false };
 }
