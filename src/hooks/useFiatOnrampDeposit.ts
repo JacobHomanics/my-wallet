@@ -12,8 +12,8 @@ export type UseFiatOnrampDepositResult = {
 };
 
 /**
- * Native stub — web supports Stripe (`useFiatOnramp`) and Fund Wallet
- * (`useFundWallet`). Mobile can later use `@privy-io/expo/ui`.
+ * Native stub — web supports Stripe embedded onramp and Fund Wallet
+ * (`useFundWallet`). Mobile can later use a WebView or `@privy-io/expo/ui`.
  */
 export function useFiatOnrampDeposit(): UseFiatOnrampDepositResult {
   return {

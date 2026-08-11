@@ -66,12 +66,16 @@ export function HomeScreen() {
   const onSelectDepositMethod = useCallback(
     async (option: DepositMethodOption) => {
       closeDepositPicker();
+      if (option.id === 'stripe') {
+        navigation.navigate('stripeOnramp');
+        return;
+      }
       const status = await deposit(option.id);
       if (status === 'confirmed' || status === 'submitted') {
         refresh();
       }
     },
-    [closeDepositPicker, deposit, refresh],
+    [closeDepositPicker, deposit, navigation, refresh],
   );
 
   const totalLabel = formatFromUsd(totalUsd) ?? defaultFormattedZero;

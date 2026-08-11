@@ -18,8 +18,10 @@ import type * as lib_networks from "../lib/networks.js";
 import type * as lib_neynar from "../lib/neynar.js";
 import type * as lib_privy from "../lib/privy.js";
 import type * as lib_solanaSend from "../lib/solanaSend.js";
+import type * as lib_stripe from "../lib/stripe.js";
 import type * as lib_treasuryReward from "../lib/treasuryReward.js";
 import type * as lib_waitForEvmReceipt from "../lib/waitForEvmReceipt.js";
+import type * as onramp from "../onramp.js";
 import type * as send from "../send.js";
 import type * as users from "../users.js";
 
@@ -40,8 +42,10 @@ declare const fullApi: ApiFromModules<{
   "lib/neynar": typeof lib_neynar;
   "lib/privy": typeof lib_privy;
   "lib/solanaSend": typeof lib_solanaSend;
+  "lib/stripe": typeof lib_stripe;
   "lib/treasuryReward": typeof lib_treasuryReward;
   "lib/waitForEvmReceipt": typeof lib_waitForEvmReceipt;
+  onramp: typeof onramp;
   send: typeof send;
   users: typeof users;
 }>;

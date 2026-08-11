@@ -12,7 +12,7 @@ export const DEPOSIT_METHODS: readonly DepositMethodOption[] = [
   {
     id: 'stripe',
     label: 'Stripe',
-    description: "Card, Apple Pay, or Google Pay in Privy's onramp",
+    description: 'Card, Apple Pay, or Google Pay (embedded onramp)',
     icon: 'card-outline',
   },
   {
@@ -22,6 +22,9 @@ export const DEPOSIT_METHODS: readonly DepositMethodOption[] = [
     icon: 'wallet-outline',
   },
 ] as const;
+
+/** Default fiat amount prefilled in onramp UIs. */
+export const ONRAMP_DEFAULT_SOURCE_AMOUNT = '50';
 
 /** Base native USDC — default fiat onramp destination. */
 export const ONRAMP_BASE_USDC = {

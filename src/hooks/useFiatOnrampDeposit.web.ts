@@ -1,22 +1,23 @@
 import { useCallback, useState } from 'react';
-import { useFiatOnramp, useFundWallet } from '@privy-io/react-auth';
+import { useFundWallet } from '@privy-io/react-auth';
 
 import { useUserWallets } from '@/hooks/useUserWallets';
 import {
   ONRAMP_BASE_USDC,
+  ONRAMP_DEFAULT_SOURCE_AMOUNT,
   type DepositMethodId,
 } from '@/lib/privy/onramp';
 
 export type FiatOnrampDepositStatus = 'submitted' | 'confirmed';
 
 export type UseFiatOnrampDepositResult = {
-  /** Card onramp is wired for web only. */
+  /** Deposit is available when an embedded EVM wallet exists. */
   isAvailable: boolean;
   isLoading: boolean;
   error: string | null;
   /**
-   * Starts the chosen deposit flow.
-   * - `stripe`: Privy `useFiatOnramp` (embedded Stripe onramp)
+   * Starts a deposit flow.
+   * - `stripe`: navigate to Stripe embedded onramp screen (handled by caller)
    * - `fund-wallet`: Privy `useFundWallet` (Coinbase / MoonPay popup)
    */
   deposit: (
@@ -33,12 +34,12 @@ function isUserCancelled(message: string) {
 
 /**
  * Web: buy Base USDC into the user's embedded EVM wallet.
- * Supports Stripe (`useFiatOnramp`) and Fund Wallet (`useFundWallet`).
+ * Stripe uses the embedded Crypto Onramp screen; Coinbase/MoonPay use Fund Wallet.
  *
+ * @see https://docs.stripe.com/crypto/onramp/embedded
  * @see https://docs.privy.io/wallets/funding/fiat-onramp
  */
 export function useFiatOnrampDeposit(): UseFiatOnrampDepositResult {
-  const { fund: fundWithStripe } = useFiatOnramp();
   const { fundWallet } = useFundWallet();
   const { wallets } = useUserWallets();
   const [isLoading, setIsLoading] = useState(false);
@@ -54,31 +55,20 @@ export function useFiatOnrampDeposit(): UseFiatOnrampDepositResult {
         return null;
       }
 
+      if (method === 'stripe') {
+        // Caller navigates to `stripeOnramp` — no Privy Stripe modal.
+        return null;
+      }
+
       setIsLoading(true);
       setError(null);
 
       try {
-        if (method === 'stripe') {
-          const result = await fundWithStripe({
-            source: {
-              assets: ['usd', 'eur', 'gbp'],
-              defaultAsset: 'usd',
-            },
-            destination: {
-              asset: ONRAMP_BASE_USDC.asset,
-              chain: ONRAMP_BASE_USDC.chain,
-              address: ethereumAddress,
-            },
-            defaultAmount: '50',
-          });
-          return result.status;
-        }
-
         const result = await fundWallet({
           address: ethereumAddress,
           options: {
             chain: { id: ONRAMP_BASE_USDC.chainId },
-            amount: '50',
+            amount: ONRAMP_DEFAULT_SOURCE_AMOUNT,
             asset: 'USDC',
             defaultFundingMethod: 'card',
           },
@@ -99,7 +89,7 @@ export function useFiatOnrampDeposit(): UseFiatOnrampDepositResult {
         setIsLoading(false);
       }
     },
-    [ethereumAddress, fundWallet, fundWithStripe],
+    [ethereumAddress, fundWallet],
   );
 
   return { isAvailable, isLoading, error, deposit };
