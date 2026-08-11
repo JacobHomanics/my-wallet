@@ -30,6 +30,10 @@ export function HomeStack() {
       <NativeStack.Screen name="receive" component={homeStackScreens.receive} />
       <NativeStack.Screen name="request" component={homeStackScreens.request} />
       <NativeStack.Screen
+        name="stripeOnramp"
+        component={homeStackScreens.stripeOnramp}
+      />
+      <NativeStack.Screen
         name="receiveQr"
         component={homeStackScreens.receiveQr}
       />

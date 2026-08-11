@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -14,6 +14,7 @@ import {
 
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
+import { useOpenStripeDeposit } from '@/hooks/useOpenStripeDeposit';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import type { HomeStackParamList } from '@/navigation/types';
@@ -39,6 +40,7 @@ export function HomeScreen() {
   });
 
   const openFreshSend = useOpenFreshSend();
+  const { canDeposit, openDeposit } = useOpenStripeDeposit();
   const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
 
   const onRefresh = useCallback(() => {
@@ -127,6 +129,23 @@ export function HomeScreen() {
                     <Ionicons name="cash-outline" size={18} color="#f0fdf4" />
                     <Text style={styles.actionButtonText}>Request</Text>
                   </Pressable>
+                  {canDeposit ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={openDeposit}
+                      style={({ pressed }) => [
+                        styles.actionButton,
+                        pressed && styles.actionButtonPressed,
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name="archive-arrow-down-outline"
+                        size={18}
+                        color="#f8fafc"
+                      />
+                      <Text style={styles.actionButtonText}>Deposit</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
                 <Pressable
                   accessibilityRole="link"
