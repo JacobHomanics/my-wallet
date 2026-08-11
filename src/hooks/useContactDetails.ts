@@ -15,8 +15,10 @@ export type ContactDetails = {
   profilePhotoUrl: string | null;
   farcasterFid: number | null;
   farcasterUsername: string | null;
+  ensName: string | null;
   isExternal: boolean;
   isFarcaster: boolean;
+  isEns: boolean;
   title: string;
 };
 
@@ -57,16 +59,20 @@ export function useContactDetails(contactId: string | undefined): {
   }
 
   const isFarcaster = Boolean(row.isFarcaster || row.farcasterFid != null);
+  const isEns = Boolean(row.isEns || row.ensName?.trim());
+  const ensName = row.ensName?.trim() || null;
   const username = isFarcaster
     ? (row.farcasterUsername ?? row.username)
     : row.username;
-  const name = row.name;
+  const name = isEns ? ensName : row.name;
   const identityId = row.identityId;
-  const title = username
-    ? `@${username}`
-    : identityId
-      ? formatWalletAddress(identityId, 10, 8)
-      : (name ?? 'Contact');
+  const title = isEns && ensName
+    ? ensName
+    : username
+      ? `@${username}`
+      : identityId
+        ? formatWalletAddress(identityId, 10, 8)
+        : (name ?? 'Contact');
 
   return {
     contact: {
@@ -79,8 +85,10 @@ export function useContactDetails(contactId: string | undefined): {
       profilePhotoUrl: row.profilePhotoUrl ?? null,
       farcasterFid: row.farcasterFid ?? null,
       farcasterUsername: row.farcasterUsername ?? null,
-      isExternal: !row.contactUserId && !isFarcaster,
+      ensName,
+      isExternal: !row.contactUserId && !isFarcaster && !isEns,
       isFarcaster,
+      isEns,
       title,
     },
     isLoading: false,

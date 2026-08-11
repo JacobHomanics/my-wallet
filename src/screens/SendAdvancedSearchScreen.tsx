@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
+import { useEnsResolve } from '@/hooks/useEnsResolve';
 import { useFarcasterSearch } from '@/hooks/useFarcasterSearch';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendToContact } from '@/hooks/useSendToContact';
@@ -25,7 +26,7 @@ import { useSendWalletRecipient } from '@/hooks/useSendWalletRecipient';
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
- * Search Farcaster usernames or enter wallet addresses during send.
+ * Search Farcaster usernames, resolve ENS names, or enter wallet addresses during send.
  */
 export function SendAdvancedSearchScreen() {
   const insets = useSafeAreaInsets();
@@ -34,9 +35,16 @@ export function SendAdvancedSearchScreen() {
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'sendAdvancedSearch'>>();
   const { sendToContact } = useSendToContact();
-  const [query, setQuery] = useState('');
+  const [farcasterQuery, setFarcasterQuery] = useState('');
+  const [ensQuery, setEnsQuery] = useState('');
   const { results, isSearching, showEmpty, errorMessage } =
-    useFarcasterSearch(query);
+    useFarcasterSearch(farcasterQuery);
+  const {
+    result: ensResult,
+    isResolving: isEnsResolving,
+    showNotFound: ensNotFound,
+    errorMessage: ensErrorMessage,
+  } = useEnsResolve(ensQuery);
   const {
     evmAddress,
     setEvmAddress,
@@ -127,11 +135,11 @@ export function SendAdvancedSearchScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="off"
-              onChangeText={setQuery}
+              onChangeText={setFarcasterQuery}
               placeholder="Farcaster username"
               placeholderTextColor="#86a894"
               style={styles.input}
-              value={query}
+              value={farcasterQuery}
             />
             <Text style={styles.hint}>
               Search by Farcaster username to pay a verified wallet.
@@ -211,6 +219,71 @@ export function SendAdvancedSearchScreen() {
 
             {showEmpty ? (
               <Text style={styles.empty}>No Farcaster users found.</Text>
+            ) : null}
+
+            <Text style={[styles.label, styles.ensLabel]}>ENS</Text>
+            <TextInput
+              accessibilityLabel="ENS name"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="off"
+              onChangeText={setEnsQuery}
+              placeholder="name.eth"
+              placeholderTextColor="#86a894"
+              style={styles.input}
+              value={ensQuery}
+            />
+            <Text style={styles.hint}>
+              Resolve an ENS name to pay its Ethereum address.
+            </Text>
+
+            {ensErrorMessage ? (
+              <Text style={styles.error}>{ensErrorMessage}</Text>
+            ) : null}
+
+            {isEnsResolving ? (
+              <ActivityIndicator color="#166534" style={styles.loader} />
+            ) : null}
+
+            {ensResult ? (
+              <Pressable
+                accessibilityLabel={`Select ${ensResult.label}`}
+                accessibilityRole="button"
+                onPress={() => {
+                  sendToContact(
+                    {
+                      identityId: null,
+                      evmAddress: ensResult.address,
+                      solanaAddress: null,
+                      name: ensResult.name,
+                      profilePhotoUrl: ensResult.avatarUrl,
+                    },
+                    { tokenId, usdAmount },
+                  );
+                }}
+                style={({ pressed }) => [
+                  styles.resultCard,
+                  pressed && styles.resultCardPressed,
+                ]}
+              >
+                <Avatar
+                  label={ensResult.label}
+                  photoUrl={ensResult.avatarUrl}
+                  seed={ensResult.name}
+                  size={40}
+                />
+                <View style={styles.resultText}>
+                  <Text style={styles.resultLabel}>{ensResult.label}</Text>
+                  <Text style={styles.resultDescription}>
+                    {ensResult.address}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#86a894" />
+              </Pressable>
+            ) : null}
+
+            {ensNotFound ? (
+              <Text style={styles.empty}>ENS name not found.</Text>
             ) : null}
 
             <Text style={[styles.label, styles.walletsLabel]}>Wallets</Text>
@@ -340,6 +413,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
   },
   walletsLabel: {
+    marginTop: 24,
+  },
+  ensLabel: {
     marginTop: 24,
   },
   input: {
