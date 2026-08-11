@@ -9,7 +9,7 @@ import { getStripePublishableKey } from '@/lib/stripe/stripeCredentials';
  */
 export function useOpenStripeDeposit(): UseOpenStripeDepositResult {
   const { wallets } = useUserWallets();
-  const { pickerOpen, openPicker, closePicker, onSelectMethod } =
+  const { pickerOpen, openPicker, closePicker, onSelectMethod, defaultMethod } =
     useDepositMethodPicker();
 
   const ethereumAddress = wallets.find((w) => w.chain === 'ethereum')?.address;
@@ -20,6 +20,7 @@ export function useOpenStripeDeposit(): UseOpenStripeDepositResult {
     canDeposit,
     openDeposit: openPicker,
     depositPickerOpen: pickerOpen,
+    defaultDepositMethod: defaultMethod,
     closeDepositPicker: closePicker,
     onSelectDepositMethod: onSelectMethod,
   };

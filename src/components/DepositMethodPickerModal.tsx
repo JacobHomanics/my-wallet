@@ -20,6 +20,7 @@ import {
 
 type DepositMethodPickerModalProps = {
   visible: boolean;
+  defaultMethod: DepositMethodOption;
   onClose: () => void;
   onSelect: (method: DepositMethodOption) => void;
 };
@@ -36,10 +37,14 @@ function DepositMethodIcon({ id }: { id: DepositMethodId }) {
  */
 export function DepositMethodPickerModal({
   visible,
+  defaultMethod,
   onClose,
   onSelect,
 }: DepositMethodPickerModalProps) {
   const insets = useSafeAreaInsets();
+  const otherMethods = DEPOSIT_METHODS.filter(
+    (method) => method.id !== defaultMethod.id,
+  );
 
   const renderMethod = useCallback(
     ({ item }: { item: DepositMethodOption }) => (
@@ -54,7 +59,10 @@ export function DepositMethodPickerModal({
         ]}
       >
         <DepositMethodIcon id={item.id} />
-        <Text style={styles.optionLabel}>{item.label}</Text>
+        <View style={styles.optionText}>
+          <Text style={styles.optionLabel}>{item.label}</Text>
+          <Text style={styles.optionDescription}>{item.description}</Text>
+        </View>
         <Ionicons name="chevron-forward" size={20} color="#166534" />
       </Pressable>
     ),
@@ -90,10 +98,39 @@ export function DepositMethodPickerModal({
           </Pressable>
         </View>
 
+        <View style={styles.defaultSection}>
+          <Text style={styles.sectionTitle}>Default provider</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              onSelect(defaultMethod);
+            }}
+            style={({ pressed }) => [
+              styles.option,
+              styles.defaultOption,
+              pressed && styles.optionPressed,
+            ]}
+          >
+            <DepositMethodIcon id={defaultMethod.id} />
+            <View style={styles.optionText}>
+              <Text style={styles.optionLabel}>{defaultMethod.label}</Text>
+              <Text style={styles.optionDescription}>
+                {defaultMethod.description}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#166534" />
+          </Pressable>
+        </View>
+
         <FlatList
           contentContainerStyle={styles.optionList}
-          data={[...DEPOSIT_METHODS]}
+          data={otherMethods}
           keyExtractor={(item) => item.id}
+          ListHeaderComponent={
+            otherMethods.length > 0 ? (
+              <Text style={styles.sectionTitle}>Other providers</Text>
+            ) : null
+          }
           renderItem={renderMethod}
         />
       </View>
@@ -137,6 +174,19 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     gap: 12,
   },
+  defaultSection: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 12,
+  },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -151,11 +201,23 @@ const styles = StyleSheet.create({
   optionPressed: {
     opacity: 0.85,
   },
-  optionLabel: {
+  defaultOption: {
+    borderColor: '#86efac',
+    backgroundColor: '#f7fee7',
+  },
+  optionText: {
     flex: 1,
     minWidth: 0,
+    gap: 4,
+  },
+  optionLabel: {
     fontSize: 16,
     fontWeight: '600',
     color: '#166534',
+  },
+  optionDescription: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#5a7d6a',
   },
 });

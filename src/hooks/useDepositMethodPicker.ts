@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
+import { useOnrampSettings } from '@/hooks/useOnrampSettings';
 import type { DepositMethodOption } from '@/lib/stripe/depositMethods';
 import type { HomeStackParamList } from '@/navigation/types';
 
@@ -11,6 +12,7 @@ import type { HomeStackParamList } from '@/navigation/types';
 export function useDepositMethodPicker() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+  const { selectedProvider } = useOnrampSettings();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const openPicker = useCallback(() => {
@@ -33,5 +35,11 @@ export function useDepositMethodPicker() {
     [navigation],
   );
 
-  return { pickerOpen, openPicker, closePicker, onSelectMethod };
+  return {
+    pickerOpen,
+    openPicker,
+    closePicker,
+    onSelectMethod,
+    defaultMethod: selectedProvider,
+  };
 }

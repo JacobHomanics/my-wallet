@@ -1,6 +1,13 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
 import {
+  DEFAULT_DEPOSIT_METHOD_ID,
+  getDepositMethodOption,
+  DEPOSIT_METHODS,
+  type DepositMethodId,
+  type DepositMethodOption,
+} from '@/lib/stripe/depositMethods';
+import {
   DEFAULT_ONRAMP_CURRENCY_ID,
   DEFAULT_ONRAMP_NETWORK_ID,
   formatOnrampDestinationLabel,
@@ -21,6 +28,7 @@ type OnrampSettingsListener = () => void;
 let selectedOnrampNetworkId: OnrampDestinationNetwork = DEFAULT_ONRAMP_NETWORK_ID;
 let selectedOnrampCurrencyId: OnrampDestinationCurrency =
   DEFAULT_ONRAMP_CURRENCY_ID;
+let selectedDepositMethodId: DepositMethodId = DEFAULT_DEPOSIT_METHOD_ID;
 const listeners = new Set<OnrampSettingsListener>();
 
 function subscribe(listener: OnrampSettingsListener): () => void {
@@ -30,8 +38,8 @@ function subscribe(listener: OnrampSettingsListener): () => void {
   };
 }
 
-function getSnapshot(): `${OnrampDestinationNetwork}|${OnrampDestinationCurrency}` {
-  return `${selectedOnrampNetworkId}|${selectedOnrampCurrencyId}`;
+function getSnapshot(): `${OnrampDestinationNetwork}|${OnrampDestinationCurrency}|${DepositMethodId}` {
+  return `${selectedOnrampNetworkId}|${selectedOnrampCurrencyId}|${selectedDepositMethodId}`;
 }
 
 function emitChange(): void {
@@ -60,6 +68,14 @@ function setSelectedOnrampCurrencyId(id: OnrampDestinationCurrency): void {
   emitChange();
 }
 
+function setSelectedDepositMethod(id: DepositMethodId): void {
+  if (id === selectedDepositMethodId) {
+    return;
+  }
+  selectedDepositMethodId = id;
+  emitChange();
+}
+
 /**
  * Default onramp destination used to preselect the Stripe widget.
  */
@@ -71,17 +87,22 @@ export function useOnrampSettings(): {
   selectedCurrencyId: OnrampDestinationCurrency;
   selectedCurrency: OnrampCurrencyOption;
   selectedDestinationLabel: string;
+  providerOptions: readonly DepositMethodOption[];
+  selectedProviderId: DepositMethodId;
+  selectedProvider: DepositMethodOption;
   setOnrampNetwork: (id: OnrampDestinationNetwork) => void;
   setOnrampCurrency: (id: OnrampDestinationCurrency) => void;
+  setOnrampProvider: (id: DepositMethodId) => void;
 } {
   const snapshot = useSyncExternalStore(
     subscribe,
     getSnapshot,
     getSnapshot,
   );
-  const [networkId, currencyId] = snapshot.split('|') as [
+  const [networkId, currencyId, providerId] = snapshot.split('|') as [
     OnrampDestinationNetwork,
     OnrampDestinationCurrency,
+    DepositMethodId,
   ];
 
   const setOnrampNetwork = useCallback((id: OnrampDestinationNetwork) => {
@@ -90,6 +111,10 @@ export function useOnrampSettings(): {
 
   const setOnrampCurrency = useCallback((id: OnrampDestinationCurrency) => {
     setSelectedOnrampCurrencyId(id);
+  }, []);
+
+  const setOnrampProvider = useCallback((id: DepositMethodId) => {
+    setSelectedDepositMethod(id);
   }, []);
 
   const selectedNetwork =
@@ -101,6 +126,9 @@ export function useOnrampSettings(): {
       getDefaultOnrampCurrencyForNetwork(selectedNetwork.id),
     )!;
   const currencyOptions = getOnrampCurrencyOptionsForNetwork(selectedNetwork.id);
+  const selectedProvider =
+    getDepositMethodOption(providerId) ??
+    getDepositMethodOption(DEFAULT_DEPOSIT_METHOD_ID)!;
 
   return {
     networkOptions: ONRAMP_NETWORK_OPTIONS,
@@ -113,7 +141,11 @@ export function useOnrampSettings(): {
       network: selectedNetwork.id,
       currency: selectedCurrency.id,
     }),
+    providerOptions: DEPOSIT_METHODS,
+    selectedProviderId: selectedProvider.id,
+    selectedProvider,
     setOnrampNetwork,
     setOnrampCurrency,
+    setOnrampProvider,
   };
 }

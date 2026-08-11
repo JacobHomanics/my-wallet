@@ -45,6 +45,7 @@ export function HomeScreen() {
     canDeposit,
     openDeposit,
     depositPickerOpen,
+    defaultDepositMethod,
     closeDepositPicker,
     onSelectDepositMethod,
   } = useOpenStripeDeposit();
@@ -191,6 +192,7 @@ export function HomeScreen() {
       </ScrollView>
 
       <DepositMethodPickerModal
+        defaultMethod={defaultDepositMethod}
         onClose={closeDepositPicker}
         onSelect={onSelectDepositMethod}
         visible={depositPickerOpen}

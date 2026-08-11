@@ -6,9 +6,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { OnrampOptionPickerModal } from '@/components/OnrampOptionPickerModal';
+import { PrivyIcon } from '@/components/PrivyIcon';
+import { StripeIcon } from '@/components/StripeIcon';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useOnrampSettings } from '@/hooks/useOnrampSettings';
 import { usePopToSettings } from '@/hooks/usePopToSettings';
+import type { DepositMethodId } from '@/lib/stripe/depositMethods';
+
+function DepositProviderIcon({ id }: { id: DepositMethodId }) {
+  if (id === 'stripe-embedded-components') {
+    return <PrivyIcon size={28} />;
+  }
+  return <StripeIcon size={28} />;
+}
 
 /**
  * Choose which asset/network Stripe should preselect for new onramp sessions.
@@ -27,8 +37,12 @@ export function OnrampSettingsScreen() {
     selectedCurrency,
     selectedCurrencyId,
     selectedDestinationLabel,
+    providerOptions,
+    selectedProviderId,
+    selectedProvider,
     setOnrampNetwork,
     setOnrampCurrency,
+    setOnrampProvider,
   } = useOnrampSettings();
 
   return (
@@ -128,9 +142,46 @@ export function OnrampSettingsScreen() {
           </Pressable>
         </View>
 
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Default provider</Text>
+          {providerOptions.map((option) => {
+            const selected = option.id === selectedProviderId;
+            return (
+              <Pressable
+                key={option.id}
+                accessibilityLabel={option.label}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: selected }}
+                onPress={() => {
+                  setOnrampProvider(option.id);
+                }}
+                style={({ pressed }) => [
+                  styles.providerRow,
+                  selected && styles.providerRowSelected,
+                  pressed && styles.optionRowPressed,
+                ]}
+              >
+                <DepositProviderIcon id={option.id} />
+                <View style={styles.optionText}>
+                  <Text style={styles.optionLabel}>{option.label}</Text>
+                  <Text style={styles.optionDescription}>
+                    {option.description}
+                  </Text>
+                </View>
+                <Ionicons
+                  name={selected ? 'checkmark-circle' : 'ellipse-outline'}
+                  size={22}
+                  color={selected ? '#166534' : '#86a894'}
+                />
+              </Pressable>
+            );
+          })}
+        </View>
+
         <Text style={styles.note}>
-          Current default: {selectedDestinationLabel}. Other supported choices
-          may still be available inside Stripe if supported for your region.
+          Current default: {selectedProvider.label} on {selectedDestinationLabel}.
+          Other supported choices may still be available inside Stripe if
+          supported for your region.
         </Text>
       </ScrollView>
 
@@ -239,6 +290,21 @@ const styles = StyleSheet.create({
   },
   optionRowPressed: {
     opacity: 0.85,
+  },
+  providerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#ffffff',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#d1fae5',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  providerRowSelected: {
+    borderColor: '#86efac',
+    backgroundColor: '#f7fee7',
   },
   optionText: {
     flex: 1,
