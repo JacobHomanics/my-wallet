@@ -8,6 +8,7 @@ const TW = {
   eth: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
   usdc: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
   pol: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/polygon/info/logo.png',
+  avax: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/avalanche/info/logo.png',
   sol: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
 } as const;
 
@@ -24,6 +25,7 @@ const NATIVE_LOGOS: Record<string, string> = {
   'arb-mainnet': TW.eth,
   'opt-mainnet': TW.eth,
   'polygon-mainnet': TW.pol,
+  'avax-mainnet': TW.avax,
   'solana-mainnet': TW.sol,
 };
 
@@ -45,6 +47,9 @@ const TOKEN_LOGOS: Record<string, string> = {
   [`opt-mainnet:${OP_STACK_WETH}`]: TW.eth,
   // Polygon native USDC
   'polygon-mainnet:0x3c499c542cef5e3811e1192ce70d8cc03d5c3359': TW.usdc,
+  // Avalanche native USDC + bridged WETH.e
+  'avax-mainnet:0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e': TW.usdc,
+  'avax-mainnet:0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab': TW.eth,
 };
 
 const SYMBOL_LOGOS: Record<string, string> = {
@@ -54,6 +59,8 @@ const SYMBOL_LOGOS: Record<string, string> = {
   usdbc: TW.usdc,
   pol: TW.pol,
   matic: TW.pol,
+  avax: TW.avax,
+  wavax: TW.avax,
   sol: TW.sol,
 };
 
@@ -111,6 +118,10 @@ function logoForSymbol(symbol: string | undefined): string | null {
     return null;
   }
   return SYMBOL_LOGOS[symbol.trim().toLowerCase()] ?? null;
+}
+
+export function getTokenSymbolLogoUrl(symbol: string | undefined): string | null {
+  return logoForSymbol(symbol);
 }
 
 function trimUrl(value: string | null | undefined): string | null {

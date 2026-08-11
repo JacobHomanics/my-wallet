@@ -35,6 +35,10 @@ export function ContactsStack() {
         component={contactsStackScreens.newFarcasterContact}
       />
       <WebStack.Screen
+        name="newEnsContact"
+        component={contactsStackScreens.newEnsContact}
+      />
+      <WebStack.Screen
         name="newRawAddressContact"
         component={contactsStackScreens.newRawAddressContact}
       />

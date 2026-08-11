@@ -599,7 +599,7 @@ export async function fetchWalletTransactions(options: {
 
   const prices = await fetchUsdPriceBySymbol(
     apiKey,
-    ['ETH', 'WETH', 'SOL', 'POL', 'MATIC'],
+    ['ETH', 'WETH', 'AVAX', 'SOL', 'POL', 'MATIC'],
     signal,
   );
 

@@ -175,6 +175,21 @@ export function NewContactScreen() {
               </Pressable>
               <View style={styles.advancedDivider} />
               <Pressable
+                accessibilityLabel="Add ENS contact"
+                accessibilityRole="button"
+                onPress={() => {
+                  navigation.navigate('newEnsContact');
+                }}
+                style={({ pressed }) => [
+                  styles.advancedButton,
+                  pressed && styles.advancedButtonPressed,
+                ]}
+              >
+                <Text style={styles.advancedButtonText}>ENS</Text>
+                <Ionicons name="chevron-forward" size={18} color="#86a894" />
+              </Pressable>
+              <View style={styles.advancedDivider} />
+              <Pressable
                 accessibilityLabel="Add contact by raw addresses"
                 accessibilityRole="button"
                 onPress={() => {

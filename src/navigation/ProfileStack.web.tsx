@@ -34,6 +34,10 @@ export function ProfileStack() {
         name="profileSettings"
         component={profileStackScreens.profileSettings}
       />
+      <WebStack.Screen
+        name="onrampSettings"
+        component={profileStackScreens.onrampSettings}
+      />
     </WebStack.Navigator>
   );
 }

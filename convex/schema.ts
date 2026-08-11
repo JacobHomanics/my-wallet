@@ -35,10 +35,15 @@ export default defineSchema({
     farcasterUsername: v.optional(v.string()),
     /** Farcaster profile picture URL. */
     farcasterPfpUrl: v.optional(v.string()),
+    /** ENS name when this is a first-class ENS contact (e.g. vitalik.eth). */
+    ensName: v.optional(v.string()),
+    /** Resolved ENS avatar URL from the avatar text record. */
+    ensAvatarUrl: v.optional(v.string()),
   })
     .index("by_owner", ["ownerId"])
     .index("by_owner_and_contact", ["ownerId", "contactUserId"])
     .index("by_owner_and_evm", ["ownerId", "evmAddress"])
     .index("by_owner_and_solana", ["ownerId", "solanaAddress"])
-    .index("by_owner_and_fid", ["ownerId", "farcasterFid"]),
+    .index("by_owner_and_fid", ["ownerId", "farcasterFid"])
+    .index("by_owner_and_ens", ["ownerId", "ensName"]),
 });

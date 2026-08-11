@@ -43,6 +43,16 @@ export type HomeStackParamList = {
     ethereumRecipient?: string;
     solanaRecipient?: string;
   } | undefined;
+  /** Cashbox username / account number search during send. */
+  sendSearch: {
+    tokenId?: string;
+    usdAmount?: string;
+  } | undefined;
+  /** Farcaster username search + ENS + raw wallet entry during send. */
+  sendAdvancedSearch: {
+    tokenId?: string;
+    usdAmount?: string;
+  } | undefined;
   sendAmount: {
     tokenId?: string;
     /** Optional when opened with a locked display-currency amount. */
@@ -82,6 +92,7 @@ export type ContactsStackParamList = {
   index: undefined;
   newContact: undefined;
   newFarcasterContact: undefined;
+  newEnsContact: undefined;
   newRawAddressContact: undefined;
   contactDetails: {
     contactId: string;
@@ -92,6 +103,7 @@ export type ProfileStackParamList = {
   index: undefined;
   settings: undefined;
   profileSettings: undefined;
+  onrampSettings: undefined;
 };
 
 export type MainTabParamList = {

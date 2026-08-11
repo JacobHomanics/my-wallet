@@ -9,6 +9,7 @@ const NETWORK_ICONS: Record<string, string> = {
   'arb-mainnet': TW_CHAIN('arbitrum'),
   'opt-mainnet': TW_CHAIN('optimism'),
   'polygon-mainnet': TW_CHAIN('polygon'),
+  'avax-mainnet': TW_CHAIN('avalanche'),
   'solana-mainnet': TW_CHAIN('solana'),
 };
 

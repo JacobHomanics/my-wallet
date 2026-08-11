@@ -127,7 +127,8 @@ export function MainTabs() {
           const hideTabBar =
             !isDesktopWeb &&
             (focusedRoute === 'settings' ||
-              focusedRoute === 'profileSettings');
+              focusedRoute === 'profileSettings' ||
+              focusedRoute === 'onrampSettings');
 
           return {
             title: 'Profile',

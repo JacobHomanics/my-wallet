@@ -29,7 +29,8 @@ export function evmTransferGasLimit(
     if (
       network === 'base-mainnet' ||
       network === 'opt-mainnet' ||
-      network === 'polygon-mainnet'
+      network === 'polygon-mainnet' ||
+      network === 'avax-mainnet'
     ) {
       return 80_000n;
     }
@@ -42,7 +43,8 @@ export function evmTransferGasLimit(
   if (
     network === 'base-mainnet' ||
     network === 'opt-mainnet' ||
-    network === 'polygon-mainnet'
+    network === 'polygon-mainnet' ||
+    network === 'avax-mainnet'
   ) {
     return 30_000n;
   }
@@ -60,6 +62,7 @@ export const TYPICAL_FEE_USD: Record<string, number> = {
   'arb-mainnet': 0.02,
   'opt-mainnet': 0.02,
   'polygon-mainnet': 0.02,
+  'avax-mainnet': 0.03,
   // SPL sends may need ~0.002 SOL ATA rent for a new recipient token account.
   'solana-mainnet': 0.35,
 };
@@ -76,6 +79,7 @@ export const FALLBACK_FEE_PER_TX_RAW: Record<string, bigint> = {
   'arb-mainnet': 10_000_000_000_000n,
   'opt-mainnet': 10_000_000_000_000n,
   'polygon-mainnet': 20_000_000_000_000_000n, // 0.02 POL
+  'avax-mainnet': 1_000_000_000_000_000n, // 0.001 AVAX
   'solana-mainnet': SOLANA_SPL_RESERVE_LAMPORTS,
 };
 
@@ -176,7 +180,8 @@ function feeReserveRawForNetwork(
     network === 'base-mainnet' ||
     network === 'opt-mainnet' ||
     network === 'arb-mainnet' ||
-    network === 'polygon-mainnet'
+    network === 'polygon-mainnet' ||
+    network === 'avax-mainnet'
   ) {
     return maxBigInt(fromEstimate, fromFallback);
   }

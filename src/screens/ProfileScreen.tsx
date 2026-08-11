@@ -91,16 +91,21 @@ export function ProfileScreen() {
         />
         <Text style={styles.title}>Profile</Text>
         <Text style={styles.subtitle}>Signed in as {displayName}.</Text>
-        {username ? (
-          <Text style={styles.username}>@{username}</Text>
-        ) : null}
 
-        {identityId ? (
+        {username || identityId ? (
           <View style={styles.section}>
-            <AccountNumber
-              identityId={identityId}
-              style={styles.accountNumber}
-            />
+            {username ? (
+              <AccountNumber
+                username={username}
+                style={styles.accountNumber}
+              />
+            ) : null}
+            {identityId ? (
+              <AccountNumber
+                identityId={identityId}
+                style={styles.accountNumber}
+              />
+            ) : null}
           </View>
         ) : null}
 
@@ -205,14 +210,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: '#3f6b52',
-    textAlign: 'center',
-  },
-  username: {
-    marginTop: 4,
-    fontSize: 15,
-    fontWeight: '600',
-    lineHeight: 22,
-    color: '#166534',
     textAlign: 'center',
   },
   section: {

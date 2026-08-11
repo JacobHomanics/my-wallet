@@ -1,6 +1,7 @@
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import type { SendTokenParams } from '@/hooks/useSendTransaction.shared';
 import { fetchNativeBalanceWei } from '@/lib/send/prepareEvmSend';
+import { getEvmNativeCurrency } from '@/lib/send/rpc';
 import { simulateEvmTransfer } from '@/lib/send/simulateEvmTransfer';
 import { simulateSolanaTransfer } from '@/lib/send/simulateSolanaTransfer';
 import { fetchSolBalanceLamports } from '@/lib/send/solanaFees';
@@ -60,7 +61,7 @@ export async function simulatePaymentLegs(
 
         nativeRemaining.set(
           leg.token.network,
-          subtractDebit(balance, result.nativeDebitWei, 'evm'),
+          subtractDebit(balance, result.nativeDebitWei, leg.token.network, 'evm'),
         );
       } else {
         if (!params.solanaFrom) {
@@ -84,7 +85,12 @@ export async function simulatePaymentLegs(
 
         nativeRemaining.set(
           leg.token.network,
-          subtractDebit(balance, result.nativeDebitLamports, 'solana'),
+          subtractDebit(
+            balance,
+            result.nativeDebitLamports,
+            leg.token.network,
+            'solana',
+          ),
         );
       }
     } catch (error) {
@@ -112,12 +118,13 @@ async function getOrFetchNative(
 function subtractDebit(
   balance: bigint,
   debit: bigint,
+  network: string,
   chain: 'evm' | 'solana',
 ): bigint {
   if (balance < debit) {
     throw new Error(
       chain === 'evm'
-        ? 'Not enough ETH left on this network to cover fees for the remaining transfers.'
+        ? `Not enough ${getEvmNativeCurrency(network).symbol} left on this network to cover fees for the remaining transfers.`
         : 'This transfer needs more SOL for network fees than is currently available to spend.',
     );
   }

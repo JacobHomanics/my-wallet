@@ -101,6 +101,8 @@ const HOME_STACK_HISTORY: Partial<Record<keyof HomeStackParamList, string[]>> =
     stripeOnrampComponents: ['index'],
     receiveQr: ['index', 'request'],
     send: ['index'],
+    sendSearch: ['index', 'send'],
+    sendAdvancedSearch: ['index', 'send', 'sendSearch'],
     sendAmount: ['index', 'send'],
     confirmSend: ['index', 'send', 'sendAmount'],
   };
@@ -110,6 +112,7 @@ const CONTACTS_STACK_HISTORY: Partial<
 > = {
   newContact: ['index'],
   newFarcasterContact: ['index', 'newContact'],
+  newEnsContact: ['index', 'newContact'],
   newRawAddressContact: ['index', 'newContact'],
   contactDetails: ['index'],
 };
@@ -328,6 +331,20 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
                   solanaRecipient: (value: string) => value || undefined,
                 },
               },
+              sendSearch: {
+                path: '/send/search',
+                parse: {
+                  tokenId: (tokenId: string) => tokenId || undefined,
+                  usdAmount: (usdAmount: string) => usdAmount || undefined,
+                },
+              },
+              sendAdvancedSearch: {
+                path: '/send/advanced-search',
+                parse: {
+                  tokenId: (tokenId: string) => tokenId || undefined,
+                  usdAmount: (usdAmount: string) => usdAmount || undefined,
+                },
+              },
               sendAmount: {
                 path: '/send/amount',
                 parse: {
@@ -378,6 +395,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               index: '',
               newContact: 'new',
               newFarcasterContact: 'new/farcaster',
+              newEnsContact: 'new/ens',
               newRawAddressContact: 'new/addresses',
               contactDetails: {
                 path: ':contactId',
@@ -399,6 +417,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               index: '',
               settings: 'settings',
               profileSettings: 'settings/profile',
+              onrampSettings: 'settings/onramp',
             },
           },
         },

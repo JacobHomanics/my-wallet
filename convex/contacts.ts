@@ -18,6 +18,8 @@ type LegacyContact = {
   farcasterFid?: number;
   farcasterUsername?: string;
   farcasterPfpUrl?: string;
+  ensName?: string;
+  ensAvatarUrl?: string;
 };
 
 /**
@@ -71,6 +73,10 @@ export const migrateOwnerIds = mutation({
         ...(contact.farcasterPfpUrl !== undefined
           ? { farcasterPfpUrl: contact.farcasterPfpUrl }
           : {}),
+        ...(contact.ensName !== undefined ? { ensName: contact.ensName } : {}),
+        ...(contact.ensAvatarUrl !== undefined
+          ? { ensAvatarUrl: contact.ensAvatarUrl }
+          : {}),
       });
       updated += 1;
     }
@@ -91,6 +97,7 @@ export const listForOwner = query({
     return await Promise.all(
       contacts.map(async (contact) => {
         const isFarcaster = contact.farcasterFid != null;
+        const isEns = Boolean(contact.ensName?.trim());
         let username: string | null = null;
         let identityId: string | null = null;
         let profilePhotoUrl: string | null = null;
@@ -105,6 +112,8 @@ export const listForOwner = query({
         } else if (isFarcaster) {
           username = contact.farcasterUsername ?? null;
           profilePhotoUrl = contact.farcasterPfpUrl ?? null;
+        } else if (isEns) {
+          profilePhotoUrl = contact.ensAvatarUrl ?? null;
         }
 
         return {
@@ -116,11 +125,14 @@ export const listForOwner = query({
           farcasterFid: contact.farcasterFid ?? null,
           farcasterUsername: contact.farcasterUsername ?? null,
           farcasterPfpUrl: contact.farcasterPfpUrl ?? null,
+          ensName: contact.ensName ?? null,
+          ensAvatarUrl: contact.ensAvatarUrl ?? null,
           username,
           identityId,
           profilePhotoUrl,
           isFarcaster,
-          isExternal: !contact.contactUserId && !isFarcaster,
+          isEns,
+          isExternal: !contact.contactUserId && !isFarcaster && !isEns,
         };
       }),
     );
@@ -140,6 +152,7 @@ export const getForOwner = query({
     }
 
     const isFarcaster = contact.farcasterFid != null;
+    const isEns = Boolean(contact.ensName?.trim());
     let username: string | null = null;
     let identityId: string | null = null;
     let profilePhotoUrl: string | null = null;
@@ -154,6 +167,8 @@ export const getForOwner = query({
     } else if (isFarcaster) {
       username = contact.farcasterUsername ?? null;
       profilePhotoUrl = contact.farcasterPfpUrl ?? null;
+    } else if (isEns) {
+      profilePhotoUrl = contact.ensAvatarUrl ?? null;
     }
 
     return {
@@ -166,10 +181,13 @@ export const getForOwner = query({
       farcasterFid: contact.farcasterFid ?? null,
       farcasterUsername: contact.farcasterUsername ?? null,
       farcasterPfpUrl: contact.farcasterPfpUrl ?? null,
+      ensName: contact.ensName ?? null,
+      ensAvatarUrl: contact.ensAvatarUrl ?? null,
       identityId,
       profilePhotoUrl,
       isFarcaster,
-      isExternal: !contact.contactUserId && !isFarcaster,
+      isEns,
+      isExternal: !contact.contactUserId && !isFarcaster && !isEns,
     };
   },
 });
@@ -217,7 +235,7 @@ export const add = mutation({
   },
 });
 
-/** Add a contact by EVM and/or Solana address (idempotent). */
+/** Add a contact by EVM and/or Solana address. */
 export const addByAddresses = mutation({
   args: {
     ownerId: v.id("users"),
@@ -232,10 +250,6 @@ export const addByAddresses = mutation({
     }
 
     const trimmedName = name.trim();
-    if (!trimmedName) {
-      throw new Error("Enter a name for this contact");
-    }
-
     const evm = evmAddress?.trim() || undefined;
     const solana = solanaAddress?.trim() || undefined;
 
@@ -251,43 +265,9 @@ export const addByAddresses = mutation({
       throw new Error("Invalid Solana address");
     }
 
-    if (evm) {
-      const existingEvm = await ctx.db
-        .query("contacts")
-        .withIndex("by_owner_and_evm", (q) =>
-          q.eq("ownerId", ownerId).eq("evmAddress", evm),
-        )
-        .unique();
-      if (existingEvm) {
-        await ctx.db.patch(existingEvm._id, {
-          name: trimmedName,
-          ...(solana && !existingEvm.solanaAddress
-            ? { solanaAddress: solana }
-            : {}),
-        });
-        return existingEvm._id;
-      }
-    }
-
-    if (solana) {
-      const existingSolana = await ctx.db
-        .query("contacts")
-        .withIndex("by_owner_and_solana", (q) =>
-          q.eq("ownerId", ownerId).eq("solanaAddress", solana),
-        )
-        .unique();
-      if (existingSolana) {
-        await ctx.db.patch(existingSolana._id, {
-          name: trimmedName,
-          ...(evm && !existingSolana.evmAddress ? { evmAddress: evm } : {}),
-        });
-        return existingSolana._id;
-      }
-    }
-
     return await ctx.db.insert("contacts", {
       ownerId,
-      name: trimmedName,
+      ...(trimmedName ? { name: trimmedName } : {}),
       evmAddress: evm,
       solanaAddress: solana,
     });
@@ -375,6 +355,59 @@ export const addByFarcaster = mutation({
       ...(trimmedName ? { name: trimmedName } : {}),
       ...(evm ? { evmAddress: evm } : {}),
       ...(solana ? { solanaAddress: solana } : {}),
+    });
+  },
+});
+
+/** Add an ENS contact by name (idempotent; refreshes resolved EVM address). */
+export const addByEns = mutation({
+  args: {
+    ownerId: v.id("users"),
+    ensName: v.string(),
+    evmAddress: v.string(),
+    ensAvatarUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, { ownerId, ensName, evmAddress, ensAvatarUrl }) => {
+    const owner = await ctx.db.get(ownerId);
+    if (!owner) {
+      throw new Error("Owner not found");
+    }
+
+    const name = ensName.trim().toLowerCase();
+    if (!name.includes(".")) {
+      throw new Error("Enter a valid ENS name");
+    }
+
+    const evm = evmAddress.trim();
+    if (!EVM_ADDRESS.test(evm)) {
+      throw new Error("Invalid EVM address");
+    }
+
+    const avatarUrl = ensAvatarUrl?.trim() || undefined;
+
+    const existing = await ctx.db
+      .query("contacts")
+      .withIndex("by_owner_and_ens", (q) =>
+        q.eq("ownerId", ownerId).eq("ensName", name),
+      )
+      .unique();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        ensName: name,
+        evmAddress: evm,
+        name,
+        ...(avatarUrl !== undefined ? { ensAvatarUrl: avatarUrl } : {}),
+      });
+      return existing._id;
+    }
+
+    return await ctx.db.insert("contacts", {
+      ownerId,
+      ensName: name,
+      evmAddress: evm,
+      name,
+      ...(avatarUrl ? { ensAvatarUrl: avatarUrl } : {}),
     });
   },
 });

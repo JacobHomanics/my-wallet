@@ -6,33 +6,26 @@ import {
 } from '@/lib/validation';
 
 /**
- * EVM/Solana address fields for adding a contact manually.
+ * EVM/Solana address fields for send advanced search.
  */
-export function useNewContactAdvanced() {
-  const [name, setName] = useState('');
+export function useSendWalletRecipient() {
   const [evmAddress, setEvmAddress] = useState('');
   const [solanaAddress, setSolanaAddress] = useState('');
 
-  const trimmedName = name.trim();
   const trimmedEvm = evmAddress.trim();
   const trimmedSolana = solanaAddress.trim();
 
   const evmValid = !trimmedEvm || isValidEvmAddress(trimmedEvm);
   const solanaValid = !trimmedSolana || isValidSolanaAddress(trimmedSolana);
   const hasAddress = Boolean(trimmedEvm || trimmedSolana);
-  const canSubmit =
-    trimmedName.length > 0 && hasAddress && evmValid && solanaValid;
+  const canContinue = hasAddress && evmValid && solanaValid;
 
   const clear = useCallback(() => {
-    setName('');
     setEvmAddress('');
     setSolanaAddress('');
   }, []);
 
   return {
-    name,
-    setName,
-    trimmedName,
     evmAddress,
     setEvmAddress,
     solanaAddress,
@@ -41,7 +34,7 @@ export function useNewContactAdvanced() {
     trimmedSolana,
     evmValid,
     solanaValid,
-    canSubmit,
+    canContinue,
     clear,
   };
 }

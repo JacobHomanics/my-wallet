@@ -3,7 +3,11 @@ import {
   evmTransferGasLimit,
   fallbackFeePerTxRaw,
 } from '@/lib/send/gasReserves';
-import { getAlchemyRpcUrl, toHexQuantity } from '@/lib/send/rpc';
+import {
+  getAlchemyRpcUrl,
+  getEvmNativeCurrency,
+  toHexQuantity,
+} from '@/lib/send/rpc';
 
 type JsonRpcResponse = {
   result?: string;
@@ -71,6 +75,10 @@ function isL2Network(network: string): boolean {
 
 function maxBigInt(a: bigint, b: bigint): bigint {
   return a > b ? a : b;
+}
+
+function nativeGasTokenSymbol(network: string): string {
+  return getEvmNativeCurrency(network).symbol;
 }
 
 /**
@@ -194,7 +202,7 @@ export async function prepareNativeEvmSend(options: {
   if (amountRaw + fees.maxFeeWei > balance) {
     if (balance <= fees.maxFeeWei) {
       throw new Error(
-        'Not enough ETH left on this network to cover fees. Try sending a token that isn’t the gas token, or add a little more ETH.',
+          `Not enough ${nativeGasTokenSymbol(options.network)} left on this network to cover fees. Try sending a token that isn’t the gas token, or add a little more ${nativeGasTokenSymbol(options.network)}.`,
       );
     }
     amountRaw = balance - fees.maxFeeWei;
@@ -235,7 +243,7 @@ export async function prepareErc20EvmSend(options: {
 
   if (balance < fees.maxFeeWei) {
     throw new Error(
-      'Not enough ETH on this network to pay for the token transfer fee.',
+      `Not enough ${nativeGasTokenSymbol(options.network)} on this network to pay for the token transfer fee.`,
     );
   }
 

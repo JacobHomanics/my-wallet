@@ -29,7 +29,8 @@ function DepositLoading({ message }: { message: string }) {
 }
 
 /**
- * Web: Stripe embedded Crypto Onramp → ETH / USDC into the Privy EVM wallet.
+ * Web: Stripe embedded Crypto Onramp into the user's Privy EVM wallet.
+ * Supports Base / Ethereum and Avalanche destinations.
  */
 export function StripeOnrampScreen() {
   const insets = useSafeAreaInsets();
@@ -111,7 +112,7 @@ export function StripeOnrampScreen() {
           {!isAvailable && !error ? (
             <Text style={styles.errorText}>
               Stripe onramp is not configured. Add
-              EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY and ensure an Ethereum wallet
+              EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY and ensure an EVM wallet
               exists.
             </Text>
           ) : null}

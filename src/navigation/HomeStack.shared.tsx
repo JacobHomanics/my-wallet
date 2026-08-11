@@ -6,8 +6,10 @@ import { HomeScreen } from '@/screens/HomeScreen';
 import { ReceiveQrScreen } from '@/screens/ReceiveQrScreen';
 import { ReceiveScreen } from '@/screens/ReceiveScreen';
 import { RequestScreen } from '@/screens/RequestScreen';
+import { SendAdvancedSearchScreen } from '@/screens/SendAdvancedSearchScreen';
 import { SendAmountScreen } from '@/screens/SendAmountScreen';
 import { SendScreen } from '@/screens/SendScreen';
+import { SendSearchScreen } from '@/screens/SendSearchScreen';
 import { SentScreen } from '@/screens/SentScreen';
 import { StripeOnrampComponentsScreen } from '@/screens/StripeOnrampComponentsScreen';
 import { StripeOnrampScreen } from '@/screens/StripeOnrampScreen';
@@ -26,6 +28,8 @@ export const homeStackScreens = {
   stripeOnrampComponents: StripeOnrampComponentsScreen,
   receiveQr: ReceiveQrScreen,
   send: SendScreen,
+  sendSearch: SendSearchScreen,
+  sendAdvancedSearch: SendAdvancedSearchScreen,
   sendAmount: SendAmountScreen,
   confirmSend: ConfirmSendScreen,
   sent: SentScreen,

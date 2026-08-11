@@ -2,6 +2,7 @@ import { useAction } from 'convex/react';
 import { useCallback, useState } from 'react';
 
 import { api } from '../../convex/_generated/api';
+import { useOnrampSettings } from '@/hooks/useOnrampSettings';
 import { useUserWallets } from '@/hooks/useUserWallets';
 import { getStripePublishableKey } from '@/lib/stripe/stripeCredentials';
 import { ONRAMP_DEFAULT_SOURCE_AMOUNT } from '@/lib/privy/onramp';
@@ -19,6 +20,7 @@ export type UseCreateStripeOnrampSessionResult = {
 export function useCreateStripeOnrampSession(): UseCreateStripeOnrampSessionResult {
   const createSessionAction = useAction(api.onramp.createSession);
   const { wallets } = useUserWallets();
+  const { selectedNetwork, selectedCurrency } = useOnrampSettings();
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,6 +46,8 @@ export function useCreateStripeOnrampSession(): UseCreateStripeOnrampSessionResu
         walletAddress: ethereumAddress,
         sourceAmount: ONRAMP_DEFAULT_SOURCE_AMOUNT,
         sourceCurrency: 'usd',
+        destinationCurrency: selectedCurrency.id,
+        destinationNetwork: selectedNetwork.id,
       });
       return {
         clientSecret: session.clientSecret,
@@ -59,7 +63,13 @@ export function useCreateStripeOnrampSession(): UseCreateStripeOnrampSessionResu
     } finally {
       setIsCreating(false);
     }
-  }, [createSessionAction, ethereumAddress, hasPublishableKey]);
+  }, [
+    createSessionAction,
+    ethereumAddress,
+    hasPublishableKey,
+    selectedCurrency.id,
+    selectedNetwork.id,
+  ]);
 
   return { isAvailable, isCreating, error, createSession };
 }

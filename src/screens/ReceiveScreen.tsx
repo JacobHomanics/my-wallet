@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { AccountNumber } from '@/components/AccountNumber';
+import { useConvexUsername } from '@/hooks/useConvexUsername';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
@@ -23,6 +24,7 @@ export function ReceiveScreen() {
   const isDesktopWeb = useIsDesktopWeb();
   const goHome = usePopToHome();
   const { ready, url, identityId } = useReceiveAddressUrl();
+  const { username } = useConvexUsername();
   const { copy, isCopied } = useCopyToClipboard();
 
   return (
@@ -73,11 +75,21 @@ export function ReceiveScreen() {
                 />
               </View>
 
-              {identityId ? (
-                <AccountNumber
-                  identityId={identityId}
-                  style={styles.accountNumber}
-                />
+              {username || identityId ? (
+                <View style={styles.identitySection}>
+                  {username ? (
+                    <AccountNumber
+                      username={username}
+                      style={styles.accountNumber}
+                    />
+                  ) : null}
+                  {identityId ? (
+                    <AccountNumber
+                      identityId={identityId}
+                      style={styles.accountNumber}
+                    />
+                  ) : null}
+                </View>
               ) : null}
 
               <Pressable
@@ -173,8 +185,14 @@ const styles = StyleSheet.create({
   qr: {
     backgroundColor: '#ffffff',
   },
-  accountNumber: {
+  identitySection: {
+    width: '100%',
     marginTop: 20,
+    gap: 10,
+    alignItems: 'center',
+  },
+  accountNumber: {
+    marginTop: 0,
   },
   copyLinkButton: {
     marginTop: 20,

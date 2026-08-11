@@ -6,6 +6,8 @@ export type CreateCryptoOnrampSessionParams = {
   sourceAmount?: string;
   sourceCurrency?: string;
   customerIpAddress?: string;
+  destinationCurrency?: string;
+  destinationNetwork?: string;
 };
 
 export type CryptoOnrampSessionResult = {
@@ -24,6 +26,26 @@ type StripeOnrampSessionResponse = {
   };
 };
 
+const SUPPORTED_DESTINATION_CURRENCIES = ["eth", "usdc", "avax"] as const;
+const SUPPORTED_DESTINATION_NETWORKS = [
+  "base",
+  "ethereum",
+  "avalanche",
+] as const;
+
+function normalizeSupportedValue<T extends string>(
+  value: string | undefined,
+  supported: readonly T[],
+): T | null {
+  if (!value) {
+    return null;
+  }
+  const normalized = value.trim().toLowerCase();
+  return (supported as readonly string[]).includes(normalized)
+    ? (normalized as T)
+    : null;
+}
+
 function getStripeSecretKey(): string {
   const key = process.env.STRIPE_SECRET_KEY?.trim();
   if (!key) {
@@ -36,7 +58,8 @@ function getStripeSecretKey(): string {
 
 /**
  * Mint a Stripe Crypto Onramp session for the user's EVM wallet.
- * Defaults to Base ETH; users can also buy USDC (Base / Ethereum).
+ * Uses the caller's preferred default destination while keeping the broader
+ * supported list available in the widget.
  * @see https://docs.stripe.com/api/crypto/onramp_sessions/create
  */
 export async function createCryptoOnrampSession(
@@ -44,18 +67,33 @@ export async function createCryptoOnrampSession(
 ): Promise<CryptoOnrampSessionResult> {
   const secret = getStripeSecretKey();
   const body = new URLSearchParams();
+  const destinationCurrency = normalizeSupportedValue(
+    params.destinationCurrency,
+    SUPPORTED_DESTINATION_CURRENCIES,
+  );
+  const destinationNetwork = normalizeSupportedValue(
+    params.destinationNetwork,
+    SUPPORTED_DESTINATION_NETWORKS,
+  );
 
-  // Prefill the same EVM address for ethereum + Base. Stripe requires every
+  // Prefill the same EVM address for Ethereum, Base, and Avalanche. Stripe requires every
   // wallet_addresses network key to appear in destination_networks.
   body.set("wallet_addresses[ethereum]", params.walletAddress);
   body.set("wallet_addresses[base_network]", params.walletAddress);
+  body.set("wallet_addresses[avalanche]", params.walletAddress);
   body.set("lock_wallet_address", "true");
-  body.set("destination_currency", "eth");
-  body.set("destination_network", "base");
+  if (destinationCurrency) {
+    body.set("destination_currency", destinationCurrency);
+  }
+  if (destinationNetwork) {
+    body.set("destination_network", destinationNetwork);
+  }
   body.set("destination_currencies[0]", "eth");
   body.set("destination_currencies[1]", "usdc");
+  body.set("destination_currencies[2]", "avax");
   body.set("destination_networks[0]", "base");
   body.set("destination_networks[1]", "ethereum");
+  body.set("destination_networks[2]", "avalanche");
   body.set("source_currency", params.sourceCurrency ?? "usd");
 
   if (params.sourceAmount?.trim()) {

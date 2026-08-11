@@ -4,6 +4,7 @@ const EVM_CHAIN_IDS: Record<string, number> = {
   "arb-mainnet": 42161,
   "opt-mainnet": 10,
   "polygon-mainnet": 137,
+  "avax-mainnet": 43114,
 };
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";

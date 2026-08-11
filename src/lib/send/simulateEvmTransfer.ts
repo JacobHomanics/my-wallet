@@ -3,7 +3,11 @@ import {
   estimateEvmFeeFields,
   fetchNativeBalanceWei,
 } from '@/lib/send/prepareEvmSend';
-import { getAlchemyRpcUrl, toHexQuantity } from '@/lib/send/rpc';
+import {
+  getAlchemyRpcUrl,
+  getEvmNativeCurrency,
+  toHexQuantity,
+} from '@/lib/send/rpc';
 import { isNativeTokenAddress } from '@/lib/alchemy/tokenLogos';
 
 export type SimulateEvmTransferParams = {
@@ -72,6 +76,10 @@ async function rpcCall(
   return json.result;
 }
 
+function nativeGasTokenSymbol(network: string): string {
+  return getEvmNativeCurrency(network).symbol;
+}
+
 /**
  * Simulates an EVM native or ERC-20 transfer via `eth_call` and fee checks.
  * Does not broadcast. Returns the clamped amount and native wei debit so
@@ -96,14 +104,14 @@ export async function simulateEvmTransfer(
     if (amountRaw + fees.maxFeeWei > balance) {
       if (balance <= fees.maxFeeWei) {
         throw new Error(
-          'Not enough ETH left on this network to cover fees. Try sending a token that isn’t the gas token, or add a little more ETH.',
+          `Not enough ${nativeGasTokenSymbol(params.network)} left on this network to cover fees. Try sending a token that isn’t the gas token, or add a little more ${nativeGasTokenSymbol(params.network)}.`,
         );
       }
       amountRaw = balance - fees.maxFeeWei;
     }
     if (amountRaw <= 0n) {
       throw new Error(
-        'Not enough ETH left on this network to cover fees. Try sending a token that isn’t the gas token, or add a little more ETH.',
+        `Not enough ${nativeGasTokenSymbol(params.network)} left on this network to cover fees. Try sending a token that isn’t the gas token, or add a little more ${nativeGasTokenSymbol(params.network)}.`,
       );
     }
 
@@ -129,7 +137,7 @@ export async function simulateEvmTransfer(
   const fees = await estimateEvmFeeFields(params.network, true);
   if (balance < fees.maxFeeWei) {
     throw new Error(
-      'Not enough ETH on this network to pay for the token transfer fee.',
+      `Not enough ${nativeGasTokenSymbol(params.network)} on this network to pay for the token transfer fee.`,
     );
   }
 

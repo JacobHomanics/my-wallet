@@ -28,6 +28,10 @@ export function ContactsStack() {
         component={contactsStackScreens.newFarcasterContact}
       />
       <NativeStack.Screen
+        name="newEnsContact"
+        component={contactsStackScreens.newEnsContact}
+      />
+      <NativeStack.Screen
         name="newRawAddressContact"
         component={contactsStackScreens.newRawAddressContact}
       />

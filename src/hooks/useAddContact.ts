@@ -13,6 +13,7 @@ export function useAddContact() {
   const addContact = useMutation(api.contacts.add);
   const addByAddresses = useMutation(api.contacts.addByAddresses);
   const addByFarcaster = useMutation(api.contacts.addByFarcaster);
+  const addByEns = useMutation(api.contacts.addByEns);
   const [isAdding, setIsAdding] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -46,7 +47,7 @@ export function useAddContact() {
 
   const addAddresses = useCallback(
     async (addresses: {
-      name: string;
+      name?: string;
       evmAddress?: string;
       solanaAddress?: string;
     }) => {
@@ -61,7 +62,7 @@ export function useAddContact() {
       try {
         await addByAddresses({
           ownerId: userId,
-          name: addresses.name,
+          name: addresses.name ?? '',
           evmAddress: addresses.evmAddress,
           solanaAddress: addresses.solanaAddress,
         });
@@ -118,10 +119,45 @@ export function useAddContact() {
     [addByFarcaster, userId],
   );
 
+  const addEns = useCallback(
+    async (profile: {
+      ensName: string;
+      evmAddress: string;
+      ensAvatarUrl?: string | null;
+    }) => {
+      if (!userId) {
+        setErrorMessage('Not signed in');
+        return false;
+      }
+
+      setIsAdding(true);
+      setErrorMessage(null);
+
+      try {
+        await addByEns({
+          ownerId: userId,
+          ensName: profile.ensName,
+          evmAddress: profile.evmAddress,
+          ensAvatarUrl: profile.ensAvatarUrl ?? undefined,
+        });
+        return true;
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Failed to add contact';
+        setErrorMessage(message);
+        return false;
+      } finally {
+        setIsAdding(false);
+      }
+    },
+    [addByEns, userId],
+  );
+
   return {
     add,
     addAddresses,
     addFarcaster,
+    addEns,
     isAdding,
     errorMessage,
     clearError: () => {
