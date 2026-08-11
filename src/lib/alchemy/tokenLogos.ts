@@ -120,6 +120,10 @@ function logoForSymbol(symbol: string | undefined): string | null {
   return SYMBOL_LOGOS[symbol.trim().toLowerCase()] ?? null;
 }
 
+export function getTokenSymbolLogoUrl(symbol: string | undefined): string | null {
+  return logoForSymbol(symbol);
+}
+
 function trimUrl(value: string | null | undefined): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;

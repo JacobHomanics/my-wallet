@@ -45,9 +45,7 @@ function setSelectedOnrampNetworkId(id: OnrampDestinationNetwork): void {
     return;
   }
   selectedOnrampNetworkId = id;
-  if (!isOnrampCurrencySupportedOnNetwork(id, selectedOnrampCurrencyId)) {
-    selectedOnrampCurrencyId = getDefaultOnrampCurrencyForNetwork(id);
-  }
+  selectedOnrampCurrencyId = getDefaultOnrampCurrencyForNetwork(id);
   emitChange();
 }
 

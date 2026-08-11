@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import {
   FlatList,
   Modal,
@@ -14,6 +15,7 @@ type OnrampPickerOption = {
   id: string;
   label: string;
   description: string;
+  iconUrl?: string | null;
 };
 
 type OnrampOptionPickerModalProps<TOption extends OnrampPickerOption> = {
@@ -54,6 +56,9 @@ export function OnrampOptionPickerModal<TOption extends OnrampPickerOption>({
             pressed && styles.optionPressed,
           ]}
         >
+          {item.iconUrl ? (
+            <Image source={item.iconUrl} style={styles.optionIcon} />
+          ) : null}
           <View style={styles.optionText}>
             <Text style={styles.optionLabel}>{item.label}</Text>
             <Text style={styles.optionDescription}>{item.description}</Text>
@@ -166,6 +171,12 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 4,
+  },
+  optionIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#f0fdf4',
   },
   optionLabel: {
     fontSize: 16,

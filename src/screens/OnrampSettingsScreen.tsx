@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -85,6 +86,9 @@ export function OnrampSettingsScreen() {
               pressed && styles.optionRowPressed,
             ]}
           >
+            {selectedNetwork.iconUrl ? (
+              <Image source={selectedNetwork.iconUrl} style={styles.optionIcon} />
+            ) : null}
             <View style={styles.optionText}>
               <Text style={styles.optionLabel}>{selectedNetwork.label}</Text>
               <Text style={styles.optionDescription}>
@@ -108,6 +112,12 @@ export function OnrampSettingsScreen() {
               pressed && styles.optionRowPressed,
             ]}
           >
+            {selectedCurrency.iconUrl ? (
+              <Image
+                source={selectedCurrency.iconUrl}
+                style={styles.optionIcon}
+              />
+            ) : null}
             <View style={styles.optionText}>
               <Text style={styles.optionLabel}>{selectedCurrency.label}</Text>
               <Text style={styles.optionDescription}>
@@ -234,6 +244,12 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 4,
+  },
+  optionIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#f0fdf4',
   },
   optionLabel: {
     fontSize: 16,

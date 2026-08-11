@@ -1,3 +1,6 @@
+import { getNetworkIconUrl } from '@/lib/alchemy/networkIcons';
+import { getTokenSymbolLogoUrl } from '@/lib/alchemy/tokenLogos';
+
 export type OnrampDestinationNetwork = 'base' | 'ethereum' | 'avalanche';
 export type OnrampDestinationCurrency = 'eth' | 'usdc' | 'avax';
 
@@ -5,6 +8,7 @@ export type OnrampNetworkOption = {
   id: OnrampDestinationNetwork;
   label: string;
   description: string;
+  iconUrl: string | null;
 };
 
 export type OnrampCurrencyOption = {
@@ -12,23 +16,38 @@ export type OnrampCurrencyOption = {
   label: string;
   description: string;
   networks: readonly OnrampDestinationNetwork[];
+  iconUrl: string | null;
 };
+
+function networkIconUrl(network: OnrampDestinationNetwork): string | null {
+  switch (network) {
+    case 'base':
+      return getNetworkIconUrl('base-mainnet');
+    case 'ethereum':
+      return getNetworkIconUrl('eth-mainnet');
+    case 'avalanche':
+      return getNetworkIconUrl('avax-mainnet');
+  }
+}
 
 export const ONRAMP_NETWORK_OPTIONS = [
   {
     id: 'base',
     label: 'Base',
     description: 'Low-fee Ethereum L2.',
+    iconUrl: networkIconUrl('base'),
   },
   {
     id: 'ethereum',
     label: 'Ethereum',
     description: 'Main Ethereum network.',
+    iconUrl: networkIconUrl('ethereum'),
   },
   {
     id: 'avalanche',
     label: 'Avalanche',
     description: 'Avalanche C-Chain.',
+    iconUrl: networkIconUrl('avalanche'),
   },
 ] as const satisfies readonly OnrampNetworkOption[];
 
@@ -38,18 +57,21 @@ export const ONRAMP_CURRENCY_OPTIONS = [
     label: 'ETH',
     description: 'Ether.',
     networks: ['base', 'ethereum'],
+    iconUrl: getTokenSymbolLogoUrl('eth'),
   },
   {
     id: 'usdc',
     label: 'USDC',
     description: 'USD Coin.',
     networks: ['base', 'ethereum', 'avalanche'],
+    iconUrl: getTokenSymbolLogoUrl('usdc'),
   },
   {
     id: 'avax',
     label: 'AVAX',
     description: 'Avalanche native token.',
     networks: ['avalanche'],
+    iconUrl: getTokenSymbolLogoUrl('avax'),
   },
 ] as const satisfies readonly OnrampCurrencyOption[];
 
