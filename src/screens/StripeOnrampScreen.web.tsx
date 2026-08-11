@@ -30,7 +30,6 @@ export function StripeOnrampScreen() {
     useCreateStripeOnrampSession();
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const startedRef = useRef(false);
 
   useEffect(() => {
@@ -52,14 +51,8 @@ export function StripeOnrampScreen() {
 
   const onSessionChange = useCallback(
     ({ session }: { session: OnrampSessionResult }) => {
-      setStatusMessage(`Status: ${session.status}`);
       if (session.status === 'fulfillment_complete') {
         void refresh();
-      }
-      if (session.status === 'error' || session.status === 'rejected') {
-        setStatusMessage(
-          `Onramp ${session.status}. If this persists, allowlist localhost in the Stripe Crypto Onramp domain settings.`,
-        );
       }
     },
     [refresh],
@@ -109,10 +102,6 @@ export function StripeOnrampScreen() {
           ) : null}
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-          {statusMessage ? (
-            <Text style={styles.statusText}>{statusMessage}</Text>
-          ) : null}
 
           {clientSecret ? (
             <CryptoElements>
@@ -184,12 +173,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     color: '#b91c1c',
-    textAlign: 'center',
-  },
-  statusText: {
-    marginBottom: 12,
-    fontSize: 13,
-    color: '#4b5563',
     textAlign: 'center',
   },
 });
