@@ -8,15 +8,18 @@ import {
   type DepositMethodOption,
 } from '@/lib/stripe/depositMethods';
 import {
+  coerceOnrampDestinationForProvider,
+  getDefaultOnrampCurrencyForProviderAndNetwork,
+  getOnrampCurrencyOptionsForProviderAndNetwork,
+  getOnrampNetworkOptionsForProvider,
+  isOnrampDestinationSupportedByProvider,
+} from '@/lib/onrampProviderSupport';
+import {
   DEFAULT_ONRAMP_CURRENCY_ID,
   DEFAULT_ONRAMP_NETWORK_ID,
   formatOnrampDestinationLabel,
-  getDefaultOnrampCurrencyForNetwork,
   getOnrampCurrencyOption,
-  getOnrampCurrencyOptionsForNetwork,
   getOnrampNetworkOption,
-  isOnrampCurrencySupportedOnNetwork,
-  ONRAMP_NETWORK_OPTIONS,
   type OnrampCurrencyOption,
   type OnrampDestinationCurrency,
   type OnrampDestinationNetwork,
@@ -25,9 +28,16 @@ import {
 
 type OnrampSettingsListener = () => void;
 
-let selectedOnrampNetworkId: OnrampDestinationNetwork = DEFAULT_ONRAMP_NETWORK_ID;
+const initialOnrampDestination = coerceOnrampDestinationForProvider(
+  DEFAULT_DEPOSIT_METHOD_ID,
+  DEFAULT_ONRAMP_NETWORK_ID,
+  DEFAULT_ONRAMP_CURRENCY_ID,
+);
+
+let selectedOnrampNetworkId: OnrampDestinationNetwork =
+  initialOnrampDestination.network;
 let selectedOnrampCurrencyId: OnrampDestinationCurrency =
-  DEFAULT_ONRAMP_CURRENCY_ID;
+  initialOnrampDestination.currency;
 let selectedDepositMethodId: DepositMethodId = DEFAULT_DEPOSIT_METHOD_ID;
 const listeners = new Set<OnrampSettingsListener>();
 
@@ -53,14 +63,21 @@ function setSelectedOnrampNetworkId(id: OnrampDestinationNetwork): void {
     return;
   }
   selectedOnrampNetworkId = id;
-  selectedOnrampCurrencyId = getDefaultOnrampCurrencyForNetwork(id);
+  selectedOnrampCurrencyId = getDefaultOnrampCurrencyForProviderAndNetwork(
+    selectedDepositMethodId,
+    id,
+  );
   emitChange();
 }
 
 function setSelectedOnrampCurrencyId(id: OnrampDestinationCurrency): void {
   if (
     id === selectedOnrampCurrencyId ||
-    !isOnrampCurrencySupportedOnNetwork(selectedOnrampNetworkId, id)
+    !isOnrampDestinationSupportedByProvider(
+      selectedDepositMethodId,
+      selectedOnrampNetworkId,
+      id,
+    )
   ) {
     return;
   }
@@ -73,6 +90,13 @@ function setSelectedDepositMethod(id: DepositMethodId): void {
     return;
   }
   selectedDepositMethodId = id;
+  const coerced = coerceOnrampDestinationForProvider(
+    id,
+    selectedOnrampNetworkId,
+    selectedOnrampCurrencyId,
+  );
+  selectedOnrampNetworkId = coerced.network;
+  selectedOnrampCurrencyId = coerced.currency;
   emitChange();
 }
 
@@ -123,15 +147,22 @@ export function useOnrampSettings(): {
   const selectedCurrency =
     getOnrampCurrencyOption(currencyId) ??
     getOnrampCurrencyOption(
-      getDefaultOnrampCurrencyForNetwork(selectedNetwork.id),
+      getDefaultOnrampCurrencyForProviderAndNetwork(
+        providerId,
+        selectedNetwork.id,
+      ),
     )!;
-  const currencyOptions = getOnrampCurrencyOptionsForNetwork(selectedNetwork.id);
+  const networkOptions = getOnrampNetworkOptionsForProvider(providerId);
+  const currencyOptions = getOnrampCurrencyOptionsForProviderAndNetwork(
+    providerId,
+    selectedNetwork.id,
+  );
   const selectedProvider =
     getDepositMethodOption(providerId) ??
     getDepositMethodOption(DEFAULT_DEPOSIT_METHOD_ID)!;
 
   return {
-    networkOptions: ONRAMP_NETWORK_OPTIONS,
+    networkOptions,
     currencyOptions,
     selectedNetworkId: selectedNetwork.id,
     selectedNetwork,

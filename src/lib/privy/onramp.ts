@@ -11,17 +11,17 @@ export type PrivyOnrampDestination = {
   asset: string;
 };
 
-const EVM_NATIVE_ASSET = '0x0000000000000000000000000000000000000000';
-
+/**
+ * Privy fiat onramp destinations we expose in settings.
+ * Stripe Embedded Components (within Privy) supports USDC on Base, Ethereum,
+ * Solana, and Arbitrum — see https://docs.privy.io/wallets/funding/fiat-onramp
+ */
 const PRIVY_ONRAMP_DESTINATIONS: Record<
   OnrampDestinationNetwork,
   Record<OnrampDestinationCurrency, PrivyOnrampDestination | null>
 > = {
   ethereum: {
-    eth: {
-      chain: 'eip155:1',
-      asset: EVM_NATIVE_ASSET,
-    },
+    eth: null,
     usdc: {
       chain: 'eip155:1',
       asset: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
@@ -29,10 +29,7 @@ const PRIVY_ONRAMP_DESTINATIONS: Record<
     avax: null,
   },
   base: {
-    eth: {
-      chain: 'eip155:8453',
-      asset: EVM_NATIVE_ASSET,
-    },
+    eth: null,
     usdc: {
       chain: 'eip155:8453',
       asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
@@ -41,14 +38,8 @@ const PRIVY_ONRAMP_DESTINATIONS: Record<
   },
   avalanche: {
     eth: null,
-    usdc: {
-      chain: 'eip155:43114',
-      asset: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
-    },
-    avax: {
-      chain: 'eip155:43114',
-      asset: EVM_NATIVE_ASSET,
-    },
+    usdc: null,
+    avax: null,
   },
 };
 
