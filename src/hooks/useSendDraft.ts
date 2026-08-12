@@ -44,8 +44,8 @@ export type SendDraft = {
    * wallets (no rewards).
    */
   broadcastMode: SendBroadcastMode;
-  /** When true, Privy gas sponsorship covers network fees (app pays). */
-  gasSponsorship: boolean;
+  /** When set, overrides default gas sponsorship for this send only. */
+  gasSponsorship: boolean | null;
 };
 
 type DraftListener = () => void;
@@ -66,7 +66,7 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   allocationInputUnit: 'token',
   strategyId: null,
   broadcastMode: 'backend',
-  gasSponsorship: true,
+  gasSponsorship: null,
 };
 
 let sendDraft: SendDraft = { ...DEFAULT_SEND_DRAFT };

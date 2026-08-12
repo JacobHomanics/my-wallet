@@ -1,19 +1,34 @@
 import { useCallback } from 'react';
 
-import { updateSendDraft, useSendDraft } from '@/hooks/useSendDraft';
+import { getDefaultGasSponsorship } from '@/hooks/useDefaultGasSponsorship';
+import {
+  getSendDraftSnapshot,
+  updateSendDraft,
+  useSendDraft,
+} from '@/hooks/useSendDraft';
 
 /**
- * Privy gas sponsorship — when enabled the app pays network fees (`sponsor: true`).
+ * Resolved gas sponsorship for the current send (draft override or settings default).
  */
-export function useGasSponsorship() {
+export function useGasSponsorship(): {
+  gasSponsorship: boolean;
+  setGasSponsorship: (enabled: boolean) => void;
+} {
   const draft = useSendDraft();
+  const gasSponsorship = draft.gasSponsorship ?? getDefaultGasSponsorship();
 
-  const setGasSponsorship = useCallback((gasSponsorship: boolean) => {
-    updateSendDraft({ gasSponsorship });
+  const setGasSponsorship = useCallback((enabled: boolean) => {
+    updateSendDraft({ gasSponsorship: enabled });
   }, []);
 
   return {
-    gasSponsorship: draft.gasSponsorship,
+    gasSponsorship,
     setGasSponsorship,
   };
+}
+
+/** Resolved gas sponsorship for the in-memory send draft. */
+export function getSendGasSponsorship(): boolean {
+  const draft = getSendDraftSnapshot();
+  return draft.gasSponsorship ?? getDefaultGasSponsorship();
 }

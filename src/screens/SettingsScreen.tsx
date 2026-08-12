@@ -5,6 +5,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from 'react-native';
@@ -16,6 +17,7 @@ import { ConfirmLogoutModal } from '@/components/ConfirmLogoutModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
+import { useDefaultGasSponsorship } from '@/hooks/useDefaultGasSponsorship';
 import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -55,6 +57,8 @@ export function SettingsScreen() {
     closePicker: closeChainPriorityPicker,
     onSelectOption: onSelectChainPriority,
   } = useChainPriorityPicker();
+  const { defaultGasSponsorship, setDefaultGasSponsorship } =
+    useDefaultGasSponsorship();
   const {
     options: displayCurrencyOptions,
     selectedCurrency,
@@ -221,6 +225,28 @@ export function SettingsScreen() {
               </Pressable>
             </View>
 
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Default gas sponsorship</Text>
+              <View style={styles.toggleRow}>
+                <View style={styles.strategyRowText}>
+                  <Text style={styles.strategyLabel}>Gas sponsorship</Text>
+                  <Text style={styles.strategyDescription}>
+                    {defaultGasSponsorship
+                      ? 'App pays network fees on new sends'
+                      : 'You pay network fees from your wallet on new sends'}
+                  </Text>
+                </View>
+                <Switch
+                  accessibilityLabel="Default gas sponsorship"
+                  trackColor={{ false: '#bbf7d0', true: '#86efac' }}
+                  thumbColor={defaultGasSponsorship ? '#166534' : '#f0fdf4'}
+                  ios_backgroundColor="#bbf7d0"
+                  value={defaultGasSponsorship}
+                  onValueChange={setDefaultGasSponsorship}
+                />
+              </View>
+            </View>
+
             <Pressable
               accessibilityRole="button"
               onPress={requestSignOut}
@@ -363,6 +389,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     color: '#86a894',
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#ffffff',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#d1fae5',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   logoutButton: {
     width: '100%',
