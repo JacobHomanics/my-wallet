@@ -407,6 +407,7 @@ export function ConfirmSendScreen() {
               <TaxDetailsCollapsible
                 gasSponsorship={gasSponsorship}
                 showEvm={taxFundingChain === 'ethereum'}
+                showRatePercent={false}
                 showSolana={taxFundingChain === 'solana'}
                 taxLabel={taxLabel}
               />
