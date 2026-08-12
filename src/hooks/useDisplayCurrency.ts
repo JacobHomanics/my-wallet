@@ -11,7 +11,39 @@ import {
 type DisplayCurrencyListener = () => void;
 type DisplayCurrencyChangeListener = () => void;
 
-let selectedDisplayCurrencyId: DisplayCurrencyId = DEFAULT_DISPLAY_CURRENCY_ID;
+const DISPLAY_CURRENCY_STORAGE_KEY = 'displayCurrencyId';
+
+function readStoredDisplayCurrencyId(): DisplayCurrencyId | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const stored = window.localStorage.getItem(DISPLAY_CURRENCY_STORAGE_KEY);
+    if (stored && getDisplayCurrencyOption(stored as DisplayCurrencyId)) {
+      return stored as DisplayCurrencyId;
+    }
+  } catch {
+    // Ignore quota / private-mode storage errors.
+  }
+
+  return null;
+}
+
+function persistDisplayCurrencyId(id: DisplayCurrencyId): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(DISPLAY_CURRENCY_STORAGE_KEY, id);
+  } catch {
+    // Ignore quota / private-mode storage errors.
+  }
+}
+
+let selectedDisplayCurrencyId: DisplayCurrencyId =
+  readStoredDisplayCurrencyId() ?? DEFAULT_DISPLAY_CURRENCY_ID;
 const listeners = new Set<DisplayCurrencyListener>();
 const changeListeners = new Set<DisplayCurrencyChangeListener>();
 
@@ -45,6 +77,7 @@ function setSelectedDisplayCurrencyId(id: DisplayCurrencyId): void {
     return;
   }
   selectedDisplayCurrencyId = id;
+  persistDisplayCurrencyId(id);
   listeners.forEach((listener) => {
     listener();
   });
