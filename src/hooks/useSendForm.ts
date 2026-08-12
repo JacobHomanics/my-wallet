@@ -612,39 +612,48 @@ export function useSendForm(
     taxUsd,
     walletTokens,
   ]);
+  const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
   const hasPositiveMerchantLeg = merchantAllocations.some(
     (leg) => leg.amountRaw > 0n,
   );
+  const isTokenOnlyPayment = !amountValid && hasPositiveLeg;
 
   const filledUsd = merchantAllocations.reduce((sum, leg) => sum + leg.usd, 0);
 
   const remainingUsd =
     targetUsd != null ? Math.max(0, targetUsd - filledUsd) : strategyPlan.remainingUsd;
 
+  const tokenOnlyCanFulfill = isTokenOnlyPayment && legsWithinBalance;
+
   const manualCanFulfill = hasPositiveMerchantLeg && legsWithinBalance;
 
   const strategyCanFulfill =
     amountValid && strategyPlan.canFulfill && legsWithinBalance;
 
-  const canFulfill = isManualPayment ? manualCanFulfill : strategyCanFulfill;
+  const canFulfill = isTokenOnlyPayment
+    ? tokenOnlyCanFulfill
+    : isManualPayment
+      ? manualCanFulfill
+      : strategyCanFulfill;
 
   const payerExceedsAvailable =
     maxAvailableUsd != null &&
     payerTotalUsd != null &&
     payerTotalUsd > maxAvailableUsd + 0.015;
 
-  const insufficientFunds = isManualPayment
-    ? hasPositiveMerchantLeg && !legsWithinBalance
-    : amountValid &&
-      (payerExceedsAvailable
-        ? true
-        : !(strategyPlan.canFulfill && legsWithinBalance));
+  const insufficientFunds = isTokenOnlyPayment
+    ? hasPositiveLeg && !legsWithinBalance
+    : isManualPayment
+      ? hasPositiveMerchantLeg && !legsWithinBalance
+      : amountValid &&
+        (payerExceedsAvailable
+          ? true
+          : !(strategyPlan.canFulfill && legsWithinBalance));
 
   const canContinue =
-    hasPositiveMerchantLeg &&
+    hasPositiveLeg &&
     canFulfill &&
     recipientsValid &&
-    (isManualPayment || amountValid) &&
     (!amountValid || !payerExceedsAvailable) &&
     (!needsEthereumRecipient || resolvedRecipients.ethereum.length > 0) &&
     (!needsSolanaRecipient || resolvedRecipients.solana.length > 0);
@@ -653,10 +662,8 @@ export function useSendForm(
     if (canContinue) {
       return null;
     }
-    if (!hasPositiveMerchantLeg) {
-      return amountValid
-        ? 'Add priced tokens or adjust the payment amount.'
-        : 'Enter a payment amount or add tokens in advanced details.';
+    if (!hasPositiveLeg) {
+      return 'Enter an amount for at least one token in advanced details.';
     }
     if (!recipientsValid) {
       return 'Recipient address is invalid.';
@@ -670,6 +677,9 @@ export function useSendForm(
     if (insufficientFunds) {
       return 'Insufficient funds for this payment (including service fee and gas).';
     }
+    if (!canFulfill && isTokenOnlyPayment) {
+      return 'Adjust token amounts to fit your available balance.';
+    }
     if (!canFulfill && isManualPayment) {
       if (taxUsd > 0 && taxFunding == null) {
         return 'Leave enough balance on one token to cover the service fee.';
@@ -678,9 +688,6 @@ export function useSendForm(
     }
     if (!canFulfill) {
       return 'Insufficient funds for this payment (including service fee and gas).';
-    }
-    if (!isManualPayment && !amountValid) {
-      return 'Enter a payment amount or add tokens in advanced details.';
     }
     if (amountValid && payerExceedsAvailable) {
       return 'Payment total exceeds your available balance.';
