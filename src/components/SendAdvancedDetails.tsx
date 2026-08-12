@@ -205,8 +205,9 @@ export function SendAdvancedDetails({
 
   const onConfirmFrontendWarning = useCallback(() => {
     setFrontendWarningOpen(false);
+    onGasSponsorshipChange(false);
     onBroadcastModeChange('frontend');
-  }, [onBroadcastModeChange]);
+  }, [onBroadcastModeChange, onGasSponsorshipChange]);
 
   return (
     <View style={styles.advanced}>
@@ -245,26 +246,30 @@ export function SendAdvancedDetails({
         />
       </View>
 
-      <View style={styles.advancedDivider} />
+      {!frontendSendEnabled ? (
+        <>
+          <View style={styles.advancedDivider} />
 
-      <View style={styles.broadcastRow}>
-        <View style={styles.broadcastText}>
-          <Text style={styles.broadcastLabel}>Gas sponsorship where available</Text>
-          <Text style={styles.broadcastHint}>
-            {gasSponsorship
-              ? 'App pays fees on supported chains'
-              : 'You pay network fees from your wallet'}
-          </Text>
-        </View>
-        <Switch
-          accessibilityLabel="Gas sponsorship where available"
-          trackColor={{ false: '#bbf7d0', true: '#86efac' }}
-          thumbColor={gasSponsorship ? '#166534' : '#f0fdf4'}
-          ios_backgroundColor="#bbf7d0"
-          value={gasSponsorship}
-          onValueChange={onGasSponsorshipChange}
-        />
-      </View>
+          <View style={styles.broadcastRow}>
+            <View style={styles.broadcastText}>
+              <Text style={styles.broadcastLabel}>Gas sponsorship where available</Text>
+              <Text style={styles.broadcastHint}>
+                {gasSponsorship
+                  ? 'App pays fees on supported chains'
+                  : 'You pay network fees from your wallet'}
+              </Text>
+            </View>
+            <Switch
+              accessibilityLabel="Gas sponsorship where available"
+              trackColor={{ false: '#bbf7d0', true: '#86efac' }}
+              thumbColor={gasSponsorship ? '#166534' : '#f0fdf4'}
+              ios_backgroundColor="#bbf7d0"
+              value={gasSponsorship}
+              onValueChange={onGasSponsorshipChange}
+            />
+          </View>
+        </>
+      ) : null}
 
       <View style={styles.advancedDivider} />
 

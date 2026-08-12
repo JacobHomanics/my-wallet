@@ -201,7 +201,10 @@ export function useSendDraftUi() {
   }, []);
 
   const setBroadcastMode = useCallback((broadcastMode: SendBroadcastMode) => {
-    updateSendDraft({ broadcastMode });
+    updateSendDraft({
+      broadcastMode,
+      ...(broadcastMode === 'frontend' ? { gasSponsorship: false } : {}),
+    });
   }, []);
 
   return {
