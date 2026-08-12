@@ -306,7 +306,7 @@ export function SendAdvancedDetails({
 
       {allocations.length === 0 ? (
         <Text style={styles.allocationEmpty}>
-          Enter an amount or add a token to get started.
+          Add a token below to get started.
         </Text>
       ) : (
         allocations.map((leg) => {

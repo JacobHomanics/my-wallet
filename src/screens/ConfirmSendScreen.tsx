@@ -107,8 +107,9 @@ export function ConfirmSendScreen() {
     allocationInputs,
     ethereumRecipient,
     solanaRecipient,
+    resolvedEthereumRecipient,
+    resolvedSolanaRecipient,
     recipientsValid,
-    amountValid,
     insufficientFunds,
     filledUsd,
     canContinue,
@@ -119,8 +120,8 @@ export function ConfirmSendScreen() {
 
   const gasFunding = useGasFunding(tokens, spendableTokens, allocations, taxFunding);
 
-  const trimmedEthereum = ethereumRecipient.trim();
-  const trimmedSolana = solanaRecipient.trim();
+  const trimmedEthereum = resolvedEthereumRecipient;
+  const trimmedSolana = resolvedSolanaRecipient;
   const {
     hasRecipient,
     primaryLabel,
@@ -159,15 +160,17 @@ export function ConfirmSendScreen() {
 
   const canSend = canContinue && allocations.length > 0;
 
+  const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
+
   const invalidReason =
-    insufficientFunds || (amountValid && allocations.length === 0)
+    insufficientFunds
       ? 'Insufficient funds for this payment.'
-      : allocations.length === 0
-        ? 'Nothing to send. Go back and enter an amount.'
+      : allocations.length === 0 || !hasPositiveLeg
+        ? 'Add at least one token with an amount in advanced details.'
         : !recipientsValid
           ? 'Recipient address is invalid.'
           : !canContinue
-            ? 'Enter a valid amount and recipients to continue.'
+            ? 'Complete payment details to continue.'
             : null;
 
   const onConfirm = useCallback(() => {

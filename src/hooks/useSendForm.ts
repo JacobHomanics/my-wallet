@@ -31,6 +31,19 @@ import {
 } from '@/lib/strategies/allocatePayment';
 import type { PaymentStrategyId } from '@/lib/strategies';
 import { isValidRecipientAddress } from '@/lib/validation';
+import { tryDecodeWalletIdentity } from '@/lib/walletIdentity';
+
+function resolveSendRecipients(
+  accountNumber: string,
+  ethereumRecipient: string,
+  solanaRecipient: string,
+): { ethereum: string; solana: string } {
+  const decoded = tryDecodeWalletIdentity(accountNumber);
+  return {
+    ethereum: ethereumRecipient.trim() || decoded?.evmAddress || '',
+    solana: solanaRecipient.trim() || decoded?.solanaAddress || '',
+  };
+}
 
 export type SendFormState = {
   /** USD amount the user is trying to send. */
@@ -58,12 +71,18 @@ export type SendFormState = {
   canFulfill: boolean;
   ethereumRecipient: string;
   solanaRecipient: string;
+  resolvedEthereumRecipient: string;
+  resolvedSolanaRecipient: string;
   ethereumRecipientValid: boolean;
   solanaRecipientValid: boolean;
   recipientsValid: boolean;
   amountValid: boolean;
   /** True when USD amount is set but holdings cannot cover it. */
   insufficientFunds: boolean;
+  /** User edited token legs in advanced details (vs strategy-only allocation). */
+  isManualPayment: boolean;
+  /** Hint for why Continue is disabled, when applicable. */
+  continueBlockedReason: string | null;
   canContinue: boolean;
   setEthereumRecipient: (value: string) => void;
   setSolanaRecipient: (value: string) => void;
@@ -146,11 +165,12 @@ export function useSendForm(
     parseDisplayInputToUsd,
   } = useFiatDisplay();
   const initialDraft = getSendDraftSnapshot();
+  const initialIdentity = tryDecodeWalletIdentity(initialDraft.accountNumber);
   const [ethereumRecipient, setEthereumRecipientState] = useState(
-    initialDraft.ethereumRecipient,
+    initialDraft.ethereumRecipient || initialIdentity?.evmAddress || '',
   );
   const [solanaRecipient, setSolanaRecipientState] = useState(
-    initialDraft.solanaRecipient,
+    initialDraft.solanaRecipient || initialIdentity?.solanaAddress || '',
   );
   const [amount, setAmountState] = useState(initialDraft.amount);
   const [amountLocked, setAmountLocked] = useState(initialDraft.amountLocked);
@@ -164,6 +184,13 @@ export function useSendForm(
   const strategyKeyRef = useRef<string | null>(null);
   const allocationUnitRef = useRef<AllocationInputUnit | null>(null);
   const additionalUsdRef = useRef<number | null>(null);
+  const manualAllocationsRef = useRef<PaymentAllocation[] | null>(
+    manualAllocations,
+  );
+
+  useEffect(() => {
+    manualAllocationsRef.current = manualAllocations;
+  }, [manualAllocations]);
 
   useEffect(() => {
     return registerDisplayCurrencyChangeListener(() => {
@@ -348,6 +375,12 @@ export function useSendForm(
 
   const recipientsValid = ethereumRecipientValid && solanaRecipientValid;
 
+  const resolvedRecipients = resolveSendRecipients(
+    getSendDraftSnapshot().accountNumber,
+    ethereumRecipient,
+    solanaRecipient,
+  );
+
   const amountValid = usdAmount != null && usdAmount > 0;
 
   const taxUsd =
@@ -369,44 +402,77 @@ export function useSendForm(
     allocations.every((leg) => leg.amountRaw <= leg.token.rawBalance) &&
     (taxUsd <= 0 || taxFunding != null);
   const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
+  const isManualPayment = resolvedManualBase != null;
 
   const filledUsd = allocations.reduce((sum, leg) => sum + leg.usd, 0);
 
   const remainingUsd =
     targetUsd != null ? Math.max(0, targetUsd - filledUsd) : strategyPlan.remainingUsd;
 
-  const coversRequestedAmount =
-    targetUsd != null && filledUsd + 0.005 >= targetUsd;
+  const manualCanFulfill = hasPositiveLeg && legsWithinBalance;
 
-  const canFulfill =
-    resolvedManualBase != null
-      ? amountValid &&
-        hasPositiveLeg &&
-        legsWithinBalance &&
-        (!amountLocked || coversRequestedAmount)
-      : strategyPlan.canFulfill && legsWithinBalance;
+  const strategyCanFulfill =
+    amountValid && strategyPlan.canFulfill && legsWithinBalance;
+
+  const canFulfill = isManualPayment ? manualCanFulfill : strategyCanFulfill;
 
   const payerExceedsAvailable =
     maxAvailableUsd != null &&
     payerTotalUsd != null &&
     payerTotalUsd > maxAvailableUsd + 0.015;
 
-  const insufficientFunds =
-    amountValid &&
-    (payerExceedsAvailable
-      ? true
-      : resolvedManualBase != null
-        ? !canFulfill
+  const insufficientFunds = isManualPayment
+    ? hasPositiveLeg && !legsWithinBalance
+    : amountValid &&
+      (payerExceedsAvailable
+        ? true
         : !(strategyPlan.canFulfill && legsWithinBalance));
 
   const canContinue =
-    amountValid &&
-    canFulfill &&
     hasPositiveLeg &&
+    canFulfill &&
     recipientsValid &&
-    !payerExceedsAvailable &&
-    (!needsEthereumRecipient || ethereumRecipient.trim().length > 0) &&
-    (!needsSolanaRecipient || solanaRecipient.trim().length > 0);
+    (isManualPayment || amountValid) &&
+    (!amountValid || !payerExceedsAvailable) &&
+    (!needsEthereumRecipient || resolvedRecipients.ethereum.length > 0) &&
+    (!needsSolanaRecipient || resolvedRecipients.solana.length > 0);
+
+  const continueBlockedReason = (() => {
+    if (canContinue) {
+      return null;
+    }
+    if (!hasPositiveLeg) {
+      return 'Enter an amount for at least one token in advanced details.';
+    }
+    if (!recipientsValid) {
+      return 'Recipient address is invalid.';
+    }
+    if (needsEthereumRecipient && !resolvedRecipients.ethereum) {
+      return 'This payment needs an EVM recipient address.';
+    }
+    if (needsSolanaRecipient && !resolvedRecipients.solana) {
+      return 'This payment needs a Solana recipient address.';
+    }
+    if (insufficientFunds) {
+      return 'Insufficient funds for this payment (including service fee and gas).';
+    }
+    if (!canFulfill && isManualPayment) {
+      if (taxUsd > 0 && taxFunding == null) {
+        return 'Leave enough balance on one token to cover the service fee.';
+      }
+      return 'Adjust token amounts to fit your available balance.';
+    }
+    if (!canFulfill) {
+      return 'Insufficient funds for this payment (including service fee and gas).';
+    }
+    if (!isManualPayment && !amountValid) {
+      return 'Enter a payment amount or add tokens in advanced details.';
+    }
+    if (amountValid && payerExceedsAvailable) {
+      return 'Payment total exceeds your available balance.';
+    }
+    return 'Complete payment details to continue.';
+  })();
 
   const setEthereumRecipient = useCallback((value: string) => {
     setEthereumRecipientState(value);
@@ -426,8 +492,10 @@ export function useSendForm(
     } else if (!sanitized.trim() || sanitized === '.') {
       setAmountUsd(null);
     }
-    setManualAllocations(null);
-    setAllocationInputs({});
+    if (manualAllocationsRef.current == null) {
+      setManualAllocations(null);
+      setAllocationInputs({});
+    }
   }, [parseDisplayInputToUsd]);
 
   const syncAmountFromLegs = useCallback(
@@ -481,31 +549,40 @@ export function useSendForm(
       }
 
       const amountRaw = (() => {
-        const parsed =
-          allocationInputUnit === 'usd'
-            ? (() => {
-                const usdForToken = parseDisplayInputToUsd(sanitized);
-                return usdForToken != null
-                  ? parseUsdAmountToTokenRaw(String(usdForToken), merchantCap)
-                  : null;
-              })()
-            : parseTokenAmountToRaw(sanitized, token.decimals);
-        if (parsed == null) {
-          return null;
+        if (allocationInputUnit === 'usd') {
+          const usdForToken = parseDisplayInputToUsd(sanitized);
+          if (usdForToken != null) {
+            const fromUsd = parseUsdAmountToTokenRaw(
+              String(usdForToken),
+              merchantCap,
+            );
+            if (fromUsd != null) {
+              return fromUsd;
+            }
+          }
+          // Unpriced tokens (e.g. rewards) — fall back to token-unit parsing.
+          return parseTokenAmountToRaw(sanitized, token.decimals);
         }
-        return parsed > merchantCap.rawBalance
-          ? merchantCap.rawBalance
-          : parsed;
+        return parseTokenAmountToRaw(sanitized, token.decimals);
       })();
       if (amountRaw == null) {
         return;
       }
-
+      const clamped =
+        amountRaw > merchantCap.rawBalance
+          ? merchantCap.rawBalance
+          : amountRaw;
       const amountFormatted =
-        allocationInputUnit === 'usd'
-          ? formatRawTokenBalance(amountRaw, token.decimals)
-          : sanitized;
-      const estimatedUsd = estimateTokenAmountUsd(token, amountRaw);
+        allocationInputUnit === 'usd' &&
+        parseUsdAmountToTokenRaw(
+          String(parseDisplayInputToUsd(sanitized) ?? ''),
+          merchantCap,
+        ) == null
+          ? sanitized
+          : allocationInputUnit === 'usd'
+            ? formatRawTokenBalance(clamped, token.decimals)
+            : sanitized;
+      const estimatedUsd = estimateTokenAmountUsd(token, clamped);
       const parsedUsd =
         allocationInputUnit === 'usd'
           ? (parseDisplayInputToUsd(sanitized) ?? 0)
@@ -515,7 +592,7 @@ export function useSendForm(
       const next = [...base];
       next[index] = {
         token,
-        amountRaw,
+        amountRaw: clamped,
         amountFormatted,
         usd,
       };
@@ -563,22 +640,34 @@ export function useSendForm(
         return;
       }
 
+      const merchantCap =
+        tokensForMerchantAllocation.find((item) => item.id === tokenId) ??
+        token;
+      const amountRaw =
+        merchantCap.rawBalance > 0n ? merchantCap.rawBalance : 0n;
+      const amountFormatted =
+        amountRaw > 0n
+          ? formatRawTokenBalance(amountRaw, token.decimals)
+          : '';
+      const usd = estimateTokenAmountUsd(merchantCap, amountRaw) ?? 0;
+
       const next: PaymentAllocation[] = [
         ...base,
         {
-          token,
-          amountRaw: 0n,
-          amountFormatted: '',
-          usd: 0,
+          token: merchantCap,
+          amountRaw,
+          amountFormatted,
+          usd,
         },
       ];
       setManualAllocations(next);
       setAllocationInputs((current) => ({
         ...current,
-        [tokenId]: '',
+        [tokenId]: amountFormatted,
       }));
+      syncAmountFromLegs(next);
     },
-    [manualAllocations, strategyPlan.allocations, tokens],
+    [manualAllocations, strategyPlan.allocations, syncAmountFromLegs, tokens, tokensForMerchantAllocation],
   );
 
   const resolvedAllocationInputs = useMemo(() => {
@@ -610,11 +699,15 @@ export function useSendForm(
     canFulfill,
     ethereumRecipient,
     solanaRecipient,
+    resolvedEthereumRecipient: resolvedRecipients.ethereum,
+    resolvedSolanaRecipient: resolvedRecipients.solana,
     ethereumRecipientValid,
     solanaRecipientValid,
     recipientsValid,
     amountValid,
     insufficientFunds,
+    isManualPayment,
+    continueBlockedReason,
     canContinue,
     setEthereumRecipient,
     setSolanaRecipient,
@@ -630,8 +723,14 @@ export function recipientForAllocation(
   allocation: PaymentAllocation,
   ethereumRecipient: string,
   solanaRecipient: string,
+  accountNumber = '',
 ): string {
+  const resolved = resolveSendRecipients(
+    accountNumber,
+    ethereumRecipient,
+    solanaRecipient,
+  );
   return getNetworkChain(allocation.token.network) === 'solana'
-    ? solanaRecipient.trim()
-    : ethereumRecipient.trim();
+    ? resolved.solana
+    : resolved.ethereum;
 }

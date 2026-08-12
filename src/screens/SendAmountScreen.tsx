@@ -98,8 +98,12 @@ export function SendAmountScreen() {
     needsSolanaRecipient,
     ethereumRecipient,
     solanaRecipient,
+    resolvedEthereumRecipient,
+    resolvedSolanaRecipient,
     insufficientFunds,
     canContinue,
+    continueBlockedReason,
+    isManualPayment,
     setAmount,
     setAllocationAmount,
     removeAllocation,
@@ -140,12 +144,11 @@ export function SendAmountScreen() {
       : needsSolanaRecipient || Boolean(solanaAddress);
 
   const isZeroAmount = parseDisplayInputToUsd(amount) === 0;
-  const amountError =
-    amount.trim() && !isZeroAmount && insufficientFunds
-      ? 'Insufficient funds for this amount (including service fee)'
-      : amount.trim() && !isZeroAmount && !form.amountValid
-        ? 'Enter a valid amount'
-        : null;
+  const amountError = insufficientFunds
+    ? 'Insufficient funds for this payment (including service fee and gas)'
+    : amount.trim() && !isZeroAmount && !isManualPayment && !form.amountValid
+      ? 'Enter a valid amount'
+      : null;
 
   const onContinue = useCallback(() => {
     if (!canContinue || allocations.length === 0) {
@@ -154,20 +157,20 @@ export function SendAmountScreen() {
 
     navigation.navigate('confirmSend', {
       usdAmount: amount,
-      ethereumRecipient: ethereumRecipient.trim() || undefined,
-      solanaRecipient: solanaRecipient.trim() || undefined,
+      ethereumRecipient: resolvedEthereumRecipient || undefined,
+      solanaRecipient: resolvedSolanaRecipient || undefined,
       legs: allocations.map((leg) => ({
         tokenId: leg.token.id,
         amount: leg.amountFormatted,
       })),
     });
   }, [
-    allocations,
     amount,
+    allocations,
     canContinue,
-    ethereumRecipient,
+    resolvedEthereumRecipient,
+    resolvedSolanaRecipient,
     navigation,
-    solanaRecipient,
   ]);
 
   const { onBack } = useClearSendRecipientOnBack();
@@ -356,6 +359,9 @@ export function SendAmountScreen() {
                 >
                   <Text style={styles.continueButtonText}>Continue</Text>
                 </Pressable>
+                {!canContinue && continueBlockedReason ? (
+                  <Text style={styles.continueHint}>{continueBlockedReason}</Text>
+                ) : null}
               </View>
             </ScrollView>
           )}
@@ -592,5 +598,12 @@ const styles = StyleSheet.create({
     color: '#f0fdf4',
     fontSize: 16,
     fontWeight: '600',
+  },
+  continueHint: {
+    marginTop: 10,
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#5a7d6a',
+    textAlign: 'center',
   },
 });
