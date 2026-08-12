@@ -20,6 +20,8 @@ export type TaxDetailsCollapsibleProps = {
   taxLabel: string;
   /** When set, selects sponsored vs unsponsored service fee rate for the label. */
   gasSponsorship?: boolean;
+  /** When false, label reads "Service fee" without the rate percentage. */
+  showRatePercent?: boolean;
   showEvm?: boolean;
   showSolana?: boolean;
   /** Optional style override for the outer section (e.g. margin). */
@@ -32,6 +34,7 @@ export type TaxDetailsCollapsibleProps = {
 export function TaxDetailsCollapsible({
   taxLabel,
   gasSponsorship = true,
+  showRatePercent = true,
   showEvm = false,
   showSolana = false,
   style,
@@ -69,7 +72,9 @@ export function TaxDetailsCollapsible({
             ]}
           >
             <Text style={styles.taxLabel}>
-              Service fee ({ratePercentLabel}%)
+              {showRatePercent
+                ? `Service fee (${ratePercentLabel}%)`
+                : 'Service fee'}
             </Text>
             <Ionicons
               name={showTaxDetails ? 'chevron-up' : 'chevron-down'}

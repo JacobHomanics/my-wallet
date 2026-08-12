@@ -89,6 +89,7 @@ export function ConfirmSendScreen() {
   const openFreshSend = useOpenFreshSend();
   const {
     formatFromUsd,
+    formatServiceFeeFromUsd,
     currencySymbol,
   } = useFiatDisplay();
 
@@ -140,7 +141,7 @@ export function ConfirmSendScreen() {
 
   const baseUsd =
     requestedUsd != null ? Math.max(0, requestedUsd - tipUsd) : null;
-  const taxLabel = taxUsd > 0 ? formatFromUsd(taxUsd) : null;
+  const taxLabel = taxUsd > 0 ? formatServiceFeeFromUsd(taxUsd) : null;
   const totalLabel =
     (payerTotalUsd != null ? formatFromUsd(payerTotalUsd) : null) ??
     (requestedUsd != null ? formatFromUsd(requestedUsd) : null) ??

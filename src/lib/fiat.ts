@@ -21,6 +21,54 @@ export function formatFiatValue(
   }
 }
 
+export const SERVICE_FEE_FRACTION_DIGITS = 2;
+
+export function serviceFeeFractionDigits(currencyCode: string): number {
+  return currencyCode === 'JPY' || currencyCode === 'KRW'
+    ? 0
+    : SERVICE_FEE_FRACTION_DIGITS;
+}
+
+/** Formats a fiat amount with an explicit fraction digit count. */
+export function formatFiatValueWithDigits(
+  value: number | null,
+  currencyCode: string,
+  fractionDigits: number,
+): string | null {
+  if (value == null || !Number.isFinite(value)) {
+    return null;
+  }
+
+  const digits =
+    currencyCode === 'JPY' || currencyCode === 'KRW' ? 0 : fractionDigits;
+
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currencyCode,
+      maximumFractionDigits: digits,
+      minimumFractionDigits: digits,
+    }).format(value);
+  } catch {
+    return null;
+  }
+}
+
+/** Formats a service fee amount for amount inputs (no currency symbol). */
+export function formatServiceFeeAmountInput(
+  value: number,
+  currencyCode: string,
+): string {
+  if (!Number.isFinite(value) || value < 0) {
+    return '0';
+  }
+  const digits = serviceFeeFractionDigits(currencyCode);
+  if (digits === 0) {
+    return String(Math.round(value));
+  }
+  return value.toFixed(digits);
+}
+
 function fiatFractionDigits(currencyCode: string, value: number): number {
   return currencyCode === 'JPY' || currencyCode === 'KRW'
     ? 0

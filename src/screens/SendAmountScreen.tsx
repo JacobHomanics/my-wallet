@@ -73,7 +73,7 @@ export function SendAmountScreen() {
     onSelectStrategy,
   } = useSendStrategyPicker();
   const [tokenPickerOpen, setTokenPickerOpen] = useState(false);
-  const { currencySymbol, formatFromUsd, defaultFormattedZero, parseDisplayInputToUsd } =
+  const { currencySymbol, formatFromUsd, formatServiceFeeFromUsd, defaultFormattedZero, defaultServiceFeeFormattedZero, parseDisplayInputToUsd } =
     useFiatDisplay();
 
   useEffect(() => {
@@ -131,7 +131,7 @@ export function SendAmountScreen() {
   const totalLabel = availableLabel;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
 
-  const taxLabel = formatFromUsd(taxUsd) ?? defaultFormattedZero;
+  const taxLabel = formatServiceFeeFromUsd(taxUsd) ?? defaultServiceFeeFormattedZero;
   const payerTotalLabel =
     (payerTotalUsd != null ? formatFromUsd(payerTotalUsd) : null) ??
     defaultFormattedZero;
@@ -305,6 +305,7 @@ export function SendAmountScreen() {
                 <TaxDetailsCollapsible
                   gasSponsorship={gasSponsorship}
                   showEvm={showTaxEvm}
+                  showRatePercent={false}
                   showSolana={showTaxSolana}
                   style={styles.taxSection}
                   taxLabel={taxLabel}

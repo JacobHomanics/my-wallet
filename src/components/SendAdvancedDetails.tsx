@@ -95,6 +95,9 @@ type ReservedAllocationRowProps = {
   formatAmountInputFromUsd: (usd: number) => string;
   formatFromUsd: (usd: number | null) => string | null;
   currencySymbol: string;
+  /** When set, overrides USD display formatting (e.g. service fee precision). */
+  formatUsdInputFromUsd?: (usd: number) => string;
+  formatUsdFromUsd?: (usd: number | null) => string | null;
 };
 
 function ReservedAllocationRow({
@@ -106,7 +109,12 @@ function ReservedAllocationRow({
   formatAmountInputFromUsd,
   formatFromUsd,
   currencySymbol,
+  formatUsdInputFromUsd,
+  formatUsdFromUsd,
 }: ReservedAllocationRowProps) {
+  const formatUsdInput = formatUsdInputFromUsd ?? formatAmountInputFromUsd;
+  const formatUsd = formatUsdFromUsd ?? formatFromUsd;
+
   return (
     <View style={[styles.allocationRow, styles.taxAllocationRow]}>
       <View style={styles.allocationHeader}>
@@ -135,14 +143,14 @@ function ReservedAllocationRow({
         <View style={styles.taxAmountBox}>
           <Text style={styles.taxAmountText}>
             {allocationInputUnit === 'usd'
-              ? formatAmountInputFromUsd(usd)
+              ? formatUsdInput(usd)
               : amountFormatted}
           </Text>
         </View>
         <Text style={styles.allocationSecondary} numberOfLines={1}>
           {allocationInputUnit === 'usd'
             ? amountFormatted
-            : (formatFromUsd(usd) ?? '—')}
+            : (formatUsd(usd) ?? '—')}
         </Text>
         <View style={styles.allocationRemove} />
       </View>
@@ -172,6 +180,8 @@ export function SendAdvancedDetails({
   const {
     formatFromUsd,
     formatAmountInputFromUsd,
+    formatServiceFeeFromUsd,
+    formatServiceFeeAmountInputFromUsd,
     currencyCode,
     currencySymbol,
     rate,
@@ -481,6 +491,8 @@ export function SendAdvancedDetails({
           currencySymbol={currencySymbol}
           formatAmountInputFromUsd={formatAmountInputFromUsd}
           formatFromUsd={formatFromUsd}
+          formatUsdFromUsd={formatServiceFeeFromUsd}
+          formatUsdInputFromUsd={formatServiceFeeAmountInputFromUsd}
           token={taxFunding.token}
           usd={taxFunding.usd}
         />

@@ -35,7 +35,7 @@ export function ReceiveQrScreen() {
     useReceivePaymentUrl(usdAmount);
   const { username } = useConvexUsername();
   const { copy, isCopied } = useCopyToClipboard();
-  const { formatFromUsd, parseDisplayInputToUsd, currencySymbol } =
+  const { formatFromUsd, formatServiceFeeFromUsd, parseDisplayInputToUsd, currencySymbol } =
     useFiatDisplay();
   const { taxUsdFor, payerTotalUsdFor } = useAppTax();
 
@@ -46,7 +46,7 @@ export function ReceiveQrScreen() {
   const amountLabel =
     (payerTotalUsd != null ? formatFromUsd(payerTotalUsd) : null) ??
     `${currencySymbol}${usdAmount}`;
-  const taxLabel = taxUsd > 0 ? formatFromUsd(taxUsd) : null;
+  const taxLabel = taxUsd > 0 ? formatServiceFeeFromUsd(taxUsd) : null;
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
