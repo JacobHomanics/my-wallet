@@ -733,7 +733,7 @@ export function useSendForm(
       return;
     }
     const totalUsd = next.reduce((sum, leg) => sum + leg.usd, 0);
-    setAmountState(totalUsd > 0 ? formatAmountInputFromUsd(totalUsd) : '0');
+    setAmountState(totalUsd > 0 ? formatAmountInputFromUsd(totalUsd) : '');
     setAmountUsd(totalUsd > 0 ? totalUsd : null);
   };
 

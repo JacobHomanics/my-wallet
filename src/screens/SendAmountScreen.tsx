@@ -145,7 +145,7 @@ export function SendAmountScreen() {
       ? taxFundingChain === 'solana'
       : needsSolanaRecipient || Boolean(solanaAddress);
 
-  const isZeroAmount = parseDisplayInputToUsd(amount) === 0;
+  const isZeroAmount = (parseDisplayInputToUsd(amount) ?? 0) === 0;
   const amountError = insufficientFunds
     ? 'Insufficient funds for this payment (including service fee and gas)'
     : amount.trim() && !isZeroAmount && !isManualPayment && !form.amountValid
