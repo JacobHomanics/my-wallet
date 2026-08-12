@@ -4,19 +4,34 @@ import { appConfig } from '@/configs/app.config';
 const BPS_SCALE = 10_000n;
 
 export type TaxConfig = {
-  /** Fraction of the merchant payment added on top (0.01 = 1%). */
-  rate: number;
+  /** Fraction of merchant payment when gas is sponsored (0.01 = 1%). */
+  sponsoredRate: number;
+  /** Fraction of merchant payment when the payer covers gas (0.015 = 1.5%). */
+  unsponsoredRate: number;
   evmAddress: string;
   solanaAddress: string;
 };
 
-/** App-wide tax wallets + rate from `src/configs/app.config.ts`. */
+/** App-wide tax wallets + rates from `src/configs/app.config.ts`. */
 export function getTaxConfig(): TaxConfig {
   return {
-    rate: appConfig.tax.rate,
+    sponsoredRate: appConfig.tax.sponsoredRate,
+    unsponsoredRate: appConfig.tax.unsponsoredRate,
     evmAddress: appConfig.tax.evmAddress,
     solanaAddress: appConfig.tax.solanaAddress,
   };
+}
+
+/** Service fee rate for the current gas sponsorship preference. */
+export function resolveTaxRate(gasSponsorship: boolean): number {
+  const config = getTaxConfig();
+  return gasSponsorship ? config.sponsoredRate : config.unsponsoredRate;
+}
+
+/** Percent label for UI, e.g. "1" or "1.5". */
+export function formatTaxRatePercent(rate: number): string {
+  const pct = rate * 100;
+  return Number.isInteger(pct) ? String(pct) : pct.toFixed(2);
 }
 
 /** Rate as integer basis points (1% → 100). */
@@ -30,7 +45,7 @@ export function taxRateToBps(rate: number): bigint {
 /** Tax USD added on top of a merchant payment. */
 export function computeTaxUsd(
   merchantUsd: number,
-  rate: number = getTaxConfig().rate,
+  rate: number = resolveTaxRate(true),
 ): number {
   if (!(merchantUsd > 0) || !(rate > 0)) {
     return 0;
@@ -41,7 +56,7 @@ export function computeTaxUsd(
 /** Payer total = merchant + tax. */
 export function computePayerTotalUsd(
   merchantUsd: number,
-  rate: number = getTaxConfig().rate,
+  rate: number = resolveTaxRate(true),
 ): number {
   if (!(merchantUsd > 0)) {
     return 0;
@@ -55,7 +70,7 @@ export function computePayerTotalUsd(
  */
 export function maxMerchantUsdForAvailable(
   availableUsd: number,
-  rate: number = getTaxConfig().rate,
+  rate: number = resolveTaxRate(true),
 ): number {
   if (!(availableUsd > 0)) {
     return 0;
@@ -69,7 +84,7 @@ export function maxMerchantUsdForAvailable(
 /** Integer tax amount from a merchant raw transfer (floor). */
 export function taxRawFromAmount(
   amountRaw: bigint,
-  rate: number = getTaxConfig().rate,
+  rate: number = resolveTaxRate(true),
 ): bigint {
   if (amountRaw <= 0n) {
     return 0n;

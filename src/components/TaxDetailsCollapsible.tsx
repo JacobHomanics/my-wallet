@@ -18,6 +18,8 @@ import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 export type TaxDetailsCollapsibleProps = {
   /** Formatted service fee amount, e.g. "$0.05". */
   taxLabel: string;
+  /** When set, selects sponsored vs unsponsored service fee rate for the label. */
+  gasSponsorship?: boolean;
   showEvm?: boolean;
   showSolana?: boolean;
   /** Optional style override for the outer section (e.g. margin). */
@@ -29,6 +31,7 @@ export type TaxDetailsCollapsibleProps = {
  */
 export function TaxDetailsCollapsible({
   taxLabel,
+  gasSponsorship = true,
   showEvm = false,
   showSolana = false,
   style,
@@ -40,7 +43,7 @@ export function TaxDetailsCollapsible({
     ratePercentLabel,
     evmAddress: taxEvmAddress,
     solanaAddress: taxSolanaAddress,
-  } = useAppTax();
+  } = useAppTax(gasSponsorship);
 
   if (!showEvm && !showSolana) {
     return null;

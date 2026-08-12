@@ -66,14 +66,14 @@ export function ConfirmSendScreen() {
   } = useSendDraft();
   const recipientUsername = useSendRecipientUsername();
   const { tip, tipUsd, setTip, setTipPercent } = useSendTip();
+  const { gasSponsorship, setGasSponsorship } = useGasSponsorship();
   const {
     evmAddress: taxEvmAddress,
     solanaAddress: taxSolanaAddress,
     rate: taxRate,
-  } = useAppTax();
+  } = useAppTax(gasSponsorship);
   const { allocationInputUnit, setAllocationInputUnit, broadcastMode, setBroadcastMode } =
     useSendDraftUi();
-  const { gasSponsorship, setGasSponsorship } = useGasSponsorship();
   const {
     strategies,
     selectedStrategy,
@@ -404,6 +404,7 @@ export function ConfirmSendScreen() {
 
             {taxLabel ? (
               <TaxDetailsCollapsible
+                gasSponsorship={gasSponsorship}
                 showEvm={taxFundingChain === 'ethereum'}
                 showSolana={taxFundingChain === 'solana'}
                 taxLabel={taxLabel}

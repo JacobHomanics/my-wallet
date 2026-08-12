@@ -303,6 +303,7 @@ export function SendAmountScreen() {
                 ) : null}
 
                 <TaxDetailsCollapsible
+                  gasSponsorship={gasSponsorship}
                   showEvm={showTaxEvm}
                   showSolana={showTaxSolana}
                   style={styles.taxSection}
