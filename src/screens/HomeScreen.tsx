@@ -12,7 +12,9 @@ import {
   View,
 } from 'react-native';
 
+import { DepositBankTipsModal } from '@/components/DepositBankTipsModal';
 import { WithdrawUnsupportedModal } from '@/components/WithdrawUnsupportedModal';
+import { useDepositBankTipsModal } from '@/hooks/useDepositBankTipsModal';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { useOpenStripeDeposit } from '@/hooks/useOpenStripeDeposit';
@@ -43,6 +45,14 @@ export function HomeScreen() {
 
   const openFreshSend = useOpenFreshSend();
   const { canDeposit, openDeposit } = useOpenStripeDeposit();
+  const {
+    depositTipsOpen,
+    doNotShowAgain,
+    setDoNotShowAgain,
+    openDepositTips,
+    closeDepositTips,
+    continueDepositTips,
+  } = useDepositBankTipsModal(openDeposit);
   const { withdrawOpen, openWithdraw, closeWithdraw } =
     useWithdrawUnsupportedModal();
   const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
@@ -137,7 +147,7 @@ export function HomeScreen() {
                     {canDeposit ? (
                       <Pressable
                         accessibilityRole="button"
-                        onPress={openDeposit}
+                        onPress={openDepositTips}
                         style={({ pressed }) => [
                           styles.actionButton,
                           pressed && styles.actionButtonPressed,
@@ -197,6 +207,13 @@ export function HomeScreen() {
           )}
         </View>
       </ScrollView>
+      <DepositBankTipsModal
+        visible={depositTipsOpen}
+        doNotShowAgain={doNotShowAgain}
+        onDoNotShowAgainChange={setDoNotShowAgain}
+        onClose={closeDepositTips}
+        onContinue={continueDepositTips}
+      />
       <WithdrawUnsupportedModal
         visible={withdrawOpen}
         onClose={closeWithdraw}
