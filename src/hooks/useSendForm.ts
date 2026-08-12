@@ -666,7 +666,7 @@ export function useSendForm(
       return null;
     }
     if (!hasPositiveLeg) {
-      return 'Enter an amount for at least one token in advanced details.';
+      return null;
     }
     if (!recipientsValid) {
       return 'Recipient address is invalid.';

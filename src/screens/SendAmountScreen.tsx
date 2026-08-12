@@ -73,7 +73,7 @@ export function SendAmountScreen() {
     onSelectStrategy,
   } = useSendStrategyPicker();
   const [tokenPickerOpen, setTokenPickerOpen] = useState(false);
-  const { currencySymbol, formatFromUsd, formatServiceFeeFromUsd, defaultFormattedZero, parseDisplayInputToUsd } =
+  const { currencySymbol, formatFromUsd, formatServiceFeeFromUsd, defaultFormattedZero, defaultServiceFeeFormattedZero, parseDisplayInputToUsd } =
     useFiatDisplay();
 
   useEffect(() => {
@@ -98,6 +98,8 @@ export function SendAmountScreen() {
     taxFunding,
     allocations,
     allocationInputs,
+    needsEthereumRecipient,
+    needsSolanaRecipient,
     ethereumRecipient,
     solanaRecipient,
     resolvedEthereumRecipient,
@@ -129,13 +131,22 @@ export function SendAmountScreen() {
   const totalLabel = availableLabel;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
 
-  const taxLabel = taxUsd > 0 ? formatServiceFeeFromUsd(taxUsd) : null;
+  const taxLabel =
+    formatServiceFeeFromUsd(taxUsd) ?? defaultServiceFeeFormattedZero;
   const payerTotalLabel =
     (payerTotalUsd != null ? formatFromUsd(payerTotalUsd) : null) ??
     defaultFormattedZero;
   const taxFundingChain = taxFunding
     ? getNetworkChain(taxFunding.token.network)
     : null;
+  const showTaxEvm =
+    taxFundingChain != null
+      ? taxFundingChain === 'ethereum'
+      : needsEthereumRecipient || Boolean(ethereumAddress);
+  const showTaxSolana =
+    taxFundingChain != null
+      ? taxFundingChain === 'solana'
+      : needsSolanaRecipient || Boolean(solanaAddress);
 
   const isZeroAmount = (parseDisplayInputToUsd(amount) ?? 0) === 0;
   const amountError = insufficientFunds
@@ -295,15 +306,13 @@ export function SendAmountScreen() {
                   <Text style={styles.fieldError}>{amountError}</Text>
                 ) : null}
 
-                {taxLabel ? (
-                  <TaxDetailsCollapsible
-                    gasSponsorship={gasSponsorship}
-                    showEvm={taxFundingChain === 'ethereum'}
-                    showRatePercent={false}
-                    showSolana={taxFundingChain === 'solana'}
-                    taxLabel={taxLabel}
-                  />
-                ) : null}
+                <TaxDetailsCollapsible
+                  gasSponsorship={gasSponsorship}
+                  showEvm={showTaxEvm}
+                  showRatePercent={false}
+                  showSolana={showTaxSolana}
+                  taxLabel={taxLabel}
+                />
 
                 <View style={styles.totalSection}>
                   <Text style={styles.totalLabel}>Total</Text>
