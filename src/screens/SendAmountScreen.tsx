@@ -39,6 +39,7 @@ import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { getNetworkChain } from '@/lib/alchemy/networks';
+import { isUnpricedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
@@ -189,7 +190,7 @@ export function SendAmountScreen() {
     if (token.rawBalance <= 0n || allocatedTokenIds.includes(token.id)) {
       return false;
     }
-    if (token.usdValue == null || !(token.usdValue > 0)) {
+    if (isUnpricedToken(token)) {
       return true;
     }
     const spendable = spendableTokens.find((item) => item.id === token.id);

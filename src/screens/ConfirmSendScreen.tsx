@@ -40,6 +40,7 @@ import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { buildPaymentLegsWithTax } from '@/lib/send/buildPaymentLegsWithTax';
 import { formatSendError } from '@/lib/send/formatSendError';
+import { isUnpricedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
@@ -285,7 +286,7 @@ export function ConfirmSendScreen() {
     if (token.rawBalance <= 0n || allocatedTokenIds.includes(token.id)) {
       return false;
     }
-    if (token.usdValue == null || !(token.usdValue > 0)) {
+    if (isUnpricedToken(token)) {
       return true;
     }
     const spendable = spendableTokens.find((item) => item.id === token.id);

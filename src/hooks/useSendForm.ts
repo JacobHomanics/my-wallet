@@ -13,8 +13,10 @@ import {
   type SendDraftManualLeg,
 } from '@/hooks/useSendDraft';
 import {
+  defaultUnpricedTokenAllocation,
   estimateTokenAmountUsd,
   formatRawTokenBalance,
+  isUnpricedToken,
   parseTokenAmountToRaw,
   parseUsdAmountToTokenRaw,
   type OwnedToken,
@@ -156,10 +158,6 @@ function refreshAllocationTokens(
 
     return [{ token, amountRaw, amountFormatted, usd: usd ?? 0 }];
   });
-}
-
-function isUnpricedToken(token: OwnedToken): boolean {
-  return token.usdValue == null || !(token.usdValue > 0);
 }
 
 function splitStoredLegs(
@@ -462,8 +460,7 @@ export function useSendForm(
     return [
       {
         token: preferred,
-        amountRaw: 0n,
-        amountFormatted: '',
+        ...defaultUnpricedTokenAllocation(preferred),
         usd: 0,
       },
     ];
@@ -917,18 +914,19 @@ export function useSendForm(
           return;
         }
 
+        const initial = defaultUnpricedTokenAllocation(token);
         setAdditionalAllocations([
           ...additionalAllocations,
           {
             token,
-            amountRaw: 0n,
-            amountFormatted: '',
+            amountRaw: initial.amountRaw,
+            amountFormatted: initial.amountFormatted,
             usd: 0,
           },
         ]);
         setAllocationInputs((current) => ({
           ...current,
-          [tokenId]: '',
+          [tokenId]: initial.amountFormatted,
         }));
         return;
       }

@@ -15,6 +15,7 @@ import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import {
   formatRawTokenBalance,
+  isUnpricedToken,
   type OwnedToken,
 } from '@/lib/alchemy/fetchTokensByAddress';
 import { floorUsdToSendableCap, formatFiatValue } from '@/lib/fiat';
@@ -311,6 +312,7 @@ export function SendAdvancedDetails({
       ) : (
         allocations.map((leg) => {
           const spendable = spendableById.get(leg.token.id) ?? leg.token;
+          const unpriced = isUnpricedToken(spendable);
           const availableToken = merchantAvailableToken(spendable, taxFunding);
           const taxRawOnLeg =
             taxFunding != null && taxFunding.token.id === leg.token.id
@@ -318,19 +320,20 @@ export function SendAdvancedDetails({
               : 0n;
           const inputValue =
             allocationInputs[leg.token.id] ??
-            (allocationInputUnit === 'usd'
+            (allocationInputUnit === 'usd' && !unpriced
               ? leg.usd > 0
                 ? String(leg.usd)
                 : leg.amountFormatted
               : leg.amountFormatted);
           const exceeds = leg.amountRaw + taxRawOnLeg > spendable.rawBalance;
-          const secondaryValue =
-            allocationInputUnit === 'usd'
+          const secondaryValue = unpriced
+            ? null
+            : allocationInputUnit === 'usd'
               ? leg.amountFormatted || '—'
               : (formatFromUsd(leg.usd) ?? '—');
 
           const availableLabel =
-            allocationInputUnit === 'usd'
+            allocationInputUnit === 'usd' && !unpriced
               ? (() => {
                   if (availableToken.usdValue == null) {
                     return '—';
@@ -374,14 +377,14 @@ export function SendAdvancedDetails({
                 </View>
               </View>
               <View style={styles.allocationControls}>
-                {allocationInputUnit === 'usd' ? (
+                {allocationInputUnit === 'usd' && !unpriced ? (
                   <Text style={styles.allocationInputPrefix}>
                     {currencySymbol}
                   </Text>
                 ) : null}
                 <TextInput
                   accessibilityLabel={
-                    allocationInputUnit === 'usd'
+                    allocationInputUnit === 'usd' && !unpriced
                       ? `${leg.token.symbol} ${currencyCode} amount`
                       : `${leg.token.symbol} amount`
                   }
@@ -397,9 +400,13 @@ export function SendAdvancedDetails({
                   ]}
                   value={inputValue}
                 />
-                <Text style={styles.allocationSecondary} numberOfLines={1}>
-                  {secondaryValue}
-                </Text>
+                {secondaryValue != null ? (
+                  <Text style={styles.allocationSecondary} numberOfLines={1}>
+                    {secondaryValue}
+                  </Text>
+                ) : (
+                  <View style={styles.allocationSecondary} />
+                )}
                 <Pressable
                   accessibilityLabel={`Remove ${leg.token.symbol}`}
                   accessibilityRole="button"
