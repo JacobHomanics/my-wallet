@@ -57,7 +57,7 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   recipientProfilePhotoUrl: null,
   recipientIsFarcaster: false,
   recipientIsEns: false,
-  amount: '',
+  amount: '0',
   amountLocked: false,
   manualLegs: null,
   allocationInputs: {},
@@ -106,7 +106,7 @@ export function hydrateSendDraftFromConfirmParams(params: {
   recipientIsFarcaster?: boolean;
   recipientIsEns?: boolean;
 }): void {
-  const amount = params.usdAmount?.trim() ?? '';
+  const amount = params.usdAmount?.trim() || '0';
   const decoded = tryDecodeWalletIdentity(params.identity);
   const username = params.recipientUsername?.trim().replace(/^@/, '') || null;
   const name = params.recipientName?.trim() || null;
@@ -124,7 +124,7 @@ export function hydrateSendDraftFromConfirmParams(params: {
     recipientIsFarcaster: Boolean(params.recipientIsFarcaster),
     recipientIsEns: Boolean(params.recipientIsEns),
     amount,
-    amountLocked: amount.length > 0,
+    amountLocked: Boolean(params.usdAmount?.trim()),
   };
   listeners.forEach((listener) => {
     listener();

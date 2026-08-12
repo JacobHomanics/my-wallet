@@ -70,7 +70,7 @@ export function SendAmountScreen() {
     onSelectStrategy,
   } = useSendStrategyPicker();
   const [tokenPickerOpen, setTokenPickerOpen] = useState(false);
-  const { currencySymbol, formatFromUsd, defaultFormattedZero } =
+  const { currencySymbol, formatFromUsd, defaultFormattedZero, parseDisplayInputToUsd } =
     useFiatDisplay();
 
   useEffect(() => {
@@ -139,10 +139,11 @@ export function SendAmountScreen() {
       ? taxFundingChain === 'solana'
       : needsSolanaRecipient || Boolean(solanaAddress);
 
+  const isZeroAmount = parseDisplayInputToUsd(amount) === 0;
   const amountError =
-    amount.trim() && insufficientFunds
+    amount.trim() && !isZeroAmount && insufficientFunds
       ? 'Insufficient funds for this amount (including service fee)'
-      : amount.trim() && !form.amountValid
+      : amount.trim() && !isZeroAmount && !form.amountValid
         ? 'Enter a valid amount'
         : null;
 
