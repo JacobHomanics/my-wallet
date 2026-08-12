@@ -234,8 +234,8 @@ export function SendAdvancedDetails({
           <Text style={styles.broadcastLabel}>Send through Cashbox Network</Text>
           <Text style={styles.broadcastHint}>
             {cashboxNetworkEnabled
-              ? `Earn ${REWARD_POINTS_LABEL} via Cashbox backend`
-              : `Signs on this device; no ${REWARD_POINTS_LABEL}`}
+              ? `Earn ${REWARD_POINTS_LABEL} and gas sponsorship on supported chains`
+              : `Signs on this device; no ${REWARD_POINTS_LABEL} or gas sponsorship`}
           </Text>
         </View>
         <Switch
