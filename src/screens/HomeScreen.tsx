@@ -12,7 +12,6 @@ import {
   View,
 } from 'react-native';
 
-import { DepositMethodPickerModal } from '@/components/DepositMethodPickerModal';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { useOpenStripeDeposit } from '@/hooks/useOpenStripeDeposit';
@@ -41,14 +40,7 @@ export function HomeScreen() {
   });
 
   const openFreshSend = useOpenFreshSend();
-  const {
-    canDeposit,
-    openDeposit,
-    depositPickerOpen,
-    defaultDepositMethod,
-    closeDepositPicker,
-    onSelectDepositMethod,
-  } = useOpenStripeDeposit();
+  const { canDeposit, openDeposit } = useOpenStripeDeposit();
   const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
 
   const onRefresh = useCallback(() => {
@@ -61,8 +53,7 @@ export function HomeScreen() {
     ready && hasWallet && !(loading && tokens.length === 0);
 
   return (
-    <>
-      <ScrollView
+    <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
@@ -190,14 +181,6 @@ export function HomeScreen() {
           )}
         </View>
       </ScrollView>
-
-      <DepositMethodPickerModal
-        defaultMethod={defaultDepositMethod}
-        onClose={closeDepositPicker}
-        onSelect={onSelectDepositMethod}
-        visible={depositPickerOpen}
-      />
-    </>
   );
 }
 
