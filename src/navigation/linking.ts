@@ -8,6 +8,7 @@ import type {
   RootStackParamList,
   HomeStackParamList,
   ContactsStackParamList,
+  ProfileStackParamList,
 } from '@/navigation/types';
 
 /** Custom URL scheme registered in app.json / Info.plist (Privy OAuth redirects). */
@@ -117,6 +118,14 @@ const CONTACTS_STACK_HISTORY: Partial<
   contactDetails: ['index'],
 };
 
+const PROFILE_STACK_HISTORY: Partial<
+  Record<keyof ProfileStackParamList, string[]>
+> = {
+  settings: ['index'],
+  profileSettings: ['index', 'settings'],
+  onrampSettings: ['index', 'settings'],
+};
+
 function hydrateSendDraftFromNavState(state: NavState | undefined): void {
   if (!state?.routes?.length) {
     return;
@@ -220,6 +229,40 @@ function ensureContactsStackHistory(state: NavState): NavState {
   };
 }
 
+function ensureProfileStackHistory(state: NavState): NavState {
+  const routes = state.routes ?? [];
+  if (!routes.length) {
+    return state;
+  }
+
+  const currentIndex = state.index ?? routes.length - 1;
+  const currentRoute = routes[currentIndex];
+  if (!currentRoute?.name) {
+    return state;
+  }
+
+  const requiredPrefix =
+    PROFILE_STACK_HISTORY[currentRoute.name as keyof ProfileStackParamList];
+  if (!requiredPrefix?.length) {
+    return state;
+  }
+
+  const existingByName = new Map(
+    routes.map((route) => [route.name, route] as const),
+  );
+  const ordered = [
+    ...requiredPrefix.map((name) => existingByName.get(name) ?? { name }),
+    ...routes.filter((route) => !requiredPrefix.includes(route.name)),
+  ];
+
+  const newIndex = ordered.findIndex((route) => route === currentRoute);
+  return {
+    ...state,
+    routes: ordered,
+    index: newIndex >= 0 ? newIndex : ordered.length - 1,
+  };
+}
+
 /** Deep links into nested stacks omit ancestor screens; prepend them for pop animations. */
 function ensureHomeStackDeepLinkHistory(
   state: NavState | undefined,
@@ -246,6 +289,13 @@ function ensureHomeStackDeepLinkHistory(
         return {
           ...route,
           state: ensureContactsStackHistory(route.state),
+        };
+      }
+
+      if (route.name === 'profile') {
+        return {
+          ...route,
+          state: ensureProfileStackHistory(route.state),
         };
       }
 

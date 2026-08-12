@@ -23,11 +23,9 @@ export function usePopToSettings() {
       return;
     }
 
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return;
-    }
-
+    // Do not call goBack() here — when settings is missing from the stack (e.g.
+    // deep link / URL sync on web), the parent tab navigator can go back and
+    // land on home instead of settings.
     navigation.reset({
       index: 1,
       routes: [{ name: 'index' }, { name: 'settings' }],
