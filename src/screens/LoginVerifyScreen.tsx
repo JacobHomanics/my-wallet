@@ -1,20 +1,21 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { CodeDigitInputs } from '@/components/CodeDigitInputs';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useResendLoginCode } from '@/hooks/useResendLoginCode';
 import { useVerifyLoginCode } from '@/hooks/useVerifyLoginCode';
 import type { RootStackParamList } from '@/navigation/types';
 
@@ -25,55 +26,79 @@ export function LoginVerifyScreen() {
   const isDesktopWeb = useIsDesktopWeb();
   const route = useRoute<RouteProp<RootStackParamList, 'loginVerify'>>();
   const { verify } = useVerifyLoginCode();
-  const [code, setCode] = useState('');
+  const { resend, cooldown, canResend, isPending: isResendPending } =
+    useResendLoginCode();
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [codeInputResetSignal, setCodeInputResetSignal] = useState(0);
 
   const { method, value } = route.params;
-  const isValid = code.trim().length >= 4;
 
-  const handleVerify = async () => {
-    if (!isValid || isPending) {
+  const handleVerify = useCallback(
+    async (code: string) => {
+      if (isPending) {
+        return;
+      }
+
+      setErrorMessage(null);
+      setIsPending(true);
+      Keyboard.dismiss();
+
+      try {
+        await verify(method, value, code);
+        // Wallet creation runs in EnsureEmbeddedWallets after auth settles
+        // (avoids racing a second create call from this screen).
+        if (
+          route.params.returnTo === 'exportWallet' &&
+          route.params.address &&
+          route.params.chain
+        ) {
+          navigation.reset({
+            index: 0,
+            routes: [
+              {
+                name: 'exportWallet',
+                params: {
+                  address: route.params.address,
+                  chain: route.params.chain,
+                },
+              },
+            ],
+          });
+        } else {
+          // RootNavigator redirects to onboarding when still needed.
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'main' }],
+          });
+        }
+      } catch (error) {
+        console.error(error);
+        setCodeInputResetSignal((current) => current + 1);
+        setErrorMessage('Invalid code. Please try again.');
+      } finally {
+        setIsPending(false);
+      }
+    },
+    [isPending, method, navigation, route.params, value, verify],
+  );
+
+  const handleResend = async () => {
+    if (!canResend) {
       return;
     }
 
     setErrorMessage(null);
-    setIsPending(true);
-    Keyboard.dismiss();
 
     try {
-      await verify(method, value, code);
-      // Wallet creation runs in EnsureEmbeddedWallets after auth settles
-      // (avoids racing a second create call from this screen).
-      if (
-        route.params.returnTo === 'exportWallet' &&
-        route.params.address &&
-        route.params.chain
-      ) {
-        navigation.reset({
-          index: 0,
-          routes: [
-            {
-              name: 'exportWallet',
-              params: {
-                address: route.params.address,
-                chain: route.params.chain,
-              },
-            },
-          ],
-        });
-      } else {
-        // RootNavigator redirects to onboarding when still needed.
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'main' }],
-        });
-      }
+      await resend(method, value);
     } catch (error) {
       console.error(error);
-      setErrorMessage('Invalid code. Please try again.');
-    } finally {
-      setIsPending(false);
+      setErrorMessage(
+        method === 'email'
+          ? 'Could not resend an email code. Please try again.'
+          : 'Could not resend an SMS code. Please try again.',
+      );
     }
   };
 
@@ -87,42 +112,47 @@ export function LoginVerifyScreen() {
 
       <View style={styles.content}>
         <Text style={styles.title}>Enter code</Text>
-        <Text style={styles.subtitle}>
-          We sent a code to {value}.
-        </Text>
+        <Text style={styles.subtitle}>We sent a code to {value}.</Text>
 
-        <TextInput
-          autoCapitalize="none"
-          autoCorrect={false}
-          autoComplete="one-time-code"
-          keyboardType="number-pad"
-          placeholder="123456"
-          placeholderTextColor="#86a894"
-          style={styles.input}
-          value={code}
-          onChangeText={setCode}
+        <CodeDigitInputs
           editable={!isPending}
-          maxLength={8}
+          focusOnMount
+          onCodeComplete={(code) => {
+            void handleVerify(code);
+          }}
+          resetSignal={codeInputResetSignal}
         />
+
+        {isPending ? (
+          <ActivityIndicator color="#166534" style={styles.spinner} />
+        ) : null}
 
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
 
         <Pressable
           accessibilityRole="button"
-          disabled={!isValid || isPending}
+          disabled={!canResend || isPending}
           onPress={() => {
-            void handleVerify();
+            void handleResend();
           }}
           style={({ pressed }) => [
-            styles.button,
-            (!isValid || isPending) && styles.buttonDisabled,
-            pressed && isValid && !isPending && styles.buttonPressed,
+            styles.resendButton,
+            pressed && canResend && !isPending && styles.resendButtonPressed,
           ]}
         >
-          {isPending ? (
-            <ActivityIndicator color="#f0fdf4" />
+          {isResendPending ? (
+            <ActivityIndicator color="#5a7d6a" />
           ) : (
-            <Text style={styles.buttonText}>Verify</Text>
+            <Text
+              style={[
+                styles.resendText,
+                (cooldown > 0 || isPending) && styles.resendTextDisabled,
+              ]}
+            >
+              {cooldown > 0
+                ? `Resend verification code in ${cooldown} seconds...`
+                : 'Resend code'}
+            </Text>
           )}
         </Pressable>
       </View>
@@ -160,44 +190,32 @@ const styles = StyleSheet.create({
     color: '#3f6b52',
     textAlign: 'center',
   },
-  input: {
-    width: '100%',
-    maxWidth: 360,
-    borderWidth: 1,
-    borderColor: '#86d4a4',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#166534',
-    backgroundColor: '#fff',
-    textAlign: 'center',
-    letterSpacing: 4,
+  spinner: {
+    marginTop: 20,
   },
   error: {
-    marginTop: 12,
+    marginTop: 16,
     fontSize: 14,
     color: '#b91c1c',
     textAlign: 'center',
   },
-  button: {
+  resendButton: {
     marginTop: 24,
-    minWidth: 160,
+    minHeight: 24,
     alignItems: 'center',
-    backgroundColor: '#166534',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 10,
+    justifyContent: 'center',
   },
-  buttonDisabled: {
-    opacity: 0.45,
+  resendButtonPressed: {
+    opacity: 0.8,
   },
-  buttonPressed: {
-    opacity: 0.85,
+  resendText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#166534',
+    textAlign: 'center',
   },
-  buttonText: {
-    color: '#f0fdf4',
-    fontSize: 16,
-    fontWeight: '600',
+  resendTextDisabled: {
+    color: '#5a7d6a',
+    opacity: 0.7,
   },
 });

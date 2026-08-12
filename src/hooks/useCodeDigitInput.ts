@@ -1,0 +1,120 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { TextInput } from 'react-native';
+
+export const CODE_DIGIT_COUNT = 6;
+
+const EMPTY_DIGITS = Array.from({ length: CODE_DIGIT_COUNT }, () => '');
+
+type UseCodeDigitInputParams = {
+  focusOnMount?: boolean;
+  onCodeComplete?: (code: string) => void;
+  /** Bump when the parent wants digits cleared (e.g. after a failed verification). */
+  resetSignal?: number;
+};
+
+/**
+ * Six-digit OTP input: paste, auto-advance, backspace, and auto-submit.
+ */
+export function useCodeDigitInput(params?: UseCodeDigitInputParams) {
+  const { focusOnMount = false, onCodeComplete, resetSignal } = params ?? {};
+
+  const [codeDigits, setCodeDigits] = useState(EMPTY_DIGITS);
+  const codeInputRefs = useRef<(TextInput | null)[]>([]);
+  const lastCompletedCodeRef = useRef('');
+  const onCodeCompleteRef = useRef(onCodeComplete);
+  onCodeCompleteRef.current = onCodeComplete;
+
+  const [prevResetSignal, setPrevResetSignal] = useState<number | undefined>(
+    undefined,
+  );
+  if (resetSignal !== undefined && resetSignal !== prevResetSignal) {
+    if (prevResetSignal !== undefined) {
+      lastCompletedCodeRef.current = '';
+      setCodeDigits(EMPTY_DIGITS);
+    }
+    setPrevResetSignal(resetSignal);
+  }
+
+  const focusFirst = useCallback(() => {
+    setTimeout(() => codeInputRefs.current[0]?.focus(), 100);
+  }, []);
+
+  useEffect(() => {
+    if (focusOnMount) {
+      focusFirst();
+    }
+  }, [focusOnMount, focusFirst]);
+
+  useEffect(() => {
+    if (resetSignal !== undefined && resetSignal > 0) {
+      focusFirst();
+    }
+  }, [focusFirst, resetSignal]);
+
+  const tryCompleteCode = useCallback((digits: string[]) => {
+    const nextCode = digits.join('');
+    if (
+      nextCode.length !== CODE_DIGIT_COUNT ||
+      nextCode === lastCompletedCodeRef.current
+    ) {
+      return;
+    }
+
+    lastCompletedCodeRef.current = nextCode;
+    onCodeCompleteRef.current?.(nextCode);
+  }, []);
+
+  const handleDigitChange = useCallback(
+    (index: number, value: string) => {
+      if (value.length > 1) {
+        const digits = value.replace(/\D/g, '').slice(0, CODE_DIGIT_COUNT);
+        setCodeDigits((prev) => {
+          const next = [...prev];
+          for (let i = 0; i < digits.length && index + i < CODE_DIGIT_COUNT; i++) {
+            next[index + i] = digits[i] ?? '';
+          }
+          const nextEmpty = next.findIndex((digit, i) => i >= index && !digit);
+          if (nextEmpty !== -1 && nextEmpty < CODE_DIGIT_COUNT) {
+            setTimeout(() => codeInputRefs.current[nextEmpty]?.focus(), 0);
+          } else {
+            codeInputRefs.current[CODE_DIGIT_COUNT - 1]?.blur();
+          }
+          tryCompleteCode(next);
+          return next;
+        });
+        return;
+      }
+
+      const singleDigit = value.slice(-1).replace(/\D/g, '');
+      setCodeDigits((prev) => {
+        const next = [...prev];
+        next[index] = singleDigit;
+        tryCompleteCode(next);
+        return next;
+      });
+
+      if (singleDigit && index < CODE_DIGIT_COUNT - 1) {
+        setTimeout(() => codeInputRefs.current[index + 1]?.focus(), 0);
+      }
+    },
+    [tryCompleteCode],
+  );
+
+  const handleKeyPress = useCallback(
+    (index: number, key: string) => {
+      if (key === 'Backspace' && !codeDigits[index] && index > 0) {
+        codeInputRefs.current[index - 1]?.focus();
+      }
+    },
+    [codeDigits],
+  );
+
+  return {
+    codeDigits,
+    code: codeDigits.join(''),
+    codeInputRefs,
+    handleDigitChange,
+    handleKeyPress,
+    focusFirst,
+  };
+}
