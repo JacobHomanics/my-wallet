@@ -15,6 +15,7 @@ import type * as lib_decryptKeystore from "../lib/decryptKeystore.js";
 import type * as lib_encodeErc20Transfer from "../lib/encodeErc20Transfer.js";
 import type * as lib_ens from "../lib/ens.js";
 import type * as lib_evmSend from "../lib/evmSend.js";
+import type * as lib_gasSponsorship from "../lib/gasSponsorship.js";
 import type * as lib_loadKeystores from "../lib/loadKeystores.js";
 import type * as lib_networks from "../lib/networks.js";
 import type * as lib_neynar from "../lib/neynar.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   "lib/encodeErc20Transfer": typeof lib_encodeErc20Transfer;
   "lib/ens": typeof lib_ens;
   "lib/evmSend": typeof lib_evmSend;
+  "lib/gasSponsorship": typeof lib_gasSponsorship;
   "lib/loadKeystores": typeof lib_loadKeystores;
   "lib/networks": typeof lib_networks;
   "lib/neynar": typeof lib_neynar;

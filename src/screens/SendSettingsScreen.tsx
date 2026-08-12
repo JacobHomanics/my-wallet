@@ -120,18 +120,18 @@ export function SendSettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Default gas sponsorship</Text>
+          <Text style={styles.sectionTitle}>Gas sponsorship where available</Text>
           <View style={styles.toggleRow}>
             <View style={styles.optionText}>
-              <Text style={styles.optionLabel}>Gas sponsorship</Text>
+              <Text style={styles.optionLabel}>Default for new sends</Text>
               <Text style={styles.optionDescription}>
                 {defaultGasSponsorship
-                  ? 'App pays network fees on new sends'
-                  : 'You pay network fees from your wallet on new sends'}
+                  ? 'App pays fees on supported chains'
+                  : 'You pay network fees from your wallet on every chain'}
               </Text>
             </View>
             <Switch
-              accessibilityLabel="Default gas sponsorship"
+              accessibilityLabel="Default gas sponsorship where available"
               trackColor={{ false: '#bbf7d0', true: '#86efac' }}
               thumbColor={defaultGasSponsorship ? '#166534' : '#f0fdf4'}
               ios_backgroundColor="#bbf7d0"

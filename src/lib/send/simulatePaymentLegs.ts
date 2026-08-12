@@ -11,8 +11,6 @@ export type SimulatePaymentLegsParams = {
   legs: readonly SendTokenParams[];
   ethereumFrom: string | null;
   solanaFrom: string | null;
-  /** When true, skip native gas balance checks (Privy sponsors fees). */
-  gasSponsored?: boolean;
 };
 
 /**
@@ -59,7 +57,7 @@ export async function simulatePaymentLegs(
           tokenAddress: leg.token.tokenAddress,
           amountRaw: leg.amountRaw,
           nativeBalanceWei: balance,
-          gasSponsored: params.gasSponsored === true,
+          gasSponsored: leg.sponsor === true,
         });
 
         nativeRemaining.set(
@@ -84,7 +82,7 @@ export async function simulatePaymentLegs(
           tokenAddress: leg.token.tokenAddress,
           decimals: leg.token.decimals,
           balanceLamports: balance,
-          gasSponsored: params.gasSponsored === true,
+          gasSponsored: leg.sponsor === true,
         });
 
         nativeRemaining.set(

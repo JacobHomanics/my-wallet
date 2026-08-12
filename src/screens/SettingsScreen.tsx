@@ -53,7 +53,7 @@ export function SettingsScreen() {
   const sendSettingsSummary = [
     selectedStrategy.label,
     selectedChainPriority.label,
-    defaultGasSponsorship ? 'Gas sponsored' : 'You pay gas',
+    defaultGasSponsorship ? 'Gas sponsored where available' : 'You pay gas',
   ].join(' · ');
 
   return (

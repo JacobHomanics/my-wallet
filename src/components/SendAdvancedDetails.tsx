@@ -248,15 +248,15 @@ export function SendAdvancedDetails({
 
       <View style={styles.broadcastRow}>
         <View style={styles.broadcastText}>
-          <Text style={styles.broadcastLabel}>Gas sponsorship</Text>
+          <Text style={styles.broadcastLabel}>Gas sponsorship where available</Text>
           <Text style={styles.broadcastHint}>
             {gasSponsorship
-              ? 'App pays network fees'
+              ? 'App pays fees on supported chains'
               : 'You pay network fees from your wallet'}
           </Text>
         </View>
         <Switch
-          accessibilityLabel="Gas sponsorship"
+          accessibilityLabel="Gas sponsorship where available"
           trackColor={{ false: '#bbf7d0', true: '#86efac' }}
           thumbColor={gasSponsorship ? '#166534' : '#f0fdf4'}
           ios_backgroundColor="#bbf7d0"

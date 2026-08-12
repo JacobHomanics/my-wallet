@@ -10,6 +10,7 @@ import type {
 import { useSendTransaction } from '@/hooks/useSendTransaction';
 import { useUserWallets } from '@/hooks/useUserWallets';
 import { getNetworkChain } from '@/lib/alchemy/networks';
+import { shouldSponsorGasForNetwork } from '@/lib/privy/gasSponsorshipNetworks';
 import type { SendBroadcastMode } from '@/lib/send/broadcastMode';
 import { createEvmNonceAllocator } from '@/lib/send/evmNonce';
 import { waitForEvmReceipt } from '@/lib/send/waitForEvmReceipt';
@@ -39,7 +40,7 @@ export type SendPaymentOutcome = {
 
 export type SendPaymentOptions = {
   broadcastMode?: SendBroadcastMode;
-  /** Privy gas sponsorship — app pays network fees when true. */
+  /** When true, sponsor gas on Privy-supported networks only. */
   gasSponsorship?: boolean;
 };
 
@@ -66,6 +67,51 @@ function orderPaymentLegs(legs: PaymentLeg[]): PaymentLeg[] {
     const bGas = isGasToken(b.token) ? 1 : 0;
     return aGas - bGas;
   });
+}
+
+function toConvexLeg(leg: PaymentLeg) {
+  return {
+    network: leg.token.network,
+    networkLabel: leg.token.networkLabel,
+    tokenAddress: leg.token.tokenAddress,
+    tokenId: leg.token.id,
+    symbol: leg.token.symbol,
+    tokenName: leg.token.name,
+    decimals: leg.token.decimals,
+    logoUrl: leg.token.logoUrl,
+    recipient: leg.recipient,
+    amountRaw: leg.amountRaw.toString(),
+    amountFormatted: leg.amountFormatted,
+    isTax: leg.isTax === true,
+  };
+}
+
+function mapConvexLegResults(
+  legs: {
+    hash: string;
+    chain: 'ethereum' | 'solana';
+    tokenId: string;
+    symbol: string;
+    amount: string;
+    network: string;
+    networkLabel: string;
+    tokenName: string;
+    logoUrl: string | null;
+    isTax?: boolean;
+  }[],
+): SendPaymentLegResult[] {
+  return legs.map((leg) => ({
+    hash: leg.hash,
+    chain: leg.chain,
+    tokenId: leg.tokenId,
+    symbol: leg.symbol,
+    amount: leg.amount,
+    network: leg.network,
+    networkLabel: leg.networkLabel,
+    tokenName: leg.tokenName,
+    logoUrl: leg.logoUrl,
+    isTax: leg.isTax === true,
+  }));
 }
 
 /**
@@ -98,6 +144,8 @@ export function useSendPayment(): SendPaymentResult {
       const broadcastMode = options?.broadcastMode ?? 'backend';
       const gasSponsorship = options?.gasSponsorship ?? false;
       const orderedLegs = orderPaymentLegs(legs);
+      const sponsorForNetwork = (network: string) =>
+        shouldSponsorGasForNetwork(network, gasSponsorship);
 
       setSending(true);
       try {
@@ -106,24 +154,80 @@ export function useSendPayment(): SendPaymentResult {
             token: leg.token,
             recipient: leg.recipient,
             amountRaw: leg.amountRaw,
-            sponsor: gasSponsorship,
+            sponsor: sponsorForNetwork(leg.token.network),
           })),
-          gasSponsorship,
         );
 
-        const relaySponsoredViaBackend =
-          gasSponsorship && broadcastMode === 'frontend' && Platform.OS !== 'web';
+        const relayLegViaBackend = async (leg: PaymentLeg) => {
+          if (!ethereumWallet?.address) {
+            throw new Error('No Ethereum wallet available');
+          }
+          const needsSolana = leg.token.network === 'solana-mainnet';
+          if (needsSolana && !solanaWallet?.address) {
+            throw new Error('No Solana wallet available');
+          }
 
-        if (broadcastMode === 'frontend' && !relaySponsoredViaBackend) {
+          const result = await sendPaymentAction({
+            ethereumWalletId: ethereumWallet.id ?? '',
+            solanaWalletId: solanaWallet?.id ?? null,
+            ethereumAddress: ethereumWallet.address,
+            solanaAddress: solanaWallet?.address ?? null,
+            gasSponsorship: true,
+            skipReward: true,
+            legs: [toConvexLeg(leg)],
+          });
+
+          return mapConvexLegResults(result.legs);
+        };
+
+        if (broadcastMode === 'frontend') {
+          const allSponsoredNative =
+            Platform.OS !== 'web' &&
+            orderedLegs.every((leg) => sponsorForNetwork(leg.token.network));
+
+          if (allSponsoredNative) {
+            if (!ethereumWallet?.address) {
+              throw new Error('No Ethereum wallet available');
+            }
+            const needsSolana = orderedLegs.some(
+              (leg) => leg.token.network === 'solana-mainnet',
+            );
+            if (needsSolana && !solanaWallet?.address) {
+              throw new Error('No Solana wallet available');
+            }
+
+            const result = await sendPaymentAction({
+              ethereumWalletId: ethereumWallet.id ?? '',
+              solanaWalletId: solanaWallet?.id ?? null,
+              ethereumAddress: ethereumWallet.address,
+              solanaAddress: solanaWallet?.address ?? null,
+              gasSponsorship: true,
+              skipReward: true,
+              legs: orderedLegs.map(toConvexLeg),
+            });
+
+            return {
+              legs: mapConvexLegResults(result.legs),
+              rewardAmount: null,
+              rewardHash: null,
+              rewardFailed: false,
+            };
+          }
+
           const ethereumFrom = ethereumWallet?.address ?? null;
           const results: SendPaymentLegResult[] = [];
-          /** Last broadcast hash per EVM network — confirm before next on same net. */
           const lastEvmHashByNetwork = new Map<string, string>();
           const nonceAllocator = ethereumFrom
             ? createEvmNonceAllocator(ethereumFrom)
             : null;
 
           for (const leg of orderedLegs) {
+            if (Platform.OS !== 'web' && sponsorForNetwork(leg.token.network)) {
+              const relayed = await relayLegViaBackend(leg);
+              results.push(...relayed);
+              continue;
+            }
+
             const chain = getNetworkChain(leg.token.network);
             let nonce: `0x${string}` | undefined;
 
@@ -131,8 +235,6 @@ export function useSendPayment(): SendPaymentResult {
               const previousHash = lastEvmHashByNetwork.get(leg.token.network);
               if (previousHash) {
                 await waitForEvmReceipt(leg.token.network, previousHash);
-                // Re-read pending nonce after confirmation in case Privy ignored
-                // the nonce we passed on the prior leg.
                 nonceAllocator?.invalidate(leg.token.network);
               }
               if (nonceAllocator) {
@@ -145,7 +247,7 @@ export function useSendPayment(): SendPaymentResult {
               recipient: leg.recipient,
               amountRaw: leg.amountRaw,
               nonce,
-              sponsor: gasSponsorship,
+              sponsor: sponsorForNetwork(leg.token.network),
             });
 
             if (result.chain === 'ethereum') {
@@ -165,6 +267,7 @@ export function useSendPayment(): SendPaymentResult {
               isTax: leg.isTax === true,
             });
           }
+
           return {
             legs: results,
             rewardAmount: null,
@@ -190,36 +293,11 @@ export function useSendPayment(): SendPaymentResult {
           ethereumAddress: ethereumWallet.address,
           solanaAddress: solanaWallet?.address ?? null,
           gasSponsorship,
-          skipReward: relaySponsoredViaBackend,
-          legs: orderedLegs.map((leg) => ({
-            network: leg.token.network,
-            networkLabel: leg.token.networkLabel,
-            tokenAddress: leg.token.tokenAddress,
-            tokenId: leg.token.id,
-            symbol: leg.token.symbol,
-            tokenName: leg.token.name,
-            decimals: leg.token.decimals,
-            logoUrl: leg.token.logoUrl,
-            recipient: leg.recipient,
-            amountRaw: leg.amountRaw.toString(),
-            amountFormatted: leg.amountFormatted,
-            isTax: leg.isTax === true,
-          })),
+          legs: orderedLegs.map(toConvexLeg),
         });
 
         return {
-          legs: result.legs.map((leg) => ({
-            hash: leg.hash,
-            chain: leg.chain,
-            tokenId: leg.tokenId,
-            symbol: leg.symbol,
-            amount: leg.amount,
-            network: leg.network,
-            networkLabel: leg.networkLabel,
-            tokenName: leg.tokenName,
-            logoUrl: leg.logoUrl,
-            isTax: leg.isTax === true,
-          })),
+          legs: mapConvexLegResults(result.legs),
           rewardAmount: result.rewardAmount,
           rewardHash: result.rewardHash,
           rewardFailed: result.rewardFailed === true,

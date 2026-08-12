@@ -53,17 +53,9 @@ export function useSendTransaction(): SendTransactionResult {
   }, [ethereumWallets, solanaWallets]);
 
   const simulatePayment = useCallback(
-    async (
-      legs: SendTokenParams[],
-      gasSponsored = false,
-    ): Promise<void> => {
+    async (legs: SendTokenParams[]): Promise<void> => {
       const { ethereumFrom, solanaFrom } = resolveAddresses();
-      await simulatePaymentLegs({
-        legs,
-        ethereumFrom,
-        solanaFrom,
-        gasSponsored,
-      });
+      await simulatePaymentLegs({ legs, ethereumFrom, solanaFrom });
     },
     [resolveAddresses],
   );

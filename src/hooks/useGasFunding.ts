@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 
-import { useGasSponsorship } from '@/hooks/useGasSponsorship';
 import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import type { TaxFundingPick } from '@/lib/send/buildPaymentLegsWithTax';
 import {
@@ -32,16 +31,11 @@ export function useGasFunding(
   allocations: readonly PaymentAllocation[] = [],
   taxFunding?: TaxFundingPick | null,
 ): GasFundingPick[] {
-  const { gasSponsorship } = useGasSponsorship();
-
   return useMemo(() => {
-    if (gasSponsorship) {
-      return [];
-    }
     const usedNetworks = paymentNetworksInUse(allocations, taxFunding);
     if (usedNetworks.size === 0) {
       return [];
     }
     return resolveGasFunding(walletTokens, spendableTokens, usedNetworks);
-  }, [allocations, gasSponsorship, taxFunding, walletTokens, spendableTokens]);
+  }, [allocations, taxFunding, walletTokens, spendableTokens]);
 }

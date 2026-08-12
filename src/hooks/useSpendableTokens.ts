@@ -10,6 +10,7 @@ import {
   totalSpendableUsd,
   type NetworkGasFeeEstimate,
 } from '@/lib/send/gasReserves';
+import { sponsoredNetworksForPreference } from '@/lib/privy/gasSponsorshipNetworks';
 import { isGasToken } from '@/lib/strategies/gasTokens';
 
 const EMPTY_ESTIMATES = new Map<string, NetworkGasFeeEstimate>();
@@ -97,10 +98,14 @@ export function useSpendableTokens(tokens: OwnedToken[]): {
   const gasEstimatesReady =
     !networksKey || fetched?.networksKey === networksKey;
 
+  const sponsoredNetworks = useMemo(
+    () => sponsoredNetworksForPreference(gasSponsorship),
+    [gasSponsorship],
+  );
+
   const spendableTokens = useMemo(
-    () =>
-      gasSponsorship ? tokens : applyGasReserves(tokens, feeEstimates),
-    [feeEstimates, gasSponsorship, tokens],
+    () => applyGasReserves(tokens, feeEstimates, sponsoredNetworks),
+    [feeEstimates, sponsoredNetworks, tokens],
   );
 
   const rawAvailableUsd = useMemo(

@@ -425,6 +425,8 @@ export function planSolanaFeeReserve(onNetwork: OwnedToken[]): {
 export function applyGasReserves(
   tokens: OwnedToken[],
   feeEstimates: ReadonlyMap<string, NetworkGasFeeEstimate>,
+  /** Networks where native gas need not be reserved (Privy sponsors fees). */
+  sponsoredNetworks?: ReadonlySet<string>,
 ): OwnedToken[] {
   if (tokens.length === 0) {
     return tokens;
@@ -435,6 +437,10 @@ export function applyGasReserves(
   const spendableIdsByNetwork = new Map<string, Set<string> | 'all' | 'none'>();
 
   for (const network of networks) {
+    if (sponsoredNetworks?.has(network)) {
+      continue;
+    }
+
     const onNetwork = tokens.filter((token) => token.network === network);
     if (onNetwork.every((token) => token.rawBalance <= 0n)) {
       continue;

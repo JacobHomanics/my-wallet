@@ -5,6 +5,7 @@ import type { PrivyClient } from "@privy-io/node";
 
 import { action } from "./_generated/server";
 import { sendEvmLeg } from "./lib/evmSend";
+import { shouldSponsorGasForNetwork } from "./lib/gasSponsorship";
 import { getNetworkChain, isNativeTokenAddress } from "./lib/networks";
 import { getPrivyClient, getAuthorizationContext } from "./lib/privy";
 import { sendSolanaLeg } from "./lib/solanaSend";
@@ -116,11 +117,12 @@ export const sendPayment = action({
 
     const results: SendPaymentLegResult[] = [];
     const lastEvmHashByNetwork = new Map<string, string>();
-    const sponsor = args.gasSponsorship === true;
+    const gasSponsorshipEnabled = args.gasSponsorship === true;
 
     for (const leg of orderedLegs) {
       const chain = getNetworkChain(leg.network);
       const amountRaw = BigInt(leg.amountRaw);
+      const sponsor = shouldSponsorGasForNetwork(leg.network, gasSponsorshipEnabled);
 
       if (chain === "ethereum") {
         const previousHash = lastEvmHashByNetwork.get(leg.network);
