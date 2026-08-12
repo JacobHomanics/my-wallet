@@ -73,7 +73,7 @@ export function SendAmountScreen() {
     onSelectStrategy,
   } = useSendStrategyPicker();
   const [tokenPickerOpen, setTokenPickerOpen] = useState(false);
-  const { currencySymbol, formatFromUsd, formatServiceFeeFromUsd, defaultFormattedZero, defaultServiceFeeFormattedZero, parseDisplayInputToUsd } =
+  const { currencySymbol, formatFromUsd, formatServiceFeeFromUsd, defaultFormattedZero, parseDisplayInputToUsd } =
     useFiatDisplay();
 
   useEffect(() => {
@@ -98,8 +98,6 @@ export function SendAmountScreen() {
     taxFunding,
     allocations,
     allocationInputs,
-    needsEthereumRecipient,
-    needsSolanaRecipient,
     ethereumRecipient,
     solanaRecipient,
     resolvedEthereumRecipient,
@@ -131,21 +129,13 @@ export function SendAmountScreen() {
   const totalLabel = availableLabel;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
 
-  const taxLabel = formatServiceFeeFromUsd(taxUsd) ?? defaultServiceFeeFormattedZero;
+  const taxLabel = taxUsd > 0 ? formatServiceFeeFromUsd(taxUsd) : null;
   const payerTotalLabel =
     (payerTotalUsd != null ? formatFromUsd(payerTotalUsd) : null) ??
     defaultFormattedZero;
   const taxFundingChain = taxFunding
     ? getNetworkChain(taxFunding.token.network)
     : null;
-  const showTaxEvm =
-    taxFundingChain != null
-      ? taxFundingChain === 'ethereum'
-      : needsEthereumRecipient || Boolean(ethereumAddress);
-  const showTaxSolana =
-    taxFundingChain != null
-      ? taxFundingChain === 'solana'
-      : needsSolanaRecipient || Boolean(solanaAddress);
 
   const isZeroAmount = (parseDisplayInputToUsd(amount) ?? 0) === 0;
   const amountError = insufficientFunds
@@ -302,14 +292,15 @@ export function SendAmountScreen() {
                   <Text style={styles.fieldError}>{amountError}</Text>
                 ) : null}
 
-                <TaxDetailsCollapsible
-                  gasSponsorship={gasSponsorship}
-                  showEvm={showTaxEvm}
-                  showRatePercent={false}
-                  showSolana={showTaxSolana}
-                  style={styles.taxSection}
-                  taxLabel={taxLabel}
-                />
+                {taxLabel ? (
+                  <TaxDetailsCollapsible
+                    gasSponsorship={gasSponsorship}
+                    showEvm={taxFundingChain === 'ethereum'}
+                    showRatePercent={false}
+                    showSolana={taxFundingChain === 'solana'}
+                    taxLabel={taxLabel}
+                  />
+                ) : null}
                 <View style={styles.payerTotalRow}>
                   <Text style={styles.payerTotalLabel}>Total</Text>
                   <Text style={styles.payerTotalValue}>
@@ -545,16 +536,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 13,
     color: '#b91c1c',
-  },
-  taxSection: {
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: '#86d4a4',
-    borderRadius: 12,
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingVertical: 14,
-    backgroundColor: '#dcfce7',
   },
   payerTotalRow: {
     marginTop: 10,
