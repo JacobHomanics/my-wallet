@@ -7,13 +7,15 @@ import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal'
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { SupportedChainsCollapsible } from '@/components/SupportedChainsCollapsible';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
+import { useDefaultCashboxNetwork } from '@/hooks/useDefaultCashboxNetwork';
 import { useDefaultGasSponsorship } from '@/hooks/useDefaultGasSponsorship';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToSettings } from '@/hooks/usePopToSettings';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
+import { REWARD_POINTS_LABEL } from '@/lib/rewardToken';
 
 /**
- * Default send behavior: payment strategy, chain priority, and gas sponsorship.
+ * Default send behavior: payment strategy, chain priority, Cashbox Network, and gas sponsorship.
  */
 export function SendSettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -37,6 +39,8 @@ export function SendSettingsScreen() {
     closePicker: closeChainPriorityPicker,
     onSelectOption: onSelectChainPriority,
   } = useChainPriorityPicker();
+  const { defaultCashboxNetwork, setDefaultCashboxNetwork } =
+    useDefaultCashboxNetwork();
   const { defaultGasSponsorship, setDefaultGasSponsorship } =
     useDefaultGasSponsorship();
 
@@ -121,26 +125,50 @@ export function SendSettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Gas sponsorship where available</Text>
+          <Text style={styles.sectionTitle}>Send through Cashbox Network</Text>
           <View style={styles.toggleRow}>
             <View style={styles.optionText}>
               <Text style={styles.optionLabel}>Default for new sends</Text>
               <Text style={styles.optionDescription}>
-                {defaultGasSponsorship
-                  ? 'App pays fees on supported chains'
-                  : 'You pay network fees from your wallet on every chain'}
+                {defaultCashboxNetwork
+                  ? `Earn ${REWARD_POINTS_LABEL} and gas sponsorship on supported chains`
+                  : `Signs on this device; no ${REWARD_POINTS_LABEL} or gas sponsorship`}
               </Text>
             </View>
             <Switch
-              accessibilityLabel="Default gas sponsorship where available"
+              accessibilityLabel="Default send through Cashbox Network"
               trackColor={{ false: '#bbf7d0', true: '#86efac' }}
-              thumbColor={defaultGasSponsorship ? '#166534' : '#f0fdf4'}
+              thumbColor={defaultCashboxNetwork ? '#166534' : '#f0fdf4'}
               ios_backgroundColor="#bbf7d0"
-              value={defaultGasSponsorship}
-              onValueChange={setDefaultGasSponsorship}
+              value={defaultCashboxNetwork}
+              onValueChange={setDefaultCashboxNetwork}
             />
           </View>
         </View>
+
+        {defaultCashboxNetwork ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Gas sponsorship where available</Text>
+            <View style={styles.toggleRow}>
+              <View style={styles.optionText}>
+                <Text style={styles.optionLabel}>Default for new sends</Text>
+                <Text style={styles.optionDescription}>
+                  {defaultGasSponsorship
+                    ? 'App pays fees on supported chains'
+                    : 'You pay network fees from your wallet on every chain'}
+                </Text>
+              </View>
+              <Switch
+                accessibilityLabel="Default gas sponsorship where available"
+                trackColor={{ false: '#bbf7d0', true: '#86efac' }}
+                thumbColor={defaultGasSponsorship ? '#166534' : '#f0fdf4'}
+                ios_backgroundColor="#bbf7d0"
+                value={defaultGasSponsorship}
+                onValueChange={setDefaultGasSponsorship}
+              />
+            </View>
+          </View>
+        ) : null}
 
         <SupportedChainsCollapsible />
       </ScrollView>

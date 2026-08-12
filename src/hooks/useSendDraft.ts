@@ -1,5 +1,6 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
+import { getDefaultCashboxNetwork } from '@/hooks/useDefaultCashboxNetwork';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import type { PaymentStrategyId } from '@/lib/strategies';
 import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
@@ -73,7 +74,15 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   gasSponsorship: null,
 };
 
-let sendDraft: SendDraft = { ...DEFAULT_SEND_DRAFT };
+function freshSendDraft(): SendDraft {
+  const throughCashbox = getDefaultCashboxNetwork();
+  return {
+    ...DEFAULT_SEND_DRAFT,
+    broadcastMode: throughCashbox ? 'backend' : 'frontend',
+  };
+}
+
+let sendDraft: SendDraft = freshSendDraft();
 const listeners = new Set<DraftListener>();
 
 function subscribe(listener: DraftListener): () => void {
@@ -95,7 +104,7 @@ export function updateSendDraft(partial: Partial<SendDraft>): void {
 }
 
 export function resetSendDraft(): void {
-  sendDraft = { ...DEFAULT_SEND_DRAFT };
+  sendDraft = freshSendDraft();
   listeners.forEach((listener) => {
     listener();
   });
@@ -119,7 +128,7 @@ export function hydrateSendDraftFromConfirmParams(params: {
   const name = params.recipientName?.trim() || null;
   const profilePhotoUrl = params.recipientProfilePhotoUrl?.trim() || null;
   sendDraft = {
-    ...DEFAULT_SEND_DRAFT,
+    ...freshSendDraft(),
     accountNumber: params.identity?.trim() ?? '',
     ethereumRecipient:
       decoded?.evmAddress ?? params.ethereumRecipient?.trim() ?? '',

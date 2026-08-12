@@ -15,6 +15,7 @@ import { ConfirmLogoutModal } from '@/components/ConfirmLogoutModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
 import { useChainPriority } from '@/hooks/useChainPriority';
 import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
+import { useDefaultCashboxNetwork } from '@/hooks/useDefaultCashboxNetwork';
 import { useDefaultGasSponsorship } from '@/hooks/useDefaultGasSponsorship';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -38,6 +39,7 @@ export function SettingsScreen() {
   } = useConfirmSignOut();
   const { selectedStrategy } = usePaymentStrategy();
   const { selectedOption: selectedChainPriority } = useChainPriority();
+  const { defaultCashboxNetwork } = useDefaultCashboxNetwork();
   const { defaultGasSponsorship } = useDefaultGasSponsorship();
   const {
     options: displayCurrencyOptions,
@@ -53,8 +55,15 @@ export function SettingsScreen() {
   const sendSettingsSummary = [
     selectedStrategy.label,
     selectedChainPriority.label,
-    defaultGasSponsorship ? 'Gas sponsored where available' : 'You pay gas',
-  ].join(' · ');
+    defaultCashboxNetwork ? 'Cashbox Network' : 'Device send',
+    defaultCashboxNetwork
+      ? defaultGasSponsorship
+        ? 'Gas sponsored where available'
+        : 'You pay gas'
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <View style={styles.container}>
