@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton } from '@/components/BackButton';
 import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
+import { SupportedChainsCollapsible } from '@/components/SupportedChainsCollapsible';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
 import { useDefaultGasSponsorship } from '@/hooks/useDefaultGasSponsorship';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -140,6 +141,8 @@ export function SendSettingsScreen() {
             />
           </View>
         </View>
+
+        <SupportedChainsCollapsible />
       </ScrollView>
 
       <StrategyPickerModal
