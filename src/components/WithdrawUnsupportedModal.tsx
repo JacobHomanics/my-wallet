@@ -1,0 +1,101 @@
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+
+type WithdrawUnsupportedModalProps = {
+  visible: boolean;
+  onClose: () => void;
+};
+
+/**
+ * Explains that bank withdrawals are not supported in-app.
+ */
+export function WithdrawUnsupportedModal({
+  visible,
+  onClose,
+}: WithdrawUnsupportedModalProps) {
+  return (
+    <Modal
+      animationType="fade"
+      transparent
+      visible={visible}
+      onRequestClose={onClose}
+    >
+      <Pressable
+        accessibilityLabel="Dismiss withdraw info"
+        accessibilityRole="button"
+        onPress={onClose}
+        style={styles.backdrop}
+      >
+        <Pressable
+          accessibilityViewIsModal
+          onPress={(event) => {
+            event.stopPropagation();
+          }}
+          style={styles.card}
+        >
+          <Text style={styles.title}>Withdraw</Text>
+          <Text style={styles.paragraph}>
+            Withdrawing to a bank account is not supported at this time. Please
+            send funds to Coinbase or another centralized exchange that supports
+            withdrawing crypto to your bank.
+          </Text>
+          <Pressable
+            accessibilityLabel="Close"
+            accessibilityRole="button"
+            onPress={onClose}
+            style={({ pressed }) => [
+              styles.closeButton,
+              pressed && styles.closeButtonPressed,
+            ]}
+          >
+            <Text style={styles.closeButtonText}>Close</Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 40, 25, 0.45)',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+  },
+  card: {
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#166534',
+    marginBottom: 12,
+  },
+  paragraph: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#3f6b52',
+  },
+  closeButton: {
+    marginTop: 16,
+    alignSelf: 'flex-end',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#d1fae5',
+  },
+  closeButtonPressed: {
+    opacity: 0.85,
+  },
+  closeButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#166534',
+  },
+});

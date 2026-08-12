@@ -12,11 +12,13 @@ import {
   View,
 } from 'react-native';
 
+import { WithdrawUnsupportedModal } from '@/components/WithdrawUnsupportedModal';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { useOpenStripeDeposit } from '@/hooks/useOpenStripeDeposit';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
+import { useWithdrawUnsupportedModal } from '@/hooks/useWithdrawUnsupportedModal';
 import type { HomeStackParamList } from '@/navigation/types';
 
 export function HomeScreen() {
@@ -41,6 +43,8 @@ export function HomeScreen() {
 
   const openFreshSend = useOpenFreshSend();
   const { canDeposit, openDeposit } = useOpenStripeDeposit();
+  const { withdrawOpen, openWithdraw, closeWithdraw } =
+    useWithdrawUnsupportedModal();
   const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
 
   const onRefresh = useCallback(() => {
@@ -53,7 +57,8 @@ export function HomeScreen() {
     ready && hasWallet && !(loading && tokens.length === 0);
 
   return (
-    <ScrollView
+    <>
+      <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
@@ -146,6 +151,21 @@ export function HomeScreen() {
                         <Text style={styles.actionButtonText}>Deposit</Text>
                       </Pressable>
                     ) : null}
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={openWithdraw}
+                      style={({ pressed }) => [
+                        styles.actionButton,
+                        pressed && styles.actionButtonPressed,
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name="archive-arrow-up-outline"
+                        size={18}
+                        color="#f8fafc"
+                      />
+                      <Text style={styles.actionButtonText}>Withdraw</Text>
+                    </Pressable>
                   </View>
                   <Pressable
                     accessibilityRole="link"
@@ -181,6 +201,11 @@ export function HomeScreen() {
           )}
         </View>
       </ScrollView>
+      <WithdrawUnsupportedModal
+        visible={withdrawOpen}
+        onClose={closeWithdraw}
+      />
+    </>
   );
 }
 
