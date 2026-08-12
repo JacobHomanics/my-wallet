@@ -30,7 +30,7 @@ export function WelcomeScreen() {
         }}
         style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
       >
-        <Text style={styles.buttonText}>Continue</Text>
+        <Text style={styles.buttonText}>Sign up / Login</Text>
       </Pressable>
     </View>
   );
