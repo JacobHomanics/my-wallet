@@ -326,6 +326,16 @@ export function ConfirmSendScreen() {
           <ActivityIndicator color="#166534" style={styles.loader} />
         ) : (
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
+            {availableLabel ? (
+              <Text style={styles.availableUsd}>
+                Available Balance: {availableLabel}
+              </Text>
+            ) : null}
+
+            {availableLabel && hasRecipient && primaryLabel ? (
+              <View style={styles.toDivider} />
+            ) : null}
+
             {hasRecipient && primaryLabel ? (
               <View style={styles.toSection}>
                 <Text style={styles.recipientLabel}>{recipientFieldLabel}</Text>
@@ -349,14 +359,9 @@ export function ConfirmSendScreen() {
                 </View>
               </View>
             ) : null}
-            {hasRecipient && primaryLabel ? (
-              <View style={styles.toDivider} />
-            ) : null}
 
-            {availableLabel ? (
-              <Text style={styles.availableUsd}>
-                Available Balance: {availableLabel}
-              </Text>
+            {!availableLabel && hasRecipient && primaryLabel ? (
+              <View style={styles.toDivider} />
             ) : null}
 
             <View style={styles.tipSection}>

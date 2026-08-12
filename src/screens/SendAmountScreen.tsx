@@ -232,33 +232,6 @@ export function SendAmountScreen() {
               style={styles.flex}
             >
               <View style={styles.formBody}>
-                {hasRecipient && primaryLabel ? (
-                  <View style={styles.recipientSection}>
-                    <Text style={styles.label}>{recipientFieldLabel}</Text>
-                    <View
-                      style={[styles.fieldRow, styles.fieldRowDisabled]}
-                    >
-                      <Avatar
-                        label={primaryLabel}
-                        photoUrl={recipientProfilePhotoUrl}
-                        seed={recipientUsername ?? primaryLabel}
-                        size={32}
-                        showFarcasterBadge={recipientIsFarcaster}
-                        showEnsBadge={recipientIsEns}
-                        style={styles.recipientAvatar}
-                      />
-                      <Text
-                        style={styles.recipientValue}
-                        selectable
-                        numberOfLines={1}
-                        ellipsizeMode="middle"
-                      >
-                        {primaryLabel}
-                      </Text>
-                    </View>
-                  </View>
-                ) : null}
-
                 <View
                   accessibilityLabel={`Available Balance: ${totalLabel}`}
                   style={[
@@ -270,6 +243,36 @@ export function SendAmountScreen() {
                   <Text style={styles.balanceLabel}>Available Balance:</Text>
                   <Text style={styles.balanceValue}>{totalLabel}</Text>
                 </View>
+
+                {hasRecipient && primaryLabel ? (
+                  <>
+                    <View style={styles.sectionDivider} />
+                    <View style={styles.recipientSection}>
+                      <Text style={styles.label}>{recipientFieldLabel}</Text>
+                      <View
+                        style={[styles.fieldRow, styles.fieldRowDisabled]}
+                      >
+                        <Avatar
+                          label={primaryLabel}
+                          photoUrl={recipientProfilePhotoUrl}
+                          seed={recipientUsername ?? primaryLabel}
+                          size={32}
+                          showFarcasterBadge={recipientIsFarcaster}
+                          showEnsBadge={recipientIsEns}
+                          style={styles.recipientAvatar}
+                        />
+                        <Text
+                          style={styles.recipientValue}
+                          selectable
+                          numberOfLines={1}
+                          ellipsizeMode="middle"
+                        >
+                          {primaryLabel}
+                        </Text>
+                      </View>
+                    </View>
+                  </>
+                ) : null}
 
                 <Text style={styles.label}>Amount</Text>
                 <View
@@ -454,8 +457,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   balanceRow: {
-    marginTop: 12,
     paddingRight: 16,
+  },
+  sectionDivider: {
+    alignSelf: 'stretch',
+    marginTop: 12,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#86d4a4',
+    marginBottom: 4,
   },
   balanceLabel: {
     fontSize: 16,
