@@ -418,7 +418,12 @@ export function ConfirmSendScreen() {
               />
             ) : null}
 
-            <Text style={styles.heroUsd}>{totalLabel}</Text>
+            <View style={styles.totalSection}>
+              <Text style={styles.totalLabel}>Total</Text>
+              <Text accessibilityRole="header" style={styles.totalValue}>
+                {totalLabel}
+              </Text>
+            </View>
 
             <Pressable
               accessibilityRole="button"
@@ -621,8 +626,20 @@ const styles = StyleSheet.create({
     paddingTop: 28,
     alignItems: 'center',
   },
-  heroUsd: {
+  totalSection: {
     marginTop: 24,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    gap: 8,
+  },
+  totalLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  totalValue: {
     fontSize: 36,
     fontWeight: '700',
     color: '#166534',

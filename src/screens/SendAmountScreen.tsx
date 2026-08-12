@@ -304,9 +304,10 @@ export function SendAmountScreen() {
                     taxLabel={taxLabel}
                   />
                 ) : null}
-                <View style={styles.payerTotalRow}>
-                  <Text style={styles.payerTotalLabel}>Total</Text>
-                  <Text style={styles.payerTotalValue}>
+
+                <View style={styles.totalSection}>
+                  <Text style={styles.totalLabel}>Total</Text>
+                  <Text accessibilityRole="header" style={styles.totalValue}>
                     {payerTotalLabel}
                   </Text>
                 </View>
@@ -546,28 +547,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#b91c1c',
   },
-  payerTotalRow: {
-    marginTop: 10,
-    flexDirection: 'row',
+  totalSection: {
+    marginTop: 24,
+    alignSelf: 'stretch',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#86d4a4',
-    borderRadius: 12,
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingVertical: 14,
-    backgroundColor: '#dcfce7',
+    gap: 8,
   },
-  payerTotalLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#14532d',
+  totalLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
-  payerTotalValue: {
-    fontSize: 15,
+  totalValue: {
+    fontSize: 36,
     fontWeight: '700',
-    color: '#14532d',
+    color: '#166534',
+    letterSpacing: -0.6,
+    textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },
   advancedToggle: {
