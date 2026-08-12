@@ -5,25 +5,22 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
-import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
 import { ConfirmLogoutModal } from '@/components/ConfirmLogoutModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
-import { StrategyPickerModal } from '@/components/StrategyPickerModal';
-import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
-import { useDefaultGasSponsorship } from '@/hooks/useDefaultGasSponsorship';
+import { useChainPriority } from '@/hooks/useChainPriority';
 import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
+import { useDefaultGasSponsorship } from '@/hooks/useDefaultGasSponsorship';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useOnrampSettings } from '@/hooks/useOnrampSettings';
+import { usePaymentStrategy } from '@/hooks/usePaymentStrategy';
 import { usePopToProfile } from '@/hooks/usePopToProfile';
-import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import type { ProfileStackParamList } from '@/navigation/types';
 
 export function SettingsScreen() {
@@ -39,26 +36,9 @@ export function SettingsScreen() {
     cancelSignOut,
     confirmSignOut,
   } = useConfirmSignOut();
-  const {
-    strategies,
-    selectedStrategy,
-    selectedStrategyId,
-    pickerOpen,
-    openPicker,
-    closePicker,
-    onSelectStrategy,
-  } = useStrategyPicker();
-  const {
-    options: chainPriorityOptions,
-    selectedOption: selectedChainPriority,
-    selectedChainPriorityId,
-    pickerOpen: chainPriorityPickerOpen,
-    openPicker: openChainPriorityPicker,
-    closePicker: closeChainPriorityPicker,
-    onSelectOption: onSelectChainPriority,
-  } = useChainPriorityPicker();
-  const { defaultGasSponsorship, setDefaultGasSponsorship } =
-    useDefaultGasSponsorship();
+  const { selectedStrategy } = usePaymentStrategy();
+  const { selectedOption: selectedChainPriority } = useChainPriority();
+  const { defaultGasSponsorship } = useDefaultGasSponsorship();
   const {
     options: displayCurrencyOptions,
     selectedCurrency,
@@ -69,6 +49,12 @@ export function SettingsScreen() {
     onSelectOption: onSelectDisplayCurrency,
   } = useDisplayCurrencyPicker();
   const { selectedDestinationLabel } = useOnrampSettings();
+
+  const sendSettingsSummary = [
+    selectedStrategy.label,
+    selectedChainPriority.label,
+    defaultGasSponsorship ? 'Gas sponsored' : 'You pay gas',
+  ].join(' · ');
 
   return (
     <View style={styles.container}>
@@ -157,6 +143,29 @@ export function SettingsScreen() {
             </View>
 
             <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Send</Text>
+              <Pressable
+                accessibilityLabel="Send settings"
+                accessibilityRole="button"
+                onPress={() => {
+                  navigation.navigate('sendSettings');
+                }}
+                style={({ pressed }) => [
+                  styles.strategyRow,
+                  pressed && styles.strategyRowPressed,
+                ]}
+              >
+                <View style={styles.strategyRowText}>
+                  <Text style={styles.strategyLabel}>Send settings</Text>
+                  <Text style={styles.strategyDescription} numberOfLines={2}>
+                    {sendSettingsSummary}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#86a894" />
+              </Pressable>
+            </View>
+
+            <View style={styles.section}>
               <Text style={styles.sectionTitle}>Display currency</Text>
               <Pressable
                 accessibilityLabel={`Display currency ${selectedCurrency.label}`}
@@ -179,74 +188,6 @@ export function SettingsScreen() {
               </Pressable>
             </View>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Default strategy</Text>
-              <Pressable
-                accessibilityLabel={`Default strategy ${selectedStrategy.label}`}
-                accessibilityRole="button"
-                onPress={openPicker}
-                style={({ pressed }) => [
-                  styles.strategyRow,
-                  pressed && styles.strategyRowPressed,
-                ]}
-              >
-                <View style={styles.strategyRowText}>
-                  <Text style={styles.strategyLabel}>
-                    {selectedStrategy.label}
-                  </Text>
-                  <Text style={styles.strategyDescription}>
-                    {selectedStrategy.description}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-down" size={18} color="#86a894" />
-              </Pressable>
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Chain priority</Text>
-              <Pressable
-                accessibilityLabel={`Chain priority ${selectedChainPriority.label}`}
-                accessibilityRole="button"
-                onPress={openChainPriorityPicker}
-                style={({ pressed }) => [
-                  styles.strategyRow,
-                  pressed && styles.strategyRowPressed,
-                ]}
-              >
-                <View style={styles.strategyRowText}>
-                  <Text style={styles.strategyLabel}>
-                    {selectedChainPriority.label}
-                  </Text>
-                  <Text style={styles.strategyDescription}>
-                    {selectedChainPriority.description}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-down" size={18} color="#86a894" />
-              </Pressable>
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Default gas sponsorship</Text>
-              <View style={styles.toggleRow}>
-                <View style={styles.strategyRowText}>
-                  <Text style={styles.strategyLabel}>Gas sponsorship</Text>
-                  <Text style={styles.strategyDescription}>
-                    {defaultGasSponsorship
-                      ? 'App pays network fees on new sends'
-                      : 'You pay network fees from your wallet on new sends'}
-                  </Text>
-                </View>
-                <Switch
-                  accessibilityLabel="Default gas sponsorship"
-                  trackColor={{ false: '#bbf7d0', true: '#86efac' }}
-                  thumbColor={defaultGasSponsorship ? '#166534' : '#f0fdf4'}
-                  ios_backgroundColor="#bbf7d0"
-                  value={defaultGasSponsorship}
-                  onValueChange={setDefaultGasSponsorship}
-                />
-              </View>
-            </View>
-
             <Pressable
               accessibilityRole="button"
               onPress={requestSignOut}
@@ -260,22 +201,6 @@ export function SettingsScreen() {
           </View>
         </View>
       </ScrollView>
-
-      <StrategyPickerModal
-        onClose={closePicker}
-        onSelect={onSelectStrategy}
-        selectedStrategyId={selectedStrategyId}
-        strategies={strategies}
-        visible={pickerOpen}
-      />
-
-      <ChainPriorityPickerModal
-        onClose={closeChainPriorityPicker}
-        onSelect={onSelectChainPriority}
-        options={chainPriorityOptions}
-        selectedChainPriorityId={selectedChainPriorityId}
-        visible={chainPriorityPickerOpen}
-      />
 
       <DisplayCurrencyPickerModal
         onClose={closeDisplayCurrencyPicker}
@@ -389,17 +314,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     color: '#86a894',
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#ffffff',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
   },
   logoutButton: {
     width: '100%',

@@ -105,6 +105,7 @@ export type ProfileStackParamList = {
   settings: undefined;
   profileSettings: undefined;
   onrampSettings: undefined;
+  sendSettings: undefined;
 };
 
 export type MainTabParamList = {
