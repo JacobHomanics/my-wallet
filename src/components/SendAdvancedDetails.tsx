@@ -183,11 +183,11 @@ export function SendAdvancedDetails({
     spendableTokens.map((token) => [token.id, token]),
   );
 
-  const frontendSendEnabled = broadcastMode === 'frontend';
+  const cashboxNetworkEnabled = broadcastMode === 'backend';
 
-  const onFrontendSendChange = useCallback(
+  const onCashboxNetworkChange = useCallback(
     (enabled: boolean) => {
-      if (!enabled) {
+      if (enabled) {
         onBroadcastModeChange('backend');
         return;
       }
@@ -231,22 +231,24 @@ export function SendAdvancedDetails({
 
       <View style={styles.broadcastRow}>
         <View style={styles.broadcastText}>
-          <Text style={styles.broadcastLabel}>Send from this device</Text>
+          <Text style={styles.broadcastLabel}>Send through Cashbox Network</Text>
           <Text style={styles.broadcastHint}>
-            Skips backend broadcast and {REWARD_POINTS_LABEL}
+            {cashboxNetworkEnabled
+              ? `Earn ${REWARD_POINTS_LABEL} via Cashbox backend`
+              : `Signs on this device; no ${REWARD_POINTS_LABEL}`}
           </Text>
         </View>
         <Switch
-          accessibilityLabel="Send from this device"
+          accessibilityLabel="Send through Cashbox Network"
           trackColor={{ false: '#bbf7d0', true: '#86efac' }}
-          thumbColor={frontendSendEnabled ? '#166534' : '#f0fdf4'}
+          thumbColor={cashboxNetworkEnabled ? '#166534' : '#f0fdf4'}
           ios_backgroundColor="#bbf7d0"
-          value={frontendSendEnabled}
-          onValueChange={onFrontendSendChange}
+          value={cashboxNetworkEnabled}
+          onValueChange={onCashboxNetworkChange}
         />
       </View>
 
-      {!frontendSendEnabled ? (
+      {cashboxNetworkEnabled ? (
         <>
           <View style={styles.advancedDivider} />
 
