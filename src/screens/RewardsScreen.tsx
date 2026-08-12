@@ -11,15 +11,19 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { TokenIcon } from '@/components/TokenIcon';
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useRewardTokenBalance } from '@/hooks/useRewardTokenBalance';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
+import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import { getNetworkLabel } from '@/lib/alchemy/networks';
 import {
   REWARD_POINTS_LABEL,
   REWARD_TOKEN_ADDRESS,
   REWARD_TOKEN_NETWORK,
+  REWARD_TOKEN_SYMBOL,
 } from '@/lib/rewardToken';
 
 /**
@@ -40,6 +44,7 @@ export function RewardsScreen() {
     loading: rewardLoading,
   } = useRewardTokenBalance();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const { copy, isCopied } = useCopyToClipboard();
 
   usePollTokenBalances(poll, {
     enabled: ready && Boolean(ethereumAddress || solanaAddress),
@@ -52,6 +57,7 @@ export function RewardsScreen() {
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
   const loading = !ready || rewardLoading;
   const chainLabel = getNetworkLabel(REWARD_TOKEN_NETWORK);
+  const contractCopied = isCopied('reward-contract');
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -111,15 +117,51 @@ export function RewardsScreen() {
 
               {showAdvanced ? (
                 <View style={styles.advanced}>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Chain</Text>
-                    <Text style={styles.detailValue}>{chainLabel}</Text>
+                  <View style={styles.tokenRow}>
+                    <TokenIcon
+                      logoUrl={null}
+                      network={REWARD_TOKEN_NETWORK}
+                      size={28}
+                      symbol={REWARD_TOKEN_SYMBOL}
+                    />
+                    <View style={styles.tokenText}>
+                      <Text style={styles.tokenSymbol}>
+                        {REWARD_POINTS_LABEL}
+                      </Text>
+                      <Text style={styles.tokenMeta}>{chainLabel}</Text>
+                    </View>
                   </View>
+
                   <View style={styles.divider} />
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Contract</Text>
-                    <Text style={styles.detailValue} selectable>
-                      {REWARD_TOKEN_ADDRESS}
+
+                  <View style={styles.field}>
+                    <View style={styles.fieldHeader}>
+                      <Text style={styles.fieldLabel}>Contract</Text>
+                      <Pressable
+                        accessibilityLabel={
+                          contractCopied
+                            ? 'Contract address copied'
+                            : 'Copy contract address'
+                        }
+                        accessibilityRole="button"
+                        hitSlop={8}
+                        onPress={() => {
+                          void copy(REWARD_TOKEN_ADDRESS, 'reward-contract');
+                        }}
+                        style={({ pressed }) => [
+                          styles.copyButton,
+                          pressed && styles.copyButtonPressed,
+                        ]}
+                      >
+                        <Ionicons
+                          name={contractCopied ? 'checkmark' : 'copy-outline'}
+                          size={14}
+                          color="#5a7d6a"
+                        />
+                      </Pressable>
+                    </View>
+                    <Text style={styles.fieldValue} selectable>
+                      {formatWalletAddress(REWARD_TOKEN_ADDRESS, 10, 8)}
                     </Text>
                   </View>
                 </View>
@@ -219,36 +261,72 @@ const styles = StyleSheet.create({
   advanced: {
     position: 'absolute',
     top: '100%',
-    left: 0,
-    right: 0,
     marginTop: 8,
-    borderWidth: 1,
+    width: '100%',
+    maxWidth: 320,
+    alignSelf: 'center',
+    backgroundColor: '#ffffff',
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#d1fae5',
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
+    borderRadius: 10,
+    paddingHorizontal: 12,
     paddingVertical: 4,
   },
-  detailRow: {
-    paddingVertical: 14,
-    gap: 6,
+  tokenRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
   },
-  detailLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
+  tokenText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 1,
   },
-  detailValue: {
-    fontSize: 16,
+  tokenSymbol: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#166534',
-    fontVariant: ['tabular-nums'],
+  },
+  tokenMeta: {
+    fontSize: 12,
+    color: '#86a894',
   },
   divider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: '#d1fae5',
+  },
+  field: {
+    paddingVertical: 8,
+  },
+  fieldHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  fieldLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  copyButton: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  copyButtonPressed: {
+    opacity: 0.7,
+  },
+  fieldValue: {
+    marginTop: 4,
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#166534',
+    fontVariant: ['tabular-nums'],
   },
   empty: {
     fontSize: 15,
