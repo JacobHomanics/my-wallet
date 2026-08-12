@@ -157,6 +157,8 @@ export function ProfileScreen() {
             )}
           </View>
         ) : null}
+
+        <Text style={styles.footerText}>Alright, take it easy.</Text>
       </ScrollView>
 
       <ConfirmExportPrivateKeyModal
@@ -259,5 +261,12 @@ const styles = StyleSheet.create({
   empty: {
     fontSize: 15,
     color: '#C37A7A',
+  },
+  footerText: {
+    marginTop: 48,
+    fontSize: 15,
+    fontStyle: 'italic',
+    color: '#9B5A5A',
+    textAlign: 'center',
   },
 });
