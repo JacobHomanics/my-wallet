@@ -115,12 +115,12 @@ export function LoginVerifyScreen() {
         <Text style={styles.subtitle}>We sent a code to {value}.</Text>
 
         <CodeDigitInputs
+          key={codeInputResetSignal}
           editable={!isPending}
           focusOnMount
           onCodeComplete={(code) => {
             void handleVerify(code);
           }}
-          resetSignal={codeInputResetSignal}
         />
 
         {isPending ? (

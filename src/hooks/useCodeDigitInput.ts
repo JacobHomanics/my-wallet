@@ -8,32 +8,22 @@ const EMPTY_DIGITS = Array.from({ length: CODE_DIGIT_COUNT }, () => '');
 type UseCodeDigitInputParams = {
   focusOnMount?: boolean;
   onCodeComplete?: (code: string) => void;
-  /** Bump when the parent wants digits cleared (e.g. after a failed verification). */
-  resetSignal?: number;
 };
 
 /**
  * Six-digit OTP input: paste, auto-advance, backspace, and auto-submit.
  */
 export function useCodeDigitInput(params?: UseCodeDigitInputParams) {
-  const { focusOnMount = false, onCodeComplete, resetSignal } = params ?? {};
+  const { focusOnMount = false, onCodeComplete } = params ?? {};
 
   const [codeDigits, setCodeDigits] = useState(EMPTY_DIGITS);
   const codeInputRefs = useRef<(TextInput | null)[]>([]);
   const lastCompletedCodeRef = useRef('');
   const onCodeCompleteRef = useRef(onCodeComplete);
-  onCodeCompleteRef.current = onCodeComplete;
 
-  const [prevResetSignal, setPrevResetSignal] = useState<number | undefined>(
-    undefined,
-  );
-  if (resetSignal !== undefined && resetSignal !== prevResetSignal) {
-    if (prevResetSignal !== undefined) {
-      lastCompletedCodeRef.current = '';
-      setCodeDigits(EMPTY_DIGITS);
-    }
-    setPrevResetSignal(resetSignal);
-  }
+  useEffect(() => {
+    onCodeCompleteRef.current = onCodeComplete;
+  }, [onCodeComplete]);
 
   const focusFirst = useCallback(() => {
     setTimeout(() => codeInputRefs.current[0]?.focus(), 100);
@@ -44,12 +34,6 @@ export function useCodeDigitInput(params?: UseCodeDigitInputParams) {
       focusFirst();
     }
   }, [focusOnMount, focusFirst]);
-
-  useEffect(() => {
-    if (resetSignal !== undefined && resetSignal > 0) {
-      focusFirst();
-    }
-  }, [focusFirst, resetSignal]);
 
   const tryCompleteCode = useCallback((digits: string[]) => {
     const nextCode = digits.join('');

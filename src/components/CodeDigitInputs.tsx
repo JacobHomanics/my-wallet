@@ -11,7 +11,6 @@ type CodeDigitInputsProps = {
   editable?: boolean;
   focusOnMount?: boolean;
   onCodeComplete?: (code: string) => void;
-  resetSignal?: number;
 };
 
 /**
@@ -21,13 +20,11 @@ export function CodeDigitInputs({
   editable = true,
   focusOnMount = false,
   onCodeComplete,
-  resetSignal,
 }: CodeDigitInputsProps) {
   const { codeDigits, codeInputRefs, handleDigitChange, handleKeyPress } =
     useCodeDigitInput({
       focusOnMount,
       onCodeComplete,
-      resetSignal,
     });
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
