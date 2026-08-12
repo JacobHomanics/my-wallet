@@ -28,17 +28,102 @@ import {
 
 type OnrampSettingsListener = () => void;
 
-const initialOnrampDestination = coerceOnrampDestinationForProvider(
-  DEFAULT_DEPOSIT_METHOD_ID,
-  DEFAULT_ONRAMP_NETWORK_ID,
-  DEFAULT_ONRAMP_CURRENCY_ID,
-);
+const ONRAMP_SETTINGS_STORAGE_KEY = 'onrampSettings';
+
+type StoredOnrampSettings = {
+  providerId: DepositMethodId;
+  networkId: OnrampDestinationNetwork;
+  currencyId: OnrampDestinationCurrency;
+};
+
+function readStoredOnrampSettings(): StoredOnrampSettings | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(ONRAMP_SETTINGS_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as {
+      provider?: unknown;
+      network?: unknown;
+      currency?: unknown;
+    };
+
+    if (
+      typeof parsed.provider !== 'string' ||
+      !getDepositMethodOption(parsed.provider as DepositMethodId)
+    ) {
+      return null;
+    }
+
+    const providerId = parsed.provider as DepositMethodId;
+    const network =
+      typeof parsed.network === 'string'
+        ? (parsed.network as OnrampDestinationNetwork)
+        : DEFAULT_ONRAMP_NETWORK_ID;
+    const currency =
+      typeof parsed.currency === 'string'
+        ? (parsed.currency as OnrampDestinationCurrency)
+        : DEFAULT_ONRAMP_CURRENCY_ID;
+    const coerced = coerceOnrampDestinationForProvider(
+      providerId,
+      network,
+      currency,
+    );
+
+    return {
+      providerId,
+      networkId: coerced.network,
+      currencyId: coerced.currency,
+    };
+  } catch {
+    // Ignore invalid JSON / storage errors.
+  }
+
+  return null;
+}
+
+function persistOnrampSettings(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      ONRAMP_SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        provider: selectedDepositMethodId,
+        network: selectedOnrampNetworkId,
+        currency: selectedOnrampCurrencyId,
+      }),
+    );
+  } catch {
+    // Ignore quota / private-mode storage errors.
+  }
+}
+
+const storedOnrampSettings = readStoredOnrampSettings();
+const initialOnrampDestination = storedOnrampSettings
+  ? {
+      network: storedOnrampSettings.networkId,
+      currency: storedOnrampSettings.currencyId,
+    }
+  : coerceOnrampDestinationForProvider(
+      DEFAULT_DEPOSIT_METHOD_ID,
+      DEFAULT_ONRAMP_NETWORK_ID,
+      DEFAULT_ONRAMP_CURRENCY_ID,
+    );
 
 let selectedOnrampNetworkId: OnrampDestinationNetwork =
   initialOnrampDestination.network;
 let selectedOnrampCurrencyId: OnrampDestinationCurrency =
   initialOnrampDestination.currency;
-let selectedDepositMethodId: DepositMethodId = DEFAULT_DEPOSIT_METHOD_ID;
+let selectedDepositMethodId: DepositMethodId =
+  storedOnrampSettings?.providerId ?? DEFAULT_DEPOSIT_METHOD_ID;
 const listeners = new Set<OnrampSettingsListener>();
 
 function subscribe(listener: OnrampSettingsListener): () => void {
@@ -53,6 +138,7 @@ function getSnapshot(): `${OnrampDestinationNetwork}|${OnrampDestinationCurrency
 }
 
 function emitChange(): void {
+  persistOnrampSettings();
   listeners.forEach((listener) => {
     listener();
   });
