@@ -73,6 +73,8 @@ export const sendPayment = action({
     solanaWalletId: v.union(v.string(), v.null()),
     ethereumAddress: v.string(),
     solanaAddress: v.union(v.string(), v.null()),
+    gasSponsorship: v.optional(v.boolean()),
+    skipReward: v.optional(v.boolean()),
     legs: v.array(sendLegValidator),
   },
   handler: async (_ctx, args): Promise<SendPaymentResult> => {
@@ -114,6 +116,7 @@ export const sendPayment = action({
 
     const results: SendPaymentLegResult[] = [];
     const lastEvmHashByNetwork = new Map<string, string>();
+    const sponsor = args.gasSponsorship === true;
 
     for (const leg of orderedLegs) {
       const chain = getNetworkChain(leg.network);
@@ -133,6 +136,7 @@ export const sendPayment = action({
           tokenAddress: leg.tokenAddress,
           recipient: leg.recipient,
           amountRaw,
+          sponsor,
         });
 
         lastEvmHashByNetwork.set(leg.network, hash);
@@ -164,6 +168,7 @@ export const sendPayment = action({
         recipient: leg.recipient,
         amountRaw,
         decimals: leg.decimals,
+        sponsor,
       });
 
       results.push({
@@ -184,13 +189,15 @@ export const sendPayment = action({
     let rewardAmount: string | null = null;
     let rewardFailed = false;
 
-    try {
-      const reward = await sendTreasuryReward(args.ethereumAddress);
-      rewardHash = reward.hash;
-      rewardAmount = reward.amount;
-    } catch (error) {
-      rewardFailed = true;
-      console.error("Treasury reward failed after successful payment", error);
+    if (args.skipReward !== true) {
+      try {
+        const reward = await sendTreasuryReward(args.ethereumAddress);
+        rewardHash = reward.hash;
+        rewardAmount = reward.amount;
+      } catch (error) {
+        rewardFailed = true;
+        console.error("Treasury reward failed after successful payment", error);
+      }
     }
 
     return {

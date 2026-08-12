@@ -32,6 +32,8 @@ type SendAdvancedDetailsProps = {
   onAllocationInputUnitChange: (unit: AllocationInputUnit) => void;
   broadcastMode: SendBroadcastMode;
   onBroadcastModeChange: (mode: SendBroadcastMode) => void;
+  gasSponsorship: boolean;
+  onGasSponsorshipChange: (enabled: boolean) => void;
   allocations: PaymentAllocation[];
   /** Fee-reserved balances — used for the Available line on each leg. */
   spendableTokens: OwnedToken[];
@@ -154,6 +156,8 @@ export function SendAdvancedDetails({
   onAllocationInputUnitChange,
   broadcastMode,
   onBroadcastModeChange,
+  gasSponsorship,
+  onGasSponsorshipChange,
   allocations,
   spendableTokens,
   taxFunding = null,
@@ -237,6 +241,27 @@ export function SendAdvancedDetails({
           ios_backgroundColor="#bbf7d0"
           value={frontendSendEnabled}
           onValueChange={onFrontendSendChange}
+        />
+      </View>
+
+      <View style={styles.advancedDivider} />
+
+      <View style={styles.broadcastRow}>
+        <View style={styles.broadcastText}>
+          <Text style={styles.broadcastLabel}>Gas sponsorship</Text>
+          <Text style={styles.broadcastHint}>
+            {gasSponsorship
+              ? 'App pays network fees'
+              : 'You pay network fees from your wallet'}
+          </Text>
+        </View>
+        <Switch
+          accessibilityLabel="Gas sponsorship"
+          trackColor={{ false: '#bbf7d0', true: '#86efac' }}
+          thumbColor={gasSponsorship ? '#166534' : '#f0fdf4'}
+          ios_backgroundColor="#bbf7d0"
+          value={gasSponsorship}
+          onValueChange={onGasSponsorshipChange}
         />
       </View>
 

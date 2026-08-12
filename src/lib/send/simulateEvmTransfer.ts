@@ -21,6 +21,8 @@ export type SimulateEvmTransferParams = {
    * native balance after prior legs' fees / native sends.
    */
   nativeBalanceWei?: bigint;
+  /** When true, skip native gas balance checks (Privy sponsors fees). */
+  gasSponsored?: boolean;
 };
 
 export type SimulateEvmTransferResult = {
@@ -97,11 +99,18 @@ export async function simulateEvmTransfer(
   const balance =
     params.nativeBalanceWei ??
     (await fetchNativeBalanceWei(params.network, params.from));
+  const gasSponsored = params.gasSponsored === true;
 
   if (isNative) {
-    const fees = await estimateEvmFeeFields(params.network, false);
+    const fees = gasSponsored
+      ? { maxFeeWei: 0n }
+      : await estimateEvmFeeFields(params.network, false);
     let amountRaw = params.amountRaw;
-    if (amountRaw + fees.maxFeeWei > balance) {
+    if (gasSponsored) {
+      if (amountRaw > balance) {
+        amountRaw = balance;
+      }
+    } else if (amountRaw + fees.maxFeeWei > balance) {
       if (balance <= fees.maxFeeWei) {
         throw new Error(
           `Not enough ${nativeGasTokenSymbol(params.network)} left on this network to cover fees. Try sending a token that isn’t the gas token, or add a little more ${nativeGasTokenSymbol(params.network)}.`,
@@ -111,7 +120,9 @@ export async function simulateEvmTransfer(
     }
     if (amountRaw <= 0n) {
       throw new Error(
-        `Not enough ${nativeGasTokenSymbol(params.network)} left on this network to cover fees. Try sending a token that isn’t the gas token, or add a little more ${nativeGasTokenSymbol(params.network)}.`,
+        gasSponsored
+          ? `Not enough ${nativeGasTokenSymbol(params.network)} on this network.`
+          : `Not enough ${nativeGasTokenSymbol(params.network)} left on this network to cover fees. Try sending a token that isn’t the gas token, or add a little more ${nativeGasTokenSymbol(params.network)}.`,
       );
     }
 
@@ -134,8 +145,10 @@ export async function simulateEvmTransfer(
     throw new Error('Missing ERC-20 token address');
   }
 
-  const fees = await estimateEvmFeeFields(params.network, true);
-  if (balance < fees.maxFeeWei) {
+  const fees = gasSponsored
+    ? { maxFeeWei: 0n }
+    : await estimateEvmFeeFields(params.network, true);
+  if (!gasSponsored && balance < fees.maxFeeWei) {
     throw new Error(
       `Not enough ${nativeGasTokenSymbol(params.network)} on this network to pay for the token transfer fee.`,
     );

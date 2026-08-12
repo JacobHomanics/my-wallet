@@ -26,6 +26,7 @@ import { usePopToSend } from '@/hooks/usePopToSend';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useGasFunding } from '@/hooks/useGasFunding';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useGasSponsorship } from '@/hooks/useGasSponsorship';
 import { resetSendDraft, useSendDraft, useSendDraftUi } from '@/hooks/useSendDraft';
 import { useSendAmountRecipientDisplay } from '@/hooks/useSendAmountRecipientDisplay';
 import { useSendForm } from '@/hooks/useSendForm';
@@ -71,6 +72,7 @@ export function ConfirmSendScreen() {
   } = useAppTax();
   const { allocationInputUnit, setAllocationInputUnit, broadcastMode, setBroadcastMode } =
     useSendDraftUi();
+  const { gasSponsorship, setGasSponsorship } = useGasSponsorship();
   const {
     strategies,
     selectedStrategy,
@@ -196,7 +198,7 @@ export function ConfirmSendScreen() {
             amountFormatted: leg.amountFormatted,
             isTax: leg.isTax,
           })),
-          { broadcastMode },
+          { broadcastMode, gasSponsorship },
         );
         resetSendDraft();
         refresh();
@@ -229,6 +231,7 @@ export function ConfirmSendScreen() {
   }, [
     allocations,
     broadcastMode,
+    gasSponsorship,
     canSend,
     clearStatus,
     navigation,
@@ -426,12 +429,14 @@ export function ConfirmSendScreen() {
                 broadcastMode={broadcastMode}
                 canAddToken={canAddToken}
                 gasFunding={gasFunding}
+                gasSponsorship={gasSponsorship}
                 onAddToken={() => {
                   setTokenPickerOpen(true);
                 }}
                 onAllocationAmountChange={setAllocationAmount}
                 onAllocationInputUnitChange={setAllocationInputUnit}
                 onBroadcastModeChange={setBroadcastMode}
+                onGasSponsorshipChange={setGasSponsorship}
                 onOpenStrategyPicker={openStrategyPicker}
                 onRemoveAllocation={removeAllocation}
                 selectedStrategy={selectedStrategy}

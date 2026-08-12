@@ -92,9 +92,17 @@ export function useSendTransaction(): SendTransactionResult {
   }, [ethereumWallets, solanaWallet]);
 
   const simulatePayment = useCallback(
-    async (legs: SendTokenParams[]): Promise<void> => {
+    async (
+      legs: SendTokenParams[],
+      gasSponsored = false,
+    ): Promise<void> => {
       const { ethereumFrom, solanaFrom } = resolveAddresses();
-      await simulatePaymentLegs({ legs, ethereumFrom, solanaFrom });
+      await simulatePaymentLegs({
+        legs,
+        ethereumFrom,
+        solanaFrom,
+        gasSponsored,
+      });
     },
     [resolveAddresses],
   );
@@ -178,12 +186,14 @@ export function useSendTransaction(): SendTransactionResult {
         const connection = new Connection(getSolanaRpcUrl(), 'confirmed');
 
         const isNative = isNativeTokenAddress(params.token.tokenAddress);
-        await assertSolanaFeePayerFunds({
-          fromAddress: wallet.address,
-          recipient: params.recipient.trim(),
-          mint: params.token.tokenAddress,
-          isNative,
-        });
+        if (!params.sponsor) {
+          await assertSolanaFeePayerFunds({
+            fromAddress: wallet.address,
+            recipient: params.recipient.trim(),
+            mint: params.token.tokenAddress,
+            isNative,
+          });
+        }
         const amountRaw = isNative
           ? await clampNativeSolSendValue({
               fromAddress: wallet.address,

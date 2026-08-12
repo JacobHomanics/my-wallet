@@ -16,6 +16,7 @@ export type SendEvmLegParams = {
   tokenAddress: string | null;
   recipient: string;
   amountRaw: bigint;
+  sponsor?: boolean;
 };
 
 /**
@@ -30,6 +31,7 @@ export async function sendEvmLeg(params: SendEvmLegParams): Promise<string> {
     tokenAddress,
     recipient,
     amountRaw,
+    sponsor = false,
   } = params;
 
   const chainId = getEvmChainId(network);
@@ -54,6 +56,7 @@ export async function sendEvmLeg(params: SendEvmLegParams): Promise<string> {
     caip2,
     params: { transaction },
     authorization_context: authorizationContext,
+    ...(sponsor ? { sponsor: true } : {}),
   });
 
   if (!result.hash) {

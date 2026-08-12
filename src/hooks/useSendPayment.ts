@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { Platform } from 'react-native';
 import { useAction } from 'convex/react';
 
 import { api } from '../../convex/_generated/api';
@@ -38,6 +39,8 @@ export type SendPaymentOutcome = {
 
 export type SendPaymentOptions = {
   broadcastMode?: SendBroadcastMode;
+  /** Privy gas sponsorship — app pays network fees when true. */
+  gasSponsorship?: boolean;
 };
 
 export type SendPaymentResult = {
@@ -93,6 +96,7 @@ export function useSendPayment(): SendPaymentResult {
       }
 
       const broadcastMode = options?.broadcastMode ?? 'backend';
+      const gasSponsorship = options?.gasSponsorship ?? false;
       const orderedLegs = orderPaymentLegs(legs);
 
       setSending(true);
@@ -102,10 +106,15 @@ export function useSendPayment(): SendPaymentResult {
             token: leg.token,
             recipient: leg.recipient,
             amountRaw: leg.amountRaw,
+            sponsor: gasSponsorship,
           })),
+          gasSponsorship,
         );
 
-        if (broadcastMode === 'frontend') {
+        const relaySponsoredViaBackend =
+          gasSponsorship && broadcastMode === 'frontend' && Platform.OS !== 'web';
+
+        if (broadcastMode === 'frontend' && !relaySponsoredViaBackend) {
           const ethereumFrom = ethereumWallet?.address ?? null;
           const results: SendPaymentLegResult[] = [];
           /** Last broadcast hash per EVM network — confirm before next on same net. */
@@ -136,6 +145,7 @@ export function useSendPayment(): SendPaymentResult {
               recipient: leg.recipient,
               amountRaw: leg.amountRaw,
               nonce,
+              sponsor: gasSponsorship,
             });
 
             if (result.chain === 'ethereum') {
@@ -179,6 +189,8 @@ export function useSendPayment(): SendPaymentResult {
           solanaWalletId: solanaWallet?.id ?? null,
           ethereumAddress: ethereumWallet.address,
           solanaAddress: solanaWallet?.address ?? null,
+          gasSponsorship,
+          skipReward: relaySponsoredViaBackend,
           legs: orderedLegs.map((leg) => ({
             network: leg.token.network,
             networkLabel: leg.token.networkLabel,

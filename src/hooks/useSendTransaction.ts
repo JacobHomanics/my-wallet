@@ -53,9 +53,17 @@ export function useSendTransaction(): SendTransactionResult {
   }, [ethereumWallets, solanaWallets]);
 
   const simulatePayment = useCallback(
-    async (legs: SendTokenParams[]): Promise<void> => {
+    async (
+      legs: SendTokenParams[],
+      gasSponsored = false,
+    ): Promise<void> => {
       const { ethereumFrom, solanaFrom } = resolveAddresses();
-      await simulatePaymentLegs({ legs, ethereumFrom, solanaFrom });
+      await simulatePaymentLegs({
+        legs,
+        ethereumFrom,
+        solanaFrom,
+        gasSponsored,
+      });
     },
     [resolveAddresses],
   );
@@ -126,6 +134,7 @@ export function useSendTransaction(): SendTransactionResult {
           const { hash } = await sendTransaction(request, {
             address: wallet.address,
             uiOptions: { showWalletUIs: false },
+            ...(params.sponsor ? { sponsor: true } : {}),
           });
 
           return { hash, chain: 'ethereum' };
@@ -137,12 +146,14 @@ export function useSendTransaction(): SendTransactionResult {
         }
 
         const isNative = isNativeTokenAddress(params.token.tokenAddress);
-        await assertSolanaFeePayerFunds({
-          fromAddress: wallet.address,
-          recipient: params.recipient.trim(),
-          mint: params.token.tokenAddress,
-          isNative,
-        });
+        if (!params.sponsor) {
+          await assertSolanaFeePayerFunds({
+            fromAddress: wallet.address,
+            recipient: params.recipient.trim(),
+            mint: params.token.tokenAddress,
+            isNative,
+          });
+        }
         const amountRaw = isNative
           ? await clampNativeSolSendValue({
               fromAddress: wallet.address,
@@ -166,6 +177,7 @@ export function useSendTransaction(): SendTransactionResult {
             uiOptions: { showWalletUIs: false },
             // Alchemy Solana often lacks `signatureSubscribe`; return after broadcast.
             optimisticBroadcast: true,
+            ...(params.sponsor ? { sponsor: true } : {}),
           },
         });
 

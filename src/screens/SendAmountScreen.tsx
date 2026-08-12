@@ -27,6 +27,7 @@ import { useGasFunding } from '@/hooks/useGasFunding';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendAmountRecipientDisplay } from '@/hooks/useSendAmountRecipientDisplay';
 import { useClearSendRecipientOnBack } from '@/hooks/useClearSendRecipientOnBack';
+import { useGasSponsorship } from '@/hooks/useGasSponsorship';
 import {
   updateSendDraft,
   useSendDraft,
@@ -57,6 +58,7 @@ export function SendAmountScreen() {
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const { allocationInputUnit, setAllocationInputUnit, broadcastMode, setBroadcastMode } =
     useSendDraftUi();
+  const { gasSponsorship, setGasSponsorship } = useGasSponsorship();
   const { accountNumber, recipientName, recipientProfilePhotoUrl, recipientIsFarcaster, recipientIsEns } =
     useSendDraft();
   const recipientUsername = useSendRecipientUsername();
@@ -329,12 +331,14 @@ export function SendAmountScreen() {
                     broadcastMode={broadcastMode}
                     canAddToken={canAddToken}
                     gasFunding={gasFunding}
+                    gasSponsorship={gasSponsorship}
                     onAddToken={() => {
                       setTokenPickerOpen(true);
                     }}
                     onAllocationAmountChange={setAllocationAmount}
                     onAllocationInputUnitChange={setAllocationInputUnit}
                     onBroadcastModeChange={setBroadcastMode}
+                    onGasSponsorshipChange={setGasSponsorship}
                     onOpenStrategyPicker={openStrategyPicker}
                     onRemoveAllocation={removeAllocation}
                     selectedStrategy={selectedStrategy}

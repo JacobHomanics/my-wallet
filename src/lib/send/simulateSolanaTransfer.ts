@@ -23,6 +23,8 @@ export type SimulateSolanaTransferParams = {
    * prior legs' fees / native sends.
    */
   balanceLamports?: bigint;
+  /** When true, skip native gas balance checks (Privy sponsors fees). */
+  gasSponsored?: boolean;
 };
 
 export type SimulateSolanaTransferResult = {
@@ -61,22 +63,27 @@ export async function simulateSolanaTransfer(
   const balance =
     params.balanceLamports ??
     (await fetchSolBalanceLamports(params.fromAddress));
+  const gasSponsored = params.gasSponsored === true;
 
   let amountRaw = params.amountRaw;
   let nativeDebitLamports: bigint;
 
   if (isNative) {
-    const maxSend =
-      solanaSpendableFeeBudget(balance) - SOLANA_TX_FEE_LAMPORTS;
+    const maxSend = gasSponsored
+      ? solanaSpendableFeeBudget(balance)
+      : solanaSpendableFeeBudget(balance) - SOLANA_TX_FEE_LAMPORTS;
     if (maxSend <= 0n) {
       throw new Error(
-        'This transfer needs more SOL for network fees than is currently available to spend.',
+        gasSponsored
+          ? 'Not enough SOL on this network.'
+          : 'This transfer needs more SOL for network fees than is currently available to spend.',
       );
     }
     if (amountRaw > maxSend) {
       amountRaw = maxSend;
     }
-    nativeDebitLamports = amountRaw + SOLANA_TX_FEE_LAMPORTS;
+    nativeDebitLamports =
+      amountRaw + (gasSponsored ? 0n : SOLANA_TX_FEE_LAMPORTS);
   } else {
     if (!params.tokenAddress) {
       throw new Error('Missing SPL token mint address');
@@ -86,14 +93,16 @@ export async function simulateSolanaTransfer(
         recipient,
         mint: params.tokenAddress,
       });
-    if (balance < needLamports) {
+    if (!gasSponsored && balance < needLamports) {
       throw new Error(
         'This transfer needs more SOL for network fees than is currently available to spend.',
       );
     }
-    nativeDebitLamports = needsAtaCreation
-      ? needLamports - SOLANA_ACCOUNT_RENT_LAMPORTS
-      : SOLANA_TX_FEE_LAMPORTS;
+    nativeDebitLamports = gasSponsored
+      ? 0n
+      : needsAtaCreation
+        ? needLamports - SOLANA_ACCOUNT_RENT_LAMPORTS
+        : SOLANA_TX_FEE_LAMPORTS;
   }
 
   const serialized = await buildSolanaTransferTransaction({
