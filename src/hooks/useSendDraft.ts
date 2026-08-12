@@ -34,7 +34,10 @@ export type SendDraft = {
    * rewrite the requested amount.
    */
   amountLocked: boolean;
+  /** Priced token legs that override strategy allocation. */
   manualLegs: SendDraftManualLeg[] | null;
+  /** Unpriced bonus legs (e.g. CashBox Points) sent on top of the USD payment. */
+  additionalLegs: SendDraftManualLeg[] | null;
   allocationInputs: Record<string, string>;
   allocationInputUnit: AllocationInputUnit;
   /** When set, overrides the default strategy for this send only. */
@@ -60,6 +63,7 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   amount: '0',
   amountLocked: false,
   manualLegs: null,
+  additionalLegs: null,
   allocationInputs: {},
   allocationInputUnit: 'token',
   strategyId: null,

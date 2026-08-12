@@ -319,7 +319,9 @@ export function SendAdvancedDetails({
           const inputValue =
             allocationInputs[leg.token.id] ??
             (allocationInputUnit === 'usd'
-              ? String(leg.usd)
+              ? leg.usd > 0
+                ? String(leg.usd)
+                : leg.amountFormatted
               : leg.amountFormatted);
           const exceeds = leg.amountRaw + taxRawOnLeg > spendable.rawBalance;
           const secondaryValue =

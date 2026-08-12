@@ -90,6 +90,7 @@ export function ConfirmSendScreen() {
   } = useFiatDisplay();
 
   const form = useSendForm(
+    tokens,
     spendableTokens,
     selectedStrategyId,
     undefined,
@@ -280,10 +281,17 @@ export function ConfirmSendScreen() {
   );
 
   const allocatedTokenIds = allocations.map((leg) => leg.token.id);
-  const canAddToken = spendableTokens.some(
-    (token) =>
-      token.rawBalance > 0n && !allocatedTokenIds.includes(token.id),
-  );
+  const pickerTokens = tokens.filter((token) => {
+    if (token.rawBalance <= 0n || allocatedTokenIds.includes(token.id)) {
+      return false;
+    }
+    if (token.usdValue == null || !(token.usdValue > 0)) {
+      return true;
+    }
+    const spendable = spendableTokens.find((item) => item.id === token.id);
+    return spendable != null && spendable.rawBalance > 0n;
+  });
+  const canAddToken = pickerTokens.length > 0;
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -500,7 +508,7 @@ export function ConfirmSendScreen() {
           setTokenPickerOpen(false);
         }}
         onSelect={onAddToken}
-        tokens={spendableTokens}
+        tokens={pickerTokens}
         visible={tokenPickerOpen}
       />
 
