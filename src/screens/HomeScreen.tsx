@@ -193,24 +193,26 @@ export function HomeScreen() {
                       </Pressable>
                     </View>
                   </View>
-                  <Pressable
-                    accessibilityRole="link"
-                    hitSlop={8}
-                    onPress={() => {
-                      navigation.navigate('transactions');
-                    }}
-                    style={({ pressed }) => [
-                      styles.detailsLink,
-                      pressed && styles.detailsLinkPressed,
-                    ]}
-                  >
-                    <Text style={styles.detailsLinkText}>Transactions</Text>
-                  </Pressable>
                 </>
               ) : null}
             </>
           )}
         </View>
+        {showActions ? (
+          <Pressable
+            accessibilityRole="link"
+            hitSlop={8}
+            onPress={() => {
+              navigation.navigate('transactions');
+            }}
+            style={({ pressed }) => [
+              styles.transactionsLink,
+              pressed && styles.detailsLinkPressed,
+            ]}
+          >
+            <Text style={styles.detailsLinkText}>Transactions</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
       <DepositBankTipsModal
         visible={depositTipsOpen}
@@ -239,7 +241,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   hero: {
-    flexGrow: 1,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -321,6 +323,10 @@ const styles = StyleSheet.create({
 
   detailsLink: {
     marginTop: 20,
+    paddingVertical: 4,
+  },
+  transactionsLink: {
+    alignSelf: 'center',
     paddingVertical: 4,
   },
   detailsLinkPressed: {
