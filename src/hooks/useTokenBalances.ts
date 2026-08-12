@@ -5,6 +5,7 @@ import { useUserWallets } from '@/hooks/useUserWallets';
 import { getAlchemyApiKey } from '@/lib/alchemy/alchemyCredentials';
 import {
   fetchTokensByAddress,
+  fetchTokensByAddressAllNetworks,
   sortOwnedTokens,
   type OwnedToken,
   type WalletNetworksQuery,
@@ -136,11 +137,18 @@ export function useTokenBalances(): TokenBalancesResult {
         // Fetch EVM and Solana separately so one chain failure does not wipe the other.
         const results = await Promise.allSettled(
           queries.map((query) =>
-            fetchTokensByAddress({
-              apiKey,
-              queries: [query],
-              signal: controller.signal,
-            }),
+            query.address === ethereumAddress
+              ? fetchTokensByAddressAllNetworks({
+                  apiKey,
+                  address: query.address,
+                  networks: query.networks,
+                  signal: controller.signal,
+                })
+              : fetchTokensByAddress({
+                  apiKey,
+                  queries: [query],
+                  signal: controller.signal,
+                }),
           ),
         );
         if (controller.signal.aborted) {

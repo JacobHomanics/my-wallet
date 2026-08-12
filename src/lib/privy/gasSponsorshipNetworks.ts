@@ -1,18 +1,12 @@
 /**
- * App network IDs where Privy app-pays gas sponsorship is supported.
+ * Privy app-pays gas sponsorship per network.
  * @see https://docs.privy.io/wallets/gas-and-asset-management/gas/overview
- *
- * Networks the app uses but Privy does not sponsor (e.g. Avalanche) are omitted —
- * sends there always use user-paid gas even when sponsorship is enabled.
  */
-export const PRIVY_GAS_SPONSORSHIP_NETWORKS = new Set<string>([
-  'eth-mainnet',
-  'base-mainnet',
-  'arb-mainnet',
-  'opt-mainnet',
-  'polygon-mainnet',
-  'solana-mainnet',
-]);
+import {
+  PRIVY_GAS_SPONSORSHIP_NETWORKS,
+} from '@/lib/alchemy/networkDefinitions';
+
+export { PRIVY_GAS_SPONSORSHIP_NETWORKS };
 
 export function isPrivyGasSponsorshipNetwork(network: string): boolean {
   return PRIVY_GAS_SPONSORSHIP_NETWORKS.has(network);

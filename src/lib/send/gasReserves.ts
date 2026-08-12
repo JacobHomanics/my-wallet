@@ -3,6 +3,7 @@ import {
   formatRawTokenBalance,
   type OwnedToken,
 } from '@/lib/alchemy/fetchTokensByAddress';
+import { isL2EvmNetwork } from '@/lib/alchemy/networkDefinitions';
 import {
   SOLANA_ACCOUNT_RENT_LAMPORTS,
   SOLANA_SPL_RESERVE_LAMPORTS,
@@ -27,12 +28,7 @@ export function evmTransferGasLimit(
     if (network === 'arb-mainnet') {
       return 150_000n;
     }
-    if (
-      network === 'base-mainnet' ||
-      network === 'opt-mainnet' ||
-      network === 'polygon-mainnet' ||
-      network === 'avax-mainnet'
-    ) {
+    if (isL2EvmNetwork(network)) {
       return 80_000n;
     }
     return EVM_ERC20_TRANSFER_GAS;
@@ -41,12 +37,7 @@ export function evmTransferGasLimit(
   if (network === 'arb-mainnet') {
     return 100_000n;
   }
-  if (
-    network === 'base-mainnet' ||
-    network === 'opt-mainnet' ||
-    network === 'polygon-mainnet' ||
-    network === 'avax-mainnet'
-  ) {
+  if (isL2EvmNetwork(network)) {
     return 30_000n;
   }
   return EVM_NATIVE_TRANSFER_GAS;

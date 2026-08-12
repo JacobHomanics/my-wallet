@@ -605,7 +605,7 @@ export async function fetchWalletTransactions(options: {
 
   const batches = await Promise.all([
     ethereumAddress
-      ? Promise.all(
+      ? Promise.allSettled(
           ALCHEMY_EVM_NETWORKS.map((network) =>
             fetchEvmNetworkTransfers({
               network,
@@ -614,7 +614,11 @@ export async function fetchWalletTransactions(options: {
               signal,
             }),
           ),
-        ).then((rows) => rows.flat())
+        ).then((results) =>
+          results.flatMap((result) =>
+            result.status === 'fulfilled' ? result.value : [],
+          ),
+        )
       : Promise.resolve([] as WalletTransaction[]),
     solanaAddress
       ? fetchSolanaTransfers({

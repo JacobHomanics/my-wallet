@@ -529,3 +529,48 @@ export async function fetchTokensByAddress({
 
   return sortOwnedTokens(tokens);
 }
+
+const PORTFOLIO_NETWORK_BATCH_SIZE = 8;
+
+/**
+ * Fetches balances across many networks; skips batches Alchemy does not support
+ * instead of failing the whole wallet query.
+ */
+export async function fetchTokensByAddressAllNetworks({
+  apiKey,
+  address,
+  networks,
+  signal,
+}: {
+  apiKey: string;
+  address: string;
+  networks: readonly string[];
+  signal?: AbortSignal;
+}): Promise<OwnedToken[]> {
+  if (!networks.length) {
+    return [];
+  }
+
+  const batches: string[][] = [];
+  for (let i = 0; i < networks.length; i += PORTFOLIO_NETWORK_BATCH_SIZE) {
+    batches.push(networks.slice(i, i + PORTFOLIO_NETWORK_BATCH_SIZE));
+  }
+
+  const results = await Promise.allSettled(
+    batches.map((batch) =>
+      fetchTokensByAddress({
+        apiKey,
+        queries: [{ address, networks: batch }],
+        signal,
+      }),
+    ),
+  );
+
+  const tokens: OwnedToken[] = [];
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      tokens.push(...result.value);
+    }
+  }
+  return sortOwnedTokens(tokens);
+}
