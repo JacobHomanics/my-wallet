@@ -159,11 +159,7 @@ export function HomeScreen() {
                         pressed && styles.actionButtonPressed,
                       ]}
                     >
-                      <MaterialCommunityIcons
-                        name="archive-arrow-up-outline"
-                        size={18}
-                        color="#f8fafc"
-                      />
+                      <Ionicons name="business-outline" size={18} color="#f0fdf4" />
                       <Text style={styles.actionButtonText}>Withdraw</Text>
                     </Pressable>
                   </View>
