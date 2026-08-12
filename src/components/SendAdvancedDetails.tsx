@@ -20,6 +20,7 @@ import {
 import { floorUsdToSendableCap, formatFiatValue } from '@/lib/fiat';
 import type { SendBroadcastMode } from '@/lib/send/broadcastMode';
 import type { TaxFundingPick } from '@/lib/send/buildPaymentLegsWithTax';
+import type { GasFundingPick } from '@/lib/send/gasReserves';
 import { REWARD_POINTS_LABEL } from '@/lib/rewardToken';
 import type { PaymentStrategy } from '@/lib/strategies';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
@@ -36,6 +37,8 @@ type SendAdvancedDetailsProps = {
   spendableTokens: OwnedToken[];
   /** Single-token tax funding pick; reserved from Available on that token. */
   taxFunding?: TaxFundingPick | null;
+  /** Native gas reserved on gas tokens for network fees. */
+  gasFunding?: GasFundingPick[];
   allocationInputs: Record<string, string>;
   onAllocationAmountChange: (tokenId: string, value: string) => void;
   onRemoveAllocation: (tokenId: string) => void;
@@ -80,6 +83,70 @@ function merchantAvailableToken(
   };
 }
 
+type ReservedAllocationRowProps = {
+  token: OwnedToken;
+  badgeLabel: string;
+  amountFormatted: string;
+  usd: number;
+  allocationInputUnit: AllocationInputUnit;
+  formatAmountInputFromUsd: (usd: number) => string;
+  formatFromUsd: (usd: number | null) => string | null;
+  currencySymbol: string;
+};
+
+function ReservedAllocationRow({
+  token,
+  badgeLabel,
+  amountFormatted,
+  usd,
+  allocationInputUnit,
+  formatAmountInputFromUsd,
+  formatFromUsd,
+  currencySymbol,
+}: ReservedAllocationRowProps) {
+  return (
+    <View style={[styles.allocationRow, styles.taxAllocationRow]}>
+      <View style={styles.allocationHeader}>
+        <TokenIcon
+          logoUrl={token.logoUrl}
+          network={token.network}
+          size={32}
+          symbol={token.symbol}
+        />
+        <View style={styles.allocationText}>
+          <View style={styles.allocationTitleRow}>
+            <Text style={styles.allocationSymbol} numberOfLines={1}>
+              {token.symbol}
+            </Text>
+            <Text style={styles.taxBadge}>{badgeLabel}</Text>
+          </View>
+          <Text style={styles.allocationMeta} numberOfLines={1}>
+            {token.networkLabel}
+          </Text>
+        </View>
+      </View>
+      <View style={styles.allocationControls}>
+        {allocationInputUnit === 'usd' ? (
+          <Text style={styles.allocationInputPrefix}>{currencySymbol}</Text>
+        ) : null}
+        <View style={styles.taxAmountBox}>
+          <Text style={styles.taxAmountText}>
+            {allocationInputUnit === 'usd'
+              ? formatAmountInputFromUsd(usd)
+              : amountFormatted}
+          </Text>
+        </View>
+        <Text style={styles.allocationSecondary} numberOfLines={1}>
+          {allocationInputUnit === 'usd'
+            ? amountFormatted
+            : (formatFromUsd(usd) ?? '—')}
+        </Text>
+        <View style={styles.allocationRemove} />
+      </View>
+    </View>
+  );
+}
+
 export function SendAdvancedDetails({
   selectedStrategy,
   onOpenStrategyPicker,
@@ -90,6 +157,7 @@ export function SendAdvancedDetails({
   allocations,
   spendableTokens,
   taxFunding = null,
+  gasFunding = [],
   allocationInputs,
   onAllocationAmountChange,
   onRemoveAllocation,
@@ -350,46 +418,31 @@ export function SendAdvancedDetails({
         })
       )}
 
+      {gasFunding.map((pick) => (
+        <ReservedAllocationRow
+          key={pick.token.id}
+          allocationInputUnit={allocationInputUnit}
+          amountFormatted={pick.amountFormatted}
+          badgeLabel="Gas"
+          currencySymbol={currencySymbol}
+          formatAmountInputFromUsd={formatAmountInputFromUsd}
+          formatFromUsd={formatFromUsd}
+          token={pick.token}
+          usd={pick.usd}
+        />
+      ))}
+
       {taxFunding != null && taxFunding.amountRaw > 0n ? (
-        <View style={[styles.allocationRow, styles.taxAllocationRow]}>
-          <View style={styles.allocationHeader}>
-            <TokenIcon
-              logoUrl={taxFunding.token.logoUrl}
-              network={taxFunding.token.network}
-              size={32}
-              symbol={taxFunding.token.symbol}
-            />
-            <View style={styles.allocationText}>
-              <View style={styles.allocationTitleRow}>
-                <Text style={styles.allocationSymbol} numberOfLines={1}>
-                  {taxFunding.token.symbol}
-                </Text>
-                <Text style={styles.taxBadge}>Service fee</Text>
-              </View>
-              <Text style={styles.allocationMeta} numberOfLines={1}>
-                {taxFunding.token.networkLabel}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.allocationControls}>
-            {allocationInputUnit === 'usd' ? (
-              <Text style={styles.allocationInputPrefix}>{currencySymbol}</Text>
-            ) : null}
-            <View style={styles.taxAmountBox}>
-              <Text style={styles.taxAmountText}>
-                {allocationInputUnit === 'usd'
-                  ? formatAmountInputFromUsd(taxFunding.usd)
-                  : taxFunding.amountFormatted}
-              </Text>
-            </View>
-            <Text style={styles.allocationSecondary} numberOfLines={1}>
-              {allocationInputUnit === 'usd'
-                ? taxFunding.amountFormatted
-                : (formatFromUsd(taxFunding.usd) ?? '—')}
-            </Text>
-            <View style={styles.allocationRemove} />
-          </View>
-        </View>
+        <ReservedAllocationRow
+          allocationInputUnit={allocationInputUnit}
+          amountFormatted={taxFunding.amountFormatted}
+          badgeLabel="Service fee"
+          currencySymbol={currencySymbol}
+          formatAmountInputFromUsd={formatAmountInputFromUsd}
+          formatFromUsd={formatFromUsd}
+          token={taxFunding.token}
+          usd={taxFunding.usd}
+        />
       ) : null}
 
       {canAddToken ? (

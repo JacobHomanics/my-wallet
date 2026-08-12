@@ -23,6 +23,7 @@ import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
+import { useGasFunding } from '@/hooks/useGasFunding';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendAmountRecipientDisplay } from '@/hooks/useSendAmountRecipientDisplay';
 import { useClearSendRecipientOnBack } from '@/hooks/useClearSendRecipientOnBack';
@@ -104,6 +105,8 @@ export function SendAmountScreen() {
     removeAllocation,
     addAllocation,
   } = form;
+
+  const gasFunding = useGasFunding(tokens, spendableTokens, allocations, taxFunding);
 
   const {
     hasRecipient,
@@ -325,6 +328,7 @@ export function SendAmountScreen() {
                     allocations={allocations}
                     broadcastMode={broadcastMode}
                     canAddToken={canAddToken}
+                    gasFunding={gasFunding}
                     onAddToken={() => {
                       setTokenPickerOpen(true);
                     }}

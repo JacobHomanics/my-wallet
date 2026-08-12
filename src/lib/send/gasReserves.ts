@@ -1,4 +1,5 @@
 import {
+  estimateTokenAmountUsd,
   formatRawTokenBalance,
   type OwnedToken,
 } from '@/lib/alchemy/fetchTokensByAddress';
@@ -90,6 +91,65 @@ export type NetworkGasFeeEstimate = {
   /** Native raw units from gasPrice × gasLimit (may be tiny on L2s). */
   feePerTxRaw: bigint;
 };
+
+export type GasFundingPick = {
+  token: OwnedToken;
+  amountRaw: bigint;
+  amountFormatted: string;
+  usd: number;
+};
+
+/**
+ * Native gas reserved on each gas token (wallet balance minus spendable).
+ * When `usedNetworks` is set, only gas tokens on those networks are included.
+ */
+export function resolveGasFunding(
+  walletTokens: readonly OwnedToken[],
+  spendableTokens: readonly OwnedToken[],
+  usedNetworks?: ReadonlySet<string>,
+): GasFundingPick[] {
+  const spendableById = new Map(
+    spendableTokens.map((token) => [token.id, token] as const),
+  );
+  const picks: GasFundingPick[] = [];
+
+  for (const wallet of walletTokens) {
+    if (!isGasToken(wallet) || wallet.rawBalance <= 0n) {
+      continue;
+    }
+    if (
+      usedNetworks != null &&
+      usedNetworks.size > 0 &&
+      !usedNetworks.has(wallet.network)
+    ) {
+      continue;
+    }
+    const spendable = spendableById.get(wallet.id);
+    if (spendable == null) {
+      continue;
+    }
+    const amountRaw =
+      wallet.rawBalance > spendable.rawBalance
+        ? wallet.rawBalance - spendable.rawBalance
+        : 0n;
+    if (amountRaw <= 0n) {
+      continue;
+    }
+
+    picks.push({
+      token: wallet,
+      amountRaw,
+      amountFormatted: formatRawTokenBalance(amountRaw, wallet.decimals),
+      usd:
+        estimateTokenAmountUsd(wallet, amountRaw) ??
+        (wallet.usdValue != null && wallet.rawBalance > 0n
+          ? wallet.usdValue * (Number(amountRaw) / Number(wallet.rawBalance))
+          : 0),
+    });
+  }
+
+  return picks.sort((a, b) => b.usd - a.usd);
+}
 
 function maxBigInt(a: bigint, b: bigint): bigint {
   return a > b ? a : b;

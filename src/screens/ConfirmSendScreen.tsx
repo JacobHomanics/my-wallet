@@ -24,6 +24,7 @@ import { useAppTax } from '@/hooks/useAppTax';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { usePopToSend } from '@/hooks/usePopToSend';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
+import { useGasFunding } from '@/hooks/useGasFunding';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { resetSendDraft, useSendDraft, useSendDraftUi } from '@/hooks/useSendDraft';
 import { useSendAmountRecipientDisplay } from '@/hooks/useSendAmountRecipientDisplay';
@@ -115,6 +116,8 @@ export function ConfirmSendScreen() {
     removeAllocation,
     addAllocation,
   } = form;
+
+  const gasFunding = useGasFunding(tokens, spendableTokens, allocations, taxFunding);
 
   const trimmedEthereum = ethereumRecipient.trim();
   const trimmedSolana = solanaRecipient.trim();
@@ -422,6 +425,7 @@ export function ConfirmSendScreen() {
                 allocations={allocations}
                 broadcastMode={broadcastMode}
                 canAddToken={canAddToken}
+                gasFunding={gasFunding}
                 onAddToken={() => {
                   setTokenPickerOpen(true);
                 }}
