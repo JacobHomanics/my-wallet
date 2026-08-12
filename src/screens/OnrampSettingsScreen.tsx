@@ -6,9 +6,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { OnrampOptionPickerModal } from '@/components/OnrampOptionPickerModal';
+import { PrivyIcon } from '@/components/PrivyIcon';
+import { StripeIcon } from '@/components/StripeIcon';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useOnrampSettings } from '@/hooks/useOnrampSettings';
 import { usePopToSettings } from '@/hooks/usePopToSettings';
+import type { DepositMethodId } from '@/lib/stripe/depositMethods';
+
+function DepositProviderIcon({ id }: { id: DepositMethodId }) {
+  if (id === 'stripe-embedded-components') {
+    return <PrivyIcon size={28} />;
+  }
+  return <StripeIcon size={28} />;
+}
 
 /**
  * Choose which asset/network Stripe should preselect for new onramp sessions.
@@ -26,9 +36,11 @@ export function OnrampSettingsScreen() {
     selectedNetworkId,
     selectedCurrency,
     selectedCurrencyId,
-    selectedDestinationLabel,
+    providerOptions,
+    selectedProviderId,
     setOnrampNetwork,
     setOnrampCurrency,
+    setOnrampProvider,
   } = useOnrampSettings();
 
   return (
@@ -68,10 +80,39 @@ export function OnrampSettingsScreen() {
         </View>
 
         <Text style={styles.title}>Onramp settings</Text>
-        <Text style={styles.subtitle}>
-          Choose a default network first, then pick the onramp currency you want
-          Stripe to preselect on that network.
-        </Text>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Default provider</Text>
+          {providerOptions.map((option) => {
+            const selected = option.id === selectedProviderId;
+            return (
+              <Pressable
+                key={option.id}
+                accessibilityLabel={option.label}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: selected }}
+                onPress={() => {
+                  setOnrampProvider(option.id);
+                }}
+                style={({ pressed }) => [
+                  styles.providerRow,
+                  selected && styles.providerRowSelected,
+                  pressed && styles.optionRowPressed,
+                ]}
+              >
+                <DepositProviderIcon id={option.id} />
+                <View style={styles.optionText}>
+                  <Text style={styles.optionLabel}>{option.label}</Text>
+                </View>
+                <Ionicons
+                  name={selected ? 'checkmark-circle' : 'ellipse-outline'}
+                  size={22}
+                  color={selected ? '#166534' : '#86a894'}
+                />
+              </Pressable>
+            );
+          })}
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Network</Text>
@@ -91,9 +132,6 @@ export function OnrampSettingsScreen() {
             ) : null}
             <View style={styles.optionText}>
               <Text style={styles.optionLabel}>{selectedNetwork.label}</Text>
-              <Text style={styles.optionDescription}>
-                {selectedNetwork.description}
-              </Text>
             </View>
             <Ionicons name="chevron-down" size={18} color="#86a894" />
           </Pressable>
@@ -120,18 +158,10 @@ export function OnrampSettingsScreen() {
             ) : null}
             <View style={styles.optionText}>
               <Text style={styles.optionLabel}>{selectedCurrency.label}</Text>
-              <Text style={styles.optionDescription}>
-                {selectedCurrency.description}
-              </Text>
             </View>
             <Ionicons name="chevron-down" size={18} color="#86a894" />
           </Pressable>
         </View>
-
-        <Text style={styles.note}>
-          Current default: {selectedDestinationLabel}. Other supported choices
-          may still be available inside Stripe if supported for your region.
-        </Text>
       </ScrollView>
 
       <OnrampOptionPickerModal
@@ -207,13 +237,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     textAlign: 'center',
   },
-  subtitle: {
-    marginTop: 12,
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#3f6b52',
-    textAlign: 'center',
-  },
   section: {
     width: '100%',
     marginTop: 28,
@@ -240,10 +263,24 @@ const styles = StyleSheet.create({
   optionRowPressed: {
     opacity: 0.85,
   },
+  providerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#ffffff',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#d1fae5',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  providerRowSelected: {
+    borderColor: '#86efac',
+    backgroundColor: '#f7fee7',
+  },
   optionText: {
     flex: 1,
     minWidth: 0,
-    gap: 4,
   },
   optionIcon: {
     width: 28,
@@ -255,17 +292,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#166534',
-  },
-  optionDescription: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#86a894',
-  },
-  note: {
-    marginTop: 20,
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#5a7d6a',
-    textAlign: 'center',
   },
 });

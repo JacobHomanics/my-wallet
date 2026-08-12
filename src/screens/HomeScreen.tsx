@@ -54,133 +54,133 @@ export function HomeScreen() {
 
   return (
     <ScrollView
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor="#166534"
-        />
-      }
-      style={styles.container}
-    >
-      <View style={styles.hero}>
-        {!ready || loading ? (
-          <ActivityIndicator color="#166534" />
-        ) : !hasWallet ? (
-          <Text style={styles.empty}>Creating your wallets…</Text>
-        ) : error && tokens.length === 0 ? (
-          <View style={styles.errorBlock}>
-            <Text style={styles.errorText}>{error}</Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onRefresh}
-              style={({ pressed }) => [
-                styles.retryButton,
-                pressed && styles.retryButtonPressed,
-              ]}
-            >
-              <Text style={styles.retryButtonText}>Try again</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <>
-            <Text style={styles.total} accessibilityRole="header">
-              {totalLabel}
-            </Text>
-            {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
-            {showActions ? (
-              <>
-                <View style={styles.actionsRow}>
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={openFreshSend}
-                    style={({ pressed }) => [
-                      styles.actionButton,
-                      pressed && styles.actionButtonPressed,
-                    ]}
-                  >
-                    <Ionicons name="arrow-up" size={18} color="#f0fdf4" />
-                    <Text style={styles.actionButtonText}>Pay</Text>
-                  </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => {
-                      navigation.navigate('receive');
-                    }}
-                    style={({ pressed }) => [
-                      styles.actionButton,
-                      pressed && styles.actionButtonPressed,
-                    ]}
-                  >
-                    <Ionicons name="arrow-down" size={18} color="#f0fdf4" />
-                    <Text style={styles.actionButtonText}>Receive</Text>
-                  </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => {
-                      navigation.navigate('request');
-                    }}
-                    style={({ pressed }) => [
-                      styles.actionButton,
-                      pressed && styles.actionButtonPressed,
-                    ]}
-                  >
-                    <Ionicons name="cash-outline" size={18} color="#f0fdf4" />
-                    <Text style={styles.actionButtonText}>Request</Text>
-                  </Pressable>
-                  {canDeposit ? (
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#166534"
+          />
+        }
+        style={styles.container}
+      >
+        <View style={styles.hero}>
+          {!ready || loading ? (
+            <ActivityIndicator color="#166534" />
+          ) : !hasWallet ? (
+            <Text style={styles.empty}>Creating your wallets…</Text>
+          ) : error && tokens.length === 0 ? (
+            <View style={styles.errorBlock}>
+              <Text style={styles.errorText}>{error}</Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={onRefresh}
+                style={({ pressed }) => [
+                  styles.retryButton,
+                  pressed && styles.retryButtonPressed,
+                ]}
+              >
+                <Text style={styles.retryButtonText}>Try again</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.total} accessibilityRole="header">
+                {totalLabel}
+              </Text>
+              {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
+              {showActions ? (
+                <>
+                  <View style={styles.actionsRow}>
                     <Pressable
                       accessibilityRole="button"
-                      onPress={openDeposit}
+                      onPress={openFreshSend}
                       style={({ pressed }) => [
                         styles.actionButton,
                         pressed && styles.actionButtonPressed,
                       ]}
                     >
-                      <MaterialCommunityIcons
-                        name="archive-arrow-down-outline"
-                        size={18}
-                        color="#f8fafc"
-                      />
-                      <Text style={styles.actionButtonText}>Deposit</Text>
+                      <Ionicons name="arrow-up" size={18} color="#f0fdf4" />
+                      <Text style={styles.actionButtonText}>Pay</Text>
                     </Pressable>
-                  ) : null}
-                </View>
-                <Pressable
-                  accessibilityRole="link"
-                  hitSlop={8}
-                  onPress={() => {
-                    navigation.navigate('tokenDetails');
-                  }}
-                  style={({ pressed }) => [
-                    styles.detailsLink,
-                    pressed && styles.detailsLinkPressed,
-                  ]}
-                >
-                  <Text style={styles.detailsLinkText}>
-                    Show advanced details
-                  </Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="link"
-                  hitSlop={8}
-                  onPress={() => {
-                    navigation.navigate('transactions');
-                  }}
-                  style={({ pressed }) => [
-                    styles.detailsLink,
-                    pressed && styles.detailsLinkPressed,
-                  ]}
-                >
-                  <Text style={styles.detailsLinkText}>Transactions</Text>
-                </Pressable>
-              </>
-            ) : null}
-          </>
-        )}
-      </View>
-    </ScrollView>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => {
+                        navigation.navigate('receive');
+                      }}
+                      style={({ pressed }) => [
+                        styles.actionButton,
+                        pressed && styles.actionButtonPressed,
+                      ]}
+                    >
+                      <Ionicons name="arrow-down" size={18} color="#f0fdf4" />
+                      <Text style={styles.actionButtonText}>Receive</Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => {
+                        navigation.navigate('request');
+                      }}
+                      style={({ pressed }) => [
+                        styles.actionButton,
+                        pressed && styles.actionButtonPressed,
+                      ]}
+                    >
+                      <Ionicons name="cash-outline" size={18} color="#f0fdf4" />
+                      <Text style={styles.actionButtonText}>Request</Text>
+                    </Pressable>
+                    {canDeposit ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={openDeposit}
+                        style={({ pressed }) => [
+                          styles.actionButton,
+                          pressed && styles.actionButtonPressed,
+                        ]}
+                      >
+                        <MaterialCommunityIcons
+                          name="archive-arrow-down-outline"
+                          size={18}
+                          color="#f8fafc"
+                        />
+                        <Text style={styles.actionButtonText}>Deposit</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                  <Pressable
+                    accessibilityRole="link"
+                    hitSlop={8}
+                    onPress={() => {
+                      navigation.navigate('tokenDetails');
+                    }}
+                    style={({ pressed }) => [
+                      styles.detailsLink,
+                      pressed && styles.detailsLinkPressed,
+                    ]}
+                  >
+                    <Text style={styles.detailsLinkText}>
+                      Show advanced details
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="link"
+                    hitSlop={8}
+                    onPress={() => {
+                      navigation.navigate('transactions');
+                    }}
+                    style={({ pressed }) => [
+                      styles.detailsLink,
+                      pressed && styles.detailsLinkPressed,
+                    ]}
+                  >
+                    <Text style={styles.detailsLinkText}>Transactions</Text>
+                  </Pressable>
+                </>
+              ) : null}
+            </>
+          )}
+        </View>
+      </ScrollView>
   );
 }
 

@@ -57,6 +57,7 @@ export function MainTabs() {
               focusedRoute === 'receive' ||
               focusedRoute === 'request' ||
               focusedRoute === 'stripeOnramp' ||
+              focusedRoute === 'stripeOnrampComponents' ||
               focusedRoute === 'receiveQr' ||
               focusedRoute === 'send' ||
               focusedRoute === 'sendAmount' ||

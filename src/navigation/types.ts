@@ -26,8 +26,10 @@ export type HomeStackParamList = {
   transactions: undefined;
   receive: undefined;
   request: undefined;
-  /** Stripe embedded Crypto Onramp (web). */
+  /** Stripe embedded Crypto Onramp widget (web). */
   stripeOnramp: undefined;
+  /** Stripe Embedded Components Crypto Onramp (web). */
+  stripeOnrampComponents: undefined;
   receiveQr: {
     /** Display-currency amount string entered on the request screen. */
     usdAmount: string;

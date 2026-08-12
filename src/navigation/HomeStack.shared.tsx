@@ -11,6 +11,7 @@ import { SendAmountScreen } from '@/screens/SendAmountScreen';
 import { SendScreen } from '@/screens/SendScreen';
 import { SendSearchScreen } from '@/screens/SendSearchScreen';
 import { SentScreen } from '@/screens/SentScreen';
+import { StripeOnrampComponentsScreen } from '@/screens/StripeOnrampComponentsScreen';
 import { StripeOnrampScreen } from '@/screens/StripeOnrampScreen';
 import { TokenDetailsScreen } from '@/screens/TokenDetailsScreen';
 import { TransactionsScreen } from '@/screens/TransactionsScreen';
@@ -24,6 +25,7 @@ export const homeStackScreens = {
   receive: ReceiveScreen,
   request: RequestScreen,
   stripeOnramp: StripeOnrampScreen,
+  stripeOnrampComponents: StripeOnrampComponentsScreen,
   receiveQr: ReceiveQrScreen,
   send: SendScreen,
   sendSearch: SendSearchScreen,
