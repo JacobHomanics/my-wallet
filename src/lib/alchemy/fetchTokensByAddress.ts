@@ -199,6 +199,27 @@ export function estimateTokenAmountUsd(
   return Number.isFinite(usd) ? usd : null;
 }
 
+export function isUnpricedToken(token: OwnedToken): boolean {
+  return token.usdValue == null || !(token.usdValue > 0);
+}
+
+/** Default unit amount for unpriced bonus tokens (e.g. 1 CashBox Point). */
+export function defaultUnpricedTokenAllocation(
+  token: OwnedToken,
+  unitAmount = '1',
+): { amountRaw: bigint; amountFormatted: string } {
+  const parsed = parseTokenAmountToRaw(unitAmount, token.decimals);
+  if (parsed == null || parsed <= 0n) {
+    return { amountRaw: 0n, amountFormatted: unitAmount };
+  }
+
+  const amountRaw = parsed > token.rawBalance ? token.rawBalance : parsed;
+  return {
+    amountRaw,
+    amountFormatted: formatRawTokenBalance(amountRaw, token.decimals),
+  };
+}
+
 /**
  * Converts a USD amount string into raw token units using the token's
  * balance / USD value ratio. Clamps tiny float overshoot to full balance.

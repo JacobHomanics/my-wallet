@@ -41,6 +41,7 @@ import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { buildPaymentLegsWithTax } from '@/lib/send/buildPaymentLegsWithTax';
 import { formatSendError } from '@/lib/send/formatSendError';
+import { isUnpricedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
@@ -92,6 +93,7 @@ export function ConfirmSendScreen() {
   } = useFiatDisplay();
 
   const form = useSendForm(
+    tokens,
     spendableTokens,
     selectedStrategyId,
     undefined,
@@ -109,8 +111,9 @@ export function ConfirmSendScreen() {
     allocationInputs,
     ethereumRecipient,
     solanaRecipient,
+    resolvedEthereumRecipient,
+    resolvedSolanaRecipient,
     recipientsValid,
-    amountValid,
     insufficientFunds,
     filledUsd,
     canContinue,
@@ -121,8 +124,8 @@ export function ConfirmSendScreen() {
 
   const gasFunding = useGasFunding(tokens, spendableTokens, allocations, taxFunding);
 
-  const trimmedEthereum = ethereumRecipient.trim();
-  const trimmedSolana = solanaRecipient.trim();
+  const trimmedEthereum = resolvedEthereumRecipient;
+  const trimmedSolana = resolvedSolanaRecipient;
   const {
     hasRecipient,
     primaryLabel,
@@ -161,15 +164,17 @@ export function ConfirmSendScreen() {
 
   const canSend = canContinue && allocations.length > 0;
 
+  const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
+
   const invalidReason =
-    insufficientFunds || (amountValid && allocations.length === 0)
+    insufficientFunds
       ? 'Insufficient funds for this payment.'
-      : allocations.length === 0
-        ? 'Nothing to send. Go back and enter an amount.'
+      : allocations.length === 0 || !hasPositiveLeg
+        ? 'Add at least one token with an amount in advanced details.'
         : !recipientsValid
           ? 'Recipient address is invalid.'
           : !canContinue
-            ? 'Enter a valid amount and recipients to continue.'
+            ? 'Complete payment details to continue.'
             : null;
 
   const onConfirm = useCallback(() => {
@@ -280,10 +285,17 @@ export function ConfirmSendScreen() {
   );
 
   const allocatedTokenIds = allocations.map((leg) => leg.token.id);
-  const canAddToken = spendableTokens.some(
-    (token) =>
-      token.rawBalance > 0n && !allocatedTokenIds.includes(token.id),
-  );
+  const pickerTokens = tokens.filter((token) => {
+    if (token.rawBalance <= 0n || allocatedTokenIds.includes(token.id)) {
+      return false;
+    }
+    if (isUnpricedToken(token)) {
+      return true;
+    }
+    const spendable = spendableTokens.find((item) => item.id === token.id);
+    return spendable != null && spendable.rawBalance > 0n;
+  });
+  const canAddToken = pickerTokens.length > 0;
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -502,7 +514,7 @@ export function ConfirmSendScreen() {
           setTokenPickerOpen(false);
         }}
         onSelect={onAddToken}
-        tokens={spendableTokens}
+        tokens={pickerTokens}
         visible={tokenPickerOpen}
       />
 

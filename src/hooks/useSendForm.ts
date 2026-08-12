@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAppTax } from '@/hooks/useAppTax';
 import { useChainPriority } from '@/hooks/useChainPriority';
@@ -10,10 +10,13 @@ import {
   getSendDraftSnapshot,
   manualLegsFromAllocations,
   updateSendDraft,
+  type SendDraftManualLeg,
 } from '@/hooks/useSendDraft';
 import {
+  defaultUnpricedTokenAllocation,
   estimateTokenAmountUsd,
   formatRawTokenBalance,
+  isUnpricedToken,
   parseTokenAmountToRaw,
   parseUsdAmountToTokenRaw,
   type OwnedToken,
@@ -31,6 +34,19 @@ import {
 } from '@/lib/strategies/allocatePayment';
 import type { PaymentStrategyId } from '@/lib/strategies';
 import { isValidRecipientAddress } from '@/lib/validation';
+import { tryDecodeWalletIdentity } from '@/lib/walletIdentity';
+
+function resolveSendRecipients(
+  accountNumber: string,
+  ethereumRecipient: string,
+  solanaRecipient: string,
+): { ethereum: string; solana: string } {
+  const decoded = tryDecodeWalletIdentity(accountNumber);
+  return {
+    ethereum: ethereumRecipient.trim() || decoded?.evmAddress || '',
+    solana: solanaRecipient.trim() || decoded?.solanaAddress || '',
+  };
+}
 
 export type SendFormState = {
   /** USD amount the user is trying to send. */
@@ -58,12 +74,18 @@ export type SendFormState = {
   canFulfill: boolean;
   ethereumRecipient: string;
   solanaRecipient: string;
+  resolvedEthereumRecipient: string;
+  resolvedSolanaRecipient: string;
   ethereumRecipientValid: boolean;
   solanaRecipientValid: boolean;
   recipientsValid: boolean;
   amountValid: boolean;
   /** True when USD amount is set but holdings cannot cover it. */
   insufficientFunds: boolean;
+  /** User edited token legs in advanced details (vs strategy-only allocation). */
+  isManualPayment: boolean;
+  /** Hint for why Continue is disabled, when applicable. */
+  continueBlockedReason: string | null;
   canContinue: boolean;
   setEthereumRecipient: (value: string) => void;
   setSolanaRecipient: (value: string) => void;
@@ -100,17 +122,26 @@ function chainsFromAllocations(
 
 function refreshAllocationTokens(
   allocations: PaymentAllocation[],
-  tokens: OwnedToken[],
+  walletTokens: OwnedToken[],
+  spendableTokens: OwnedToken[],
+  useWalletBalance: boolean,
 ): PaymentAllocation[] {
+  const balanceTokens = useWalletBalance ? walletTokens : spendableTokens;
+
   return allocations.flatMap((leg) => {
-    const token = tokens.find((item) => item.id === leg.token.id);
+    const token = walletTokens.find((item) => item.id === leg.token.id);
     if (!token) {
       return [];
     }
 
+    const balanceToken =
+      balanceTokens.find((item) => item.id === leg.token.id) ?? token;
+
     // Clamp to spendable balance (fee reserves may shrink gas tokens after draft).
     const amountRaw =
-      leg.amountRaw > token.rawBalance ? token.rawBalance : leg.amountRaw;
+      leg.amountRaw > balanceToken.rawBalance
+        ? balanceToken.rawBalance
+        : leg.amountRaw;
 
     const usd =
       amountRaw <= 0n
@@ -129,8 +160,73 @@ function refreshAllocationTokens(
   });
 }
 
+function splitStoredLegs(
+  manualLegs: SendDraftManualLeg[] | null,
+  additionalLegs: SendDraftManualLeg[] | null,
+  walletTokens: OwnedToken[],
+): {
+  merchant: PaymentAllocation[] | null;
+  additional: PaymentAllocation[];
+} {
+  const fromAdditional =
+    allocationsFromManualLegs(additionalLegs, walletTokens) ?? [];
+  const fromManual =
+    allocationsFromManualLegs(manualLegs, walletTokens) ?? [];
+
+  if (fromManual.length === 0) {
+    return { merchant: null, additional: fromAdditional };
+  }
+
+  const merchant: PaymentAllocation[] = [];
+  const additional: PaymentAllocation[] = [...fromAdditional];
+
+  for (const leg of fromManual) {
+    if (isUnpricedToken(leg.token)) {
+      if (!additional.some((item) => item.token.id === leg.token.id)) {
+        additional.push(leg);
+      }
+      continue;
+    }
+    merchant.push(leg);
+  }
+
+  return {
+    merchant: merchant.length > 0 ? merchant : null,
+    additional,
+  };
+}
+
+function mergeAllocationLists(
+  merchant: PaymentAllocation[],
+  additional: PaymentAllocation[],
+): PaymentAllocation[] {
+  const merchantIds = new Set(merchant.map((leg) => leg.token.id));
+  return [
+    ...merchant,
+    ...additional.filter((leg) => !merchantIds.has(leg.token.id)),
+  ];
+}
+
+function maxManualAllocationRaw(
+  walletToken: OwnedToken,
+  tokensForMerchantAllocation: OwnedToken[],
+  spendableTokens: OwnedToken[],
+): bigint {
+  if (isUnpricedToken(walletToken)) {
+    return walletToken.rawBalance > 0n ? walletToken.rawBalance : 0n;
+  }
+
+  const merchantCap =
+    tokensForMerchantAllocation.find((item) => item.id === walletToken.id) ??
+    spendableTokens.find((item) => item.id === walletToken.id) ??
+    walletToken;
+
+  return merchantCap.rawBalance > 0n ? merchantCap.rawBalance : 0n;
+}
+
 export function useSendForm(
-  tokens: OwnedToken[],
+  walletTokens: OwnedToken[],
+  spendableTokens: OwnedToken[],
   strategyId: PaymentStrategyId,
   preferredTokenId?: string | null,
   allocationInputUnit: AllocationInputUnit = 'token',
@@ -146,24 +242,47 @@ export function useSendForm(
     parseDisplayInputToUsd,
   } = useFiatDisplay();
   const initialDraft = getSendDraftSnapshot();
+  const initialIdentity = tryDecodeWalletIdentity(initialDraft.accountNumber);
   const [ethereumRecipient, setEthereumRecipientState] = useState(
-    initialDraft.ethereumRecipient,
+    initialDraft.ethereumRecipient || initialIdentity?.evmAddress || '',
   );
   const [solanaRecipient, setSolanaRecipientState] = useState(
-    initialDraft.solanaRecipient,
+    initialDraft.solanaRecipient || initialIdentity?.solanaAddress || '',
   );
   const [amount, setAmountState] = useState(initialDraft.amount);
   const [amountLocked, setAmountLocked] = useState(initialDraft.amountLocked);
   const [amountUsd, setAmountUsd] = useState<number | null>(null);
-  const [manualAllocations, setManualAllocations] = useState<
+  const initialStoredLegs = splitStoredLegs(
+    initialDraft.manualLegs,
+    initialDraft.additionalLegs,
+    walletTokens,
+  );
+  const [manualMerchantAllocations, setManualMerchantAllocations] = useState<
     PaymentAllocation[] | null
-  >(() => allocationsFromManualLegs(initialDraft.manualLegs, tokens));
+  >(initialStoredLegs.merchant);
+  const [additionalAllocations, setAdditionalAllocations] = useState<
+    PaymentAllocation[]
+  >(initialStoredLegs.additional);
+  const [preferredAdditionalDismissed, setPreferredAdditionalDismissed] =
+    useState(false);
   const [allocationInputs, setAllocationInputs] = useState<
     Record<string, string>
   >(initialDraft.allocationInputs);
   const strategyKeyRef = useRef<string | null>(null);
   const allocationUnitRef = useRef<AllocationInputUnit | null>(null);
   const additionalUsdRef = useRef<number | null>(null);
+  const manualMerchantAllocationsRef = useRef<PaymentAllocation[] | null>(
+    manualMerchantAllocations,
+  );
+  const additionalAllocationsRef = useRef(additionalAllocations);
+
+  useEffect(() => {
+    manualMerchantAllocationsRef.current = manualMerchantAllocations;
+  }, [manualMerchantAllocations]);
+
+  useEffect(() => {
+    additionalAllocationsRef.current = additionalAllocations;
+  }, [additionalAllocations]);
 
   useEffect(() => {
     return registerDisplayCurrencyChangeListener(() => {
@@ -187,9 +306,18 @@ export function useSendForm(
       return;
     }
     additionalUsdRef.current = tipUsd;
-    setManualAllocations(null);
-    setAllocationInputs({});
-  }, [tipUsd]);
+    setManualMerchantAllocations(null);
+    setAllocationInputs((current) => {
+      const additionalIds = new Set(
+        additionalAllocations.map((leg) => leg.token.id),
+      );
+      return Object.fromEntries(
+        Object.entries(current).filter(([tokenId]) =>
+          additionalIds.has(tokenId),
+        ),
+      );
+    });
+  }, [additionalAllocations, tipUsd]);
 
   /**
    * Merchant allocation target. Only soft-cap tiny display rounding past the
@@ -218,14 +346,25 @@ export function useSendForm(
   /** Leave headroom on one preferred token so a single tax transfer can fit. */
   const tokensForMerchantAllocation = useMemo(() => {
     if (targetUsd == null || !(targetUsd > 0)) {
-      return tokens;
+      return spendableTokens;
     }
     const taxUsdNeeded = taxUsdFor(targetUsd);
     if (!(taxUsdNeeded > 0)) {
-      return tokens;
+      return spendableTokens;
     }
-    return reserveTaxHeadroomOnTokens(tokens, taxUsdNeeded);
-  }, [targetUsd, taxUsdFor, tokens]);
+    return reserveTaxHeadroomOnTokens(spendableTokens, taxUsdNeeded);
+  }, [spendableTokens, targetUsd, taxUsdFor]);
+
+  const strategyPreferredTokenId = useMemo(() => {
+    if (!preferredTokenId) {
+      return null;
+    }
+    const preferred = walletTokens.find((item) => item.id === preferredTokenId);
+    if (preferred != null && isUnpricedToken(preferred)) {
+      return null;
+    }
+    return preferredTokenId;
+  }, [preferredTokenId, walletTokens]);
 
   const strategyPlan = useMemo(() => {
     if (targetUsd == null || targetUsd <= 0) {
@@ -243,19 +382,19 @@ export function useSendForm(
       usdAmount: targetUsd,
       strategyId,
       chainPriorityId: selectedChainPriorityId,
-      preferredTokenId,
+      preferredTokenId: strategyPreferredTokenId,
     });
   }, [
-    preferredTokenId,
     selectedChainPriorityId,
     strategyId,
+    strategyPreferredTokenId,
     targetUsd,
     tokensForMerchantAllocation,
   ]);
 
-  // Strategy / preferred-token changes discard manual leg edits.
+  // Strategy / preferred-token changes discard manual merchant leg edits.
   useEffect(() => {
-    const key = `${strategyId}:${preferredTokenId ?? ''}`;
+    const key = `${strategyId}:${strategyPreferredTokenId ?? ''}`;
     if (strategyKeyRef.current === null) {
       strategyKeyRef.current = key;
       return;
@@ -264,9 +403,18 @@ export function useSendForm(
       return;
     }
     strategyKeyRef.current = key;
-    setManualAllocations(null);
-    setAllocationInputs({});
-  }, [strategyId, preferredTokenId]);
+    setManualMerchantAllocations(null);
+    setAllocationInputs((current) => {
+      const additionalIds = new Set(
+        additionalAllocations.map((leg) => leg.token.id),
+      );
+      return Object.fromEntries(
+        Object.entries(current).filter(([tokenId]) =>
+          additionalIds.has(tokenId),
+        ),
+      );
+    });
+  }, [additionalAllocations, strategyId, strategyPreferredTokenId]);
 
   // Switching token ↔ USD input remaps display from resolved legs.
   useEffect(() => {
@@ -281,25 +429,95 @@ export function useSendForm(
     setAllocationInputs({});
   }, [allocationInputUnit]);
 
-  const draftManualFromTokens = useMemo(() => {
-    if (tokens.length === 0) {
-      return null;
+  const draftStoredLegs = useMemo(
+    () =>
+      splitStoredLegs(
+        getSendDraftSnapshot().manualLegs,
+        getSendDraftSnapshot().additionalLegs,
+        walletTokens,
+      ),
+    [walletTokens],
+  );
+
+  const preferredAdditionalSeed = useMemo((): PaymentAllocation[] => {
+    if (
+      preferredAdditionalDismissed ||
+      additionalAllocations.length > 0 ||
+      !preferredTokenId
+    ) {
+      return [];
     }
-    return allocationsFromManualLegs(
-      getSendDraftSnapshot().manualLegs,
-      tokens,
-    );
-  }, [tokens]);
 
-  const resolvedManualBase = manualAllocations ?? draftManualFromTokens;
+    const preferred = walletTokens.find((item) => item.id === preferredTokenId);
+    if (
+      !preferred ||
+      preferred.rawBalance <= 0n ||
+      !isUnpricedToken(preferred)
+    ) {
+      return [];
+    }
 
-  const allocations = useMemo(() => {
+    return [
+      {
+        token: preferred,
+        ...defaultUnpricedTokenAllocation(preferred),
+        usd: 0,
+      },
+    ];
+  }, [
+    additionalAllocations.length,
+    preferredAdditionalDismissed,
+    preferredTokenId,
+    walletTokens,
+  ]);
+
+  const resolvedManualMerchant = (() => {
+    const manual = manualMerchantAllocations ?? draftStoredLegs.merchant;
+    return manual != null && manual.length > 0 ? manual : null;
+  })();
+  const isManualPayment = resolvedManualMerchant != null;
+
+  const merchantAllocations = useMemo(() => {
     const base =
-      resolvedManualBase != null
-        ? resolvedManualBase
+      resolvedManualMerchant != null
+        ? resolvedManualMerchant
         : strategyPlan.allocations;
-    return refreshAllocationTokens(base, tokens);
-  }, [resolvedManualBase, strategyPlan.allocations, tokens]);
+    return refreshAllocationTokens(
+      base,
+      walletTokens,
+      spendableTokens,
+      isManualPayment,
+    );
+  }, [
+    isManualPayment,
+    resolvedManualMerchant,
+    spendableTokens,
+    strategyPlan.allocations,
+    walletTokens,
+  ]);
+
+  const additionalLegs = useMemo(() => {
+    const base =
+      additionalAllocations.length > 0
+        ? additionalAllocations
+        : preferredAdditionalSeed;
+    return refreshAllocationTokens(
+      base,
+      walletTokens,
+      spendableTokens,
+      true,
+    );
+  }, [
+    additionalAllocations,
+    preferredAdditionalSeed,
+    spendableTokens,
+    walletTokens,
+  ]);
+
+  const allocations = useMemo(
+    () => mergeAllocationLists(merchantAllocations, additionalLegs),
+    [additionalLegs, merchantAllocations],
+  );
 
   useEffect(() => {
     updateSendDraft({
@@ -308,17 +526,21 @@ export function useSendForm(
       amount,
       amountLocked,
       manualLegs: manualLegsFromAllocations(
-        resolvedManualBase != null ? allocations : null,
+        isManualPayment ? merchantAllocations : null,
+      ),
+      additionalLegs: manualLegsFromAllocations(
+        additionalLegs.length > 0 ? additionalLegs : null,
       ),
       allocationInputs,
     });
   }, [
+    additionalLegs,
     allocationInputs,
-    allocations,
     amount,
     amountLocked,
     ethereumRecipient,
-    resolvedManualBase,
+    isManualPayment,
+    merchantAllocations,
     solanaRecipient,
   ]);
 
@@ -348,6 +570,12 @@ export function useSendForm(
 
   const recipientsValid = ethereumRecipientValid && solanaRecipientValid;
 
+  const resolvedRecipients = resolveSendRecipients(
+    getSendDraftSnapshot().accountNumber,
+    ethereumRecipient,
+    solanaRecipient,
+  );
+
   const amountValid = usdAmount != null && usdAmount > 0;
 
   const taxUsd =
@@ -360,63 +588,122 @@ export function useSendForm(
         : null;
 
   const taxFunding = useMemo(
-    () => resolveTaxFunding(allocations, tokens, taxUsd),
-    [allocations, taxUsd, tokens],
+    () => resolveTaxFunding(allocations, walletTokens, taxUsd),
+    [allocations, taxUsd, walletTokens],
   );
 
   // Merchant legs must fit; tax must fit on a single leftover token.
-  const legsWithinBalance =
-    allocations.every((leg) => leg.amountRaw <= leg.token.rawBalance) &&
-    (taxUsd <= 0 || taxFunding != null);
+  const legsWithinBalance = useMemo(() => {
+    const legsFit = allocations.every((leg) => {
+      const balanceSource = isUnpricedToken(leg.token)
+        ? walletTokens
+        : isManualPayment
+          ? walletTokens
+          : spendableTokens;
+      const balance = balanceSource.find((item) => item.id === leg.token.id);
+      return balance != null && leg.amountRaw <= balance.rawBalance;
+    });
+    return legsFit && (taxUsd <= 0 || taxFunding != null);
+  }, [
+    allocations,
+    isManualPayment,
+    spendableTokens,
+    taxFunding,
+    taxUsd,
+    walletTokens,
+  ]);
   const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
+  const hasPositiveMerchantLeg = merchantAllocations.some(
+    (leg) => leg.amountRaw > 0n,
+  );
+  const isTokenOnlyPayment = !amountValid && hasPositiveLeg;
 
-  const filledUsd = allocations.reduce((sum, leg) => sum + leg.usd, 0);
+  const filledUsd = merchantAllocations.reduce((sum, leg) => sum + leg.usd, 0);
 
   const remainingUsd =
     targetUsd != null ? Math.max(0, targetUsd - filledUsd) : strategyPlan.remainingUsd;
 
-  const coversRequestedAmount =
-    targetUsd != null && filledUsd + 0.005 >= targetUsd;
+  const tokenOnlyCanFulfill = isTokenOnlyPayment && legsWithinBalance;
 
-  const canFulfill =
-    resolvedManualBase != null
-      ? amountValid &&
-        hasPositiveLeg &&
-        legsWithinBalance &&
-        (!amountLocked || coversRequestedAmount)
-      : strategyPlan.canFulfill && legsWithinBalance;
+  const manualCanFulfill = hasPositiveMerchantLeg && legsWithinBalance;
+
+  const strategyCanFulfill =
+    amountValid && strategyPlan.canFulfill && legsWithinBalance;
+
+  const canFulfill = isTokenOnlyPayment
+    ? tokenOnlyCanFulfill
+    : isManualPayment
+      ? manualCanFulfill
+      : strategyCanFulfill;
 
   const payerExceedsAvailable =
     maxAvailableUsd != null &&
     payerTotalUsd != null &&
     payerTotalUsd > maxAvailableUsd + 0.015;
 
-  const insufficientFunds =
-    amountValid &&
-    (payerExceedsAvailable
-      ? true
-      : resolvedManualBase != null
-        ? !canFulfill
-        : !(strategyPlan.canFulfill && legsWithinBalance));
+  const insufficientFunds = isTokenOnlyPayment
+    ? hasPositiveLeg && !legsWithinBalance
+    : isManualPayment
+      ? hasPositiveMerchantLeg && !legsWithinBalance
+      : amountValid &&
+        (payerExceedsAvailable
+          ? true
+          : !(strategyPlan.canFulfill && legsWithinBalance));
 
   const canContinue =
-    amountValid &&
-    canFulfill &&
     hasPositiveLeg &&
+    canFulfill &&
     recipientsValid &&
-    !payerExceedsAvailable &&
-    (!needsEthereumRecipient || ethereumRecipient.trim().length > 0) &&
-    (!needsSolanaRecipient || solanaRecipient.trim().length > 0);
+    (!amountValid || !payerExceedsAvailable) &&
+    (!needsEthereumRecipient || resolvedRecipients.ethereum.length > 0) &&
+    (!needsSolanaRecipient || resolvedRecipients.solana.length > 0);
 
-  const setEthereumRecipient = useCallback((value: string) => {
+  const continueBlockedReason = (() => {
+    if (canContinue) {
+      return null;
+    }
+    if (!hasPositiveLeg) {
+      return 'Enter an amount for at least one token in advanced details.';
+    }
+    if (!recipientsValid) {
+      return 'Recipient address is invalid.';
+    }
+    if (needsEthereumRecipient && !resolvedRecipients.ethereum) {
+      return 'This payment needs an EVM recipient address.';
+    }
+    if (needsSolanaRecipient && !resolvedRecipients.solana) {
+      return 'This payment needs a Solana recipient address.';
+    }
+    if (insufficientFunds) {
+      return 'Insufficient funds for this payment (including service fee and gas).';
+    }
+    if (!canFulfill && isTokenOnlyPayment) {
+      return 'Adjust token amounts to fit your available balance.';
+    }
+    if (!canFulfill && isManualPayment) {
+      if (taxUsd > 0 && taxFunding == null) {
+        return 'Leave enough balance on one token to cover the service fee.';
+      }
+      return 'Adjust token amounts to fit your available balance.';
+    }
+    if (!canFulfill) {
+      return 'Insufficient funds for this payment (including service fee and gas).';
+    }
+    if (amountValid && payerExceedsAvailable) {
+      return 'Payment total exceeds your available balance.';
+    }
+    return 'Complete payment details to continue.';
+  })();
+
+  const setEthereumRecipient = (value: string) => {
     setEthereumRecipientState(value);
-  }, []);
+  };
 
-  const setSolanaRecipient = useCallback((value: string) => {
+  const setSolanaRecipient = (value: string) => {
     setSolanaRecipientState(value);
-  }, []);
+  };
 
-  const setAmount = useCallback((value: string) => {
+  const setAmount = (value: string) => {
     const sanitized = sanitizeAmountInput(value);
     setAmountLocked(false);
     setAmountState(sanitized);
@@ -426,160 +713,269 @@ export function useSendForm(
     } else if (!sanitized.trim() || sanitized === '.') {
       setAmountUsd(null);
     }
-    setManualAllocations(null);
-    setAllocationInputs({});
-  }, [parseDisplayInputToUsd]);
+    if (
+      manualMerchantAllocationsRef.current == null ||
+      manualMerchantAllocationsRef.current.length === 0
+    ) {
+      setManualMerchantAllocations(null);
+      setAllocationInputs((current) => {
+        const additionalIds = new Set(
+          additionalAllocationsRef.current.map((leg) => leg.token.id),
+        );
+        return Object.fromEntries(
+          Object.entries(current).filter(([tokenId]) =>
+            additionalIds.has(tokenId),
+          ),
+        );
+      });
+    }
+  };
 
-  const syncAmountFromLegs = useCallback(
-    (next: PaymentAllocation[]) => {
-      // Keep the base amount stable when a tip is applied, otherwise leg edits
-      // would fold the tip into the draft amount and double-count it.
-      if (amountLocked || tipUsd > 0) {
-        return;
-      }
-      const totalUsd = next.reduce((sum, leg) => sum + leg.usd, 0);
-      setAmountState(totalUsd > 0 ? formatAmountInputFromUsd(totalUsd) : '0');
-      setAmountUsd(totalUsd > 0 ? totalUsd : null);
-    },
-    [amountLocked, formatAmountInputFromUsd, tipUsd],
-  );
+  const applyMerchantLegEdits = (
+    next: PaymentAllocation[],
+    syncAmount: boolean,
+  ) => {
+    setManualMerchantAllocations(next.length > 0 ? next : null);
+    if (!syncAmount || amountLocked || tipUsd > 0) {
+      return;
+    }
+    const totalUsd = next.reduce((sum, leg) => sum + leg.usd, 0);
+    setAmountState(totalUsd > 0 ? formatAmountInputFromUsd(totalUsd) : '');
+    setAmountUsd(totalUsd > 0 ? totalUsd : null);
+  };
 
-  const setAllocationAmount = useCallback(
-    (tokenId: string, value: string) => {
+  const setAllocationAmount = (tokenId: string, value: string) => {
       const sanitized = sanitizeAmountInput(value);
       setAllocationInputs((current) => ({
         ...current,
         [tokenId]: sanitized,
       }));
 
-      const base =
-        manualAllocations ??
+      const additionalIndex = additionalAllocations.findIndex(
+        (leg) => leg.token.id === tokenId,
+      );
+      if (additionalIndex >= 0) {
+        const token =
+          walletTokens.find((item) => item.id === tokenId) ??
+          additionalAllocations[additionalIndex].token;
+        const maxRaw = maxManualAllocationRaw(
+          token,
+          tokensForMerchantAllocation,
+          spendableTokens,
+        );
+
+        if (sanitized.trim() === '' || sanitized === '.') {
+          const next = [...additionalAllocations];
+          next[additionalIndex] = {
+            token,
+            amountRaw: 0n,
+            amountFormatted: sanitized,
+            usd: 0,
+          };
+          setAdditionalAllocations(next);
+          return;
+        }
+
+        const amountRaw = (() => {
+          if (allocationInputUnit === 'usd') {
+            return parseTokenAmountToRaw(sanitized, token.decimals);
+          }
+          return parseTokenAmountToRaw(sanitized, token.decimals);
+        })();
+        if (amountRaw == null) {
+          return;
+        }
+
+        const clamped = amountRaw > maxRaw ? maxRaw : amountRaw;
+        const amountFormatted =
+          allocationInputUnit === 'usd'
+            ? formatRawTokenBalance(clamped, token.decimals)
+            : sanitized;
+
+        const next = [...additionalAllocations];
+        next[additionalIndex] = {
+          token,
+          amountRaw: clamped,
+          amountFormatted,
+          usd: 0,
+        };
+        setAdditionalAllocations(next);
+        return;
+      }
+
+      const merchantBase =
+        manualMerchantAllocations ??
         strategyPlan.allocations.map((leg) => ({ ...leg }));
-      const index = base.findIndex((leg) => leg.token.id === tokenId);
+      const index = merchantBase.findIndex((leg) => leg.token.id === tokenId);
       if (index < 0) {
         return;
       }
 
       const token =
-        tokens.find((item) => item.id === tokenId) ?? base[index].token;
-      // Cap merchant input so the preferred tax funding token keeps headroom.
-      const merchantCap =
-        tokensForMerchantAllocation.find((item) => item.id === tokenId) ??
-        token;
+        walletTokens.find((item) => item.id === tokenId) ?? merchantBase[index].token;
+      const maxRaw = maxManualAllocationRaw(
+        token,
+        tokensForMerchantAllocation,
+        spendableTokens,
+      );
+      const merchantCap = { ...token, rawBalance: maxRaw };
 
       if (sanitized.trim() === '' || sanitized === '.') {
-        const next = [...base];
+        const next = [...merchantBase];
         next[index] = {
           token,
           amountRaw: 0n,
           amountFormatted: sanitized,
           usd: 0,
         };
-        setManualAllocations(next);
-        syncAmountFromLegs(next);
+        applyMerchantLegEdits(next, false);
         return;
       }
 
       const amountRaw = (() => {
-        const parsed =
-          allocationInputUnit === 'usd'
-            ? (() => {
-                const usdForToken = parseDisplayInputToUsd(sanitized);
-                return usdForToken != null
-                  ? parseUsdAmountToTokenRaw(String(usdForToken), merchantCap)
-                  : null;
-              })()
-            : parseTokenAmountToRaw(sanitized, token.decimals);
-        if (parsed == null) {
-          return null;
+        if (allocationInputUnit === 'usd') {
+          const usdForToken = parseDisplayInputToUsd(sanitized);
+          if (usdForToken != null) {
+            const fromUsd = parseUsdAmountToTokenRaw(
+              String(usdForToken),
+              merchantCap,
+            );
+            if (fromUsd != null) {
+              return fromUsd;
+            }
+          }
+          return parseTokenAmountToRaw(sanitized, token.decimals);
         }
-        return parsed > merchantCap.rawBalance
-          ? merchantCap.rawBalance
-          : parsed;
+        return parseTokenAmountToRaw(sanitized, token.decimals);
       })();
       if (amountRaw == null) {
         return;
       }
-
+      const clamped = amountRaw > maxRaw ? maxRaw : amountRaw;
       const amountFormatted =
-        allocationInputUnit === 'usd'
-          ? formatRawTokenBalance(amountRaw, token.decimals)
-          : sanitized;
-      const estimatedUsd = estimateTokenAmountUsd(token, amountRaw);
-      const parsedUsd =
-        allocationInputUnit === 'usd'
-          ? (parseDisplayInputToUsd(sanitized) ?? 0)
-          : 0;
-      const usd = estimatedUsd ?? parsedUsd;
+        allocationInputUnit === 'usd' &&
+        parseUsdAmountToTokenRaw(
+          String(parseDisplayInputToUsd(sanitized) ?? ''),
+          merchantCap,
+        ) == null
+          ? sanitized
+          : allocationInputUnit === 'usd'
+            ? formatRawTokenBalance(clamped, token.decimals)
+            : sanitized;
+      const estimatedUsd = estimateTokenAmountUsd(token, clamped);
+      const usd = (() => {
+        if (estimatedUsd != null) {
+          return estimatedUsd;
+        }
+        if (allocationInputUnit === 'usd') {
+          const usdForToken = parseDisplayInputToUsd(sanitized);
+          if (
+            usdForToken != null &&
+            parseUsdAmountToTokenRaw(String(usdForToken), merchantCap) != null
+          ) {
+            return usdForToken;
+          }
+        }
+        return 0;
+      })();
 
-      const next = [...base];
+      const next = [...merchantBase];
       next[index] = {
         token,
-        amountRaw,
+        amountRaw: clamped,
         amountFormatted,
         usd,
       };
-      setManualAllocations(next);
-      syncAmountFromLegs(next);
-    },
-    [
-      allocationInputUnit,
-      manualAllocations,
-      parseDisplayInputToUsd,
-      strategyPlan.allocations,
-      syncAmountFromLegs,
-      tokens,
-      tokensForMerchantAllocation,
-    ],
-  );
+      applyMerchantLegEdits(next, true);
+  };
 
-  const removeAllocation = useCallback(
-    (tokenId: string) => {
-      const base =
-        manualAllocations ??
+  const removeAllocation = (tokenId: string) => {
+      if (additionalAllocations.some((leg) => leg.token.id === tokenId)) {
+        if (tokenId === preferredTokenId) {
+          setPreferredAdditionalDismissed(true);
+        }
+        setAdditionalAllocations(
+          additionalAllocations.filter((leg) => leg.token.id !== tokenId),
+        );
+        setAllocationInputs((current) => {
+          const { [tokenId]: _removed, ...rest } = current;
+          return rest;
+        });
+        return;
+      }
+
+      const merchantBase =
+        manualMerchantAllocations ??
         strategyPlan.allocations.map((leg) => ({ ...leg }));
-      const next = base.filter((leg) => leg.token.id !== tokenId);
-      setManualAllocations(next);
+      const next = merchantBase.filter((leg) => leg.token.id !== tokenId);
       setAllocationInputs((current) => {
         const { [tokenId]: _removed, ...rest } = current;
         return rest;
       });
-      syncAmountFromLegs(next);
-    },
-    [manualAllocations, strategyPlan.allocations, syncAmountFromLegs],
-  );
+      applyMerchantLegEdits(next, true);
+  };
 
-  const addAllocation = useCallback(
-    (tokenId: string) => {
-      const token = tokens.find((item) => item.id === tokenId);
+  const addAllocation = (tokenId: string) => {
+      const token = walletTokens.find((item) => item.id === tokenId);
       if (!token) {
         return;
       }
 
-      const base =
-        manualAllocations ??
-        strategyPlan.allocations.map((leg) => ({ ...leg }));
-      if (base.some((leg) => leg.token.id === tokenId)) {
+      if (isUnpricedToken(token)) {
+        if (additionalAllocations.some((leg) => leg.token.id === tokenId)) {
+          return;
+        }
+
+        const initial = defaultUnpricedTokenAllocation(token);
+        setAdditionalAllocations([
+          ...additionalAllocations,
+          {
+            token,
+            amountRaw: initial.amountRaw,
+            amountFormatted: initial.amountFormatted,
+            usd: 0,
+          },
+        ]);
+        setAllocationInputs((current) => ({
+          ...current,
+          [tokenId]: initial.amountFormatted,
+        }));
         return;
       }
 
+      const merchantBase =
+        manualMerchantAllocations ??
+        strategyPlan.allocations.map((leg) => ({ ...leg }));
+      if (merchantBase.some((leg) => leg.token.id === tokenId)) {
+        return;
+      }
+
+      const amountRaw = maxManualAllocationRaw(
+        token,
+        tokensForMerchantAllocation,
+        spendableTokens,
+      );
+      const amountFormatted =
+        amountRaw > 0n
+          ? formatRawTokenBalance(amountRaw, token.decimals)
+          : '';
+      const usd = estimateTokenAmountUsd(token, amountRaw) ?? 0;
+
       const next: PaymentAllocation[] = [
-        ...base,
+        ...merchantBase,
         {
           token,
-          amountRaw: 0n,
-          amountFormatted: '',
-          usd: 0,
+          amountRaw,
+          amountFormatted,
+          usd,
         },
       ];
-      setManualAllocations(next);
       setAllocationInputs((current) => ({
         ...current,
-        [tokenId]: '',
+        [tokenId]: amountFormatted,
       }));
-    },
-    [manualAllocations, strategyPlan.allocations, tokens],
-  );
+      applyMerchantLegEdits(next, true);
+  };
 
   const resolvedAllocationInputs = useMemo(() => {
     const resolved: Record<string, string> = { ...allocationInputs };
@@ -587,7 +983,9 @@ export function useSendForm(
       if (resolved[leg.token.id] == null) {
         resolved[leg.token.id] =
           allocationInputUnit === 'usd'
-            ? formatAmountInputFromUsd(leg.usd)
+            ? leg.usd > 0
+              ? formatAmountInputFromUsd(leg.usd)
+              : leg.amountFormatted
             : leg.amountFormatted;
       }
     }
@@ -610,11 +1008,15 @@ export function useSendForm(
     canFulfill,
     ethereumRecipient,
     solanaRecipient,
+    resolvedEthereumRecipient: resolvedRecipients.ethereum,
+    resolvedSolanaRecipient: resolvedRecipients.solana,
     ethereumRecipientValid,
     solanaRecipientValid,
     recipientsValid,
     amountValid,
     insufficientFunds,
+    isManualPayment,
+    continueBlockedReason,
     canContinue,
     setEthereumRecipient,
     setSolanaRecipient,
@@ -630,8 +1032,14 @@ export function recipientForAllocation(
   allocation: PaymentAllocation,
   ethereumRecipient: string,
   solanaRecipient: string,
+  accountNumber = '',
 ): string {
+  const resolved = resolveSendRecipients(
+    accountNumber,
+    ethereumRecipient,
+    solanaRecipient,
+  );
   return getNetworkChain(allocation.token.network) === 'solana'
-    ? solanaRecipient.trim()
-    : ethereumRecipient.trim();
+    ? resolved.solana
+    : resolved.ethereum;
 }

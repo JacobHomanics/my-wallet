@@ -40,6 +40,7 @@ import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { getNetworkChain } from '@/lib/alchemy/networks';
+import { isUnpricedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
 
 /**
@@ -83,6 +84,7 @@ export function SendAmountScreen() {
   }, [route.params?.usdAmount]);
 
   const form = useSendForm(
+    tokens,
     spendableTokens,
     selectedStrategyId,
     route.params?.tokenId,
@@ -100,8 +102,12 @@ export function SendAmountScreen() {
     needsSolanaRecipient,
     ethereumRecipient,
     solanaRecipient,
+    resolvedEthereumRecipient,
+    resolvedSolanaRecipient,
     insufficientFunds,
     canContinue,
+    continueBlockedReason,
+    isManualPayment,
     setAmount,
     setAllocationAmount,
     removeAllocation,
@@ -141,13 +147,12 @@ export function SendAmountScreen() {
       ? taxFundingChain === 'solana'
       : needsSolanaRecipient || Boolean(solanaAddress);
 
-  const isZeroAmount = parseDisplayInputToUsd(amount) === 0;
-  const amountError =
-    amount.trim() && !isZeroAmount && insufficientFunds
-      ? 'Insufficient funds for this amount (including service fee)'
-      : amount.trim() && !isZeroAmount && !form.amountValid
-        ? 'Enter a valid amount'
-        : null;
+  const isZeroAmount = (parseDisplayInputToUsd(amount) ?? 0) === 0;
+  const amountError = insufficientFunds
+    ? 'Insufficient funds for this payment (including service fee and gas)'
+    : amount.trim() && !isZeroAmount && !isManualPayment && !form.amountValid
+      ? 'Enter a valid amount'
+      : null;
 
   const onContinue = useCallback(() => {
     if (!canContinue || allocations.length === 0) {
@@ -156,20 +161,20 @@ export function SendAmountScreen() {
 
     navigation.navigate('confirmSend', {
       usdAmount: amount,
-      ethereumRecipient: ethereumRecipient.trim() || undefined,
-      solanaRecipient: solanaRecipient.trim() || undefined,
+      ethereumRecipient: resolvedEthereumRecipient || undefined,
+      solanaRecipient: resolvedSolanaRecipient || undefined,
       legs: allocations.map((leg) => ({
         tokenId: leg.token.id,
         amount: leg.amountFormatted,
       })),
     });
   }, [
-    allocations,
     amount,
+    allocations,
     canContinue,
-    ethereumRecipient,
+    resolvedEthereumRecipient,
+    resolvedSolanaRecipient,
     navigation,
-    solanaRecipient,
   ]);
 
   const { onBack } = useClearSendRecipientOnBack();
@@ -183,10 +188,17 @@ export function SendAmountScreen() {
   );
 
   const allocatedTokenIds = allocations.map((leg) => leg.token.id);
-  const canAddToken = spendableTokens.some(
-    (token) =>
-      token.rawBalance > 0n && !allocatedTokenIds.includes(token.id),
-  );
+  const pickerTokens = tokens.filter((token) => {
+    if (token.rawBalance <= 0n || allocatedTokenIds.includes(token.id)) {
+      return false;
+    }
+    if (isUnpricedToken(token)) {
+      return true;
+    }
+    const spendable = spendableTokens.find((item) => item.id === token.id);
+    return spendable != null && spendable.rawBalance > 0n;
+  });
+  const canAddToken = pickerTokens.length > 0;
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -360,6 +372,9 @@ export function SendAmountScreen() {
                 >
                   <Text style={styles.continueButtonText}>Continue</Text>
                 </Pressable>
+                {!canContinue && continueBlockedReason ? (
+                  <Text style={styles.continueHint}>{continueBlockedReason}</Text>
+                ) : null}
               </View>
             </ScrollView>
           )}
@@ -380,7 +395,7 @@ export function SendAmountScreen() {
           setTokenPickerOpen(false);
         }}
         onSelect={onAddToken}
-        tokens={spendableTokens}
+        tokens={pickerTokens}
         visible={tokenPickerOpen}
       />
     </View>
@@ -596,5 +611,12 @@ const styles = StyleSheet.create({
     color: '#f0fdf4',
     fontSize: 16,
     fontWeight: '600',
+  },
+  continueHint: {
+    marginTop: 10,
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#5a7d6a',
+    textAlign: 'center',
   },
 });

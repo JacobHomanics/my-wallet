@@ -34,7 +34,10 @@ export type SendDraft = {
    * rewrite the requested amount.
    */
   amountLocked: boolean;
+  /** Priced token legs that override strategy allocation. */
   manualLegs: SendDraftManualLeg[] | null;
+  /** Unpriced bonus legs (e.g. CashBox Points) sent on top of the USD payment. */
+  additionalLegs: SendDraftManualLeg[] | null;
   allocationInputs: Record<string, string>;
   allocationInputUnit: AllocationInputUnit;
   /** When set, overrides the default strategy for this send only. */
@@ -59,9 +62,10 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   recipientProfilePhotoUrl: null,
   recipientIsFarcaster: false,
   recipientIsEns: false,
-  amount: '0',
+  amount: '',
   amountLocked: false,
   manualLegs: null,
+  additionalLegs: null,
   allocationInputs: {},
   allocationInputUnit: 'token',
   strategyId: null,
@@ -109,7 +113,7 @@ export function hydrateSendDraftFromConfirmParams(params: {
   recipientIsFarcaster?: boolean;
   recipientIsEns?: boolean;
 }): void {
-  const amount = params.usdAmount?.trim() || '0';
+  const amount = params.usdAmount?.trim() ?? '';
   const decoded = tryDecodeWalletIdentity(params.identity);
   const username = params.recipientUsername?.trim().replace(/^@/, '') || null;
   const name = params.recipientName?.trim() || null;
