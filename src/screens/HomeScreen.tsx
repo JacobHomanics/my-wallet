@@ -106,72 +106,78 @@ export function HomeScreen() {
               {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
               {showActions ? (
                 <>
-                  <View style={styles.actionsRow}>
-                    <Pressable
-                      accessibilityRole="button"
-                      onPress={openFreshSend}
-                      style={({ pressed }) => [
-                        styles.actionButton,
-                        pressed && styles.actionButtonPressed,
-                      ]}
-                    >
-                      <Ionicons name="arrow-up" size={18} color="#f0fdf4" />
-                      <Text style={styles.actionButtonText}>Pay</Text>
-                    </Pressable>
-                    <Pressable
-                      accessibilityRole="button"
-                      onPress={() => {
-                        navigation.navigate('receive');
-                      }}
-                      style={({ pressed }) => [
-                        styles.actionButton,
-                        pressed && styles.actionButtonPressed,
-                      ]}
-                    >
-                      <Ionicons name="arrow-down" size={18} color="#f0fdf4" />
-                      <Text style={styles.actionButtonText}>Receive</Text>
-                    </Pressable>
-                    <Pressable
-                      accessibilityRole="button"
-                      onPress={() => {
-                        navigation.navigate('request');
-                      }}
-                      style={({ pressed }) => [
-                        styles.actionButton,
-                        pressed && styles.actionButtonPressed,
-                      ]}
-                    >
-                      <Ionicons name="cash-outline" size={18} color="#f0fdf4" />
-                      <Text style={styles.actionButtonText}>Request</Text>
-                    </Pressable>
-                    {canDeposit ? (
+                  <View style={styles.actionsGroup}>
+                    <View style={styles.actionsRow}>
                       <Pressable
                         accessibilityRole="button"
-                        onPress={openDepositTips}
+                        onPress={openFreshSend}
                         style={({ pressed }) => [
                           styles.actionButton,
                           pressed && styles.actionButtonPressed,
                         ]}
                       >
-                        <MaterialCommunityIcons
-                          name="archive-arrow-down-outline"
-                          size={18}
-                          color="#f8fafc"
-                        />
-                        <Text style={styles.actionButtonText}>Deposit</Text>
+                        <Ionicons name="arrow-up" size={18} color="#f0fdf4" />
+                        <Text style={styles.actionButtonText}>Pay</Text>
                       </Pressable>
-                    ) : null}
-                    <Pressable
-                      accessibilityRole="button"
-                      onPress={openWithdraw}
-                      style={({ pressed }) => [
-                        styles.actionButton,
-                        pressed && styles.actionButtonPressed,
-                      ]}
-                    >
-                      <Ionicons name="business-outline" size={18} color="#f0fdf4" />
-                      <Text style={styles.actionButtonText}>Withdraw</Text>
-                    </Pressable>
+                    </View>
+                    <View style={styles.actionsRow}>
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => {
+                          navigation.navigate('receive');
+                        }}
+                        style={({ pressed }) => [
+                          styles.actionButton,
+                          pressed && styles.actionButtonPressed,
+                        ]}
+                      >
+                        <Ionicons name="arrow-down" size={18} color="#f0fdf4" />
+                        <Text style={styles.actionButtonText}>Receive</Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => {
+                          navigation.navigate('request');
+                        }}
+                        style={({ pressed }) => [
+                          styles.actionButton,
+                          pressed && styles.actionButtonPressed,
+                        ]}
+                      >
+                        <Ionicons name="cash-outline" size={18} color="#f0fdf4" />
+                        <Text style={styles.actionButtonText}>Request</Text>
+                      </Pressable>
+                    </View>
+                    <View style={[styles.actionsRow, styles.depositWithdrawRow]}>
+                      {canDeposit ? (
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={openDepositTips}
+                          style={({ pressed }) => [
+                            styles.actionButton,
+                            pressed && styles.actionButtonPressed,
+                          ]}
+                        >
+                          <MaterialCommunityIcons
+                            name="archive-arrow-down-outline"
+                            size={18}
+                            color="#f8fafc"
+                          />
+                          <Text style={styles.actionButtonText}>Deposit</Text>
+                        </Pressable>
+                      ) : null}
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={openWithdraw}
+                        style={({ pressed }) => [
+                          styles.actionButton,
+                          pressed && styles.actionButtonPressed,
+                        ]}
+                      >
+                        <Ionicons name="business-outline" size={18} color="#f0fdf4" />
+                        <Text style={styles.actionButtonText}>Withdraw</Text>
+                      </Pressable>
+                    </View>
                   </View>
                   <Pressable
                     accessibilityRole="link"
@@ -281,13 +287,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-  actionsRow: {
+  actionsGroup: {
     marginTop: 28,
+    alignItems: 'center',
+    gap: 12,
+  },
+  actionsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
+  },
+  depositWithdrawRow: {
+    paddingTop: 36,
   },
   actionButton: {
     flexDirection: 'row',
