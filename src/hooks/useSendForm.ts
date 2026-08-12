@@ -471,8 +471,10 @@ export function useSendForm(
     walletTokens,
   ]);
 
-  const resolvedManualMerchant =
-    manualMerchantAllocations ?? draftStoredLegs.merchant;
+  const resolvedManualMerchant = (() => {
+    const manual = manualMerchantAllocations ?? draftStoredLegs.merchant;
+    return manual != null && manual.length > 0 ? manual : null;
+  })();
   const isManualPayment = resolvedManualMerchant != null;
 
   const merchantAllocations = useMemo(() => {
@@ -704,7 +706,10 @@ export function useSendForm(
     } else if (!sanitized.trim() || sanitized === '.') {
       setAmountUsd(null);
     }
-    if (manualMerchantAllocationsRef.current == null) {
+    if (
+      manualMerchantAllocationsRef.current == null ||
+      manualMerchantAllocationsRef.current.length === 0
+    ) {
       setManualMerchantAllocations(null);
       setAllocationInputs((current) => {
         const additionalIds = new Set(
@@ -723,7 +728,7 @@ export function useSendForm(
     next: PaymentAllocation[],
     syncAmount: boolean,
   ) => {
-    setManualMerchantAllocations(next);
+    setManualMerchantAllocations(next.length > 0 ? next : null);
     if (!syncAmount || amountLocked || tipUsd > 0) {
       return;
     }
