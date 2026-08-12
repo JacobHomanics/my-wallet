@@ -106,6 +106,20 @@ export function HomeScreen() {
               {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
               {showActions ? (
                 <>
+                  <Pressable
+                    accessibilityRole="link"
+                    hitSlop={8}
+                    onPress={() => {
+                      navigation.navigate('tokenDetails');
+                    }}
+                    style={({ pressed }) => [
+                      pressed && styles.detailsLinkPressed,
+                    ]}
+                  >
+                    <Text style={styles.detailsLinkText}>
+                      Show advanced details
+                    </Text>
+                  </Pressable>
                   <View style={styles.actionsGroup}>
                     <View style={styles.actionsRow}>
                       {canDeposit ? (
@@ -179,21 +193,6 @@ export function HomeScreen() {
                       </Pressable>
                     </View>
                   </View>
-                  <Pressable
-                    accessibilityRole="link"
-                    hitSlop={8}
-                    onPress={() => {
-                      navigation.navigate('tokenDetails');
-                    }}
-                    style={({ pressed }) => [
-                      styles.detailsLink,
-                      pressed && styles.detailsLinkPressed,
-                    ]}
-                  >
-                    <Text style={styles.detailsLinkText}>
-                      Show advanced details
-                    </Text>
-                  </Pressable>
                   <Pressable
                     accessibilityRole="link"
                     hitSlop={8}
@@ -300,7 +299,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   payReceiveRequestRow: {
-    paddingTop: 36,
+    paddingTop: 64,
   },
   actionButton: {
     flexDirection: 'row',
@@ -319,6 +318,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+
   detailsLink: {
     marginTop: 20,
     paddingVertical: 4,
