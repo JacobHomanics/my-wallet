@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 
 import { DepositBankTipsModal } from '@/components/DepositBankTipsModal';
+import { BalanceLoadErrorFooter } from '@/components/BalanceLoadErrorFooter';
 import { WithdrawUnsupportedModal } from '@/components/WithdrawUnsupportedModal';
 import { useDepositBankTipsModal } from '@/hooks/useDepositBankTipsModal';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
@@ -96,21 +97,10 @@ export function HomeScreen() {
                   >
                     {balancePlaceholder}
                   </Text>
-                  <View style={styles.balanceUnavailableFooter}>
-                    <Text style={styles.balanceUnavailableText}>
-                      Couldn't load balance.
-                    </Text>
-                    <Pressable
-                      accessibilityRole="link"
-                      hitSlop={8}
-                      onPress={onRefresh}
-                      style={({ pressed }) => [
-                        pressed && styles.detailsLinkPressed,
-                      ]}
-                    >
-                      <Text style={styles.detailsLinkText}>Retry</Text>
-                    </Pressable>
-                  </View>
+                  <BalanceLoadErrorFooter
+                    onRetry={onRefresh}
+                    style={styles.balanceUnavailableFooter}
+                  />
                 </View>
               ) : (
                 <Text style={styles.total} accessibilityRole="header">
@@ -274,17 +264,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   balanceUnavailableFooter: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
     marginTop: 10,
-  },
-  balanceUnavailableText: {
-    fontSize: 15,
-    color: '#5a7d6a',
-    textAlign: 'center',
   },
   empty: {
     fontSize: 15,

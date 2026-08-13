@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TokenIcon } from '@/components/TokenIcon';
+import { BalanceLoadErrorFooter } from '@/components/BalanceLoadErrorFooter';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useRewardTokenBalance } from '@/hooks/useRewardTokenBalance';
@@ -96,21 +97,10 @@ export function RewardsScreen() {
                   >
                     —
                   </Text>
-                  <View style={styles.balanceUnavailableFooter}>
-                    <Text style={styles.balanceUnavailableText}>
-                      Couldn't load balance.
-                    </Text>
-                    <Pressable
-                      accessibilityRole="link"
-                      hitSlop={8}
-                      onPress={onRefresh}
-                      style={({ pressed }) => [
-                        pressed && styles.detailsLinkPressed,
-                      ]}
-                    >
-                      <Text style={styles.detailsLinkText}>Retry</Text>
-                    </Pressable>
-                  </View>
+                  <BalanceLoadErrorFooter
+                    onRetry={onRefresh}
+                    style={styles.balanceUnavailableFooter}
+                  />
                 </View>
               ) : (
                 <Text style={styles.balance} accessibilityRole="header">
@@ -269,26 +259,7 @@ const styles = StyleSheet.create({
     color: '#86a894',
   },
   balanceUnavailableFooter: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
     marginTop: 10,
-  },
-  balanceUnavailableText: {
-    fontSize: 15,
-    color: '#5a7d6a',
-    textAlign: 'center',
-  },
-  detailsLinkPressed: {
-    opacity: 0.6,
-  },
-  detailsLinkText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#5a7d6a',
-    textDecorationLine: 'underline',
   },
   hint: {
     marginTop: 20,
