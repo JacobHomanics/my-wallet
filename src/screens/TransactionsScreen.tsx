@@ -99,22 +99,22 @@ export function TransactionsScreen() {
           })}
         </View>
 
-        {loading ? (
-          <ActivityIndicator color="#166534" style={styles.loader} />
-        ) : error && transactions.length === 0 ? (
-          <View style={styles.errorBlock}>
-            <Text style={styles.errorText}>{error}</Text>
+        {error ? (
+          <View style={styles.loadErrorFooter}>
+            <Text style={styles.loadErrorText}>Couldn't load transactions.</Text>
             <Pressable
-              accessibilityRole="button"
+              accessibilityRole="link"
+              hitSlop={8}
               onPress={onRefresh}
-              style={({ pressed }) => [
-                styles.retryButton,
-                pressed && styles.retryButtonPressed,
-              ]}
+              style={({ pressed }) => [pressed && styles.detailsLinkPressed]}
             >
-              <Text style={styles.retryButtonText}>Try again</Text>
+              <Text style={styles.detailsLinkText}>Retry</Text>
             </Pressable>
           </View>
+        ) : null}
+
+        {loading ? (
+          <ActivityIndicator color="#166534" style={styles.loader} />
         ) : (
           <FlatList
             contentContainerStyle={
@@ -125,10 +125,9 @@ export function TransactionsScreen() {
             data={filteredTransactions}
             keyExtractor={(item) => item.id}
             ListEmptyComponent={
-              <Text style={styles.empty}>{emptyMessage}</Text>
-            }
-            ListHeaderComponent={
-              error ? <Text style={styles.errorBanner}>{error}</Text> : null
+              error ? null : (
+                <Text style={styles.empty}>{emptyMessage}</Text>
+              )
             }
             refreshControl={
               <RefreshControl
@@ -223,6 +222,29 @@ const styles = StyleSheet.create({
   filterOptionTextSelected: {
     color: '#166534',
   },
+  loadErrorFooter: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginHorizontal: 24,
+    paddingBottom: 12,
+  },
+  loadErrorText: {
+    fontSize: 15,
+    color: '#5a7d6a',
+    textAlign: 'center',
+  },
+  detailsLinkPressed: {
+    opacity: 0.6,
+  },
+  detailsLinkText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#5a7d6a',
+    textDecorationLine: 'underline',
+  },
   loader: {
     marginTop: 48,
   },
@@ -232,37 +254,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#86a894',
     textAlign: 'center',
-  },
-  errorBlock: {
-    marginTop: 48,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    gap: 16,
-  },
-  errorText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#b91c1c',
-    textAlign: 'center',
-  },
-  errorBanner: {
-    marginBottom: 12,
-    fontSize: 13,
-    color: '#b91c1c',
-  },
-  retryButton: {
-    backgroundColor: '#166534',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  retryButtonPressed: {
-    opacity: 0.85,
-  },
-  retryButtonText: {
-    color: '#f0fdf4',
-    fontSize: 15,
-    fontWeight: '600',
   },
   list: {
     flex: 1,

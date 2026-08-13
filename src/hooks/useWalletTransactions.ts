@@ -53,9 +53,11 @@ export function useWalletTransactions(): WalletTransactionsResult {
         if (controller.signal.aborted) {
           return;
         }
+        console.error('[useWalletTransactions] Failed to load transactions:', err);
         setError(
           err instanceof Error ? err.message : 'Failed to load transactions',
         );
+        setTransactions((previous) => (hasLoadedOnce ? previous : []));
         setHasLoadedOnce(true);
       } finally {
         if (!controller.signal.aborted) {

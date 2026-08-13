@@ -262,13 +262,13 @@ async function fetchEvmNetworkTransfers(options: {
       'alchemy_getAssetTransfers',
       [{ ...baseParams, fromAddress: address }],
       signal,
-    ).catch(() => ({ transfers: [] as AlchemyTransfer[] })),
+    ),
     rpcCall<AlchemyTransfersResult>(
       url,
       'alchemy_getAssetTransfers',
       [{ ...baseParams, toAddress: address }],
       signal,
-    ).catch(() => ({ transfers: [] as AlchemyTransfer[] })),
+    ),
   ]);
 
   const byId = new Map<string, WalletTransaction>();
@@ -395,7 +395,7 @@ async function fetchSolanaTransfers(options: {
     'getSignaturesForAddress',
     [address, { limit: SOLANA_SIGNATURE_LIMIT }],
     signal,
-  ).catch(() => [] as SolanaSignature[]);
+  );
 
   const solPrice = prices.get('SOL') ?? null;
   const results: WalletTransaction[] = [];
@@ -603,31 +603,56 @@ export async function fetchWalletTransactions(options: {
     signal,
   );
 
-  const batches = await Promise.all([
-    ethereumAddress
-      ? Promise.allSettled(
-          ALCHEMY_EVM_NETWORKS.map((network) =>
-            fetchEvmNetworkTransfers({
-              network,
-              address: ethereumAddress,
-              prices,
-              signal,
-            }),
-          ),
-        ).then((results) =>
-          results.flatMap((result) =>
-            result.status === 'fulfilled' ? result.value : [],
-          ),
-        )
-      : Promise.resolve([] as WalletTransaction[]),
-    solanaAddress
-      ? fetchSolanaTransfers({
+  const errors: string[] = [];
+  const batches: WalletTransaction[][] = [];
+
+  if (ethereumAddress) {
+    const evmResults = await Promise.allSettled(
+      ALCHEMY_EVM_NETWORKS.map((network) =>
+        fetchEvmNetworkTransfers({
+          network,
+          address: ethereumAddress,
+          prices,
+          signal,
+        }),
+      ),
+    );
+    for (const result of evmResults) {
+      if (result.status === 'fulfilled') {
+        batches.push(result.value);
+      } else {
+        errors.push(
+          result.reason instanceof Error
+            ? result.reason.message
+            : 'Failed to load transactions',
+        );
+      }
+    }
+  }
+
+  if (solanaAddress) {
+    try {
+      batches.push(
+        await fetchSolanaTransfers({
           address: solanaAddress,
           prices,
           signal,
-        })
-      : Promise.resolve([] as WalletTransaction[]),
-  ]);
+        }),
+      );
+    } catch (err) {
+      errors.push(
+        err instanceof Error ? err.message : 'Failed to load transactions',
+      );
+    }
+  }
 
-  return batches.flat().sort((a, b) => b.timestampMs - a.timestampMs);
+  const transactions = batches
+    .flat()
+    .sort((a, b) => b.timestampMs - a.timestampMs);
+
+  if (transactions.length === 0 && errors.length > 0) {
+    throw new Error(errors[0] ?? 'Failed to load transactions');
+  }
+
+  return transactions;
 }
