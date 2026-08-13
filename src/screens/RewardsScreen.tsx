@@ -42,6 +42,7 @@ export function RewardsScreen() {
   const {
     balanceFormatted: rewardBalance,
     loading: rewardLoading,
+    error,
   } = useRewardTokenBalance();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const { copy, isCopied } = useCopyToClipboard();
@@ -86,9 +87,36 @@ export function RewardsScreen() {
           ) : (
             <View style={styles.main}>
               <Text style={styles.balanceLabel}>{REWARD_POINTS_LABEL}</Text>
-              <Text style={styles.balance} accessibilityRole="header">
-                {rewardBalance}
-              </Text>
+              {error ? (
+                <View style={styles.balanceUnavailable}>
+                  <Text
+                    accessibilityLabel="Balance unavailable"
+                    accessibilityRole="header"
+                    style={[styles.balance, styles.balanceUnavailableValue]}
+                  >
+                    —
+                  </Text>
+                  <View style={styles.balanceUnavailableFooter}>
+                    <Text style={styles.balanceUnavailableText}>
+                      Couldn't load balance.
+                    </Text>
+                    <Pressable
+                      accessibilityRole="link"
+                      hitSlop={8}
+                      onPress={onRefresh}
+                      style={({ pressed }) => [
+                        pressed && styles.detailsLinkPressed,
+                      ]}
+                    >
+                      <Text style={styles.detailsLinkText}>Retry</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ) : (
+                <Text style={styles.balance} accessibilityRole="header">
+                  {rewardBalance}
+                </Text>
+              )}
               <Text style={styles.hint}>
                 Earn {REWARD_POINTS_LABEL} when you send or complete a payment
                 with someone else!
@@ -232,6 +260,35 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
+  },
+  balanceUnavailable: {
+    alignItems: 'center',
+    paddingBottom: 20,
+  },
+  balanceUnavailableValue: {
+    color: '#86a894',
+  },
+  balanceUnavailableFooter: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 10,
+  },
+  balanceUnavailableText: {
+    fontSize: 15,
+    color: '#5a7d6a',
+    textAlign: 'center',
+  },
+  detailsLinkPressed: {
+    opacity: 0.6,
+  },
+  detailsLinkText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#5a7d6a',
+    textDecorationLine: 'underline',
   },
   hint: {
     marginTop: 20,
