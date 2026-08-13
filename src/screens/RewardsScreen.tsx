@@ -99,6 +99,7 @@ export function RewardsScreen() {
                   </Text>
                   <BalanceLoadErrorFooter
                     onRetry={onRefresh}
+                    retrying={refreshing}
                     style={styles.balanceUnavailableFooter}
                   />
                 </View>

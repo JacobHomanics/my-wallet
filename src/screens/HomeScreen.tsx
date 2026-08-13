@@ -99,6 +99,7 @@ export function HomeScreen() {
                   </Text>
                   <BalanceLoadErrorFooter
                     onRetry={onRefresh}
+                    retrying={refreshing}
                     style={styles.balanceUnavailableFooter}
                   />
                 </View>

@@ -156,6 +156,7 @@ export function TokenDetailsScreen() {
           {error ? (
             <BalanceLoadErrorFooter
               onRetry={onRefresh}
+              retrying={refreshing}
               style={styles.balanceUnavailableFooter}
             />
           ) : null}

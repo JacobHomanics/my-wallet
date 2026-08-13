@@ -53,7 +53,7 @@ export function SendAmountScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'sendAmount'>>();
-  const { tokens, loading, ready, error, refresh, ethereumAddress, solanaAddress } =
+  const { tokens, loading, ready, error, refresh, refreshing, ethereumAddress, solanaAddress } =
     useTokenBalances();
   const { spendableTokens, availableUsd, availableLabel } =
     useSpendableTokens(tokens);
@@ -275,6 +275,7 @@ export function SendAmountScreen() {
                 {error ? (
                   <BalanceLoadErrorFooter
                     onRetry={onRefresh}
+                    retrying={refreshing}
                     style={styles.balanceUnavailableFooter}
                   />
                 ) : null}
