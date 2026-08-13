@@ -23,6 +23,9 @@ import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useWithdrawUnsupportedModal } from '@/hooks/useWithdrawUnsupportedModal';
 import type { HomeStackParamList } from '@/navigation/types';
 
+const BALANCE_LOAD_ERROR_MESSAGE =
+  'Error loading balance. Please try again later.';
+
 export function HomeScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
@@ -84,26 +87,29 @@ export function HomeScreen() {
             <ActivityIndicator color="#166534" />
           ) : !hasWallet ? (
             <Text style={styles.empty}>Creating your wallets…</Text>
-          ) : error && tokens.length === 0 ? (
-            <View style={styles.errorBlock}>
-              <Text style={styles.errorText}>{error}</Text>
-              <Pressable
-                accessibilityRole="button"
-                onPress={onRefresh}
-                style={({ pressed }) => [
-                  styles.retryButton,
-                  pressed && styles.retryButtonPressed,
-                ]}
-              >
-                <Text style={styles.retryButtonText}>Try again</Text>
-              </Pressable>
-            </View>
           ) : (
             <>
-              <Text style={styles.total} accessibilityRole="header">
-                {totalLabel}
-              </Text>
-              {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
+              {error ? (
+                <View style={styles.errorBlock}>
+                  <Text style={styles.balanceErrorMessage}>
+                    {BALANCE_LOAD_ERROR_MESSAGE}
+                  </Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={onRefresh}
+                    style={({ pressed }) => [
+                      styles.retryButton,
+                      pressed && styles.retryButtonPressed,
+                    ]}
+                  >
+                    <Text style={styles.retryButtonText}>Try again</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <Text style={styles.total} accessibilityRole="header">
+                  {totalLabel}
+                </Text>
+              )}
               {showActions ? (
                 <>
                   <Pressable
@@ -258,21 +264,16 @@ const styles = StyleSheet.create({
     color: '#86a894',
     textAlign: 'center',
   },
-  errorBlock: {
-    alignItems: 'center',
-    gap: 16,
-  },
-  errorText: {
+  balanceErrorMessage: {
     fontSize: 15,
     lineHeight: 22,
     color: '#b91c1c',
     textAlign: 'center',
+    maxWidth: 280,
   },
-  errorBanner: {
-    marginTop: 12,
-    fontSize: 13,
-    color: '#b91c1c',
-    textAlign: 'center',
+  errorBlock: {
+    alignItems: 'center',
+    gap: 16,
   },
   retryButton: {
     backgroundColor: '#166534',

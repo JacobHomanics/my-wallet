@@ -167,6 +167,10 @@ export function useTokenBalances(): TokenBalancesResult {
               result.reason.name === 'AbortError'
             )
           ) {
+            console.error(
+              '[useTokenBalances] Failed to load token balances:',
+              result.reason,
+            );
             errors.push(
               result.reason instanceof Error
                 ? result.reason.message
@@ -182,32 +186,48 @@ export function useTokenBalances(): TokenBalancesResult {
               ? (errors[0] ?? null)
               : null;
 
-        tokenBalancesCache = {
-          key,
-          tokens: nextTokens,
-          error: nextError,
-          fetchedAt: Date.now(),
-        };
-
-        setSnapshot({
+        const nextSnapshot = {
           fetchId,
           tokens: nextTokens,
           error: nextError,
+        };
+        const keepPreviousSnapshot =
+          !isRefresh && nextTokens.length === 0 && nextError != null;
+
+        if (!keepPreviousSnapshot) {
+          tokenBalancesCache = {
+            key,
+            tokens: nextTokens,
+            error: nextError,
+            fetchedAt: Date.now(),
+          };
+        }
+
+        setSnapshot((previous) => {
+          if (keepPreviousSnapshot && previous?.fetchId.startsWith(`${key}:`)) {
+            return previous;
+          }
+
+          return nextSnapshot;
         });
       } catch (err) {
         if (controller.signal.aborted) {
           return;
         }
+        console.error('[useTokenBalances] Failed to load token balances:', err);
         const message =
           err instanceof Error ? err.message : 'Failed to load tokens';
-        setSnapshot((previous) => ({
-          fetchId,
-          tokens:
-            isRefresh && previous?.fetchId.startsWith(`${key}:`)
-              ? previous.tokens
-              : [],
-          error: message,
-        }));
+        setSnapshot((previous) => {
+          if (!isRefresh && previous?.fetchId.startsWith(`${key}:`)) {
+            return previous;
+          }
+
+          return {
+            fetchId,
+            tokens: [],
+            error: message,
+          };
+        });
       } finally {
         if (!controller.signal.aborted) {
           setRefreshFetchId((current) =>
@@ -264,13 +284,11 @@ export function useTokenBalances(): TokenBalancesResult {
             ? snapshotForKey.error
             : null;
 
-  const settled = Boolean(snapshotMatches || freshCache);
+  const hasDisplayableData = Boolean(snapshotForKey || freshCache);
   const refreshing = Boolean(isRefresh && !snapshotMatches);
   const loading =
     !walletsReady ||
-    Boolean(
-      hasAddress && !missingApiKey && !settled && visibleTokens.length === 0,
-    );
+    Boolean(hasAddress && !missingApiKey && !hasDisplayableData);
 
   const totalUsd = visibleTokens.reduce<number | null>((sum, token) => {
     if (token.usdValue == null) {
