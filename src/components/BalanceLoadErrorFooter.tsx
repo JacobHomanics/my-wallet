@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -19,37 +18,27 @@ export function BalanceLoadErrorFooter({
   retrying = false,
   style,
 }: BalanceLoadErrorFooterProps) {
-  const [pending, setPending] = useState(false);
-  const showSpinner = retrying || pending;
-
-  useEffect(() => {
-    if (!retrying) {
-      setPending(false);
-    }
-  }, [retrying]);
-
   const handleRetry = () => {
-    if (showSpinner) {
+    if (retrying) {
       return;
     }
-    setPending(true);
     onRetry();
   };
 
   return (
     <View style={[styles.inline, style]}>
       <Text style={styles.message}>
-        Couldn't load balance. Your funds are safe.{' '}
+        {"Couldn't load balance. Your funds are safe. "}
         <Text
           accessibilityRole="link"
-          accessibilityState={{ disabled: showSpinner }}
-          onPress={showSpinner ? undefined : handleRetry}
-          style={[styles.link, showSpinner && styles.linkDisabled]}
+          accessibilityState={{ disabled: retrying }}
+          onPress={retrying ? undefined : handleRetry}
+          style={[styles.link, retrying && styles.linkDisabled]}
         >
           Retry
         </Text>
       </Text>
-      {showSpinner ? (
+      {retrying ? (
         <ActivityIndicator
           color="#166534"
           size="small"

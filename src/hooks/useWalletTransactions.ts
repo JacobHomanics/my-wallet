@@ -57,7 +57,7 @@ export function useWalletTransactions(): WalletTransactionsResult {
         setError(
           err instanceof Error ? err.message : 'Failed to load transactions',
         );
-        setTransactions((previous) => (hasLoadedOnce ? previous : []));
+        setTransactions((previous) => (previous.length > 0 ? previous : []));
         setHasLoadedOnce(true);
       } finally {
         if (!controller.signal.aborted) {

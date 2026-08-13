@@ -101,7 +101,9 @@ export function TransactionsScreen() {
 
         {error ? (
           <View style={styles.loadErrorFooter}>
-            <Text style={styles.loadErrorText}>Couldn't load transactions.</Text>
+            <Text style={styles.loadErrorText}>
+              {"Couldn't load transactions."}
+            </Text>
             <Pressable
               accessibilityRole="link"
               hitSlop={8}
