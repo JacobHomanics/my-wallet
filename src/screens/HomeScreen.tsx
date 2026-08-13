@@ -23,9 +23,6 @@ import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useWithdrawUnsupportedModal } from '@/hooks/useWithdrawUnsupportedModal';
 import type { HomeStackParamList } from '@/navigation/types';
 
-const BALANCE_LOAD_ERROR_MESSAGE =
-  'Error loading balance. Please try again later.';
-
 export function HomeScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
@@ -58,13 +55,14 @@ export function HomeScreen() {
   } = useDepositBankTipsModal(openDeposit);
   const { withdrawOpen, openWithdraw, closeWithdraw } =
     useWithdrawUnsupportedModal();
-  const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
+  const { formatFromUsd, defaultFormattedZero, currencySymbol } = useFiatDisplay();
 
   const onRefresh = useCallback(() => {
     refresh();
   }, [refresh]);
 
   const totalLabel = formatFromUsd(totalUsd) ?? defaultFormattedZero;
+  const balancePlaceholder = `${currencySymbol}—.——`;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
   const showActions =
     ready && hasWallet && !(loading && tokens.length === 0);
@@ -90,20 +88,29 @@ export function HomeScreen() {
           ) : (
             <>
               {error ? (
-                <View style={styles.errorBlock}>
-                  <Text style={styles.balanceErrorMessage}>
-                    {BALANCE_LOAD_ERROR_MESSAGE}
-                  </Text>
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={onRefresh}
-                    style={({ pressed }) => [
-                      styles.retryButton,
-                      pressed && styles.retryButtonPressed,
-                    ]}
+                <View style={styles.balanceUnavailable}>
+                  <Text
+                    accessibilityLabel="Balance unavailable"
+                    accessibilityRole="header"
+                    style={[styles.total, styles.totalUnavailable]}
                   >
-                    <Text style={styles.retryButtonText}>Try again</Text>
-                  </Pressable>
+                    {balancePlaceholder}
+                  </Text>
+                  <View style={styles.balanceUnavailableFooter}>
+                    <Text style={styles.balanceUnavailableText}>
+                      Couldn't load balance.
+                    </Text>
+                    <Pressable
+                      accessibilityRole="link"
+                      hitSlop={8}
+                      onPress={onRefresh}
+                      style={({ pressed }) => [
+                        pressed && styles.detailsLinkPressed,
+                      ]}
+                    >
+                      <Text style={styles.detailsLinkText}>Retry</Text>
+                    </Pressable>
+                  </View>
                 </View>
               ) : (
                 <Text style={styles.total} accessibilityRole="header">
@@ -259,35 +266,30 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
   },
+  totalUnavailable: {
+    color: '#86a894',
+  },
+  balanceUnavailable: {
+    alignItems: 'center',
+    paddingBottom: 20,
+  },
+  balanceUnavailableFooter: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 10,
+  },
+  balanceUnavailableText: {
+    fontSize: 15,
+    color: '#5a7d6a',
+    textAlign: 'center',
+  },
   empty: {
     fontSize: 15,
     color: '#86a894',
     textAlign: 'center',
-  },
-  balanceErrorMessage: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#b91c1c',
-    textAlign: 'center',
-    maxWidth: 280,
-  },
-  errorBlock: {
-    alignItems: 'center',
-    gap: 16,
-  },
-  retryButton: {
-    backgroundColor: '#166534',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  retryButtonPressed: {
-    opacity: 0.85,
-  },
-  retryButtonText: {
-    color: '#f0fdf4',
-    fontSize: 15,
-    fontWeight: '600',
   },
   actionsGroup: {
     marginTop: 28,
