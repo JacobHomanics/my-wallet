@@ -49,7 +49,7 @@ export function TokenDetailsScreen() {
   const { availableLabel } = useSpendableTokens(tokens);
   const chainGroups = useTokensByChain(tokens);
   const { expandedNetworks, isExpanded, toggleNetwork } = useExpandedNetworks();
-  const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
+  const { formatFromUsd, defaultFormattedZero, currencySymbol } = useFiatDisplay();
 
   const onRefresh = useCallback(() => {
     refresh();
@@ -78,7 +78,10 @@ export function TokenDetailsScreen() {
     [expandedNetworks, isExpanded, onTokenPress, toggleNetwork],
   );
 
+  const balancePlaceholder = `${currencySymbol}—.——`;
   const ledgerLabel = formatFromUsd(totalUsd) ?? defaultFormattedZero;
+  const displayAvailableLabel = error ? balancePlaceholder : availableLabel;
+  const displayLedgerLabel = error ? balancePlaceholder : ledgerLabel;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
 
   return (
@@ -114,37 +117,62 @@ export function TokenDetailsScreen() {
 
         <View style={styles.summary}>
           <View
-            accessibilityLabel={`Available Balance: ${availableLabel}`}
+            accessibilityLabel={
+              error
+                ? 'Available balance unavailable'
+                : `Available Balance: ${availableLabel}`
+            }
             style={styles.balanceRow}
           >
             <Text style={styles.balanceLabel}>Available Balance:</Text>
-            <Text style={styles.balanceValue}>{availableLabel}</Text>
+            <Text
+              style={[
+                styles.balanceValue,
+                error && styles.balanceValueUnavailable,
+              ]}
+            >
+              {displayAvailableLabel}
+            </Text>
           </View>
           <View
-            accessibilityLabel={`Total Balance: ${ledgerLabel}`}
+            accessibilityLabel={
+              error
+                ? 'Total balance unavailable'
+                : `Total Balance: ${ledgerLabel}`
+            }
             style={styles.balanceRow}
           >
             <Text style={styles.balanceLabel}>Total Balance:</Text>
-            <Text style={styles.balanceValue}>{ledgerLabel}</Text>
+            <Text
+              style={[
+                styles.balanceValue,
+                error && styles.balanceValueUnavailable,
+              ]}
+            >
+              {displayLedgerLabel}
+            </Text>
           </View>
+          {error ? (
+            <View style={styles.balanceUnavailableFooter}>
+              <Text style={styles.balanceUnavailableText}>
+                Couldn't load balance.
+              </Text>
+              <Pressable
+                accessibilityRole="link"
+                hitSlop={8}
+                onPress={onRefresh}
+                style={({ pressed }) => [
+                  pressed && styles.detailsLinkPressed,
+                ]}
+              >
+                <Text style={styles.detailsLinkText}>Retry</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
 
         {!hasWallet || loading ? (
           <ActivityIndicator color="#166534" style={styles.loader} />
-        ) : error && tokens.length === 0 ? (
-          <View style={styles.errorBlock}>
-            <Text style={styles.errorText}>{error}</Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onRefresh}
-              style={({ pressed }) => [
-                styles.retryButton,
-                pressed && styles.retryButtonPressed,
-              ]}
-            >
-              <Text style={styles.retryButtonText}>Try again</Text>
-            </Pressable>
-          </View>
         ) : (
           <FlatList
             contentContainerStyle={
@@ -156,9 +184,6 @@ export function TokenDetailsScreen() {
               <Text style={styles.empty}>
                 No tokens found on Ethereum or Solana.
               </Text>
-            }
-            ListHeaderComponent={
-              error ? <Text style={styles.errorBanner}>{error}</Text> : null
             }
             refreshControl={
               <RefreshControl
@@ -250,6 +275,32 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     textAlign: 'right',
   },
+  balanceValueUnavailable: {
+    color: '#86a894',
+  },
+  balanceUnavailableFooter: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingTop: 4,
+    paddingBottom: 8,
+  },
+  balanceUnavailableText: {
+    fontSize: 15,
+    color: '#5a7d6a',
+    textAlign: 'center',
+  },
+  detailsLinkPressed: {
+    opacity: 0.6,
+  },
+  detailsLinkText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#5a7d6a',
+    textDecorationLine: 'underline',
+  },
   loader: {
     marginTop: 48,
   },
@@ -259,37 +310,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#86a894',
     textAlign: 'center',
-  },
-  errorBlock: {
-    marginTop: 48,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    gap: 16,
-  },
-  errorText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#b91c1c',
-    textAlign: 'center',
-  },
-  errorBanner: {
-    marginBottom: 12,
-    fontSize: 13,
-    color: '#b91c1c',
-  },
-  retryButton: {
-    backgroundColor: '#166534',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  retryButtonPressed: {
-    opacity: 0.85,
-  },
-  retryButtonText: {
-    color: '#f0fdf4',
-    fontSize: 15,
-    fontWeight: '600',
   },
   list: {
     flex: 1,
