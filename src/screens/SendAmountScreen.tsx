@@ -52,7 +52,7 @@ export function SendAmountScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'sendAmount'>>();
-  const { tokens, loading, ready, ethereumAddress, solanaAddress } =
+  const { tokens, loading, ready, error, refresh, ethereumAddress, solanaAddress } =
     useTokenBalances();
   const { spendableTokens, availableUsd, availableLabel } =
     useSpendableTokens(tokens);
@@ -129,7 +129,13 @@ export function SendAmountScreen() {
   });
 
   const totalLabel = availableLabel;
+  const balancePlaceholder = `${currencySymbol}—.——`;
+  const displayAvailableLabel = error ? balancePlaceholder : totalLabel;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
+
+  const onRefresh = useCallback(() => {
+    refresh();
+  }, [refresh]);
 
   const taxLabel =
     formatServiceFeeFromUsd(taxUsd) ?? defaultServiceFeeFormattedZero;
@@ -229,7 +235,7 @@ export function SendAmountScreen() {
             <View style={styles.topBarSpacer} />
           </View>
 
-          {!ready || (loading && tokens.length === 0) ? (
+          {!ready || loading ? (
             <ActivityIndicator color="#166534" style={styles.loader} />
           ) : !hasWallet ? (
             <Text style={styles.empty}>Creating your wallets…</Text>
@@ -244,7 +250,11 @@ export function SendAmountScreen() {
             >
               <View style={styles.formBody}>
                 <View
-                  accessibilityLabel={`Available Balance: ${totalLabel}`}
+                  accessibilityLabel={
+                    error
+                      ? 'Available balance unavailable'
+                      : `Available Balance: ${totalLabel}`
+                  }
                   style={[
                     styles.fieldRow,
                     styles.fieldRowDisabled,
@@ -252,8 +262,32 @@ export function SendAmountScreen() {
                   ]}
                 >
                   <Text style={styles.balanceLabel}>Available Balance:</Text>
-                  <Text style={styles.balanceValue}>{totalLabel}</Text>
+                  <Text
+                    style={[
+                      styles.balanceValue,
+                      error && styles.balanceValueUnavailable,
+                    ]}
+                  >
+                    {displayAvailableLabel}
+                  </Text>
                 </View>
+                {error ? (
+                  <View style={styles.balanceUnavailableFooter}>
+                    <Text style={styles.balanceUnavailableText}>
+                      Couldn't load balance.
+                    </Text>
+                    <Pressable
+                      accessibilityRole="link"
+                      hitSlop={8}
+                      onPress={onRefresh}
+                      style={({ pressed }) => [
+                        pressed && styles.detailsLinkPressed,
+                      ]}
+                    >
+                      <Text style={styles.detailsLinkText}>Retry</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
 
                 {hasRecipient && primaryLabel ? (
                   <>
@@ -489,6 +523,32 @@ const styles = StyleSheet.create({
     color: '#166534',
     fontVariant: ['tabular-nums'],
     textAlign: 'right',
+  },
+  balanceValueUnavailable: {
+    color: '#86a894',
+  },
+  balanceUnavailableFooter: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 10,
+    paddingBottom: 4,
+  },
+  balanceUnavailableText: {
+    fontSize: 15,
+    color: '#5a7d6a',
+    textAlign: 'center',
+  },
+  detailsLinkPressed: {
+    opacity: 0.6,
+  },
+  detailsLinkText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#5a7d6a',
+    textDecorationLine: 'underline',
   },
   formBody: {
     flex: 1,
