@@ -16,7 +16,6 @@ import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import {
   calculateEarnedYield,
   formatEarnApy,
-  formatEarnAssetSymbol,
   formatEarnRawAmount,
 } from '@/lib/privy/earn';
 
@@ -52,7 +51,6 @@ export function EarnScreen() {
     void refresh();
   }, [refresh]);
 
-  const assetSymbol = vault ? formatEarnAssetSymbol(vault.asset.symbol) : 'USDC';
   const vaultBalance =
     position != null
       ? formatEarnRawAmount(position.assets_in_vault, position.asset.decimals)
@@ -155,27 +153,20 @@ export function EarnScreen() {
             <Text style={styles.error}>{error}</Text>
           ) : (
             <View style={styles.main}>
+              <Text style={styles.heroLabel}>In vault</Text>
+              <Text style={styles.heroBalance} accessibilityRole="header">
+                {vaultBalanceFiat}
+              </Text>
               {vault ? (
-                <View style={styles.card}>
-                  <Text style={styles.vaultName}>{vault.name}</Text>
-                  <Text style={styles.apyLabel}>Current APY</Text>
-                  <Text style={styles.apy}>{formatEarnApy(vault.user_apy)}</Text>
-                  <Text style={styles.hint}>
-                    Yield from {vault.provider} on {assetSymbol}
-                  </Text>
-                </View>
+                <Text style={styles.heroHint}>
+                  {formatEarnApy(vault.user_apy)} APY
+                </Text>
               ) : null}
 
-              <View style={styles.card}>
-                <Text style={styles.balanceLabel}>In vault</Text>
-                <Text style={styles.balance} accessibilityRole="header">
-                  {vaultBalanceFiat}
-                </Text>
-                <Text style={styles.yieldHint}>
-                  Earned: {earnedYieldFiat}
-                </Text>
+              <View style={styles.statsBlock}>
+                <Text style={styles.statLine}>Earned: {earnedYieldFiat}</Text>
                 {walletAssetBalance != null ? (
-                  <Text style={styles.yieldHint}>
+                  <Text style={styles.statLine}>
                     Depositable balance: {walletBalanceFiat}
                   </Text>
                 ) : null}
@@ -283,12 +274,48 @@ const styles = StyleSheet.create({
   body: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: 32,
     paddingBottom: 32,
+    alignItems: 'center',
   },
   main: {
     width: '100%',
-    gap: 16,
+    alignItems: 'center',
+    gap: 24,
+  },
+  heroLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#5a7d6a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  heroBalance: {
+    fontSize: 56,
+    fontWeight: '700',
+    color: '#166534',
+    letterSpacing: -1,
+    fontVariant: ['tabular-nums'],
+    textAlign: 'center',
+  },
+  heroHint: {
+    marginTop: -8,
+    maxWidth: 320,
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#5a7d6a',
+    textAlign: 'center',
+  },
+  statsBlock: {
+    width: '100%',
+    maxWidth: 320,
+    gap: 6,
+    alignItems: 'center',
+  },
+  statLine: {
+    fontSize: 14,
+    color: '#5a7d6a',
+    textAlign: 'center',
   },
   card: {
     width: '100%',
@@ -302,34 +329,6 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#166534',
-  },
-  vaultName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#166534',
-  },
-  apyLabel: {
-    fontSize: 13,
-    color: '#5a7d6a',
-    marginTop: 4,
-  },
-  apy: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#166534',
-  },
-  balanceLabel: {
-    fontSize: 13,
-    color: '#5a7d6a',
-  },
-  balance: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#166534',
-  },
-  yieldHint: {
-    fontSize: 14,
     color: '#166534',
   },
   hint: {
