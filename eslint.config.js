@@ -16,6 +16,8 @@ module.exports = defineConfig([
       ".expo/**",
       "convex/_generated/**",
       "dist/**",
+      "extension/dist/**",
+      "web-build/**",
       "build/**",
       "ios/**",
       "android/**",
