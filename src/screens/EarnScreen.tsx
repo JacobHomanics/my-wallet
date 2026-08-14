@@ -158,14 +158,15 @@ export function EarnScreen() {
                 {vaultBalanceFiat}
               </Text>
               {vault ? (
-                <Text style={styles.heroHint}>
-                  {formatEarnApy(vault.user_apy)} APY
-                </Text>
-              ) : null}
-
-              <View style={styles.statsBlock}>
+                <View style={styles.heroMeta}>
+                  <Text style={styles.heroHint}>
+                    {formatEarnApy(vault.user_apy)} APY
+                  </Text>
+                  <Text style={styles.statLine}>Earned: {earnedYieldFiat}</Text>
+                </View>
+              ) : (
                 <Text style={styles.statLine}>Earned: {earnedYieldFiat}</Text>
-              </View>
+              )}
 
               <View style={styles.card}>
                 {walletAssetBalance != null ? (
@@ -299,18 +300,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   heroHint: {
-    marginTop: -8,
     maxWidth: 320,
     fontSize: 15,
     lineHeight: 22,
     color: '#5a7d6a',
     textAlign: 'center',
   },
-  statsBlock: {
-    width: '100%',
-    maxWidth: 320,
-    gap: 6,
+  heroMeta: {
     alignItems: 'center',
+    gap: 4,
+    marginTop: -8,
   },
   statLine: {
     fontSize: 14,
