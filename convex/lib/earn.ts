@@ -53,6 +53,45 @@ export function getEarnVaultId(): string {
   return vaultId;
 }
 
+function parsePrivyEarnApiError(error: unknown, action: "deposit" | "withdraw"): never {
+  const fallback =
+    action === "deposit"
+      ? "Deposit failed. Try again shortly."
+      : "Withdrawal failed. Try again shortly.";
+
+  if (!(error instanceof Error)) {
+    throw new Error(fallback);
+  }
+
+  const message = error.message;
+  const jsonMatch = message.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      const payload = JSON.parse(jsonMatch[0]) as {
+        error?: string;
+        code?: string;
+      };
+      if (
+        payload.code === "invalid_state" &&
+        payload.error?.includes("not available for deposits or withdrawals")
+      ) {
+        throw new Error(
+          "This earn vault is not active yet. In Privy Dashboard → Wallet infrastructure → Earn, confirm the fee wrapper finished deploying and the vault shows as live before depositing.",
+        );
+      }
+      if (payload.error) {
+        throw new Error(payload.error);
+      }
+    } catch (parsed) {
+      if (parsed instanceof Error && parsed.message !== message) {
+        throw parsed;
+      }
+    }
+  }
+
+  throw new Error(message || fallback);
+}
+
 function getPrivyBasicAuthHeader(): { appId: string; authorization: string } {
   const appId = process.env.PRIVY_APP_ID;
   const appSecret = process.env.PRIVY_APP_SECRET;
@@ -117,27 +156,31 @@ export async function depositToEarnVault(params: {
   vaultId: string;
   amount: string;
 }): Promise<EarnWalletAction> {
-  const result = await params.privy.wallets().earn().ethereum().deposit(
-    params.walletId,
-    {
-      vault_id: params.vaultId,
-      amount: params.amount,
-      authorization_context: params.authorizationContext,
-    },
-  );
+  try {
+    const result = await params.privy.wallets().earn().ethereum().deposit(
+      params.walletId,
+      {
+        vault_id: params.vaultId,
+        amount: params.amount,
+        authorization_context: params.authorizationContext,
+      },
+    );
 
-  return {
-    id: result.id,
-    wallet_id: result.wallet_id,
-    type: result.type,
-    status: result.status,
-    amount: result.amount ?? null,
-    raw_amount: result.raw_amount ?? null,
-    asset: result.asset ?? null,
-    decimals: result.decimals ?? null,
-    share_amount: result.share_amount ?? null,
-    created_at: result.created_at,
-  };
+    return {
+      id: result.id,
+      wallet_id: result.wallet_id,
+      type: result.type,
+      status: result.status,
+      amount: result.amount ?? null,
+      raw_amount: result.raw_amount ?? null,
+      asset: result.asset ?? null,
+      decimals: result.decimals ?? null,
+      share_amount: result.share_amount ?? null,
+      created_at: result.created_at,
+    };
+  } catch (error) {
+    parsePrivyEarnApiError(error, "deposit");
+  }
 }
 
 export async function withdrawFromEarnVault(params: {
@@ -147,25 +190,29 @@ export async function withdrawFromEarnVault(params: {
   vaultId: string;
   amount: string;
 }): Promise<EarnWalletAction> {
-  const result = await params.privy.wallets().earn().ethereum().withdraw(
-    params.walletId,
-    {
-      vault_id: params.vaultId,
-      amount: params.amount,
-      authorization_context: params.authorizationContext,
-    },
-  );
+  try {
+    const result = await params.privy.wallets().earn().ethereum().withdraw(
+      params.walletId,
+      {
+        vault_id: params.vaultId,
+        amount: params.amount,
+        authorization_context: params.authorizationContext,
+      },
+    );
 
-  return {
-    id: result.id,
-    wallet_id: result.wallet_id,
-    type: result.type,
-    status: result.status,
-    amount: result.amount ?? null,
-    raw_amount: result.raw_amount ?? null,
-    asset: result.asset ?? null,
-    decimals: result.decimals ?? null,
-    share_amount: result.share_amount ?? null,
-    created_at: result.created_at,
-  };
+    return {
+      id: result.id,
+      wallet_id: result.wallet_id,
+      type: result.type,
+      status: result.status,
+      amount: result.amount ?? null,
+      raw_amount: result.raw_amount ?? null,
+      asset: result.asset ?? null,
+      decimals: result.decimals ?? null,
+      share_amount: result.share_amount ?? null,
+      created_at: result.created_at,
+    };
+  } catch (error) {
+    parsePrivyEarnApiError(error, "withdraw");
+  }
 }

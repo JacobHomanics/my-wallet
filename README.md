@@ -64,3 +64,5 @@ curl "https://api.privy.io/v1/earn/ethereum/vaults/<vault_id>" \
 ```
 
 Deposits and withdrawals run through Convex using the same authorization key as payment sends. Users manage yield from the **Earn** tab.
+
+If deposits fail with "vault is not available for deposits or withdrawals", the fee wrapper may still be deploying. In Privy Dashboard → **Wallet infrastructure → Earn**, wait until the vault shows as live, then retry.
