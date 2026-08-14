@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { EnsureConvexUser } from '@/components/EnsureConvexUser';
 import { EnsureEmbeddedWallets } from '@/components/EnsureEmbeddedWallets';
+import { isChromeExtension } from '@/lib/runtime/isChromeExtension';
 import { AuthFlowProvider } from '@/lib/privy/context/AuthFlowContext';
 import { RootNavigator } from '@/navigation/RootNavigator';
 import { ConvexProvider } from '@/providers/ConvexProvider';
@@ -24,7 +25,7 @@ export default function App() {
           </AuthFlowProvider>
         </PrivyProvider>
       </ConvexProvider>
-      {Platform.OS === 'web' ? <Analytics /> : null}
+      {Platform.OS === 'web' && !isChromeExtension() ? <Analytics /> : null}
     </SafeAreaProvider>
   );
 }

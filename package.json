@@ -71,6 +71,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "build:web": "expo export",
+    "build:extension": "node scripts/build-extension.mjs",
+    "build:extension:fast": "node scripts/build-extension.mjs --skip-web-build",
     "lint": "eslint . --max-warnings 0 && tsc --noEmit --incremental",
     "clear-all-temp": "rm -rf .expo ios android node_modules",
     "prepare": "husky",
