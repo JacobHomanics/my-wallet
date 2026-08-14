@@ -37,6 +37,16 @@ function isVaultNotConfiguredError(message: string): boolean {
   return message.includes('PRIVY_EARN_VAULT_ID');
 }
 
+function getEarnLoadKey(
+  walletsReady: boolean,
+  ethereumWalletId: string | null,
+): string {
+  if (!walletsReady) {
+    return 'pending';
+  }
+  return `ready:${ethereumWalletId ?? ''}`;
+}
+
 /**
  * Privy Earn vault position, deposit, and withdraw via Convex + Wallet API.
  * @see https://docs.privy.io/wallets/actions/earn/setup
@@ -52,15 +62,18 @@ export function usePrivyEarn(): UsePrivyEarnResult {
 
   const ethereumWallet = wallets.find((wallet) => wallet.chain === 'ethereum');
   const ethereumWalletId = ethereumWallet?.id?.trim() ?? null;
+  const loadKey = getEarnLoadKey(walletsReady, ethereumWalletId);
 
   const [vault, setVault] = useState<EarnVaultDetails | null>(null);
   const [position, setPosition] = useState<EarnVaultPosition | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [acting, setActing] = useState(false);
   const [configured, setConfigured] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const loading = loadKey === 'pending' || loadedKey !== loadKey;
 
   const walletAssetBalance = (() => {
     if (!vault?.asset.address) {
@@ -73,60 +86,67 @@ export function usePrivyEarn(): UsePrivyEarnResult {
     return token?.balanceFormatted ?? '0';
   })();
 
-  const load = useCallback(
-    async (mode: 'initial' | 'refresh') => {
-      if (!walletsReady) {
-        return;
-      }
+  const fetchEarnData = useCallback(async (): Promise<void> => {
+    setError(null);
 
-      if (mode === 'initial') {
-        setLoading(true);
+    try {
+      const vaultDetails = await getVaultDetails({});
+      setVault(vaultDetails);
+      setConfigured(true);
+
+      if (ethereumWalletId) {
+        const vaultPosition = await getPosition({ ethereumWalletId });
+        setPosition(vaultPosition);
       } else {
-        setRefreshing(true);
+        setPosition(null);
       }
-      setError(null);
-
-      try {
-        const vaultDetails = await getVaultDetails({});
-        setVault(vaultDetails);
-        setConfigured(true);
-
-        if (ethereumWalletId) {
-          const vaultPosition = await getPosition({ ethereumWalletId });
-          setPosition(vaultPosition);
-        } else {
-          setPosition(null);
-        }
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Could not load earn vault.';
-        if (isVaultNotConfiguredError(message)) {
-          setConfigured(false);
-          setVault(null);
-          setPosition(null);
-          setError(null);
-        } else {
-          setError(message);
-        }
-      } finally {
-        if (mode === 'initial') {
-          setLoading(false);
-        } else {
-          setRefreshing(false);
-        }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Could not load earn vault.';
+      if (isVaultNotConfiguredError(message)) {
+        setConfigured(false);
+        setVault(null);
+        setPosition(null);
+        setError(null);
+      } else {
+        setError(message);
       }
-    },
-    [ethereumWalletId, getPosition, getVaultDetails, walletsReady],
-  );
+    }
+  }, [ethereumWalletId, getPosition, getVaultDetails]);
 
   useEffect(() => {
-    void load('initial');
-  }, [load]);
+    if (loadKey === 'pending') {
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      await fetchEarnData();
+      if (!cancelled) {
+        setLoadedKey(loadKey);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchEarnData, loadKey]);
 
   const refresh = useCallback(async () => {
-    await load('refresh');
-    refreshTokenBalances();
-  }, [load, refreshTokenBalances]);
+    if (loadKey === 'pending') {
+      return;
+    }
+
+    setRefreshing(true);
+    try {
+      await fetchEarnData();
+      setLoadedKey(loadKey);
+      refreshTokenBalances();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchEarnData, loadKey, refreshTokenBalances]);
 
   const pollAction = useCallback(
     async (actionId: string) => {
