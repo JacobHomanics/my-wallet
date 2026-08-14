@@ -170,9 +170,17 @@ export function EarnScreen() {
 
               <View style={styles.card}>
                 {walletAssetBalance != null ? (
-                  <Text style={styles.depositableBalance}>
-                    Depositable balance: {walletBalanceFiat}
-                  </Text>
+                  <View
+                    accessibilityLabel={`Depositable balance: ${walletBalanceFiat}`}
+                    style={[
+                      styles.fieldRow,
+                      styles.fieldRowDisabled,
+                      styles.balanceRow,
+                    ]}
+                  >
+                    <Text style={styles.balanceLabel}>Depositable balance:</Text>
+                    <Text style={styles.balanceValue}>{walletBalanceFiat}</Text>
+                  </View>
                 ) : null}
                 <Text style={styles.inputLabel}>Amount</Text>
                 <View style={styles.amountRow}>
@@ -357,9 +365,36 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#166534',
   },
-  depositableBalance: {
-    fontSize: 14,
+  fieldRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#86d4a4',
+    borderRadius: 12,
+    paddingLeft: 16,
+    paddingRight: 8,
+    backgroundColor: '#fff',
+    minHeight: 52,
+  },
+  fieldRowDisabled: {
+    backgroundColor: '#dcfce7',
+  },
+  balanceRow: {
+    paddingRight: 16,
+  },
+  balanceLabel: {
+    fontSize: 16,
+    fontWeight: '600',
     color: '#5a7d6a',
+    marginRight: 8,
+  },
+  balanceValue: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#166534',
+    fontVariant: ['tabular-nums'],
+    textAlign: 'right',
   },
   amountRow: {
     flexDirection: 'row',
