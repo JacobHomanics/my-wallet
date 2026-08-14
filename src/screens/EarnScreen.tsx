@@ -165,14 +165,14 @@ export function EarnScreen() {
 
               <View style={styles.statsBlock}>
                 <Text style={styles.statLine}>Earned: {earnedYieldFiat}</Text>
-                {walletAssetBalance != null ? (
-                  <Text style={styles.statLine}>
-                    Depositable balance: {walletBalanceFiat}
-                  </Text>
-                ) : null}
               </View>
 
               <View style={styles.card}>
+                {walletAssetBalance != null ? (
+                  <Text style={styles.depositableBalance}>
+                    Depositable balance: {walletBalanceFiat}
+                  </Text>
+                ) : null}
                 <Text style={styles.inputLabel}>Amount</Text>
                 <View style={styles.amountRow}>
                   <Text style={styles.amountPrefix}>{currencySymbol}</Text>
@@ -357,6 +357,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#166534',
+  },
+  depositableBalance: {
+    fontSize: 14,
+    color: '#5a7d6a',
   },
   amountRow: {
     flexDirection: 'row',
