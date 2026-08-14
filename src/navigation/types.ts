@@ -89,6 +89,10 @@ export type RewardsStackParamList = {
   index: undefined;
 };
 
+export type EarnStackParamList = {
+  index: undefined;
+};
+
 export type ContactsStackParamList = {
   index: undefined;
   newContact: undefined;
@@ -111,6 +115,7 @@ export type MainTabParamList = {
   home: NavigatorScreenParams<HomeStackParamList> | undefined;
   contacts: NavigatorScreenParams<ContactsStackParamList> | undefined;
   rewards: NavigatorScreenParams<RewardsStackParamList> | undefined;
+  earn: NavigatorScreenParams<EarnStackParamList> | undefined;
   profile: NavigatorScreenParams<ProfileStackParamList> | undefined;
 };
 

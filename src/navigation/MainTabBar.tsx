@@ -15,6 +15,7 @@ import { colors } from '@/theme/colors';
 const TAB_ICONS = {
   contacts: { focused: 'people', outline: 'people-outline' },
   rewards: { focused: 'gift', outline: 'gift-outline' },
+  earn: { focused: 'trending-up', outline: 'trending-up-outline' },
   profile: { focused: 'person', outline: 'person-outline' },
 } as const;
 
