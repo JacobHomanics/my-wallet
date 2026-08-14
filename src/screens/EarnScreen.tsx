@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { usePrivyEarn } from '@/hooks/usePrivyEarn';
+import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import {
   calculateEarnedYield,
   formatEarnApy,
@@ -37,6 +38,14 @@ export function EarnScreen() {
     withdraw,
     withdrawAll,
   } = usePrivyEarn();
+  const {
+    currencySymbol,
+    formatFromUsd,
+    formatSignedFromUsd,
+    formatAmountInput,
+    parseDisplayInputToUsd,
+    defaultFormattedZero,
+  } = useFiatDisplay();
   const [amount, setAmount] = useState('');
 
   const onRefresh = useCallback(() => {
@@ -55,22 +64,50 @@ export function EarnScreen() {
           position.asset.decimals,
         )
       : '0';
+  const vaultBalanceUsd = Number(vaultBalance);
+  const vaultBalanceFiat =
+    Number.isFinite(vaultBalanceUsd) && vaultBalanceUsd >= 0
+      ? formatFromUsd(vaultBalanceUsd) ?? defaultFormattedZero
+      : defaultFormattedZero;
+  const earnedYieldUsd = Number(earnedYield);
+  const earnedYieldFiat =
+    Number.isFinite(earnedYieldUsd)
+      ? formatSignedFromUsd(earnedYieldUsd) ?? defaultFormattedZero
+      : defaultFormattedZero;
+  const walletBalanceUsd = Number(walletAssetBalance ?? '0');
+  const walletBalanceFiat =
+    Number.isFinite(walletBalanceUsd) && walletBalanceUsd >= 0
+      ? formatFromUsd(walletBalanceUsd) ?? defaultFormattedZero
+      : defaultFormattedZero;
+  const usdAmount = parseDisplayInputToUsd(amount.trim());
+  const hasValidAmount = usdAmount != null && usdAmount > 0;
+
+  const getTokenAmountFromInput = useCallback((): string | null => {
+    if (!hasValidAmount || usdAmount == null) {
+      return null;
+    }
+    return formatAmountInput(usdAmount);
+  }, [formatAmountInput, hasValidAmount, usdAmount]);
 
   const handleDeposit = useCallback(async () => {
-    const result = await deposit(amount.trim());
+    const tokenAmount = getTokenAmountFromInput();
+    if (!tokenAmount) {
+      return;
+    }
+    const result = await deposit(tokenAmount);
     if (result) {
       setAmount('');
     }
-  }, [amount, deposit]);
+  }, [deposit, getTokenAmountFromInput]);
 
   const handleWithdraw = useCallback(async () => {
-    const trimmed = amount.trim();
-    if (trimmed) {
-      await withdraw(trimmed);
+    const tokenAmount = getTokenAmountFromInput();
+    if (tokenAmount) {
+      await withdraw(tokenAmount);
       return;
     }
     await withdrawAll();
-  }, [amount, withdraw, withdrawAll]);
+  }, [getTokenAmountFromInput, withdraw, withdrawAll]);
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -132,40 +169,43 @@ export function EarnScreen() {
               <View style={styles.card}>
                 <Text style={styles.balanceLabel}>In vault</Text>
                 <Text style={styles.balance} accessibilityRole="header">
-                  {vaultBalance} {assetSymbol}
+                  {vaultBalanceFiat}
                 </Text>
                 <Text style={styles.yieldHint}>
-                  Earned yield: {earnedYield} {assetSymbol}
+                  Earned: {earnedYieldFiat}
                 </Text>
                 {walletAssetBalance != null ? (
-                  <Text style={styles.hint}>
-                    Wallet balance: {walletAssetBalance} {assetSymbol}
+                  <Text style={styles.yieldHint}>
+                    Depositable balance: {walletBalanceFiat}
                   </Text>
                 ) : null}
               </View>
 
               <View style={styles.card}>
-                <Text style={styles.inputLabel}>Amount ({assetSymbol})</Text>
-                <TextInput
-                  accessibilityLabel={`Amount in ${assetSymbol}`}
-                  editable={!acting && ready}
-                  keyboardType="decimal-pad"
-                  onChangeText={setAmount}
-                  placeholder="0.00"
-                  placeholderTextColor="#86a894"
-                  style={styles.input}
-                  value={amount}
-                />
+                <Text style={styles.inputLabel}>Amount</Text>
+                <View style={styles.amountRow}>
+                  <Text style={styles.amountPrefix}>{currencySymbol}</Text>
+                  <TextInput
+                    accessibilityLabel="Amount in display currency"
+                    editable={!acting && ready}
+                    keyboardType="decimal-pad"
+                    onChangeText={setAmount}
+                    placeholder="0"
+                    placeholderTextColor="#86a894"
+                    style={styles.amountInput}
+                    value={amount}
+                  />
+                </View>
                 <View style={styles.actions}>
                   <Pressable
                     accessibilityRole="button"
-                    disabled={acting || !ready || !amount.trim()}
+                    disabled={acting || !ready || !hasValidAmount}
                     onPress={() => {
                       void handleDeposit();
                     }}
                     style={({ pressed }) => [
                       styles.primaryButton,
-                      (acting || !ready || !amount.trim()) &&
+                      (acting || !ready || !hasValidAmount) &&
                         styles.buttonDisabled,
                       pressed && styles.buttonPressed,
                     ]}
@@ -189,7 +229,7 @@ export function EarnScreen() {
                     ]}
                   >
                     <Text style={styles.secondaryButtonText}>
-                      {amount.trim() ? 'Withdraw' : 'Withdraw all'}
+                      {hasValidAmount ? 'Withdraw' : 'Withdraw all'}
                     </Text>
                   </Pressable>
                 </View>
@@ -319,15 +359,27 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#166534',
   },
-  input: {
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#d1fae5',
     borderRadius: 12,
     paddingHorizontal: 14,
+    backgroundColor: '#f0fdf4',
+    minHeight: 48,
+  },
+  amountPrefix: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#166534',
+    marginRight: 4,
+  },
+  amountInput: {
+    flex: 1,
     paddingVertical: 12,
     fontSize: 18,
     color: '#166534',
-    backgroundColor: '#f0fdf4',
   },
   actions: {
     flexDirection: 'row',
