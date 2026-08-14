@@ -9,9 +9,11 @@
  */
 
 import type * as contacts from "../contacts.js";
+import type * as earn from "../earn.js";
 import type * as ens from "../ens.js";
 import type * as farcaster from "../farcaster.js";
 import type * as lib_decryptKeystore from "../lib/decryptKeystore.js";
+import type * as lib_earn from "../lib/earn.js";
 import type * as lib_encodeErc20Transfer from "../lib/encodeErc20Transfer.js";
 import type * as lib_ens from "../lib/ens.js";
 import type * as lib_evmSend from "../lib/evmSend.js";
@@ -35,9 +37,11 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   contacts: typeof contacts;
+  earn: typeof earn;
   ens: typeof ens;
   farcaster: typeof farcaster;
   "lib/decryptKeystore": typeof lib_decryptKeystore;
+  "lib/earn": typeof lib_earn;
   "lib/encodeErc20Transfer": typeof lib_encodeErc20Transfer;
   "lib/ens": typeof lib_ens;
   "lib/evmSend": typeof lib_evmSend;
