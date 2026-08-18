@@ -92,7 +92,7 @@ async function sendEvmLegGroup(params: {
   network: string;
   legs: SendLeg[];
   previousHash: string | undefined;
-}): Promise<Array<{ leg: SendLeg; hash: string }>> {
+}): Promise<{ leg: SendLeg; hash: string }[]> {
   const {
     ctx,
     privy,
@@ -104,7 +104,7 @@ async function sendEvmLegGroup(params: {
     previousHash,
   } = params;
 
-  const sentLegs: Array<{ leg: SendLeg; hash: string }> = [];
+  const sentLegs: { leg: SendLeg; hash: string }[] = [];
 
   if (previousHash) {
     await waitForEvmReceipt(network, previousHash);
@@ -112,7 +112,7 @@ async function sendEvmLegGroup(params: {
 
   const autoDepositLegs: SendLeg[] = [];
   const batchableLegs: SendLeg[] = [];
-  const pendingAutoDeposits: Array<{ leg: SendLeg; txHash: string }> = [];
+  const pendingAutoDeposits: { leg: SendLeg; txHash: string }[] = [];
 
   for (const leg of legs) {
     if (

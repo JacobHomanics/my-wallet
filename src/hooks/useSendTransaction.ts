@@ -21,7 +21,6 @@ import {
 import {
   getEvmAddChainParams,
   getEvmChainId,
-  getSolanaRpcUrl,
   toHexQuantity,
 } from '@/lib/send/rpc';
 import { sendPrivyEvmTransaction } from '@/lib/send/sendPrivyEvmTransaction';

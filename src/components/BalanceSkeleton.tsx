@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Animated, Easing, StyleSheet, View, type ViewStyle } from 'react-native';
 
 type BalanceSkeletonProps = {
@@ -20,7 +20,7 @@ export function BalanceSkeleton({
   height = DEFAULT_AMOUNT_HEIGHT,
   style,
 }: BalanceSkeletonProps) {
-  const pulse = useRef(new Animated.Value(0)).current;
+  const pulse = useMemo(() => new Animated.Value(0), []);
 
   useEffect(() => {
     const animation = Animated.loop(

@@ -20,18 +20,6 @@ import { sumVaultUsdcLegsRaw, type VaultUsdcLeg } from "./vaultUsdcLeg";
 import { waitForErc20Balance } from "./waitForErc20Balance";
 import { waitForEvmSendSlot } from "./waitForEvmSendSlot";
 
-async function resolveWalletId(
-  privy: PrivyClient,
-  address: string,
-): Promise<string | null> {
-  try {
-    const wallet = await privy.wallets().getWalletByAddress({ address });
-    return wallet?.id?.trim() || null;
-  } catch {
-    return null;
-  }
-}
-
 /**
  * When the sender has vault-send enabled, withdraw enough vault USDC into their
  * wallet to cover Base USDC payment legs before broadcasting transfers.

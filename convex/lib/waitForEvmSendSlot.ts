@@ -1,4 +1,4 @@
-import { getAlchemyRpcUrl, toHexQuantity } from "./networks";
+import { getAlchemyRpcUrl } from "./networks";
 
 type JsonRpcResponse = {
   result?: string;
