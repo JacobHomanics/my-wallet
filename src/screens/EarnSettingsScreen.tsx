@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import {
   Pressable,
   ScrollView,
@@ -9,7 +10,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { EligiblePaymentInfoModal } from '@/components/EligiblePaymentInfoModal';
 import { useAutoDepositSettings } from '@/hooks/useAutoDepositSettings';
+import { useEligiblePaymentInfoModal } from '@/hooks/useEligiblePaymentInfoModal';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToSettings } from '@/hooks/usePopToSettings';
 import { useVaultSendSettings } from '@/hooks/useVaultSendSettings';
@@ -21,6 +24,7 @@ export function EarnSettingsScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goSettings = usePopToSettings();
+  const { infoOpen, openInfo, closeInfo } = useEligiblePaymentInfoModal();
   const {
     enabled: autoDepositEnabled,
     setEnabled: setAutoDepositEnabled,
@@ -70,7 +74,21 @@ export function EarnSettingsScreen() {
           <View style={styles.topBarSpacer} />
         </View>
 
-        <Text style={styles.title}>Earn settings</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>Earn settings</Text>
+          <Pressable
+            accessibilityLabel="What is an eligible payment?"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={openInfo}
+            style={({ pressed }) => [
+              styles.helpButton,
+              pressed && styles.helpButtonPressed,
+            ]}
+          >
+            <Ionicons name="help-circle-outline" size={22} color="#5a7d6a" />
+          </Pressable>
+        </View>
 
         <View style={styles.section}>
           <View style={styles.toggleRow}>
@@ -116,6 +134,8 @@ export function EarnSettingsScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <EligiblePaymentInfoModal onClose={closeInfo} visible={infoOpen} />
     </View>
   );
 }
@@ -155,12 +175,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#166534',
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
   title: {
     fontSize: 28,
     fontWeight: '700',
     color: '#166534',
     letterSpacing: -0.5,
     textAlign: 'center',
+  },
+  helpButton: {
+    marginTop: 2,
+    padding: 2,
+  },
+  helpButtonPressed: {
+    opacity: 0.7,
   },
   section: {
     width: '100%',
