@@ -5,26 +5,28 @@ type BalanceSkeletonProps = {
   accessibilityLabel?: string;
 };
 
+const AMOUNT_WIDTH = 168;
+
 /**
  * Placeholder for the home-screen total balance while wallets/balances load.
  */
 export function BalanceSkeleton({
   accessibilityLabel = 'Loading balance',
 }: BalanceSkeletonProps) {
-  const opacity = useRef(new Animated.Value(0.45)).current;
+  const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const animation = Animated.loop(
       Animated.sequence([
-        Animated.timing(opacity, {
-          toValue: 0.85,
-          duration: 900,
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 1_000,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
-        Animated.timing(opacity, {
-          toValue: 0.45,
-          duration: 900,
+        Animated.timing(pulse, {
+          toValue: 0,
+          duration: 1_000,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
@@ -35,7 +37,12 @@ export function BalanceSkeleton({
     return () => {
       animation.stop();
     };
-  }, [opacity]);
+  }, [pulse]);
+
+  const amountOpacity = pulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.35, 0.7],
+  });
 
   return (
     <View
@@ -43,30 +50,26 @@ export function BalanceSkeleton({
       accessibilityRole="progressbar"
       style={styles.row}
     >
-      <Animated.View style={[styles.amount, { opacity }]} />
-      <Animated.View style={[styles.help, { opacity }]} />
+      <Animated.View style={[styles.amount, { opacity: amountOpacity }]} />
     </View>
   );
 }
+
+export const balanceSkeletonLayout = {
+  width: AMOUNT_WIDTH,
+  height: 48,
+} as const;
 
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
   },
   amount: {
-    width: 220,
+    width: AMOUNT_WIDTH,
     height: 48,
-    borderRadius: 12,
-    backgroundColor: '#bbf7d0',
-  },
-  help: {
-    width: 22,
-    height: 22,
-    marginTop: 4,
-    borderRadius: 11,
-    backgroundColor: '#bbf7d0',
+    borderRadius: 6,
+    backgroundColor: '#166534',
   },
 });

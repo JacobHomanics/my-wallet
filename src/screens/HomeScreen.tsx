@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 
-import { BalanceSkeleton } from '@/components/BalanceSkeleton';
+import { BalanceSkeleton, balanceSkeletonLayout } from '@/components/BalanceSkeleton';
 
 import { DepositBankTipsModal } from '@/components/DepositBankTipsModal';
 import { BalanceBreakdownModal } from '@/components/BalanceBreakdownModal';
@@ -312,8 +312,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   balancePlaceholder: {
-    width: 220,
-    height: 48,
+    width: balanceSkeletonLayout.width,
+    height: balanceSkeletonLayout.height,
   },
   total: {
     fontSize: 48,
