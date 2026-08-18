@@ -51,10 +51,10 @@ export function shouldUsePrivyTransfer(
 
 /**
  * Headroom Privy needs in the same Base stablecoin to collect paymaster fees
- * after each Transfer API leg (6-decimal units). Observed fees are often
- * ~$0.08–0.12; reserve above that so max sends don't fail when gas spikes.
+ * after each Transfer API leg (6-decimal units). Typical fee is a few cents;
+ * merchant + service-fee legs each reserve one of these.
  */
-export const PRIVY_TRANSFER_GAS_RESERVE_RAW = 150_000n;
+export const PRIVY_TRANSFER_GAS_RESERVE_RAW = 10_000n;
 
 type PrivyTransferLeg = {
   network: string;

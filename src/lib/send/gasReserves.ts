@@ -19,6 +19,7 @@ import {
   isBaseGasPaymentToken,
   isGasToken,
 } from '@/lib/strategies/gasTokens';
+import { getTaxConfig } from '@/lib/tax';
 
 /** Typical EVM transfer gas limits (units). */
 export const EVM_NATIVE_TRANSFER_GAS = 21_000n;
@@ -409,6 +410,37 @@ function selfGasReserveRaw(
     : 10_000n;
 }
 
+/** Privy Transfer API legs that debit gas from the same Base stablecoin. */
+export function baseSelfGasLegCount(options: {
+  hasMerchantLeg: boolean;
+  hasTaxLeg: boolean;
+}): number {
+  let count = 0;
+  if (options.hasMerchantLeg) {
+    count += 1;
+  }
+  if (options.hasTaxLeg) {
+    count += 1;
+  }
+  return count;
+}
+
+/** Typical merchant + service-fee legs when tax-on-top is enabled. */
+export function typicalBaseSelfGasLegCount(): number {
+  return getTaxConfig().rate > 0 ? 2 : 1;
+}
+
+/** Total raw gas headroom for multiple self-gas legs on one token. */
+export function totalSelfGasReserveRaw(
+  token: OwnedToken,
+  legCount: number,
+): bigint {
+  if (legCount <= 0 || !isBaseGasPaymentToken(token)) {
+    return 0n;
+  }
+  return selfGasReserveRaw(token.network, token) * BigInt(legCount);
+}
+
 /** Per-transfer gas headroom for a token that pays its own network fee. */
 export function transferGasReserveRaw(token: OwnedToken): bigint {
   if (isBaseGasPaymentToken(token)) {
@@ -490,7 +522,11 @@ export function planEvmFeeReserve(
   }
 
   for (const token of selfGasTokens) {
-    const reserveRaw = selfGasReserveRaw(network, token);
+    // Merchant + service-fee legs each pay gas from the same Base stablecoin.
+    const reserveRaw = totalSelfGasReserveRaw(
+      token,
+      typicalBaseSelfGasLegCount(),
+    );
     if (token.rawBalance > reserveRaw) {
       spendableTokenIds.add(token.id);
       reserveByGasPayerId.set(token.id, reserveRaw);

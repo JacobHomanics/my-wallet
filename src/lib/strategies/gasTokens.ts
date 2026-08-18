@@ -15,10 +15,11 @@ export const BASE_GAS_PAYMENT_TOKEN_ADDRESSES: ReadonlySet<string> = new Set([
  * Per-leg gas headroom when Privy debits Base USDC/EURC/USDT for fees (6 decimals).
  * Keep in sync with convex/lib/gasTokens.ts `PRIVY_TRANSFER_GAS_RESERVE_RAW`.
  */
-export const BASE_PRIVY_TRANSFER_GAS_RESERVE_RAW = 150_000n;
+export const BASE_PRIVY_TRANSFER_GAS_RESERVE_RAW = 10_000n;
 
-/** USD target for `usdFeeToRaw` when the stablecoin has no price yet. */
-export const BASE_PRIVY_TRANSFER_GAS_FEE_USD = 0.15;
+/** USD equivalent of `BASE_PRIVY_TRANSFER_GAS_RESERVE_RAW` for priced stables. */
+export const BASE_PRIVY_TRANSFER_GAS_FEE_USD =
+  Number(BASE_PRIVY_TRANSFER_GAS_RESERVE_RAW) / 1_000_000;
 
 export function isBaseGasPaymentToken(token: OwnedToken): boolean {
   if (token.network !== 'base-mainnet' || token.tokenAddress == null) {
