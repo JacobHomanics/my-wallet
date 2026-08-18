@@ -13,6 +13,7 @@ export function formatSendError(error: unknown): string {
     (part) =>
       /^cannot send /i.test(part) ||
       /not enough (eth|sol)\b/i.test(part) ||
+      /not enough \w+ to cover the transfer and network fees/i.test(part) ||
       /needs more sol for network fees/i.test(part) ||
       /token transfer would fail/i.test(part) ||
       /recipient address is invalid/i.test(part) ||
@@ -28,7 +29,9 @@ export function formatSendError(error: unknown): string {
     lower.includes('insufficient funds') ||
     lower.includes('insufficient lamports') ||
     lower.includes('gas required exceeds allowance') ||
-    lower.includes('exceeds the balance')
+    lower.includes('exceeds the balance') ||
+    lower.includes('paymaster to collect its fee') ||
+    lower.includes('cover the transfer and network fees')
   ) {
     return 'Insufficient funds for this transfer after network fees.';
   }

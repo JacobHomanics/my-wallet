@@ -394,11 +394,13 @@ function selfGasReserveRaw(
   network: string,
   token: OwnedToken,
 ): bigint {
-  const fromUsd = usdFeeToRaw(token, typicalFeeUsd(network, true));
+  // Privy Transfer API debits gas from the same stablecoin after execution.
+  const feeUsd = isBaseGasPaymentToken(token) ? 0.06 : typicalFeeUsd(network, true);
+  const fromUsd = usdFeeToRaw(token, feeUsd);
   if (fromUsd != null && fromUsd > 0n) {
     return fromUsd;
   }
-  return 10_000n; // ~$0.01 USDC at 6 decimals when price is missing
+  return isBaseGasPaymentToken(token) ? 60_000n : 10_000n;
 }
 
 /** Per-transfer gas headroom for a token that pays its own network fee. */

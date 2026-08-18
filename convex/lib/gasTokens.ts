@@ -48,3 +48,40 @@ export function shouldUsePrivyTransfer(
     resolvePrivyTransferAsset(network, tokenAddress) != null
   );
 }
+
+/** Typical Privy / Alchemy ERC-20 paymaster fee per transfer on Base (6-decimal units). */
+export const PRIVY_TRANSFER_GAS_RESERVE_RAW = 60_000n;
+
+type PrivyTransferLeg = {
+  network: string;
+  tokenAddress: string | null | undefined;
+};
+
+/** Raw headroom Privy needs in the same token to collect paymaster fees after transfer. */
+export function privyTransferGasReserveRaw(
+  network: string,
+  decimals: number,
+  legCount = 1,
+): bigint {
+  if (network !== "base-mainnet") {
+    return 0n;
+  }
+  const count = BigInt(Math.max(1, legCount));
+  if (decimals === 6) {
+    return PRIVY_TRANSFER_GAS_RESERVE_RAW * count;
+  }
+  if (decimals < 6) {
+    return PRIVY_TRANSFER_GAS_RESERVE_RAW / 10n ** BigInt(6 - decimals) * count;
+  }
+  return PRIVY_TRANSFER_GAS_RESERVE_RAW * 10n ** BigInt(decimals - 6) * count;
+}
+
+export function countPrivyTransferLegs(legs: readonly PrivyTransferLeg[]): number {
+  let count = 0;
+  for (const leg of legs) {
+    if (shouldUsePrivyTransfer(leg.network, leg.tokenAddress)) {
+      count += 1;
+    }
+  }
+  return count;
+}

@@ -33,7 +33,7 @@ import {
   allocatePaymentUsd,
   type PaymentAllocation,
 } from '@/lib/strategies/allocatePayment';
-import { isGasToken } from '@/lib/strategies/gasTokens';
+import { isGasToken, isBaseGasPaymentToken } from '@/lib/strategies/gasTokens';
 import type { PaymentStrategyId } from '@/lib/strategies';
 import { isValidRecipientAddress } from '@/lib/validation';
 import { tryDecodeWalletIdentity } from '@/lib/walletIdentity';
@@ -222,7 +222,7 @@ function maxManualAllocationRaw(
     walletToken;
 
   let cap = merchantCap.rawBalance > 0n ? merchantCap.rawBalance : 0n;
-  if (isGasToken(walletToken) && cap > 0n) {
+  if ((isGasToken(walletToken) || isBaseGasPaymentToken(walletToken)) && cap > 0n) {
     const globalReserve =
       walletToken.rawBalance > cap ? walletToken.rawBalance - cap : 0n;
     if (globalReserve === 0n) {

@@ -1,4 +1,6 @@
 import { encodeErc20Transfer } from '@/lib/send/encodeErc20Transfer';
+import { fetchErc20Balance } from '@/lib/send/fetchErc20Balance';
+import { transferGasReserveRaw } from '@/lib/send/gasReserves';
 import {
   estimateEvmFeeFields,
   fetchNativeBalanceWei,
@@ -9,7 +11,11 @@ import {
   toHexQuantity,
 } from '@/lib/send/rpc';
 import { isNativeTokenAddress } from '@/lib/alchemy/tokenLogos';
-import { canPayOwnTransferGas } from '@/lib/strategies/gasTokens';
+import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
+import {
+  canPayOwnTransferGas,
+  isBaseGasPaymentAddress,
+} from '@/lib/strategies/gasTokens';
 
 export type SimulateEvmTransferParams = {
   network: string;
@@ -22,12 +28,20 @@ export type SimulateEvmTransferParams = {
    * native balance after prior legs' fees / native sends.
    */
   nativeBalanceWei?: bigint;
+  /**
+   * When simulating Privy self-gas stables, pass the remaining token balance
+   * after prior legs on the same asset.
+   */
+  tokenBalanceRaw?: bigint;
+  token?: OwnedToken;
 };
 
 export type SimulateEvmTransferResult = {
   amountRaw: bigint;
   /** Native wei expected to leave the wallet for gas (and value if native). */
   nativeDebitWei: bigint;
+  /** ERC-20 raw units expected to leave the wallet (amount + self-gas fee). */
+  tokenDebitRaw: bigint;
 };
 
 type JsonRpcResponse = {
@@ -128,6 +142,7 @@ export async function simulateEvmTransfer(
     return {
       amountRaw,
       nativeDebitWei: amountRaw + fees.maxFeeWei,
+      tokenDebitRaw: 0n,
     };
   }
 
@@ -146,7 +161,32 @@ export async function simulateEvmTransfer(
     );
   }
 
-  const data = encodeErc20Transfer(recipient, params.amountRaw);
+  let amountRaw = params.amountRaw;
+  let tokenDebitRaw = 0n;
+
+  if (isBaseGasPaymentAddress(params.network, params.tokenAddress)) {
+    const token = params.token;
+    if (token == null) {
+      throw new Error('Missing token metadata for gas reserve check');
+    }
+    const gasReserveRaw = transferGasReserveRaw(token);
+    const tokenBalance =
+      params.tokenBalanceRaw ??
+      (await fetchErc20Balance({
+        network: params.network,
+        tokenAddress: params.tokenAddress,
+        holder: params.from,
+      }));
+
+    if (amountRaw + gasReserveRaw > tokenBalance) {
+      throw new Error(
+        `Not enough ${token.symbol} to cover the transfer and network fees.`,
+      );
+    }
+    tokenDebitRaw = amountRaw + gasReserveRaw;
+  }
+
+  const data = encodeErc20Transfer(recipient, amountRaw);
   const call = {
     from: params.from,
     to: params.tokenAddress,
@@ -181,7 +221,8 @@ export async function simulateEvmTransfer(
   }
 
   return {
-    amountRaw: params.amountRaw,
+    amountRaw,
     nativeDebitWei: paysOwnGas ? 0n : fees.maxFeeWei,
+    tokenDebitRaw,
   };
 }

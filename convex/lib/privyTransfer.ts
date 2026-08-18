@@ -1,6 +1,8 @@
 import type { AuthorizationContext, PrivyClient } from "@privy-io/node";
 
+import { fetchErc20Balance } from "./fetchErc20Balance";
 import {
+  privyTransferGasReserveRaw,
   resolvePrivyTransferAsset,
   resolvePrivyTransferChain,
 } from "./gasTokens";
@@ -188,7 +190,31 @@ export async function sendPrivyTransferLeg(
   }
 
   const recipient = params.recipient.trim();
-  const amount = formatPrivyTransferAmount(params.amountRaw, params.decimals);
+  const amountRaw = params.amountRaw;
+  const gasReserveRaw = privyTransferGasReserveRaw(
+    params.network,
+    params.decimals,
+  );
+
+  if (gasReserveRaw > 0n) {
+    const balance = await fetchErc20Balance({
+      network: params.network,
+      tokenAddress: params.tokenAddress,
+      holder: params.fromAddress,
+    });
+    if (amountRaw + gasReserveRaw > balance) {
+      throw new Error(
+        `Not enough ${asset.toUpperCase()} to cover the transfer and network fees.`,
+      );
+    }
+    if (amountRaw <= 0n) {
+      throw new Error(
+        `Not enough ${asset.toUpperCase()} to cover the transfer and network fees.`,
+      );
+    }
+  }
+
+  const amount = formatPrivyTransferAmount(amountRaw, params.decimals);
 
   return retrySendOperation(async () => {
     await waitForEvmSendSlot(params.network, params.fromAddress);

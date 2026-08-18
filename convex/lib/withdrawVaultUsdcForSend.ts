@@ -14,6 +14,10 @@ import {
   withdrawFromEarnVault,
 } from "./earn";
 import { fetchErc20Balance } from "./fetchErc20Balance";
+import {
+  countPrivyTransferLegs,
+  privyTransferGasReserveRaw,
+} from "./gasTokens";
 import { getNetworkFromCaip2 } from "./networks";
 import { retrySendOperation } from "./retrySendOperation";
 import { sumVaultUsdcLegsRaw, type VaultUsdcLeg } from "./vaultUsdcLeg";
@@ -65,14 +69,21 @@ export async function tryWithdrawVaultUsdcForSend(params: {
     return;
   }
 
-  const requiredRaw = sumVaultUsdcLegsRaw(
+  const paymentRaw = sumVaultUsdcLegsRaw(
     params.legs,
     vaultNetwork,
     vault.asset.address,
   );
-  if (requiredRaw <= 0n) {
+  if (paymentRaw <= 0n) {
     return;
   }
+
+  const privyLegCount = countPrivyTransferLegs(params.legs);
+  const gasHeadroom =
+    privyLegCount > 0
+      ? privyTransferGasReserveRaw(vaultNetwork, vault.asset.decimals, privyLegCount)
+      : 0n;
+  const requiredRaw = paymentRaw + gasHeadroom;
 
   const walletBalance = await fetchErc20Balance({
     network: vaultNetwork,
