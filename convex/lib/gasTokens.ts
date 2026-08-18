@@ -54,7 +54,7 @@ export function shouldUsePrivyTransfer(
  * after each Transfer API leg (6-decimal units). Observed fees are often
  * ~$0.08–0.12; reserve above that so max sends don't fail when gas spikes.
  */
-export const PRIVY_TRANSFER_GAS_RESERVE_RAW = 150_000n;
+export const PRIVY_TRANSFER_GAS_RESERVE_RAW = 100_000n;
 
 type PrivyTransferLeg = {
   network: string;

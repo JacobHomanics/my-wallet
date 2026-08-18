@@ -28,7 +28,11 @@ import {
   resolveTaxFunding,
   type TaxFundingPick,
 } from '@/lib/send/buildPaymentLegsWithTax';
-import { transferGasReserveRaw } from '@/lib/send/gasReserves';
+import {
+  totalSelfGasReserveRaw,
+  transferGasReserveRaw,
+  typicalBaseSelfGasLegCount,
+} from '@/lib/send/gasReserves';
 import {
   allocatePaymentUsd,
   type PaymentAllocation,
@@ -222,7 +226,18 @@ function maxManualAllocationRaw(
     walletToken;
 
   let cap = merchantCap.rawBalance > 0n ? merchantCap.rawBalance : 0n;
-  if ((isGasToken(walletToken) || isBaseGasPaymentToken(walletToken)) && cap > 0n) {
+  if (isBaseGasPaymentToken(walletToken) && cap > 0n) {
+    const globalReserve =
+      walletToken.rawBalance > cap ? walletToken.rawBalance - cap : 0n;
+    const expectedGas = totalSelfGasReserveRaw(
+      walletToken,
+      typicalBaseSelfGasLegCount(),
+    );
+    if (globalReserve < expectedGas) {
+      const missing = expectedGas - globalReserve;
+      cap = cap > missing ? cap - missing : 0n;
+    }
+  } else if (isGasToken(walletToken) && cap > 0n) {
     const globalReserve =
       walletToken.rawBalance > cap ? walletToken.rawBalance - cap : 0n;
     if (globalReserve === 0n) {
