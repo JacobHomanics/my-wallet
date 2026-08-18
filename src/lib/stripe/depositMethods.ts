@@ -22,7 +22,8 @@ export const DEPOSIT_METHODS: readonly DepositMethodOption[] = [
   },
 ] as const;
 
-export const DEFAULT_DEPOSIT_METHOD_ID: DepositMethodId = 'stripe-embedded';
+export const DEFAULT_DEPOSIT_METHOD_ID: DepositMethodId =
+  'stripe-embedded-components';
 
 export function getDepositMethodOption(
   id: DepositMethodId,

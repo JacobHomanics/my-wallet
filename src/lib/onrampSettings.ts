@@ -75,8 +75,8 @@ export const ONRAMP_CURRENCY_OPTIONS = [
   },
 ] as const satisfies readonly OnrampCurrencyOption[];
 
-export const DEFAULT_ONRAMP_NETWORK_ID: OnrampDestinationNetwork = 'ethereum';
-export const DEFAULT_ONRAMP_CURRENCY_ID: OnrampDestinationCurrency = 'eth';
+export const DEFAULT_ONRAMP_NETWORK_ID: OnrampDestinationNetwork = 'base';
+export const DEFAULT_ONRAMP_CURRENCY_ID: OnrampDestinationCurrency = 'usdc';
 
 export function getOnrampNetworkOption(
   id: OnrampDestinationNetwork,
@@ -114,7 +114,7 @@ export function getDefaultOnrampCurrencyForNetwork(
     case 'ethereum':
       return 'eth';
     case 'base':
-      return 'eth';
+      return 'usdc';
     case 'avalanche':
       return 'avax';
   }
