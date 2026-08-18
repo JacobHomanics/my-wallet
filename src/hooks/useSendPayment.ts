@@ -14,6 +14,7 @@ import type { SendBroadcastMode } from '@/lib/send/broadcastMode';
 import { createEvmNonceAllocator } from '@/lib/send/evmNonce';
 import { retrySendOperation } from '@/lib/send/retrySendOperation';
 import { runExclusiveSend } from '@/lib/send/runExclusiveSend';
+import { waitForErc20Balance } from '@/lib/send/waitForErc20Balance';
 import { waitForEvmReceipt } from '@/lib/send/waitForEvmReceipt';
 import { waitForEvmSendSlot } from '@/lib/send/waitForEvmSendSlot';
 import { shouldDeferLegForGasPayment } from '@/lib/strategies/gasTokens';
@@ -168,6 +169,17 @@ export function useSendPayment(): SendPaymentResult {
               legs: convexLegs,
               useVaultUsdc,
             });
+
+            if (vaultWithdrawal) {
+              await waitForErc20Balance({
+                network: vaultWithdrawal.vaultNetwork,
+                tokenAddress: vaultWithdrawal.tokenAddress,
+                holder: ethereumWallet.address,
+                minRaw:
+                  BigInt(vaultWithdrawal.walletBalanceBefore) +
+                  BigInt(vaultWithdrawal.withdrawnRaw),
+              });
+            }
           }
 
           await simulatePayment(

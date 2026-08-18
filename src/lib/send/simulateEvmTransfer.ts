@@ -1,5 +1,5 @@
 import { encodeErc20Transfer } from '@/lib/send/encodeErc20Transfer';
-import { fetchErc20Balance } from '@/lib/send/fetchErc20Balance';
+import { waitForErc20Balance } from '@/lib/send/waitForErc20Balance';
 import { transferGasReserveRaw } from '@/lib/send/gasReserves';
 import {
   estimateEvmFeeFields,
@@ -170,20 +170,32 @@ export async function simulateEvmTransfer(
       throw new Error('Missing token metadata for gas reserve check');
     }
     const gasReserveRaw = transferGasReserveRaw(token);
-    const tokenBalance =
-      params.tokenBalanceRaw ??
-      (await fetchErc20Balance({
-        network: params.network,
-        tokenAddress: params.tokenAddress,
-        holder: params.from,
-      }));
+    const minRaw = amountRaw + gasReserveRaw;
 
-    if (amountRaw + gasReserveRaw > tokenBalance) {
-      throw new Error(
-        `Not enough ${token.symbol} to cover the transfer and network fees.`,
-      );
+    let tokenBalance: bigint;
+    if (params.tokenBalanceRaw != null) {
+      tokenBalance = params.tokenBalanceRaw;
+      if (minRaw > tokenBalance) {
+        throw new Error(
+          `Not enough ${token.symbol} to cover the transfer and network fees.`,
+        );
+      }
+    } else {
+      try {
+        tokenBalance = await waitForErc20Balance({
+          network: params.network,
+          tokenAddress: params.tokenAddress,
+          holder: params.from,
+          minRaw,
+        });
+      } catch {
+        throw new Error(
+          `Not enough ${token.symbol} to cover the transfer and network fees.`,
+        );
+      }
     }
-    tokenDebitRaw = amountRaw + gasReserveRaw;
+
+    tokenDebitRaw = minRaw;
   }
 
   const data = encodeErc20Transfer(recipient, amountRaw);
