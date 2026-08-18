@@ -48,7 +48,7 @@ export function useAutoDepositOnrampUsdc() {
       return 0n;
     }
     return readBaseUsdcBalanceRaw(tokens, destination.asset);
-  }, [destination?.asset, tokens]);
+  }, [destination, tokens]);
 
   const triggerAutoDeposit = useCallback(
     (priorBalanceRaw: bigint) => {
