@@ -11,5 +11,5 @@
       "@assets/*": ["./assets/*"]
     }
   },
-  "exclude": ["dist"]
+  "exclude": ["dist", "extension", "convex/_generated"]
 }

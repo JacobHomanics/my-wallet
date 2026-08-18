@@ -7,6 +7,7 @@ import { CashboxIcon } from '@/components/CashboxIcon';
 import { useBottomTabBarStyle } from '@/hooks/useBottomTabBarStyle';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { ContactsStack } from '@/navigation/ContactsStack';
+import { EarnStack } from '@/navigation/EarnStack';
 import { HomeStack } from '@/navigation/HomeStack';
 import { MainTabBar } from '@/navigation/MainTabBar';
 import { ProfileStack } from '@/navigation/ProfileStack';
@@ -112,6 +113,20 @@ export function MainTabs() {
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons
               name={focused ? 'gift' : 'gift-outline'}
+              color={color}
+              size={size}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="earn"
+        component={EarnStack}
+        options={{
+          title: 'Earn',
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              name={focused ? 'trending-up' : 'trending-up-outline'}
               color={color}
               size={size}
             />

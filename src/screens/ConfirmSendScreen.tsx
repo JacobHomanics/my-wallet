@@ -35,8 +35,7 @@ import { useSendStatus } from '@/hooks/useSendStatus';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useSendTip } from '@/hooks/useSendTip';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
-import { useSpendableTokens } from '@/hooks/useSpendableTokens';
-import { useTokenBalances } from '@/hooks/useTokenBalances';
+import { useSendSpendableTokens } from '@/hooks/useSendSpendableTokens';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { buildPaymentLegsWithTax } from '@/lib/send/buildPaymentLegsWithTax';
 import { formatSendError } from '@/lib/send/formatSendError';
@@ -51,8 +50,14 @@ export function ConfirmSendScreen() {
   const isDesktopWeb = useIsDesktopWeb();
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const { tokens, loading, ready, refresh } = useTokenBalances();
-  const { spendableTokens, availableUsd } = useSpendableTokens(tokens);
+  const { refresh, ...sendSpendable } = useSendSpendableTokens();
+  const {
+    tokens,
+    loading,
+    ready,
+    spendableTokens,
+    availableUsd,
+  } = sendSpendable;
   const { sendPayment, sending } = useSendPayment();
   const { error, clearStatus, setError } = useSendStatus();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();

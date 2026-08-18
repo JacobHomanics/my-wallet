@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
+import { BalanceSkeleton } from '@/components/BalanceSkeleton';
 import { BackButton } from '@/components/BackButton';
 import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
@@ -36,8 +37,7 @@ import { useSendForm } from '@/hooks/useSendForm';
 import { useSendRecipientUsername } from '@/hooks/useSendRecipientUsername';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
-import { useSpendableTokens } from '@/hooks/useSpendableTokens';
-import { useTokenBalances } from '@/hooks/useTokenBalances';
+import { useSendSpendableTokens } from '@/hooks/useSendSpendableTokens';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { isUnpricedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
@@ -51,10 +51,17 @@ export function SendAmountScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'sendAmount'>>();
-  const { tokens, loading, ready, ethereumAddress, solanaAddress } =
-    useTokenBalances();
-  const { spendableTokens, availableUsd, availableLabel } =
-    useSpendableTokens(tokens);
+  const {
+    tokens,
+    loading,
+    ready,
+    ethereumAddress,
+    solanaAddress,
+    spendableTokens,
+    availableUsd,
+    availableLabel,
+    availableBalanceLoading,
+  } = useSendSpendableTokens();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const { allocationInputUnit, setAllocationInputUnit, broadcastMode, setBroadcastMode } =
     useSendDraftUi();
@@ -268,7 +275,11 @@ export function SendAmountScreen() {
                 ) : null}
 
                 <View
-                  accessibilityLabel={`Available Balance: ${totalLabel}`}
+                  accessibilityLabel={
+                    availableBalanceLoading
+                      ? 'Loading available balance'
+                      : `Available Balance: ${totalLabel}`
+                  }
                   style={[
                     styles.fieldRow,
                     styles.fieldRowDisabled,
@@ -276,7 +287,17 @@ export function SendAmountScreen() {
                   ]}
                 >
                   <Text style={styles.balanceLabel}>Available Balance:</Text>
-                  <Text style={styles.balanceValue}>{totalLabel}</Text>
+                  {availableBalanceLoading ? (
+                    <View style={styles.balanceValueSkeletonWrap}>
+                      <BalanceSkeleton
+                        accessibilityLabel="Loading available balance"
+                        height={20}
+                        width={88}
+                      />
+                    </View>
+                  ) : (
+                    <Text style={styles.balanceValue}>{totalLabel}</Text>
+                  )}
                 </View>
 
                 <Text style={styles.label}>Amount</Text>
@@ -473,6 +494,12 @@ const styles = StyleSheet.create({
     color: '#166534',
     fontVariant: ['tabular-nums'],
     textAlign: 'right',
+  },
+  balanceValueSkeletonWrap: {
+    flex: 1,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingRight: 8,
   },
   formBody: {
     flex: 1,

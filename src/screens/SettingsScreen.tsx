@@ -5,6 +5,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from 'react-native';
@@ -15,6 +16,8 @@ import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal'
 import { ConfirmLogoutModal } from '@/components/ConfirmLogoutModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
+import { useAutoDepositSettings } from '@/hooks/useAutoDepositSettings';
+import { useVaultSendSettings } from '@/hooks/useVaultSendSettings';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
 import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
@@ -65,6 +68,18 @@ export function SettingsScreen() {
     onSelectOption: onSelectDisplayCurrency,
   } = useDisplayCurrencyPicker();
   const { selectedDestinationLabel } = useOnrampSettings();
+  const {
+    enabled: autoDepositEnabled,
+    setEnabled: setAutoDepositEnabled,
+    isLoading: autoDepositLoading,
+    isSaving: autoDepositSaving,
+  } = useAutoDepositSettings();
+  const {
+    enabled: vaultSendEnabled,
+    setEnabled: setVaultSendEnabled,
+    isLoading: vaultSendLoading,
+    isSaving: vaultSendSaving,
+  } = useVaultSendSettings();
 
   return (
     <View style={styles.container}>
@@ -150,6 +165,54 @@ export function SettingsScreen() {
                 </View>
                 <Ionicons name="chevron-forward" size={18} color="#86a894" />
               </Pressable>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Earn</Text>
+              <View style={styles.toggleRow}>
+                <View style={styles.strategyRowText}>
+                  <Text style={styles.strategyLabel}>
+                    Auto-deposit received USDC
+                  </Text>
+                  <Text style={styles.strategyDescription}>
+                    When someone sends you USDC on Base, deposit it into your
+                    vault automatically
+                  </Text>
+                </View>
+                <Switch
+                  accessibilityLabel="Auto-deposit received USDC"
+                  disabled={autoDepositLoading || autoDepositSaving}
+                  trackColor={{ false: '#bbf7d0', true: '#86efac' }}
+                  thumbColor={autoDepositEnabled ? '#166534' : '#f0fdf4'}
+                  ios_backgroundColor="#bbf7d0"
+                  value={autoDepositEnabled}
+                  onValueChange={(value) => {
+                    void setAutoDepositEnabled(value);
+                  }}
+                />
+              </View>
+              <View style={styles.toggleRow}>
+                <View style={styles.strategyRowText}>
+                  <Text style={styles.strategyLabel}>
+                    Use vault USDC when sending
+                  </Text>
+                  <Text style={styles.strategyDescription}>
+                    When a payment needs USDC on Base, withdraw from your vault
+                    into your wallet automatically
+                  </Text>
+                </View>
+                <Switch
+                  accessibilityLabel="Use vault USDC when sending"
+                  disabled={vaultSendLoading || vaultSendSaving}
+                  trackColor={{ false: '#bbf7d0', true: '#86efac' }}
+                  thumbColor={vaultSendEnabled ? '#166534' : '#f0fdf4'}
+                  ios_backgroundColor="#bbf7d0"
+                  value={vaultSendEnabled}
+                  onValueChange={(value) => {
+                    void setVaultSendEnabled(value);
+                  }}
+                />
+              </View>
             </View>
 
             <View style={styles.section}>
@@ -363,6 +426,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     color: '#86a894',
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#ffffff',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#d1fae5',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   logoutButton: {
     width: '100%',

@@ -30,6 +30,23 @@ export function getEvmCaip2(network: string): `eip155:${number}` {
   return `eip155:${getEvmChainId(network)}`;
 }
 
+/** Map a CAIP-2 chain id (e.g. `eip155:8453`) to an Alchemy network id. */
+export function getNetworkFromCaip2(caip2: string): string | null {
+  const match = /^eip155:(\d+)$/.exec(caip2.trim());
+  if (!match) {
+    return null;
+  }
+
+  const chainId = Number(match[1]);
+  for (const [network, id] of Object.entries(EVM_CHAIN_IDS)) {
+    if (id === chainId) {
+      return network;
+    }
+  }
+
+  return null;
+}
+
 export function getAlchemyRpcUrl(network: string): string {
   const apiKey = process.env.ALCHEMY_API_KEY;
   if (!apiKey) {

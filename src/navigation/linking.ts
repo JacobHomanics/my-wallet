@@ -461,6 +461,12 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               index: '',
             },
           },
+          earn: {
+            path: 'earn',
+            screens: {
+              index: '',
+            },
+          },
           profile: {
             path: 'profile',
             screens: {
