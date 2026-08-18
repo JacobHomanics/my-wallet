@@ -5,7 +5,6 @@ import type { Doc } from "./_generated/dataModel";
 import {
   identityIdMatchesEvmAddress,
   normalizeEvmAddress,
-  tryDecodeEvmAddressFromIdentityId,
 } from "./lib/walletIdentity";
 
 /** Look up a user by Privy DID (`externalId`). */
@@ -358,23 +357,9 @@ export const getAutoDepositRecipientByEthereumAddress = internalQuery({
 
     for (const user of candidates) {
       if (identityIdMatchesEvmAddress(user.identityId, normalized)) {
-        return {
-          userId: user._id,
-          candidateCount: candidates.length,
-        };
+        return { userId: user._id };
       }
     }
-
-    console.log("[auto-deposit] recipient_lookup_miss", {
-      recipient: normalized,
-      candidateCount: candidates.length,
-      candidatesWithIdentityId: candidates.filter((user) => user.identityId)
-        .length,
-      candidateAddresses: candidates
-        .map((user) => tryDecodeEvmAddressFromIdentityId(user.identityId))
-        .filter((address): address is string => Boolean(address))
-        .map((address) => normalizeEvmAddress(address)),
-    });
 
     return null;
   },

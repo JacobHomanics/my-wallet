@@ -84,19 +84,6 @@ export const sendPayment = action({
     const privy = getPrivyClient();
     const authorizationContext = getAuthorizationContext();
 
-    console.log("[sendPayment] start", {
-      legCount: args.legs.length,
-      sender: args.ethereumAddress,
-      legs: args.legs.map((leg) => ({
-        network: leg.network,
-        symbol: leg.symbol,
-        tokenAddress: leg.tokenAddress,
-        recipient: leg.recipient,
-        amount: leg.amountFormatted,
-        isTax: leg.isTax === true,
-      })),
-    });
-
     const ethereumWalletId = await resolveWalletId(
       privy,
       args.ethereumAddress,
@@ -147,16 +134,6 @@ export const sendPayment = action({
           tokenAddress: leg.tokenAddress,
           recipient: leg.recipient,
           amountRaw,
-        });
-
-        console.log("[sendPayment] evm_leg_sent", {
-          network: leg.network,
-          symbol: leg.symbol,
-          tokenAddress: leg.tokenAddress,
-          recipient: leg.recipient,
-          amount: leg.amountFormatted,
-          hash,
-          isTax: leg.isTax === true,
         });
 
         lastEvmHashByNetwork.set(leg.network, hash);
@@ -226,12 +203,6 @@ export const sendPayment = action({
       rewardFailed = true;
       console.error("Treasury reward failed after successful payment", error);
     }
-
-    console.log("[sendPayment] complete", {
-      legCount: results.length,
-      rewardHash,
-      rewardFailed,
-    });
 
     return {
       legs: results,
