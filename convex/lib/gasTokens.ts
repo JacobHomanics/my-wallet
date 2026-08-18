@@ -49,8 +49,12 @@ export function shouldUsePrivyTransfer(
   );
 }
 
-/** Typical Privy / Alchemy ERC-20 paymaster fee per transfer on Base (6-decimal units). */
-export const PRIVY_TRANSFER_GAS_RESERVE_RAW = 60_000n;
+/**
+ * Headroom Privy needs in the same Base stablecoin to collect paymaster fees
+ * after each Transfer API leg (6-decimal units). Observed fees are often
+ * ~$0.08–0.12; reserve above that so max sends don't fail when gas spikes.
+ */
+export const PRIVY_TRANSFER_GAS_RESERVE_RAW = 150_000n;
 
 type PrivyTransferLeg = {
   network: string;

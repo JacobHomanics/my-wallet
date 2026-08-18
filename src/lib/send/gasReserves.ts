@@ -12,6 +12,8 @@ import {
 import type { TaxFundingPick } from '@/lib/send/buildPaymentLegsWithTax';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
 import {
+  BASE_PRIVY_TRANSFER_GAS_FEE_USD,
+  BASE_PRIVY_TRANSFER_GAS_RESERVE_RAW,
   canPayOwnTransferGas,
   hasGasReserve,
   isBaseGasPaymentToken,
@@ -395,12 +397,16 @@ function selfGasReserveRaw(
   token: OwnedToken,
 ): bigint {
   // Privy Transfer API debits gas from the same stablecoin after execution.
-  const feeUsd = isBaseGasPaymentToken(token) ? 0.06 : typicalFeeUsd(network, true);
+  const feeUsd = isBaseGasPaymentToken(token)
+    ? BASE_PRIVY_TRANSFER_GAS_FEE_USD
+    : typicalFeeUsd(network, true);
   const fromUsd = usdFeeToRaw(token, feeUsd);
   if (fromUsd != null && fromUsd > 0n) {
     return fromUsd;
   }
-  return isBaseGasPaymentToken(token) ? 60_000n : 10_000n;
+  return isBaseGasPaymentToken(token)
+    ? BASE_PRIVY_TRANSFER_GAS_RESERVE_RAW
+    : 10_000n;
 }
 
 /** Per-transfer gas headroom for a token that pays its own network fee. */
