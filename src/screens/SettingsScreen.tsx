@@ -191,16 +191,14 @@ export function SettingsScreen() {
               </View>
               <View style={styles.toggleRow}>
                 <View style={styles.strategyRowText}>
-                  <Text style={styles.strategyLabel}>
-                    Use vault balance when sending
-                  </Text>
+                  <Text style={styles.strategyLabel}>Use vault balance</Text>
                   <Text style={styles.strategyDescription}>
                     When you make an eligible payment, automatically move money
                     from your vault into your balance
                   </Text>
                 </View>
                 <Switch
-                  accessibilityLabel="Use vault balance when sending"
+                  accessibilityLabel="Use vault balance"
                   disabled={vaultSendLoading || vaultSendSaving}
                   trackColor={{ false: '#bbf7d0', true: '#86efac' }}
                   thumbColor={vaultSendEnabled ? '#166534' : '#f0fdf4'}
