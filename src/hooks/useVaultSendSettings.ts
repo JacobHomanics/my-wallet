@@ -21,7 +21,7 @@ export function useVaultSendSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const enabled = convexUser?.useVaultUsdcWhenSending === true;
+  const enabled = convexUser?.useVaultUsdcWhenSending !== false;
   const isLoading = externalId != null && convexUser === undefined;
 
   const setEnabled = useCallback(

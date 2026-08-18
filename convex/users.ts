@@ -146,6 +146,7 @@ export const ensureByExternalId = mutation({
       identityId: normalizedIdentity,
       onboardingCompleted: false,
       autoDepositReceivedUsdc: true,
+      useVaultUsdcWhenSending: true,
     });
   },
 });
@@ -375,7 +376,7 @@ export const getVaultSendSenderByEthereumAddress = internalQuery({
     const normalized = normalizeEvmAddress(ethereumAddress);
     const candidates = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("useVaultUsdcWhenSending"), true))
+      .filter((q) => q.neq(q.field("useVaultUsdcWhenSending"), false))
       .collect();
 
     for (const user of candidates) {
