@@ -36,6 +36,7 @@ export type EarnWalletAction = {
   decimals?: number | null;
   share_amount?: string | null;
   created_at?: string;
+  failure_reason?: { message: string } | null;
 };
 
 /** Basis points (500 = 5.00%). */
@@ -48,6 +49,22 @@ export function formatEarnApy(basisPoints: number | null): string {
 
 export function formatEarnAssetSymbol(symbol: string): string {
   return symbol.toUpperCase();
+}
+
+/** Converts a human-readable decimal amount to smallest-unit bigint. */
+export function parseEarnDecimalToRaw(amount: string, decimals: number): bigint {
+  const trimmed = amount.trim();
+  if (!/^\d+(\.\d+)?$/.test(trimmed)) {
+    return 0n;
+  }
+
+  const [wholePart, fractionPart = ''] = trimmed.split('.');
+  const fraction = fractionPart.padEnd(decimals, '0').slice(0, decimals);
+  return BigInt(`${wholePart}${fraction}`);
+}
+
+export function capEarnRawAmount(requested: bigint, max: bigint): bigint {
+  return requested > max ? max : requested;
 }
 
 export function formatEarnRawAmount(raw: string, decimals: number): string {
@@ -86,6 +103,16 @@ export function isEarnActionSucceeded(action: EarnWalletAction): boolean {
 
 export function isEarnActionFailed(action: EarnWalletAction): boolean {
   return action.status === 'failed' || action.status === 'rejected';
+}
+
+export function formatEarnActionError(
+  action: EarnWalletAction,
+  label: string,
+): string {
+  if (action.failure_reason?.message) {
+    return action.failure_reason.message;
+  }
+  return `${label} ${action.status}.`;
 }
 
 const EARN_ACTION_POLL_MS = 2_000;

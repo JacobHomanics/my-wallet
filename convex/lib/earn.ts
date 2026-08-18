@@ -41,6 +41,7 @@ export type EarnWalletAction = {
   decimals?: number | null;
   share_amount?: string | null;
   created_at?: string;
+  failure_reason?: { message: string } | null;
 };
 
 export function getEarnVaultId(): string {
@@ -71,14 +72,6 @@ function parsePrivyEarnApiError(error: unknown, action: "deposit" | "withdraw"):
         error?: string;
         code?: string;
       };
-      if (
-        payload.code === "invalid_state" &&
-        payload.error?.includes("not available for deposits or withdrawals")
-      ) {
-        throw new Error(
-          "This earn vault is not active yet. In Privy Dashboard → Wallet infrastructure → Earn, confirm the fee wrapper finished deploying and the vault shows as live before depositing.",
-        );
-      }
       if (payload.error) {
         throw new Error(payload.error);
       }
@@ -166,21 +159,38 @@ export async function depositToEarnVault(params: {
       },
     );
 
-    return {
-      id: result.id,
-      wallet_id: result.wallet_id,
-      type: result.type,
-      status: result.status,
-      amount: result.amount ?? null,
-      raw_amount: result.raw_amount ?? null,
-      asset: result.asset ?? null,
-      decimals: result.decimals ?? null,
-      share_amount: result.share_amount ?? null,
-      created_at: result.created_at,
-    };
+    return mapEarnWalletAction(result);
   } catch (error) {
     parsePrivyEarnApiError(error, "deposit");
   }
+}
+
+function mapEarnWalletAction(result: {
+  id: string;
+  wallet_id: string;
+  type: string;
+  status: string;
+  amount?: string | null;
+  raw_amount?: string | null;
+  asset?: string | null;
+  decimals?: number | null;
+  share_amount?: string | null;
+  created_at?: string;
+  failure_reason?: { message: string } | null;
+}): EarnWalletAction {
+  return {
+    id: result.id,
+    wallet_id: result.wallet_id,
+    type: result.type,
+    status: result.status,
+    amount: result.amount ?? null,
+    raw_amount: result.raw_amount ?? null,
+    asset: result.asset ?? null,
+    decimals: result.decimals ?? null,
+    share_amount: result.share_amount ?? null,
+    created_at: result.created_at,
+    failure_reason: result.failure_reason ?? null,
+  };
 }
 
 export async function withdrawFromEarnVault(params: {
@@ -188,30 +198,23 @@ export async function withdrawFromEarnVault(params: {
   authorizationContext: AuthorizationContext;
   walletId: string;
   vaultId: string;
-  amount: string;
+  amount?: string;
+  rawAmount?: string;
 }): Promise<EarnWalletAction> {
   try {
+    const withdrawBody = params.rawAmount
+      ? { vault_id: params.vaultId, raw_amount: params.rawAmount }
+      : { vault_id: params.vaultId, amount: params.amount! };
+
     const result = await params.privy.wallets().earn().ethereum().withdraw(
       params.walletId,
       {
-        vault_id: params.vaultId,
-        amount: params.amount,
+        ...withdrawBody,
         authorization_context: params.authorizationContext,
       },
     );
 
-    return {
-      id: result.id,
-      wallet_id: result.wallet_id,
-      type: result.type,
-      status: result.status,
-      amount: result.amount ?? null,
-      raw_amount: result.raw_amount ?? null,
-      asset: result.asset ?? null,
-      decimals: result.decimals ?? null,
-      share_amount: result.share_amount ?? null,
-      created_at: result.created_at,
-    };
+    return mapEarnWalletAction(result);
   } catch (error) {
     parsePrivyEarnApiError(error, "withdraw");
   }

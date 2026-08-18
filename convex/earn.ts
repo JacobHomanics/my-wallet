@@ -80,12 +80,34 @@ export const deposit = action({
 export const withdraw = action({
   args: {
     ethereumWalletId: v.string(),
-    amount: v.string(),
+    amount: v.optional(v.string()),
+    rawAmount: v.optional(v.string()),
   },
   handler: async (_ctx, args) => {
-    const amount = args.amount.trim();
-    if (!amount || Number(amount) <= 0) {
+    const amount = args.amount?.trim();
+    const rawAmount = args.rawAmount?.trim();
+    const hasAmount = Boolean(amount);
+    const hasRawAmount = Boolean(rawAmount);
+
+    if (hasAmount === hasRawAmount) {
+      throw new Error("Provide exactly one of amount or rawAmount.");
+    }
+
+    if (amount && Number(amount) <= 0) {
       throw new Error("Enter a valid withdrawal amount.");
+    }
+
+    if (rawAmount) {
+      try {
+        if (BigInt(rawAmount) <= 0n) {
+          throw new Error("Enter a valid withdrawal amount.");
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message.includes("valid withdrawal")) {
+          throw error;
+        }
+        throw new Error("Enter a valid withdrawal amount.");
+      }
     }
 
     const privy = getPrivyClient();
@@ -98,6 +120,7 @@ export const withdraw = action({
       walletId: args.ethereumWalletId.trim(),
       vaultId,
       amount,
+      rawAmount,
     });
   },
 });

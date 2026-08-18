@@ -10,9 +10,11 @@ import type {
   EarnWalletAction,
 } from '@/lib/privy/earn';
 import {
-  formatEarnRawAmount,
+  capEarnRawAmount,
+  formatEarnActionError,
   isEarnActionFailed,
   isEarnActionSucceeded,
+  parseEarnDecimalToRaw,
   pollEarnAction,
 } from '@/lib/privy/earn';
 
@@ -176,7 +178,7 @@ export function usePrivyEarn(): UsePrivyEarnResult {
         const pending = await depositAction({ ethereumWalletId, amount });
         const finalAction = await pollAction(pending.id);
         if (isEarnActionFailed(finalAction)) {
-          throw new Error(`Deposit ${finalAction.status}.`);
+          throw new Error(formatEarnActionError(finalAction, 'Deposit'));
         }
         if (!isEarnActionSucceeded(finalAction)) {
           throw new Error('Deposit is still processing. Pull to refresh shortly.');
@@ -195,8 +197,8 @@ export function usePrivyEarn(): UsePrivyEarnResult {
     [depositAction, ethereumWalletId, pollAction, refresh],
   );
 
-  const withdraw = useCallback(
-    async (amount: string) => {
+  const executeWithdraw = useCallback(
+    async (params: { amount?: string; rawAmount?: string }) => {
       if (!ethereumWalletId) {
         setActionError('No Ethereum wallet available.');
         return null;
@@ -206,10 +208,31 @@ export function usePrivyEarn(): UsePrivyEarnResult {
       setActionError(null);
 
       try {
-        const pending = await withdrawAction({ ethereumWalletId, amount });
+        let rawAmount = params.rawAmount;
+        let amount = params.amount;
+
+        if (!rawAmount && amount && position) {
+          const requestedRaw = parseEarnDecimalToRaw(
+            amount,
+            position.asset.decimals,
+          );
+          const vaultRaw = BigInt(position.assets_in_vault);
+          rawAmount = capEarnRawAmount(requestedRaw, vaultRaw).toString();
+          amount = undefined;
+        }
+
+        if (rawAmount && BigInt(rawAmount) <= 0n) {
+          throw new Error('No vault balance to withdraw.');
+        }
+
+        const pending = await withdrawAction({
+          ethereumWalletId,
+          amount,
+          rawAmount,
+        });
         const finalAction = await pollAction(pending.id);
         if (isEarnActionFailed(finalAction)) {
-          throw new Error(`Withdrawal ${finalAction.status}.`);
+          throw new Error(formatEarnActionError(finalAction, 'Withdrawal'));
         }
         if (!isEarnActionSucceeded(finalAction)) {
           throw new Error(
@@ -227,7 +250,12 @@ export function usePrivyEarn(): UsePrivyEarnResult {
         setActing(false);
       }
     },
-    [ethereumWalletId, pollAction, refresh, withdrawAction],
+    [ethereumWalletId, pollAction, position, refresh, withdrawAction],
+  );
+
+  const withdraw = useCallback(
+    async (amount: string) => executeWithdraw({ amount }),
+    [executeWithdraw],
   );
 
   const withdrawAll = useCallback(async () => {
@@ -236,17 +264,13 @@ export function usePrivyEarn(): UsePrivyEarnResult {
       return null;
     }
 
-    const amount = formatEarnRawAmount(
-      position.assets_in_vault,
-      position.asset.decimals,
-    );
-    if (Number(amount) <= 0) {
+    if (BigInt(position.assets_in_vault) <= 0n) {
       setActionError('No vault balance to withdraw.');
       return null;
     }
 
-    return withdraw(amount);
-  }, [position, withdraw]);
+    return executeWithdraw({ rawAmount: position.assets_in_vault });
+  }, [executeWithdraw, position]);
 
   return {
     ready: walletsReady,
