@@ -6,6 +6,12 @@ import type { PrivyClient } from "@privy-io/node";
 import { action } from "./_generated/server";
 import { isAutoDepositPaymentLeg, tryAutoDepositReceivedUsdc } from "./lib/autoDepositReceivedUsdc";
 import { tryWithdrawVaultUsdcForSend } from "./lib/withdrawVaultUsdcForSend";
+import {
+  parseVaultSendWithdrawalRecord,
+  serializeVaultSendWithdrawal,
+  tryRedepositVaultUsdcAfterFailedSend,
+  type VaultSendWithdrawalRecord,
+} from "./lib/withdrawVaultUsdcForSend";
 import { sendEvmBatch, sendEvmLeg } from "./lib/evmSend";
 import { shouldDeferLegForGasPayment } from "./lib/gasTokens";
 import { getNetworkChain } from "./lib/networks";
@@ -234,9 +240,9 @@ export const prepareVaultUsdcForSend = action({
     legs: v.array(sendLegValidator),
     useVaultUsdc: v.boolean(),
   },
-  handler: async (ctx, args): Promise<void> => {
+  handler: async (ctx, args): Promise<VaultSendWithdrawalRecord | null> => {
     if (args.legs.length === 0) {
-      return;
+      return null;
     }
 
     const privy = getPrivyClient();
@@ -248,7 +254,7 @@ export const prepareVaultUsdcForSend = action({
       "ethereum",
     );
 
-    await tryWithdrawVaultUsdcForSend({
+    const withdrawal = await tryWithdrawVaultUsdcForSend({
       ctx,
       privy,
       authorizationContext,
@@ -256,6 +262,44 @@ export const prepareVaultUsdcForSend = action({
       ethereumWalletId,
       legs: args.legs,
       useVaultUsdc: args.useVaultUsdc,
+    });
+
+    return withdrawal ? serializeVaultSendWithdrawal(withdrawal) : null;
+  },
+});
+
+const vaultSendWithdrawalValidator = v.object({
+  withdrawnRaw: v.string(),
+  walletBalanceBefore: v.string(),
+  vaultId: v.string(),
+  vaultNetwork: v.string(),
+  tokenAddress: v.string(),
+  decimals: v.number(),
+});
+
+/** Return vault USDC to the earn vault after a send fails post-withdrawal. */
+export const redepositVaultUsdcAfterFailedSend = action({
+  args: {
+    ethereumWalletId: v.string(),
+    ethereumAddress: v.string(),
+    withdrawal: vaultSendWithdrawalValidator,
+  },
+  handler: async (_ctx, args): Promise<void> => {
+    const privy = getPrivyClient();
+    const authorizationContext = getAuthorizationContext();
+    const ethereumWalletId = await resolveWalletId(
+      privy,
+      args.ethereumAddress,
+      args.ethereumWalletId,
+      "ethereum",
+    );
+
+    await tryRedepositVaultUsdcAfterFailedSend({
+      privy,
+      authorizationContext,
+      ethereumAddress: args.ethereumAddress,
+      ethereumWalletId,
+      withdrawal: parseVaultSendWithdrawalRecord(args.withdrawal),
     });
   },
 });
@@ -309,121 +353,137 @@ export const sendPayment = action({
       return aGas - bGas;
     });
 
-    await tryWithdrawVaultUsdcForSend({
-      ctx,
-      privy,
-      authorizationContext,
-      ethereumAddress: args.ethereumAddress,
-      ethereumWalletId,
-      legs: orderedLegs,
-      useVaultUsdc: args.useVaultUsdc,
-    });
-
-    const results: SendPaymentLegResult[] = [];
-    const lastEvmHashByNetwork = new Map<string, string>();
-
-    let legIndex = 0;
-    while (legIndex < orderedLegs.length) {
-      const leg = orderedLegs[legIndex]!;
-      const chain = getNetworkChain(leg.network);
-
-      if (chain === "ethereum") {
-        const network = leg.network;
-        const evmGroup = [];
-        while (
-          legIndex < orderedLegs.length &&
-          getNetworkChain(orderedLegs[legIndex]!.network) === "ethereum" &&
-          orderedLegs[legIndex]!.network === network
-        ) {
-          evmGroup.push(orderedLegs[legIndex]!);
-          legIndex += 1;
-        }
-
-        const previousHash = lastEvmHashByNetwork.get(network);
-
-        const sentLegs = await sendEvmLegGroup({
-          ctx,
-          privy,
-          authorizationContext,
-          ethereumWalletId,
-          ethereumAddress: args.ethereumAddress,
-          network,
-          legs: evmGroup,
-          previousHash,
-        });
-
-        const lastSent = sentLegs[sentLegs.length - 1];
-        if (lastSent) {
-          lastEvmHashByNetwork.set(network, lastSent.hash);
-        }
-
-        for (const { leg: item, hash } of sentLegs) {
-          results.push({
-            hash,
-            chain: "ethereum",
-            tokenId: item.tokenId,
-            symbol: item.symbol,
-            amount: item.amountFormatted,
-            network: item.network,
-            networkLabel: item.networkLabel,
-            tokenName: item.tokenName,
-            logoUrl: item.logoUrl,
-            isTax: item.isTax === true,
-          });
-        }
-        continue;
-      }
-
-      const amountRaw = BigInt(leg.amountRaw);
-      legIndex += 1;
-
-      if (!solanaWalletId || !args.solanaAddress) {
-        throw new Error("Solana wallet is required for Solana payment legs");
-      }
-
-      const hash = await sendSolanaLeg({
-        privy,
-        authorizationContext,
-        walletId: solanaWalletId,
-        fromAddress: args.solanaAddress,
-        tokenAddress: leg.tokenAddress,
-        recipient: leg.recipient,
-        amountRaw,
-        decimals: leg.decimals,
-      });
-
-      results.push({
-        hash,
-        chain: "solana",
-        tokenId: leg.tokenId,
-        symbol: leg.symbol,
-        amount: leg.amountFormatted,
-        network: leg.network,
-        networkLabel: leg.networkLabel,
-        tokenName: leg.tokenName,
-        logoUrl: leg.logoUrl,
-        isTax: leg.isTax === true,
-      });
-    }
-
-    let rewardHash: string | null = null;
-    let rewardAmount: string | null = null;
-    let rewardFailed = false;
+    let vaultWithdrawal: Awaited<ReturnType<typeof tryWithdrawVaultUsdcForSend>> =
+      null;
 
     try {
-      const reward = await sendTreasuryReward(args.ethereumAddress);
-      rewardHash = reward.hash;
-      rewardAmount = reward.amount;
-    } catch (error) {
-      rewardFailed = true;
-      console.error("Treasury reward failed after successful payment", error);
-    }
+      vaultWithdrawal = await tryWithdrawVaultUsdcForSend({
+        ctx,
+        privy,
+        authorizationContext,
+        ethereumAddress: args.ethereumAddress,
+        ethereumWalletId,
+        legs: orderedLegs,
+        useVaultUsdc: args.useVaultUsdc,
+      });
 
-    return {
-      legs: results,
-      rewardHash,
-      rewardAmount,
-      rewardFailed,
-    };
+      const results: SendPaymentLegResult[] = [];
+      const lastEvmHashByNetwork = new Map<string, string>();
+
+      let legIndex = 0;
+      while (legIndex < orderedLegs.length) {
+        const leg = orderedLegs[legIndex]!;
+        const chain = getNetworkChain(leg.network);
+
+        if (chain === "ethereum") {
+          const network = leg.network;
+          const evmGroup = [];
+          while (
+            legIndex < orderedLegs.length &&
+            getNetworkChain(orderedLegs[legIndex]!.network) === "ethereum" &&
+            orderedLegs[legIndex]!.network === network
+          ) {
+            evmGroup.push(orderedLegs[legIndex]!);
+            legIndex += 1;
+          }
+
+          const previousHash = lastEvmHashByNetwork.get(network);
+
+          const sentLegs = await sendEvmLegGroup({
+            ctx,
+            privy,
+            authorizationContext,
+            ethereumWalletId,
+            ethereumAddress: args.ethereumAddress,
+            network,
+            legs: evmGroup,
+            previousHash,
+          });
+
+          const lastSent = sentLegs[sentLegs.length - 1];
+          if (lastSent) {
+            lastEvmHashByNetwork.set(network, lastSent.hash);
+          }
+
+          for (const { leg: item, hash } of sentLegs) {
+            results.push({
+              hash,
+              chain: "ethereum",
+              tokenId: item.tokenId,
+              symbol: item.symbol,
+              amount: item.amountFormatted,
+              network: item.network,
+              networkLabel: item.networkLabel,
+              tokenName: item.tokenName,
+              logoUrl: item.logoUrl,
+              isTax: item.isTax === true,
+            });
+          }
+          continue;
+        }
+
+        const amountRaw = BigInt(leg.amountRaw);
+        legIndex += 1;
+
+        if (!solanaWalletId || !args.solanaAddress) {
+          throw new Error("Solana wallet is required for Solana payment legs");
+        }
+
+        const hash = await sendSolanaLeg({
+          privy,
+          authorizationContext,
+          walletId: solanaWalletId,
+          fromAddress: args.solanaAddress,
+          tokenAddress: leg.tokenAddress,
+          recipient: leg.recipient,
+          amountRaw,
+          decimals: leg.decimals,
+        });
+
+        results.push({
+          hash,
+          chain: "solana",
+          tokenId: leg.tokenId,
+          symbol: leg.symbol,
+          amount: leg.amountFormatted,
+          network: leg.network,
+          networkLabel: leg.networkLabel,
+          tokenName: leg.tokenName,
+          logoUrl: leg.logoUrl,
+          isTax: leg.isTax === true,
+        });
+      }
+
+      let rewardHash: string | null = null;
+      let rewardAmount: string | null = null;
+      let rewardFailed = false;
+
+      try {
+        const reward = await sendTreasuryReward(args.ethereumAddress);
+        rewardHash = reward.hash;
+        rewardAmount = reward.amount;
+      } catch (error) {
+        rewardFailed = true;
+        console.error("Treasury reward failed after successful payment", error);
+      }
+
+      return {
+        legs: results,
+        rewardHash,
+        rewardAmount,
+        rewardFailed,
+      };
+    } catch (error) {
+      if (vaultWithdrawal) {
+        await tryRedepositVaultUsdcAfterFailedSend({
+          privy,
+          authorizationContext,
+          ethereumAddress: args.ethereumAddress,
+          ethereumWalletId,
+          withdrawal: vaultWithdrawal,
+        });
+      }
+      throw error;
+    }
   },
 });

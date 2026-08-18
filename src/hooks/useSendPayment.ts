@@ -129,6 +129,9 @@ export function useSendPayment(): SendPaymentResult {
   const { ready: walletsReady, wallets } = useUserWallets();
   const sendPaymentAction = useAction(api.send.sendPayment);
   const prepareVaultUsdcForSend = useAction(api.send.prepareVaultUsdcForSend);
+  const redepositVaultUsdcAfterFailedSend = useAction(
+    api.send.redepositVaultUsdcAfterFailedSend,
+  );
   const [sending, setSending] = useState(false);
 
   const ethereumWallet = wallets.find((wallet) => wallet.chain === 'ethereum');
@@ -151,11 +154,15 @@ export function useSendPayment(): SendPaymentResult {
         const orderedLegs = orderPaymentLegs(legs);
 
         setSending(true);
+        let vaultWithdrawal: Awaited<
+          ReturnType<typeof prepareVaultUsdcForSend>
+        > = null;
+
         try {
           const convexLegs = toConvexSendLegs(orderedLegs);
 
           if (ethereumWallet?.address) {
-            await prepareVaultUsdcForSend({
+            vaultWithdrawal = await prepareVaultUsdcForSend({
               ethereumWalletId: ethereumWallet.id ?? '',
               ethereumAddress: ethereumWallet.address,
               legs: convexLegs,
@@ -299,6 +306,22 @@ export function useSendPayment(): SendPaymentResult {
             rewardHash: result.rewardHash,
             rewardFailed: result.rewardFailed === true,
           };
+        } catch (error) {
+          if (vaultWithdrawal && ethereumWallet?.address) {
+            try {
+              await redepositVaultUsdcAfterFailedSend({
+                ethereumWalletId: ethereumWallet.id ?? '',
+                ethereumAddress: ethereumWallet.address,
+                withdrawal: vaultWithdrawal,
+              });
+            } catch (redepositError) {
+              console.error(
+                '[vault-send] redeposit after failed payment failed',
+                redepositError,
+              );
+            }
+          }
+          throw error;
         } finally {
           setSending(false);
         }
@@ -308,6 +331,7 @@ export function useSendPayment(): SendPaymentResult {
       ethereumWallet,
       send,
       prepareVaultUsdcForSend,
+      redepositVaultUsdcAfterFailedSend,
       sendPaymentAction,
       simulatePayment,
       solanaWallet,
