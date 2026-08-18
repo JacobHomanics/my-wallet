@@ -46,7 +46,7 @@ type WalletActionStepLike = {
 };
 
 function extractEvmTransactionHash(
-  steps: ReadonlyArray<WalletActionStepLike> | undefined,
+  steps: readonly WalletActionStepLike[] | undefined,
 ): string | null {
   if (steps == null) {
     return null;

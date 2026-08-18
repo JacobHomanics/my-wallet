@@ -301,9 +301,11 @@ export function useSendForm(
 
   const tipUsd =
     additionalUsd != null && additionalUsd > 0 ? additionalUsd : 0;
-  const usdAmount = amountUsd ?? parseDisplayInputToUsd(amount);
-  const requestedUsd =
-    usdAmount != null && usdAmount > 0 ? usdAmount + tipUsd : usdAmount;
+  const baseUsdAmount = amountUsd ?? parseDisplayInputToUsd(amount);
+  const bootstrapRequestedUsd =
+    baseUsdAmount != null && baseUsdAmount > 0
+      ? baseUsdAmount + tipUsd
+      : baseUsdAmount;
 
   // Tip changes need a fresh strategy allocation (manual legs stay at base).
   useEffect(() => {
@@ -334,35 +336,35 @@ export function useSendForm(
    * "typed available balance" as max merchant — that would hide insufficient
    * funds when tax makes the grand total exceed holdings.
    */
-  const targetUsd = (() => {
-    if (requestedUsd == null || !(requestedUsd > 0)) {
-      return requestedUsd;
+  const bootstrapTargetUsd = (() => {
+    if (bootstrapRequestedUsd == null || !(bootstrapRequestedUsd > 0)) {
+      return bootstrapRequestedUsd;
     }
     if (maxAvailableUsd == null || !(maxAvailableUsd >= 0)) {
-      return requestedUsd;
+      return bootstrapRequestedUsd;
     }
     const maxMerchant = maxMerchantUsdFor(maxAvailableUsd);
-    if (requestedUsd <= maxMerchant + 0.000001) {
-      return Math.min(requestedUsd, maxMerchant);
+    if (bootstrapRequestedUsd <= maxMerchant + 0.000001) {
+      return Math.min(bootstrapRequestedUsd, maxMerchant);
     }
     // Slight overshoot of max sendable merchant (display rounding).
-    if (requestedUsd <= maxMerchant + 0.015) {
+    if (bootstrapRequestedUsd <= maxMerchant + 0.015) {
       return maxMerchant;
     }
-    return requestedUsd;
+    return bootstrapRequestedUsd;
   })();
 
   /** Leave headroom on one preferred token so a single tax transfer can fit. */
   const tokensForMerchantAllocation = useMemo(() => {
-    if (targetUsd == null || !(targetUsd > 0)) {
+    if (bootstrapTargetUsd == null || !(bootstrapTargetUsd > 0)) {
       return spendableTokens;
     }
-    const taxUsdNeeded = taxUsdFor(targetUsd);
+    const taxUsdNeeded = taxUsdFor(bootstrapTargetUsd);
     if (!(taxUsdNeeded > 0)) {
       return spendableTokens;
     }
     return reserveTaxHeadroomOnTokens(spendableTokens, taxUsdNeeded);
-  }, [spendableTokens, targetUsd, taxUsdFor]);
+  }, [bootstrapTargetUsd, spendableTokens, taxUsdFor]);
 
   const strategyPreferredTokenId = useMemo(() => {
     if (!preferredTokenId) {
@@ -376,7 +378,7 @@ export function useSendForm(
   }, [preferredTokenId, walletTokens]);
 
   const strategyPlan = useMemo(() => {
-    if (targetUsd == null || targetUsd <= 0) {
+    if (bootstrapTargetUsd == null || bootstrapTargetUsd <= 0) {
       return {
         allocations: [] as PaymentAllocation[],
         filledUsd: 0,
@@ -388,16 +390,16 @@ export function useSendForm(
 
     return allocatePaymentUsd({
       tokens: tokensForMerchantAllocation,
-      usdAmount: targetUsd,
+      usdAmount: bootstrapTargetUsd,
       strategyId,
       chainPriorityId: selectedChainPriorityId,
       preferredTokenId: strategyPreferredTokenId,
     });
   }, [
+    bootstrapTargetUsd,
     selectedChainPriorityId,
     strategyId,
     strategyPreferredTokenId,
-    targetUsd,
     tokensForMerchantAllocation,
   ]);
 
@@ -480,10 +482,27 @@ export function useSendForm(
     walletTokens,
   ]);
 
-  const resolvedManualMerchant = (() => {
-    const manual = manualMerchantAllocations ?? draftStoredLegs.merchant;
+  const clampedManualMerchantAllocations = useMemo(() => {
+    if (manualMerchantAllocations == null) {
+      return null;
+    }
+    return refreshAllocationTokens(
+      manualMerchantAllocations,
+      walletTokens,
+      spendableTokens,
+      tokensForMerchantAllocation,
+    );
+  }, [
+    manualMerchantAllocations,
+    spendableTokens,
+    tokensForMerchantAllocation,
+    walletTokens,
+  ]);
+
+  const resolvedManualMerchant = useMemo(() => {
+    const manual = clampedManualMerchantAllocations ?? draftStoredLegs.merchant;
     return manual != null && manual.length > 0 ? manual : null;
-  })();
+  }, [clampedManualMerchantAllocations, draftStoredLegs.merchant]);
   const isManualPayment = resolvedManualMerchant != null;
 
   const merchantAllocations = useMemo(() => {
@@ -505,38 +524,43 @@ export function useSendForm(
     walletTokens,
   ]);
 
-  useEffect(() => {
-    if (manualMerchantAllocations == null) {
-      return;
+  const manualSyncedAmountUsd = useMemo(() => {
+    if (manualMerchantAllocations == null || amountLocked || tipUsd > 0) {
+      return null;
     }
-    const clamped = refreshAllocationTokens(
-      manualMerchantAllocations,
-      walletTokens,
-      spendableTokens,
-      tokensForMerchantAllocation,
-    );
-    const changed = clamped.some(
-      (leg, index) =>
-        leg.amountRaw !== manualMerchantAllocations[index]?.amountRaw,
-    );
-    if (!changed) {
-      return;
+    const totalUsd = merchantAllocations.reduce((sum, leg) => sum + leg.usd, 0);
+    return totalUsd > 0 ? totalUsd : null;
+  }, [amountLocked, manualMerchantAllocations, merchantAllocations, tipUsd]);
+
+  const usdAmount = manualSyncedAmountUsd ?? baseUsdAmount;
+  const requestedUsd =
+    usdAmount != null && usdAmount > 0 ? usdAmount + tipUsd : usdAmount;
+
+  const targetUsd = (() => {
+    if (requestedUsd == null || !(requestedUsd > 0)) {
+      return requestedUsd;
     }
-    setManualMerchantAllocations(clamped);
-    if (!amountLocked && tipUsd <= 0) {
-      const totalUsd = clamped.reduce((sum, leg) => sum + leg.usd, 0);
-      setAmountState(totalUsd > 0 ? formatAmountInputFromUsd(totalUsd) : '');
-      setAmountUsd(totalUsd > 0 ? totalUsd : null);
+    if (maxAvailableUsd == null || !(maxAvailableUsd >= 0)) {
+      return requestedUsd;
     }
-  }, [
-    amountLocked,
-    formatAmountInputFromUsd,
-    manualMerchantAllocations,
-    spendableTokens,
-    tipUsd,
-    tokensForMerchantAllocation,
-    walletTokens,
-  ]);
+    const maxMerchant = maxMerchantUsdFor(maxAvailableUsd);
+    if (requestedUsd <= maxMerchant + 0.000001) {
+      return Math.min(requestedUsd, maxMerchant);
+    }
+    if (requestedUsd <= maxMerchant + 0.015) {
+      return maxMerchant;
+    }
+    return requestedUsd;
+  })();
+
+  const displayAmount = useMemo(() => {
+    if (manualSyncedAmountUsd != null) {
+      return manualSyncedAmountUsd > 0
+        ? formatAmountInputFromUsd(manualSyncedAmountUsd)
+        : '';
+    }
+    return amount;
+  }, [amount, formatAmountInputFromUsd, manualSyncedAmountUsd]);
 
   const additionalLegs = useMemo(() => {
     const base =
@@ -566,7 +590,7 @@ export function useSendForm(
     updateSendDraft({
       ethereumRecipient,
       solanaRecipient,
-      amount,
+      amount: displayAmount,
       amountLocked,
       manualLegs: manualLegsFromAllocations(
         isManualPayment ? merchantAllocations : null,
@@ -579,8 +603,8 @@ export function useSendForm(
   }, [
     additionalLegs,
     allocationInputs,
-    amount,
     amountLocked,
+    displayAmount,
     ethereumRecipient,
     isManualPayment,
     merchantAllocations,
@@ -839,7 +863,7 @@ export function useSendForm(
       }
 
       const merchantBase =
-        manualMerchantAllocations ??
+        clampedManualMerchantAllocations ??
         strategyPlan.allocations.map((leg) => ({ ...leg }));
       const index = merchantBase.findIndex((leg) => leg.token.id === tokenId);
       if (index < 0) {
@@ -940,7 +964,7 @@ export function useSendForm(
       }
 
       const merchantBase =
-        manualMerchantAllocations ??
+        clampedManualMerchantAllocations ??
         strategyPlan.allocations.map((leg) => ({ ...leg }));
       const next = merchantBase.filter((leg) => leg.token.id !== tokenId);
       setAllocationInputs((current) => {
@@ -979,7 +1003,7 @@ export function useSendForm(
       }
 
       const merchantBase =
-        manualMerchantAllocations ??
+        clampedManualMerchantAllocations ??
         strategyPlan.allocations.map((leg) => ({ ...leg }));
       if (merchantBase.some((leg) => leg.token.id === tokenId)) {
         return;
@@ -1056,7 +1080,7 @@ export function useSendForm(
   ]);
 
   return {
-    amount,
+    amount: displayAmount,
     requestedUsd,
     taxUsd,
     payerTotalUsd,
