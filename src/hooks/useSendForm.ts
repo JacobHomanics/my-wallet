@@ -28,10 +28,12 @@ import {
   resolveTaxFunding,
   type TaxFundingPick,
 } from '@/lib/send/buildPaymentLegsWithTax';
+import { transferGasReserveRaw } from '@/lib/send/gasReserves';
 import {
   allocatePaymentUsd,
   type PaymentAllocation,
 } from '@/lib/strategies/allocatePayment';
+import { isGasToken } from '@/lib/strategies/gasTokens';
 import type { PaymentStrategyId } from '@/lib/strategies';
 import { isValidRecipientAddress } from '@/lib/validation';
 import { tryDecodeWalletIdentity } from '@/lib/walletIdentity';
@@ -219,7 +221,16 @@ function maxManualAllocationRaw(
     spendableTokens.find((item) => item.id === walletToken.id) ??
     walletToken;
 
-  return merchantCap.rawBalance > 0n ? merchantCap.rawBalance : 0n;
+  let cap = merchantCap.rawBalance > 0n ? merchantCap.rawBalance : 0n;
+  if (isGasToken(walletToken) && cap > 0n) {
+    const globalReserve =
+      walletToken.rawBalance > cap ? walletToken.rawBalance - cap : 0n;
+    if (globalReserve === 0n) {
+      const fee = transferGasReserveRaw(walletToken);
+      cap = cap > fee ? cap - fee : 0n;
+    }
+  }
+  return cap;
 }
 
 export function useSendForm(

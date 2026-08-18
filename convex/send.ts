@@ -152,6 +152,7 @@ async function sendEvmLegGroup(params: {
       tokenAddress: leg.tokenAddress,
       recipient: leg.recipient,
       amountRaw: BigInt(leg.amountRaw),
+      decimals: leg.decimals,
     });
 
     sentLegs.push({ leg, hash: lastHash });
@@ -178,6 +179,7 @@ async function sendEvmLegGroup(params: {
           tokenAddress: item.tokenAddress,
           recipient: item.recipient,
           amountRaw: BigInt(item.amountRaw),
+          decimals: item.decimals,
         })),
       });
       for (const leg of batchableLegs) {
@@ -195,6 +197,7 @@ async function sendEvmLegGroup(params: {
         tokenAddress: leg.tokenAddress,
         recipient: leg.recipient,
         amountRaw: BigInt(leg.amountRaw),
+        decimals: leg.decimals,
       });
       sentLegs.push({ leg, hash: lastHash });
     }

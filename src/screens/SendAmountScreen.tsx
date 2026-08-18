@@ -117,7 +117,7 @@ export function SendAmountScreen() {
     addAllocation,
   } = form;
 
-  const gasFunding = useGasFunding(tokens, spendableTokens, allocations, taxFunding);
+  const gasFunding = useGasFunding(tokens, allocations, taxFunding);
   const vaultUsdcFundingSplits = useVaultUsdcFundingSplits(
     allocations,
     taxFunding,

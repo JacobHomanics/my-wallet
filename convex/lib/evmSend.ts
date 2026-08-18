@@ -1,12 +1,14 @@
 import type { AuthorizationContext, PrivyClient } from "@privy-io/node";
 
 import { encodeErc20Transfer } from "./encodeErc20Transfer";
+import { shouldUsePrivyTransfer } from "./gasTokens";
 import {
   getEvmCaip2,
   getEvmChainId,
   isNativeTokenAddress,
   toHexQuantity,
 } from "./networks";
+import { sendPrivyTransferLeg } from "./privyTransfer";
 import { retrySendOperation } from "./retrySendOperation";
 import { waitForEvmSendSlot } from "./waitForEvmSendSlot";
 import { waitForEvmReceipt } from "./waitForEvmReceipt";
@@ -21,12 +23,14 @@ export type SendEvmLegParams = {
   tokenAddress: string | null;
   recipient: string;
   amountRaw: bigint;
+  decimals?: number;
 };
 
 export type SendEvmBatchLeg = {
   tokenAddress: string | null;
   recipient: string;
   amountRaw: bigint;
+  decimals?: number;
 };
 
 export type SendEvmBatchParams = {
@@ -85,6 +89,7 @@ function buildEvmTransaction(
 
 /**
  * Broadcast an EVM native or ERC-20 transfer via Privy Wallet API.
+ * Base USDC/EURC/USDT use the Transfer API so gas is paid in the same token.
  */
 export async function sendEvmLeg(params: SendEvmLegParams): Promise<string> {
   const {
@@ -96,7 +101,25 @@ export async function sendEvmLeg(params: SendEvmLegParams): Promise<string> {
     tokenAddress,
     recipient,
     amountRaw,
+    decimals = 6,
   } = params;
+
+  if (
+    tokenAddress != null &&
+    shouldUsePrivyTransfer(network, tokenAddress)
+  ) {
+    return sendPrivyTransferLeg({
+      privy,
+      authorizationContext,
+      walletId,
+      fromAddress,
+      network,
+      tokenAddress,
+      recipient,
+      amountRaw,
+      decimals,
+    });
+  }
 
   const chainId = getEvmChainId(network);
   const caip2 = getEvmCaip2(network);
@@ -126,6 +149,7 @@ export async function sendEvmLeg(params: SendEvmLegParams): Promise<string> {
 /**
  * Batch multiple EVM calls into one atomic `wallet_sendCalls` transaction.
  * Avoids Base/EIP-7702 in-flight limits when a payment has multiple same-network legs.
+ * Privy transfer-gas tokens are sent sequentially via the Transfer API instead.
  */
 export async function sendEvmBatch(params: SendEvmBatchParams): Promise<string> {
   const {
@@ -151,7 +175,30 @@ export async function sendEvmBatch(params: SendEvmBatchParams): Promise<string> 
       tokenAddress: leg.tokenAddress,
       recipient: leg.recipient,
       amountRaw: leg.amountRaw,
+      decimals: leg.decimals,
     });
+  }
+
+  if (
+    legs.some((leg) =>
+      shouldUsePrivyTransfer(network, leg.tokenAddress),
+    )
+  ) {
+    let lastHash = "";
+    for (const leg of legs) {
+      lastHash = await sendEvmLeg({
+        privy,
+        authorizationContext,
+        walletId,
+        fromAddress,
+        network,
+        tokenAddress: leg.tokenAddress,
+        recipient: leg.recipient,
+        amountRaw: leg.amountRaw,
+        decimals: leg.decimals,
+      });
+    }
+    return lastHash;
   }
 
   const caip2 = getEvmCaip2(network);
