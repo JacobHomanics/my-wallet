@@ -57,6 +57,7 @@ export function ConfirmSendScreen() {
     ready,
     spendableTokens,
     availableUsd,
+    availableBalanceLoading,
   } = sendSpendable;
   const { sendPayment, sending } = useSendPayment();
   const { error, clearStatus, setError } = useSendStatus();
@@ -152,8 +153,11 @@ export function ConfirmSendScreen() {
     (payerTotalUsd != null ? formatFromUsd(payerTotalUsd) : null) ??
     (requestedUsd != null ? formatFromUsd(requestedUsd) : null) ??
     `${currencySymbol}${amount || '0'}`;
-  const availableLabel =
-    insufficientFunds ? formatFromUsd(filledUsd) : null;
+  const showInsufficientFunds =
+    insufficientFunds && !availableBalanceLoading;
+  const availableLabel = showInsufficientFunds
+    ? formatFromUsd(filledUsd)
+    : null;
 
   const taxFundingChain = taxFunding
     ? getNetworkChain(taxFunding.token.network)
@@ -169,12 +173,13 @@ export function ConfirmSendScreen() {
     [baseUsd, setTipPercent],
   );
 
-  const canSend = canContinue && allocations.length > 0;
+  const canSend =
+    canContinue && allocations.length > 0 && !availableBalanceLoading;
 
   const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
 
   const invalidReason =
-    insufficientFunds
+    showInsufficientFunds
       ? 'Insufficient funds for this payment.'
       : allocations.length === 0 || !hasPositiveLeg
         ? 'Add at least one token with an amount in advanced details.'
