@@ -32,6 +32,7 @@ export function EarnScreen() {
     vault,
     position,
     walletAssetBalance,
+    vaultBalanceUsd,
     refresh,
     deposit,
     withdraw,
@@ -51,10 +52,8 @@ export function EarnScreen() {
     void refresh();
   }, [refresh]);
 
-  const vaultBalance =
-    position != null
-      ? formatEarnRawAmount(position.assets_in_vault, position.asset.decimals)
-      : '0';
+  const vaultBalanceFiat =
+    formatFromUsd(vaultBalanceUsd) ?? defaultFormattedZero;
   const earnedYield =
     position != null
       ? formatEarnRawAmount(
@@ -62,11 +61,6 @@ export function EarnScreen() {
           position.asset.decimals,
         )
       : '0';
-  const vaultBalanceUsd = Number(vaultBalance);
-  const vaultBalanceFiat =
-    Number.isFinite(vaultBalanceUsd) && vaultBalanceUsd >= 0
-      ? formatFromUsd(vaultBalanceUsd) ?? defaultFormattedZero
-      : defaultFormattedZero;
   const earnedYieldUsd = Number(earnedYield);
   const earnedYieldFiat =
     Number.isFinite(earnedYieldUsd)

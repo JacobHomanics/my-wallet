@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -19,6 +19,7 @@ import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { useOpenStripeDeposit } from '@/hooks/useOpenStripeDeposit';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
+import { usePrivyEarn } from '@/hooks/usePrivyEarn';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useWithdrawUnsupportedModal } from '@/hooks/useWithdrawUnsupportedModal';
 import type { HomeStackParamList } from '@/navigation/types';
@@ -38,6 +39,8 @@ export function HomeScreen() {
     refresh,
     poll,
   } = useTokenBalances();
+
+  const { vaultBalanceUsd, refresh: refreshEarn } = usePrivyEarn();
 
   usePollTokenBalances(poll, {
     enabled: ready && Boolean(ethereumAddress || solanaAddress),
@@ -59,9 +62,17 @@ export function HomeScreen() {
 
   const onRefresh = useCallback(() => {
     refresh();
-  }, [refresh]);
+    void refreshEarn();
+  }, [refresh, refreshEarn]);
 
-  const totalLabel = formatFromUsd(totalUsd) ?? defaultFormattedZero;
+  const combinedTotalUsd = useMemo(() => {
+    if (totalUsd == null && vaultBalanceUsd === 0) {
+      return null;
+    }
+    return (totalUsd ?? 0) + vaultBalanceUsd;
+  }, [totalUsd, vaultBalanceUsd]);
+
+  const totalLabel = formatFromUsd(combinedTotalUsd) ?? defaultFormattedZero;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
   const showActions =
     ready && hasWallet && !(loading && tokens.length === 0);

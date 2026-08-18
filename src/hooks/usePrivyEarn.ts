@@ -12,6 +12,7 @@ import type {
 import {
   capEarnRawAmount,
   formatEarnActionError,
+  getEarnVaultBalanceUsd,
   isEarnActionFailed,
   isEarnActionSucceeded,
   parseEarnDecimalToRaw,
@@ -28,6 +29,7 @@ export type UsePrivyEarnResult = {
   actionError: string | null;
   vault: EarnVaultDetails | null;
   position: EarnVaultPosition | null;
+  vaultBalanceUsd: number;
   walletAssetBalance: string | null;
   refresh: () => Promise<void>;
   deposit: (amount: string) => Promise<EarnWalletAction | null>;
@@ -87,6 +89,8 @@ export function usePrivyEarn(): UsePrivyEarnResult {
     );
     return token?.balanceFormatted ?? '0';
   })();
+
+  const vaultBalanceUsd = getEarnVaultBalanceUsd(position);
 
   const fetchEarnData = useCallback(async (): Promise<void> => {
     setError(null);
@@ -282,6 +286,7 @@ export function usePrivyEarn(): UsePrivyEarnResult {
     actionError,
     vault,
     position,
+    vaultBalanceUsd,
     walletAssetBalance,
     refresh,
     deposit,

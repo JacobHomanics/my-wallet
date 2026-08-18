@@ -93,6 +93,22 @@ export function calculateEarnedYield(position: EarnVaultPosition): bigint {
   return assets - (deposited - withdrawn);
 }
 
+/** Vault assets are USD stablecoins — human amount equals USD value. */
+export function getEarnVaultBalanceUsd(
+  position: EarnVaultPosition | null,
+): number {
+  if (!position) {
+    return 0;
+  }
+
+  const vaultBalance = formatEarnRawAmount(
+    position.assets_in_vault,
+    position.asset.decimals,
+  );
+  const usd = Number(vaultBalance);
+  return Number.isFinite(usd) && usd >= 0 ? usd : 0;
+}
+
 export function isEarnActionPending(action: EarnWalletAction): boolean {
   return action.status === 'pending' || action.status === 'processing';
 }
