@@ -24,7 +24,6 @@ import type * as lib_neynar from "../lib/neynar.js";
 import type * as lib_privy from "../lib/privy.js";
 import type * as lib_solanaSend from "../lib/solanaSend.js";
 import type * as lib_stripe from "../lib/stripe.js";
-import type * as lib_tax from "../lib/tax.js";
 import type * as lib_treasuryReward from "../lib/treasuryReward.js";
 import type * as lib_waitForEvmReceipt from "../lib/waitForEvmReceipt.js";
 import type * as lib_walletIdentity from "../lib/walletIdentity.js";
@@ -55,7 +54,6 @@ declare const fullApi: ApiFromModules<{
   "lib/privy": typeof lib_privy;
   "lib/solanaSend": typeof lib_solanaSend;
   "lib/stripe": typeof lib_stripe;
-  "lib/tax": typeof lib_tax;
   "lib/treasuryReward": typeof lib_treasuryReward;
   "lib/waitForEvmReceipt": typeof lib_waitForEvmReceipt;
   "lib/walletIdentity": typeof lib_walletIdentity;

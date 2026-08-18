@@ -13,7 +13,6 @@ import {
   getNetworkFromCaip2,
   isNativeTokenAddress,
 } from "./networks";
-import { SERVICE_FEE_EVM_ADDRESS } from "./tax";
 import { normalizeEvmAddress } from "./walletIdentity";
 import { waitForEvmReceipt } from "./waitForEvmReceipt";
 
@@ -23,7 +22,6 @@ type AutoDepositLeg = {
   symbol: string;
   recipient: string;
   amountFormatted: string;
-  isTax?: boolean;
 };
 
 const LOG_PREFIX = "[auto-deposit]";
@@ -43,7 +41,6 @@ function legContext(leg: AutoDepositLeg, txHash: string) {
     tokenAddress: leg.tokenAddress,
     recipient: normalizeEvmAddress(leg.recipient),
     amount: leg.amountFormatted,
-    isTax: leg.isTax === true,
   };
 }
 
@@ -99,19 +96,6 @@ export async function tryAutoDepositReceivedUsdc(params: {
 }): Promise<void> {
   const context = legContext(params.leg, params.txHash);
   logAutoDeposit("checking_leg", context);
-
-  if (params.leg.isTax === true) {
-    logAutoDeposit("skipped", { ...context, reason: "service_fee_leg" });
-    return;
-  }
-
-  if (
-    normalizeEvmAddress(params.leg.recipient) ===
-    normalizeEvmAddress(SERVICE_FEE_EVM_ADDRESS)
-  ) {
-    logAutoDeposit("skipped", { ...context, reason: "service_fee_address" });
-    return;
-  }
 
   if (getNetworkChain(params.leg.network) !== "ethereum") {
     logAutoDeposit("skipped", {

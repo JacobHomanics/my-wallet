@@ -173,13 +173,15 @@ export const sendPayment = action({
           isTax: leg.isTax === true,
         });
 
-        await tryAutoDepositReceivedUsdc({
-          ctx,
-          privy,
-          authorizationContext,
-          leg,
-          txHash: hash,
-        });
+        if (leg.isTax !== true) {
+          await tryAutoDepositReceivedUsdc({
+            ctx,
+            privy,
+            authorizationContext,
+            leg,
+            txHash: hash,
+          });
+        }
         continue;
       }
 
