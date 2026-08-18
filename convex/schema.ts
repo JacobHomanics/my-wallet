@@ -14,6 +14,11 @@ export default defineSchema({
      * Missing/`false` means onboarding is still required.
      */
     onboardingCompleted: v.optional(v.boolean()),
+    /**
+     * Auto-deposit received Base USDC into the earn vault. Defaults to on;
+     * set explicitly to `false` to opt out.
+     */
+    autoDepositReceivedUsdc: v.optional(v.boolean()),
   })
     .index("by_externalId", ["externalId"])
     .index("by_username", ["username"])

@@ -1,7 +1,12 @@
 import { v } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
+import {
+  identityIdMatchesEvmAddress,
+  normalizeEvmAddress,
+  tryDecodeEvmAddressFromIdentityId,
+} from "./lib/walletIdentity";
 
 /** Look up a user by Privy DID (`externalId`). */
 export const getByExternalId = query({
@@ -141,6 +146,7 @@ export const ensureByExternalId = mutation({
       externalId,
       identityId: normalizedIdentity,
       onboardingCompleted: false,
+      autoDepositReceivedUsdc: true,
     });
   },
 });
@@ -312,5 +318,64 @@ export const clearProfilePhoto = mutation({
     }
 
     return user._id;
+  },
+});
+
+/** Enable or disable auto-deposit of received USDC into the earn vault. */
+export const setAutoDepositReceivedUsdc = mutation({
+  args: {
+    externalId: v.string(),
+    enabled: v.boolean(),
+  },
+  handler: async (ctx, { externalId, enabled }) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_externalId", (q) => q.eq("externalId", externalId))
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    await ctx.db.patch(user._id, {
+      autoDepositReceivedUsdc: enabled,
+    });
+    return user._id;
+  },
+});
+
+/** Resolve whether a recipient should auto-deposit received USDC. */
+export const getAutoDepositRecipientByEthereumAddress = internalQuery({
+  args: {
+    ethereumAddress: v.string(),
+  },
+  handler: async (ctx, { ethereumAddress }) => {
+    const normalized = normalizeEvmAddress(ethereumAddress);
+    const candidates = await ctx.db
+      .query("users")
+      .filter((q) => q.neq(q.field("autoDepositReceivedUsdc"), false))
+      .collect();
+
+    for (const user of candidates) {
+      if (identityIdMatchesEvmAddress(user.identityId, normalized)) {
+        return {
+          userId: user._id,
+          candidateCount: candidates.length,
+        };
+      }
+    }
+
+    console.log("[auto-deposit] recipient_lookup_miss", {
+      recipient: normalized,
+      candidateCount: candidates.length,
+      candidatesWithIdentityId: candidates.filter((user) => user.identityId)
+        .length,
+      candidateAddresses: candidates
+        .map((user) => tryDecodeEvmAddressFromIdentityId(user.identityId))
+        .filter((address): address is string => Boolean(address))
+        .map((address) => normalizeEvmAddress(address)),
+    });
+
+    return null;
   },
 });

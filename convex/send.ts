@@ -4,6 +4,7 @@ import { v } from "convex/values";
 import type { PrivyClient } from "@privy-io/node";
 
 import { action } from "./_generated/server";
+import { tryAutoDepositReceivedUsdc } from "./lib/autoDepositReceivedUsdc";
 import { sendEvmLeg } from "./lib/evmSend";
 import { getNetworkChain, isNativeTokenAddress } from "./lib/networks";
 import { getPrivyClient, getAuthorizationContext } from "./lib/privy";
@@ -75,13 +76,26 @@ export const sendPayment = action({
     solanaAddress: v.union(v.string(), v.null()),
     legs: v.array(sendLegValidator),
   },
-  handler: async (_ctx, args): Promise<SendPaymentResult> => {
+  handler: async (ctx, args): Promise<SendPaymentResult> => {
     if (args.legs.length === 0) {
       throw new Error("Nothing to send");
     }
 
     const privy = getPrivyClient();
     const authorizationContext = getAuthorizationContext();
+
+    console.log("[sendPayment] start", {
+      legCount: args.legs.length,
+      sender: args.ethereumAddress,
+      legs: args.legs.map((leg) => ({
+        network: leg.network,
+        symbol: leg.symbol,
+        tokenAddress: leg.tokenAddress,
+        recipient: leg.recipient,
+        amount: leg.amountFormatted,
+        isTax: leg.isTax === true,
+      })),
+    });
 
     const ethereumWalletId = await resolveWalletId(
       privy,
@@ -135,6 +149,16 @@ export const sendPayment = action({
           amountRaw,
         });
 
+        console.log("[sendPayment] evm_leg_sent", {
+          network: leg.network,
+          symbol: leg.symbol,
+          tokenAddress: leg.tokenAddress,
+          recipient: leg.recipient,
+          amount: leg.amountFormatted,
+          hash,
+          isTax: leg.isTax === true,
+        });
+
         lastEvmHashByNetwork.set(leg.network, hash);
         results.push({
           hash,
@@ -147,6 +171,14 @@ export const sendPayment = action({
           tokenName: leg.tokenName,
           logoUrl: leg.logoUrl,
           isTax: leg.isTax === true,
+        });
+
+        await tryAutoDepositReceivedUsdc({
+          ctx,
+          privy,
+          authorizationContext,
+          leg,
+          txHash: hash,
         });
         continue;
       }
@@ -192,6 +224,12 @@ export const sendPayment = action({
       rewardFailed = true;
       console.error("Treasury reward failed after successful payment", error);
     }
+
+    console.log("[sendPayment] complete", {
+      legCount: results.length,
+      rewardHash,
+      rewardFailed,
+    });
 
     return {
       legs: results,
