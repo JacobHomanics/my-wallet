@@ -11,6 +11,7 @@ import {
   getEarnVaultId,
   withdrawFromEarnVault,
 } from "./lib/earn";
+import { tryAutoDepositOnrampUsdc } from "./lib/autoDepositOnrampUsdc";
 import { getAuthorizationContext, getPrivyClient } from "./lib/privy";
 
 /**
@@ -121,6 +122,41 @@ export const withdraw = action({
       vaultId,
       amount,
       rawAmount,
+    });
+  },
+});
+
+/**
+ * After a Base USDC onramp completes, move the credited amount into the earn
+ * vault in the background (respects auto-deposit setting, leaves a gas buffer).
+ */
+export const autoDepositAfterOnramp = action({
+  args: {
+    ethereumWalletId: v.string(),
+    ethereumAddress: v.string(),
+    priorBalanceRaw: v.string(),
+  },
+  handler: async (ctx, args) => {
+    let priorBalanceRaw: bigint;
+    try {
+      priorBalanceRaw = BigInt(args.priorBalanceRaw.trim());
+      if (priorBalanceRaw < 0n) {
+        throw new Error("Invalid prior balance");
+      }
+    } catch {
+      throw new Error("Invalid prior balance.");
+    }
+
+    const privy = getPrivyClient();
+    const authorizationContext = getAuthorizationContext();
+
+    await tryAutoDepositOnrampUsdc({
+      ctx,
+      privy,
+      authorizationContext,
+      ethereumWalletId: args.ethereumWalletId.trim(),
+      ethereumAddress: args.ethereumAddress.trim(),
+      priorBalanceRaw,
     });
   },
 });

@@ -9,6 +9,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { useAutoDepositOnrampUsdc } from '@/hooks/useAutoDepositOnrampUsdc';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import { usePrivyFiatOnramp } from '@/hooks/usePrivyFiatOnramp';
@@ -23,15 +24,19 @@ export function StripeOnrampComponentsScreen() {
   const isDesktopWeb = useIsDesktopWeb();
   const goHome = usePopToHome();
   const { refresh } = useTokenBalances();
+  const { getPriorBaseUsdcBalanceRaw, triggerAutoDeposit } =
+    useAutoDepositOnrampUsdc();
   const { isAvailable, isFunding, status, error, startFund } =
     usePrivyFiatOnramp();
   const startedRef = useRef(false);
+  const priorBalanceRawRef = useRef<bigint>(0n);
 
   useEffect(() => {
     if (startedRef.current || !isAvailable) {
       return;
     }
     startedRef.current = true;
+    priorBalanceRawRef.current = getPriorBaseUsdcBalanceRaw();
     void (async () => {
       const result = await startFund();
       if (result === 'exited') {
@@ -39,14 +44,23 @@ export function StripeOnrampComponentsScreen() {
         return;
       }
       if (result === 'confirmed' || result === 'submitted') {
+        triggerAutoDeposit(priorBalanceRawRef.current);
         void refresh();
         goHome();
       }
     })();
-  }, [goHome, isAvailable, refresh, startFund]);
+  }, [
+    getPriorBaseUsdcBalanceRaw,
+    goHome,
+    isAvailable,
+    refresh,
+    startFund,
+    triggerAutoDeposit,
+  ]);
 
   const onRetry = () => {
     startedRef.current = true;
+    priorBalanceRawRef.current = getPriorBaseUsdcBalanceRaw();
     void (async () => {
       const result = await startFund();
       if (result === 'exited') {
@@ -54,6 +68,7 @@ export function StripeOnrampComponentsScreen() {
         return;
       }
       if (result === 'confirmed' || result === 'submitted') {
+        triggerAutoDeposit(priorBalanceRawRef.current);
         void refresh();
         goHome();
       }

@@ -95,8 +95,8 @@ export function EarnSettingsScreen() {
             <View style={styles.toggleText}>
               <Text style={styles.toggleLabel}>Vault Auto-deposit</Text>
               <Text style={styles.toggleDescription}>
-                When someone sends you an eligible payment, automatically move
-                it into your vault
+                When you receive an eligible payment or deposit,
+                automatically move it into your vault
               </Text>
             </View>
             <Switch

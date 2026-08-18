@@ -6,7 +6,7 @@ import { getPrivyExternalId } from '@/lib/convex/getPrivyExternalId';
 import { api } from '../../convex/_generated/api';
 
 /**
- * Auto-deposit received USDC into the earn vault (stored on Convex `users`).
+ * Auto-deposit received or onramped Base USDC into the earn vault (stored on Convex `users`).
  */
 export function useAutoDepositSettings() {
   const { user, isReady } = useAuth();

@@ -15,7 +15,7 @@ export default defineSchema({
      */
     onboardingCompleted: v.optional(v.boolean()),
     /**
-     * Auto-deposit received Base USDC into the earn vault. Defaults to on;
+     * Auto-deposit received or onramped Base USDC into the earn vault. Defaults to on;
      * set explicitly to `false` to opt out.
      */
     autoDepositReceivedUsdc: v.optional(v.boolean()),

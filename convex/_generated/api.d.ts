@@ -12,6 +12,7 @@ import type * as contacts from "../contacts.js";
 import type * as earn from "../earn.js";
 import type * as ens from "../ens.js";
 import type * as farcaster from "../farcaster.js";
+import type * as lib_autoDepositOnrampUsdc from "../lib/autoDepositOnrampUsdc.js";
 import type * as lib_autoDepositReceivedUsdc from "../lib/autoDepositReceivedUsdc.js";
 import type * as lib_decryptKeystore from "../lib/decryptKeystore.js";
 import type * as lib_earn from "../lib/earn.js";
@@ -52,6 +53,7 @@ declare const fullApi: ApiFromModules<{
   earn: typeof earn;
   ens: typeof ens;
   farcaster: typeof farcaster;
+  "lib/autoDepositOnrampUsdc": typeof lib_autoDepositOnrampUsdc;
   "lib/autoDepositReceivedUsdc": typeof lib_autoDepositReceivedUsdc;
   "lib/decryptKeystore": typeof lib_decryptKeystore;
   "lib/earn": typeof lib_earn;

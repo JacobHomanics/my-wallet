@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton } from '@/components/BackButton';
 import { CryptoElements } from '@/components/stripe/CryptoElements';
 import { OnrampElement } from '@/components/stripe/OnrampElement';
+import { useAutoDepositOnrampUsdc } from '@/hooks/useAutoDepositOnrampUsdc';
 import { useCreateStripeOnrampSession } from '@/hooks/useCreateStripeOnrampSession';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
@@ -37,12 +38,15 @@ export function StripeOnrampScreen() {
   const isDesktopWeb = useIsDesktopWeb();
   const goHome = usePopToHome();
   const { refresh } = useTokenBalances();
+  const { getPriorBaseUsdcBalanceRaw, triggerAutoDeposit } =
+    useAutoDepositOnrampUsdc();
   const { isCreating, error, createSession, isAvailable } =
     useCreateStripeOnrampSession();
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [fulfillmentComplete, setFulfillmentComplete] = useState(false);
   const startedRef = useRef(false);
+  const priorBalanceRawRef = useRef<bigint>(0n);
   const { uiReady, onReady } = useStripeOnrampUiReady(clientSecret);
 
   useEffect(() => {
@@ -50,6 +54,7 @@ export function StripeOnrampScreen() {
       return;
     }
     startedRef.current = true;
+    priorBalanceRawRef.current = getPriorBaseUsdcBalanceRaw();
     let cancelled = false;
     void (async () => {
       const session = await createSession();
@@ -60,16 +65,17 @@ export function StripeOnrampScreen() {
     return () => {
       cancelled = true;
     };
-  }, [createSession]);
+  }, [createSession, getPriorBaseUsdcBalanceRaw]);
 
   const onSessionChange = useCallback(
     ({ session }: { session: OnrampSessionResult }) => {
       if (session.status === 'fulfillment_complete') {
         setFulfillmentComplete(true);
+        triggerAutoDeposit(priorBalanceRawRef.current);
         void refresh();
       }
     },
-    [refresh],
+    [refresh, triggerAutoDeposit],
   );
 
   const showSessionLoader =
