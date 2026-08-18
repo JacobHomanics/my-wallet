@@ -369,10 +369,6 @@ export function SendTokenAllocations({
           const spendable = spendableById.get(leg.token.id) ?? leg.token;
           const unpriced = isUnpricedToken(spendable);
           const availableToken = merchantAvailableToken(spendable, taxFunding);
-          const taxRawOnLeg =
-            taxFunding != null && taxFunding.token.id === leg.token.id
-              ? taxFunding.amountRaw
-              : 0n;
           const inputValue =
             allocationInputs[leg.token.id] ??
             (allocationInputUnit === 'usd' && !unpriced
@@ -380,7 +376,7 @@ export function SendTokenAllocations({
                 ? String(leg.usd)
                 : leg.amountFormatted
               : leg.amountFormatted);
-          const exceeds = leg.amountRaw + taxRawOnLeg > spendable.rawBalance;
+          const exceeds = leg.amountRaw > availableToken.rawBalance;
           const secondaryValue = unpriced
             ? null
             : allocationInputUnit === 'usd'

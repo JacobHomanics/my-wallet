@@ -124,24 +124,22 @@ function refreshAllocationTokens(
   allocations: PaymentAllocation[],
   walletTokens: OwnedToken[],
   spendableTokens: OwnedToken[],
-  useWalletBalance: boolean,
+  tokensForMerchantAllocation: OwnedToken[],
 ): PaymentAllocation[] {
-  const balanceTokens = useWalletBalance ? walletTokens : spendableTokens;
-
   return allocations.flatMap((leg) => {
     const token = walletTokens.find((item) => item.id === leg.token.id);
     if (!token) {
       return [];
     }
 
-    const balanceToken =
-      balanceTokens.find((item) => item.id === leg.token.id) ?? token;
+    const maxRaw = maxManualAllocationRaw(
+      token,
+      tokensForMerchantAllocation,
+      spendableTokens,
+    );
 
-    // Clamp to spendable balance (fee reserves may shrink gas tokens after draft).
-    const amountRaw =
-      leg.amountRaw > balanceToken.rawBalance
-        ? balanceToken.rawBalance
-        : leg.amountRaw;
+    // Clamp to spendable balance (gas reserves + tax headroom).
+    const amountRaw = leg.amountRaw > maxRaw ? maxRaw : leg.amountRaw;
 
     const usd =
       amountRaw <= 0n
@@ -486,13 +484,46 @@ export function useSendForm(
       base,
       walletTokens,
       spendableTokens,
-      isManualPayment,
+      tokensForMerchantAllocation,
     );
   }, [
-    isManualPayment,
     resolvedManualMerchant,
     spendableTokens,
     strategyPlan.allocations,
+    tokensForMerchantAllocation,
+    walletTokens,
+  ]);
+
+  useEffect(() => {
+    if (manualMerchantAllocations == null) {
+      return;
+    }
+    const clamped = refreshAllocationTokens(
+      manualMerchantAllocations,
+      walletTokens,
+      spendableTokens,
+      tokensForMerchantAllocation,
+    );
+    const changed = clamped.some(
+      (leg, index) =>
+        leg.amountRaw !== manualMerchantAllocations[index]?.amountRaw,
+    );
+    if (!changed) {
+      return;
+    }
+    setManualMerchantAllocations(clamped);
+    if (!amountLocked && tipUsd <= 0) {
+      const totalUsd = clamped.reduce((sum, leg) => sum + leg.usd, 0);
+      setAmountState(totalUsd > 0 ? formatAmountInputFromUsd(totalUsd) : '');
+      setAmountUsd(totalUsd > 0 ? totalUsd : null);
+    }
+  }, [
+    amountLocked,
+    formatAmountInputFromUsd,
+    manualMerchantAllocations,
+    spendableTokens,
+    tipUsd,
+    tokensForMerchantAllocation,
     walletTokens,
   ]);
 
@@ -505,12 +536,13 @@ export function useSendForm(
       base,
       walletTokens,
       spendableTokens,
-      true,
+      tokensForMerchantAllocation,
     );
   }, [
     additionalAllocations,
     preferredAdditionalSeed,
     spendableTokens,
+    tokensForMerchantAllocation,
     walletTokens,
   ]);
 
@@ -595,23 +627,15 @@ export function useSendForm(
   // Merchant legs must fit; tax must fit on a single leftover token.
   const legsWithinBalance = useMemo(() => {
     const legsFit = allocations.every((leg) => {
-      const balanceSource = isUnpricedToken(leg.token)
-        ? walletTokens
-        : isManualPayment
-          ? walletTokens
-          : spendableTokens;
-      const balance = balanceSource.find((item) => item.id === leg.token.id);
-      return balance != null && leg.amountRaw <= balance.rawBalance;
+      const maxRaw = maxManualAllocationRaw(
+        leg.token,
+        tokensForMerchantAllocation,
+        spendableTokens,
+      );
+      return leg.amountRaw <= maxRaw;
     });
     return legsFit && (taxUsd <= 0 || taxFunding != null);
-  }, [
-    allocations,
-    isManualPayment,
-    spendableTokens,
-    taxFunding,
-    taxUsd,
-    walletTokens,
-  ]);
+  }, [allocations, spendableTokens, taxFunding, taxUsd, tokensForMerchantAllocation]);
   const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
   const hasPositiveMerchantLeg = merchantAllocations.some(
     (leg) => leg.amountRaw > 0n,
@@ -950,11 +974,14 @@ export function useSendForm(
         return;
       }
 
-      const amountRaw = maxManualAllocationRaw(
-        token,
-        tokensForMerchantAllocation,
-        spendableTokens,
-      );
+      const hasRequestedAmount = requestedUsd != null && requestedUsd > 0;
+      const amountRaw = hasRequestedAmount
+        ? maxManualAllocationRaw(
+            token,
+            tokensForMerchantAllocation,
+            spendableTokens,
+          )
+        : 0n;
       const amountFormatted =
         amountRaw > 0n
           ? formatRawTokenBalance(amountRaw, token.decimals)
@@ -974,23 +1001,48 @@ export function useSendForm(
         ...current,
         [tokenId]: amountFormatted,
       }));
-      applyMerchantLegEdits(next, true);
+      applyMerchantLegEdits(next, hasRequestedAmount);
   };
 
   const resolvedAllocationInputs = useMemo(() => {
     const resolved: Record<string, string> = { ...allocationInputs };
     for (const leg of allocations) {
-      if (resolved[leg.token.id] == null) {
-        resolved[leg.token.id] =
-          allocationInputUnit === 'usd'
-            ? leg.usd > 0
-              ? formatAmountInputFromUsd(leg.usd)
-              : leg.amountFormatted
-            : leg.amountFormatted;
+      const fromLeg =
+        allocationInputUnit === 'usd' && !isUnpricedToken(leg.token)
+          ? leg.usd > 0
+            ? formatAmountInputFromUsd(leg.usd)
+            : leg.amountFormatted
+          : leg.amountFormatted;
+
+      const existing = resolved[leg.token.id];
+      if (existing == null) {
+        resolved[leg.token.id] = fromLeg;
+        continue;
+      }
+
+      const existingRaw =
+        allocationInputUnit === 'usd' && !isUnpricedToken(leg.token)
+          ? (() => {
+              const usdValue = parseDisplayInputToUsd(existing);
+              if (usdValue == null) {
+                return null;
+              }
+              return parseUsdAmountToTokenRaw(String(usdValue), leg.token);
+            })()
+          : parseTokenAmountToRaw(existing, leg.token.decimals);
+
+      if (existingRaw != null && existingRaw > leg.amountRaw) {
+        resolved[leg.token.id] = fromLeg;
       }
     }
     return resolved;
-  }, [allocationInputUnit, allocationInputs, allocations, formatAmountInputFromUsd]);
+  }, [
+    allocationInputUnit,
+    allocationInputs,
+    allocations,
+    formatAmountInputFromUsd,
+    parseDisplayInputToUsd,
+  ]);
 
   return {
     amount,

@@ -6,7 +6,7 @@ import { simulateEvmTransfer } from '@/lib/send/simulateEvmTransfer';
 import { simulateSolanaTransfer } from '@/lib/send/simulateSolanaTransfer';
 import { fetchSolBalanceLamports } from '@/lib/send/solanaFees';
 import {
-  networkSupportsStablecoinGas,
+  isBaseGasPaymentToken,
   shouldDeferLegForGasPayment,
 } from '@/lib/strategies/gasTokens';
 
@@ -69,7 +69,7 @@ export async function simulatePaymentLegs(
             result.nativeDebitWei,
             leg.token.network,
             'evm',
-            networkSupportsStablecoinGas(leg.token.network),
+            isBaseGasPaymentToken(leg.token),
           ),
         );
       } else {

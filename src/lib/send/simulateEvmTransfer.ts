@@ -9,7 +9,7 @@ import {
   toHexQuantity,
 } from '@/lib/send/rpc';
 import { isNativeTokenAddress } from '@/lib/alchemy/tokenLogos';
-import { networkSupportsStablecoinGas } from '@/lib/strategies/gasTokens';
+import { canPayOwnTransferGas } from '@/lib/strategies/gasTokens';
 
 export type SimulateEvmTransferParams = {
   network: string;
@@ -136,10 +136,11 @@ export async function simulateEvmTransfer(
   }
 
   const fees = await estimateEvmFeeFields(params.network, true);
-  if (
-    !networkSupportsStablecoinGas(params.network) &&
-    balance < fees.maxFeeWei
-  ) {
+  const paysOwnGas = canPayOwnTransferGas(
+    params.network,
+    params.tokenAddress,
+  );
+  if (!paysOwnGas && balance < fees.maxFeeWei) {
     throw new Error(
       `Not enough ${nativeGasTokenSymbol(params.network)} on this network to pay for the token transfer fee.`,
     );
@@ -181,8 +182,6 @@ export async function simulateEvmTransfer(
 
   return {
     amountRaw: params.amountRaw,
-    nativeDebitWei: networkSupportsStablecoinGas(params.network)
-      ? 0n
-      : fees.maxFeeWei,
+    nativeDebitWei: paysOwnGas ? 0n : fees.maxFeeWei,
   };
 }

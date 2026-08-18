@@ -1,16 +1,15 @@
 import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import { isNativeTokenAddress } from '@/lib/alchemy/tokenLogos';
 
-/** Base mainnet tokens that can pay network fees (Coinbase Smart Wallet). */
+/**
+ * Base mainnet tokens Privy can debit for gas when sending the same token.
+ * They do not pay gas for other assets on the network.
+ */
 export const BASE_GAS_PAYMENT_TOKEN_ADDRESSES: ReadonlySet<string> = new Set([
   '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', // USDC
   '0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42', // EURC
   '0xfde4c96c8593536e31f229ea8f37b2ada2699bb2', // USDT
 ]);
-
-export function networkSupportsStablecoinGas(network: string): boolean {
-  return network === 'base-mainnet';
-}
 
 export function isBaseGasPaymentToken(token: OwnedToken): boolean {
   if (token.network !== 'base-mainnet' || token.tokenAddress == null) {
@@ -25,7 +24,7 @@ export function isBaseGasPaymentAddress(
   network: string,
   tokenAddress: string | null | undefined,
 ): boolean {
-  if (!networkSupportsStablecoinGas(network) || tokenAddress == null) {
+  if (network !== 'base-mainnet' || tokenAddress == null) {
     return false;
   }
   return BASE_GAS_PAYMENT_TOKEN_ADDRESSES.has(
@@ -38,15 +37,26 @@ export function isGasToken(token: OwnedToken): boolean {
   return isNativeTokenAddress(token.tokenAddress);
 }
 
-/** Tokens that can pay network fees on their chain. */
-export function canPayNetworkGas(token: OwnedToken): boolean {
+/** True when Privy can pay this transfer's gas from the token being sent. */
+export function canPayOwnTransferGas(
+  network: string,
+  tokenAddress: string | null | undefined,
+): boolean {
+  return (
+    isNativeTokenAddress(tokenAddress) ||
+    isBaseGasPaymentAddress(network, tokenAddress)
+  );
+}
+
+/** Tokens whose balances may have a fee reserve deducted before spendable use. */
+export function hasGasReserve(token: OwnedToken): boolean {
   return isGasToken(token) || isBaseGasPaymentToken(token);
 }
 
 /**
- * Payment legs that pay gas should broadcast after other legs on the same
- * network so fee headroom remains available.
+ * Native gas legs broadcast last so fee headroom remains for earlier legs
+ * on the same network.
  */
 export function shouldDeferLegForGasPayment(token: OwnedToken): boolean {
-  return canPayNetworkGas(token);
+  return isGasToken(token);
 }
