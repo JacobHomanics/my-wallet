@@ -40,6 +40,7 @@ export function StripeOnrampComponentsScreen() {
       }
       if (result === 'confirmed' || result === 'submitted') {
         void refresh();
+        goHome();
       }
     })();
   }, [goHome, isAvailable, refresh, startFund]);
@@ -54,6 +55,7 @@ export function StripeOnrampComponentsScreen() {
       }
       if (result === 'confirmed' || result === 'submitted') {
         void refresh();
+        goHome();
       }
     })();
   };
