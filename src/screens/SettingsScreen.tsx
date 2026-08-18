@@ -171,16 +171,14 @@ export function SettingsScreen() {
               <Text style={styles.sectionTitle}>Earn</Text>
               <View style={styles.toggleRow}>
                 <View style={styles.strategyRowText}>
-                  <Text style={styles.strategyLabel}>
-                    Auto-deposit received USDC
-                  </Text>
+                  <Text style={styles.strategyLabel}>Vault Auto-deposit</Text>
                   <Text style={styles.strategyDescription}>
-                    When someone sends you USDC on Base, deposit it into your
-                    vault automatically
+                    When someone pays you, automatically move it into your
+                    vault
                   </Text>
                 </View>
                 <Switch
-                  accessibilityLabel="Auto-deposit received USDC"
+                  accessibilityLabel="Vault Auto-deposit"
                   disabled={autoDepositLoading || autoDepositSaving}
                   trackColor={{ false: '#bbf7d0', true: '#86efac' }}
                   thumbColor={autoDepositEnabled ? '#166534' : '#f0fdf4'}
@@ -197,8 +195,8 @@ export function SettingsScreen() {
                     Use vault balance when sending
                   </Text>
                   <Text style={styles.strategyDescription}>
-                    When a payment needs USDC on Base, withdraw from your vault
-                    into your wallet automatically
+                    When you pay, automatically move money from your vault into
+                    your balance
                   </Text>
                 </View>
                 <Switch
