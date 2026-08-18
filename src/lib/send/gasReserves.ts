@@ -12,7 +12,6 @@ import {
 import type { TaxFundingPick } from '@/lib/send/buildPaymentLegsWithTax';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
 import {
-  BASE_PRIVY_TRANSFER_GAS_FEE_USD,
   BASE_PRIVY_TRANSFER_GAS_RESERVE_RAW,
   canPayOwnTransferGas,
   hasGasReserve,
@@ -393,21 +392,37 @@ export type EvmFeeReservePlan = {
   spendableTokenIds: Set<string>;
 };
 
+function scalePrivyGasReserveRaw(decimals: number): bigint {
+  if (decimals === 6) {
+    return BASE_PRIVY_TRANSFER_GAS_RESERVE_RAW;
+  }
+  if (decimals < 6) {
+    return (
+      BASE_PRIVY_TRANSFER_GAS_RESERVE_RAW /
+      10n ** BigInt(6 - decimals)
+    );
+  }
+  return (
+    BASE_PRIVY_TRANSFER_GAS_RESERVE_RAW *
+    10n ** BigInt(decimals - 6)
+  );
+}
+
 function selfGasReserveRaw(
   network: string,
   token: OwnedToken,
 ): bigint {
-  // Privy Transfer API debits gas from the same stablecoin after execution.
-  const feeUsd = isBaseGasPaymentToken(token)
-    ? BASE_PRIVY_TRANSFER_GAS_FEE_USD
-    : typicalFeeUsd(network, true);
-  const fromUsd = usdFeeToRaw(token, feeUsd);
+  // Privy Transfer API debits a fixed raw headroom on Base stables — do not
+  // derive from USD × balance (float drift vs Convex `PRIVY_TRANSFER_GAS_RESERVE_RAW`).
+  if (isBaseGasPaymentToken(token)) {
+    return scalePrivyGasReserveRaw(token.decimals);
+  }
+
+  const fromUsd = usdFeeToRaw(token, typicalFeeUsd(network, true));
   if (fromUsd != null && fromUsd > 0n) {
     return fromUsd;
   }
-  return isBaseGasPaymentToken(token)
-    ? BASE_PRIVY_TRANSFER_GAS_RESERVE_RAW
-    : 10_000n;
+  return 10_000n;
 }
 
 /** Privy Transfer API legs that debit gas from the same Base stablecoin. */

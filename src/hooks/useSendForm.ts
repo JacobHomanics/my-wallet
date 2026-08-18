@@ -222,28 +222,23 @@ function maxManualAllocationRaw(
 
   const merchantCap =
     tokensForMerchantAllocation.find((item) => item.id === walletToken.id) ??
-    spendableTokens.find((item) => item.id === walletToken.id) ??
-    walletToken;
+    spendableTokens.find((item) => item.id === walletToken.id);
 
-  let cap = merchantCap.rawBalance > 0n ? merchantCap.rawBalance : 0n;
+  // Spendable lists already subtract gas via applyGasReserves — do not reserve twice.
+  if (merchantCap != null) {
+    return merchantCap.rawBalance > 0n ? merchantCap.rawBalance : 0n;
+  }
+
+  let cap = walletToken.rawBalance > 0n ? walletToken.rawBalance : 0n;
   if (isBaseGasPaymentToken(walletToken) && cap > 0n) {
-    const globalReserve =
-      walletToken.rawBalance > cap ? walletToken.rawBalance - cap : 0n;
     const expectedGas = totalSelfGasReserveRaw(
       walletToken,
       typicalBaseSelfGasLegCount(),
     );
-    if (globalReserve < expectedGas) {
-      const missing = expectedGas - globalReserve;
-      cap = cap > missing ? cap - missing : 0n;
-    }
+    cap = cap > expectedGas ? cap - expectedGas : 0n;
   } else if (isGasToken(walletToken) && cap > 0n) {
-    const globalReserve =
-      walletToken.rawBalance > cap ? walletToken.rawBalance - cap : 0n;
-    if (globalReserve === 0n) {
-      const fee = transferGasReserveRaw(walletToken);
-      cap = cap > fee ? cap - fee : 0n;
-    }
+    const fee = transferGasReserveRaw(walletToken);
+    cap = cap > fee ? cap - fee : 0n;
   }
   return cap;
 }

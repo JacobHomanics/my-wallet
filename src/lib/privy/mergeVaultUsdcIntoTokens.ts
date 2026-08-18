@@ -4,6 +4,15 @@ import type { EarnVaultDetails } from '@/lib/privy/earn';
 import { formatEarnRawAmount } from '@/lib/privy/earn';
 import { getNetworkFromCaip2 } from '@/lib/privy/vaultUsdc';
 
+function usdFromRaw(raw: bigint, decimals: number): number {
+  const scale = 10 ** Math.max(0, decimals);
+  const divisor = 10n ** BigInt(Math.max(0, decimals));
+  const whole = Number(raw / divisor);
+  const fraction = Number(raw % divisor) / scale;
+  const usd = whole + fraction;
+  return Number.isFinite(usd) ? usd : 0;
+}
+
 function mergeTokenBalance(
   token: OwnedToken,
   vaultRaw: bigint,
@@ -14,10 +23,8 @@ function mergeTokenBalance(
     combinedRaw.toString(),
     vault.asset.decimals,
   );
-  const walletUsd = token.usdValue ?? 0;
-  const vaultUsd = Number(formatEarnRawAmount(vaultRaw.toString(), vault.asset.decimals));
-  const combinedUsd =
-    Number.isFinite(vaultUsd) && vaultUsd >= 0 ? walletUsd + vaultUsd : token.usdValue;
+  // Keep USD aligned with raw units (avoids wallet USD + vault float mismatch).
+  const combinedUsd = usdFromRaw(combinedRaw, vault.asset.decimals);
 
   return {
     ...token,
@@ -40,7 +47,7 @@ function createVaultUsdcToken(
     vaultRaw.toString(),
     vault.asset.decimals,
   );
-  const usd = Number(balanceFormatted);
+  const usd = usdFromRaw(vaultRaw, vault.asset.decimals);
 
   return {
     id: `${network}:${vault.asset.address.toLowerCase()}`,
@@ -52,7 +59,7 @@ function createVaultUsdcToken(
     decimals: vault.asset.decimals,
     rawBalance: vaultRaw,
     balanceFormatted,
-    usdValue: Number.isFinite(usd) && usd >= 0 ? usd : null,
+    usdValue: usd > 0 ? usd : null,
     logoUrl: null,
   };
 }
