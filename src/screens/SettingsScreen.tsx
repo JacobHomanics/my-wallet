@@ -173,8 +173,8 @@ export function SettingsScreen() {
                 <View style={styles.strategyRowText}>
                   <Text style={styles.strategyLabel}>Vault Auto-deposit</Text>
                   <Text style={styles.strategyDescription}>
-                    When someone pays you, automatically move it into your
-                    vault
+                    When someone sends you an eligible payment, automatically
+                    move it into your vault
                   </Text>
                 </View>
                 <Switch
@@ -195,8 +195,8 @@ export function SettingsScreen() {
                     Use vault balance when sending
                   </Text>
                   <Text style={styles.strategyDescription}>
-                    When you pay, automatically move money from your vault into
-                    your balance
+                    When you make an eligible payment, automatically move money
+                    from your vault into your balance
                   </Text>
                 </View>
                 <Switch
