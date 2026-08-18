@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -12,6 +13,8 @@ import {
 
 import { Avatar } from '@/components/Avatar';
 import type { ContactSearchHit } from '@/hooks/useContactSearch';
+import type { RecentSendRecipient } from '@/hooks/useRecentSendRecipients';
+import { useRecentSendRecipients } from '@/hooks/useRecentSendRecipients';
 import { useSendToContact } from '@/hooks/useSendToContact';
 import type { HomeStackParamList } from '@/navigation/types';
 
@@ -24,7 +27,55 @@ type SendSearchContentProps = {
   results: ContactSearchHit[];
   isSearching: boolean;
   showEmpty: boolean;
+  onSearchFocusChange?: (focused: boolean) => void;
 };
+
+function RecipientOptionRow({
+  label,
+  subtitle,
+  profilePhotoUrl,
+  avatarSeed,
+  selectable,
+  onPress,
+}: {
+  label: string;
+  subtitle: string | null;
+  profilePhotoUrl: string | null | undefined;
+  avatarSeed: string;
+  selectable: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityLabel={`Select ${label}`}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !selectable }}
+      disabled={!selectable}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.option,
+        pressed && selectable && styles.optionPressed,
+        !selectable && styles.optionDisabled,
+      ]}
+    >
+      <Avatar
+        label={label}
+        photoUrl={profilePhotoUrl}
+        seed={avatarSeed}
+        size={40}
+      />
+      <View style={styles.optionText}>
+        <Text style={styles.optionLabel}>{label}</Text>
+        {subtitle ? (
+          <Text style={styles.optionDescription}>{subtitle}</Text>
+        ) : !selectable ? (
+          <Text style={styles.optionDescription}>No account number yet</Text>
+        ) : null}
+      </View>
+      <Ionicons name="chevron-forward" size={18} color="#86a894" />
+    </Pressable>
+  );
+}
 
 /**
  * Username / account-number search UI used by Send Search and Recipient.
@@ -38,14 +89,34 @@ export function SendSearchContent({
   results,
   isSearching,
   showEmpty,
+  onSearchFocusChange,
 }: SendSearchContentProps) {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const { sendToContact } = useSendToContact();
+  const { recents } = useRecentSendRecipients();
+  const [isFocused, setIsFocused] = useState(false);
 
   const trimmed = query.trim();
   const hasResults = results.length > 0;
   const showResults = Boolean(trimmed);
+  const showRecents = isFocused && !trimmed && recents.length > 0;
+
+  const selectRecent = (item: RecentSendRecipient) => {
+    sendToContact(
+      {
+        identityId: item.identityId,
+        evmAddress: item.evmAddress,
+        solanaAddress: item.solanaAddress,
+        username: item.username,
+        name: item.name,
+        profilePhotoUrl: item.profilePhotoUrl,
+        isFarcaster: item.isFarcaster,
+        isEns: item.isEns,
+      },
+      { tokenId, usdAmount },
+    );
+  };
 
   return (
     <View>
@@ -55,7 +126,15 @@ export function SendSearchContent({
           accessibilityLabel="Search usernames or account numbers"
           autoCapitalize="none"
           autoCorrect={false}
+          onBlur={() => {
+            setIsFocused(false);
+            onSearchFocusChange?.(false);
+          }}
           onChangeText={setQuery}
+          onFocus={() => {
+            setIsFocused(true);
+            onSearchFocusChange?.(true);
+          }}
           placeholder="Username or account number"
           placeholderTextColor="#86a894"
           returnKeyType="search"
@@ -92,6 +171,33 @@ export function SendSearchContent({
         <Text style={styles.advancedSearchText}>Advanced search</Text>
       </Pressable>
 
+      {showRecents ? (
+        <View style={styles.list}>
+          <Text style={styles.sectionTitle}>Recents</Text>
+          {recents.map((item) => {
+            const selectable = Boolean(
+              item.identityId || item.evmAddress || item.solanaAddress,
+            );
+            return (
+              <RecipientOptionRow
+                key={item.id}
+                avatarSeed={item.username ?? item.id}
+                label={item.label}
+                onPress={() => {
+                  if (!selectable) {
+                    return;
+                  }
+                  selectRecent(item);
+                }}
+                profilePhotoUrl={item.profilePhotoUrl}
+                selectable={selectable}
+                subtitle={item.subtitle}
+              />
+            );
+          })}
+        </View>
+      ) : null}
+
       {showResults ? (
         isSearching && !hasResults ? (
           <ActivityIndicator color="#166534" style={styles.loader} />
@@ -104,12 +210,10 @@ export function SendSearchContent({
                 {results.map((item) => {
                   const selectable = Boolean(item.identityId);
                   return (
-                    <Pressable
+                    <RecipientOptionRow
                       key={item.userId}
-                      accessibilityLabel={`Select ${item.label}`}
-                      accessibilityRole="button"
-                      accessibilityState={{ disabled: !selectable }}
-                      disabled={!selectable}
+                      avatarSeed={item.username ?? item.userId}
+                      label={item.label}
                       onPress={() => {
                         if (!item.identityId) {
                           return;
@@ -126,36 +230,10 @@ export function SendSearchContent({
                           { tokenId, usdAmount },
                         );
                       }}
-                      style={({ pressed }) => [
-                        styles.option,
-                        pressed && selectable && styles.optionPressed,
-                        !selectable && styles.optionDisabled,
-                      ]}
-                    >
-                      <Avatar
-                        label={item.label}
-                        photoUrl={item.profilePhotoUrl}
-                        seed={item.username ?? item.userId}
-                        size={40}
-                      />
-                      <View style={styles.optionText}>
-                        <Text style={styles.optionLabel}>{item.label}</Text>
-                        {item.subtitle ? (
-                          <Text style={styles.optionDescription}>
-                            {item.subtitle}
-                          </Text>
-                        ) : !selectable ? (
-                          <Text style={styles.optionDescription}>
-                            No account number yet
-                          </Text>
-                        ) : null}
-                      </View>
-                      <Ionicons
-                        name="chevron-forward"
-                        size={18}
-                        color="#86a894"
-                      />
-                    </Pressable>
+                      profilePhotoUrl={item.profilePhotoUrl}
+                      selectable={selectable}
+                      subtitle={item.subtitle}
+                    />
                   );
                 })}
 
@@ -217,6 +295,12 @@ const styles = StyleSheet.create({
   listEmpty: {
     paddingHorizontal: 24,
     paddingTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#166534',
+    marginBottom: 4,
   },
   option: {
     flexDirection: 'row',

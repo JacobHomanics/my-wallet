@@ -30,6 +30,7 @@ import { useSendAmountRecipientDisplay } from '@/hooks/useSendAmountRecipientDis
 import { useSendForm } from '@/hooks/useSendForm';
 import { useSendPayment } from '@/hooks/useSendPayment';
 import { useSendRecipientUsername } from '@/hooks/useSendRecipientUsername';
+import { addRecentSendRecipient } from '@/hooks/useRecentSendRecipients';
 import { useSendStatus } from '@/hooks/useSendStatus';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useSendTip } from '@/hooks/useSendTip';
@@ -178,8 +179,9 @@ export function ConfirmSendScreen() {
 
   const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
 
-  const invalidReason =
-    showInsufficientFunds
+  const invalidReason = availableBalanceLoading
+    ? null
+    : showInsufficientFunds
       ? 'Insufficient funds for this payment.'
       : allocations.length === 0 || !hasPositiveLeg
         ? 'Add at least one token with an amount in advanced details.'
@@ -217,6 +219,16 @@ export function ConfirmSendScreen() {
           })),
           { broadcastMode, useVaultUsdc: useVaultUsdcForSend },
         );
+        addRecentSendRecipient({
+          identityId: accountNumber.trim() || null,
+          evmAddress: trimmedEthereum || null,
+          solanaAddress: trimmedSolana || null,
+          username: recipientUsername,
+          name: recipientName,
+          profilePhotoUrl: recipientProfilePhotoUrl,
+          isFarcaster: recipientIsFarcaster,
+          isEns: recipientIsEns,
+        });
         resetSendDraft();
         refresh();
         navigation.navigate('sent', {
@@ -247,6 +259,7 @@ export function ConfirmSendScreen() {
     })();
   }, [
     allocations,
+    accountNumber,
     broadcastMode,
     canSend,
     clearStatus,
@@ -254,6 +267,7 @@ export function ConfirmSendScreen() {
     primaryLabel,
     recipientIsFarcaster,
     recipientIsEns,
+    recipientName,
     recipientProfilePhotoUrl,
     recipientUsername,
     refresh,

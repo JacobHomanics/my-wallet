@@ -6,6 +6,7 @@ import {
   hydrateSendDraftFromConfirmParams,
   resetSendDraft,
 } from '@/hooks/useSendDraft';
+import { addRecentSendRecipient } from '@/hooks/useRecentSendRecipients';
 import type { MainTabParamList } from '@/navigation/types';
 
 export type SendableContact = {
@@ -41,6 +42,14 @@ export function useSendToContact() {
 
   const sendToContact = useCallback(
     (contact: SendableContact, options?: SendToContactOptions) => {
+      if (
+        contact.identityId ||
+        contact.evmAddress ||
+        contact.solanaAddress
+      ) {
+        addRecentSendRecipient(contact);
+      }
+
       resetSendDraft();
 
       if (contact.identityId) {

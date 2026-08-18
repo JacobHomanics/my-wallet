@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import {
@@ -32,10 +32,11 @@ export function SendScreen() {
   const goHome = usePopToHome();
   const { sendToContact } = useSendToContact();
   const search = useContactSearch();
+  const [searchFocused, setSearchFocused] = useState(false);
 
   const tokenId = route.params?.tokenId;
   const usdAmount = route.params?.usdAmount;
-  const showContacts = !search.query.trim();
+  const showContacts = !search.query.trim() && !searchFocused;
 
   const onSelectContact = useCallback(
     (contact: ContactListItem) => {
@@ -91,6 +92,7 @@ export function SendScreen() {
               results={search.results}
               isSearching={search.isSearching}
               showEmpty={search.showEmpty}
+              onSearchFocusChange={setSearchFocused}
             />
 
             {showContacts ? (
