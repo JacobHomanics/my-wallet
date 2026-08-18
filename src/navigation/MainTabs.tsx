@@ -143,7 +143,8 @@ export function MainTabs() {
             !isDesktopWeb &&
             (focusedRoute === 'settings' ||
               focusedRoute === 'profileSettings' ||
-              focusedRoute === 'onrampSettings');
+              focusedRoute === 'onrampSettings' ||
+              focusedRoute === 'earnSettings');
 
           return {
             title: 'Profile',

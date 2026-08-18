@@ -213,7 +213,7 @@ export function SendConfigurationFields({
           <Text style={styles.broadcastHint}>
             {vaultGloballyEnabled
               ? 'When you make an eligible payment, automatically move money from your vault into your balance'
-              : 'Turn on in Settings → Earn to use your vault for eligible payments'}
+              : 'Turn on in Settings → Earn settings to use your vault for eligible payments'}
           </Text>
         </View>
         <Switch

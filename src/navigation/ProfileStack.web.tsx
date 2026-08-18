@@ -38,6 +38,10 @@ export function ProfileStack() {
         name="onrampSettings"
         component={profileStackScreens.onrampSettings}
       />
+      <WebStack.Screen
+        name="earnSettings"
+        component={profileStackScreens.earnSettings}
+      />
     </WebStack.Navigator>
   );
 }
