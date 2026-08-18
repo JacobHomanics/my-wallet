@@ -17,6 +17,7 @@ import { ConfirmLogoutModal } from '@/components/ConfirmLogoutModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { useAutoDepositSettings } from '@/hooks/useAutoDepositSettings';
+import { useVaultSendSettings } from '@/hooks/useVaultSendSettings';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
 import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
@@ -73,6 +74,12 @@ export function SettingsScreen() {
     isLoading: autoDepositLoading,
     isSaving: autoDepositSaving,
   } = useAutoDepositSettings();
+  const {
+    enabled: vaultSendEnabled,
+    setEnabled: setVaultSendEnabled,
+    isLoading: vaultSendLoading,
+    isSaving: vaultSendSaving,
+  } = useVaultSendSettings();
 
   return (
     <View style={styles.container}>
@@ -181,6 +188,28 @@ export function SettingsScreen() {
                   value={autoDepositEnabled}
                   onValueChange={(value) => {
                     void setAutoDepositEnabled(value);
+                  }}
+                />
+              </View>
+              <View style={styles.toggleRow}>
+                <View style={styles.strategyRowText}>
+                  <Text style={styles.strategyLabel}>
+                    Use vault USDC when sending
+                  </Text>
+                  <Text style={styles.strategyDescription}>
+                    When a payment needs USDC on Base, withdraw from your vault
+                    into your wallet automatically
+                  </Text>
+                </View>
+                <Switch
+                  accessibilityLabel="Use vault USDC when sending"
+                  disabled={vaultSendLoading || vaultSendSaving}
+                  trackColor={{ false: '#bbf7d0', true: '#86efac' }}
+                  thumbColor={vaultSendEnabled ? '#166534' : '#f0fdf4'}
+                  ios_backgroundColor="#bbf7d0"
+                  value={vaultSendEnabled}
+                  onValueChange={(value) => {
+                    void setVaultSendEnabled(value);
                   }}
                 />
               </View>

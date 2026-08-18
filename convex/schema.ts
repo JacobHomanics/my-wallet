@@ -19,6 +19,11 @@ export default defineSchema({
      * set explicitly to `false` to opt out.
      */
     autoDepositReceivedUsdc: v.optional(v.boolean()),
+    /**
+     * Withdraw vault USDC into the wallet before sending when payment legs
+     * need Base USDC. Opt-in — missing/`false` means off.
+     */
+    useVaultUsdcWhenSending: v.optional(v.boolean()),
   })
     .index("by_externalId", ["externalId"])
     .index("by_username", ["username"])

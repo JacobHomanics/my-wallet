@@ -320,6 +320,29 @@ export const clearProfilePhoto = mutation({
   },
 });
 
+/** Enable or disable withdrawing vault USDC to fund sends. */
+export const setUseVaultUsdcWhenSending = mutation({
+  args: {
+    externalId: v.string(),
+    enabled: v.boolean(),
+  },
+  handler: async (ctx, { externalId, enabled }) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_externalId", (q) => q.eq("externalId", externalId))
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    await ctx.db.patch(user._id, {
+      useVaultUsdcWhenSending: enabled,
+    });
+    return user._id;
+  },
+});
+
 /** Enable or disable auto-deposit of received USDC into the earn vault. */
 export const setAutoDepositReceivedUsdc = mutation({
   args: {
@@ -340,6 +363,28 @@ export const setAutoDepositReceivedUsdc = mutation({
       autoDepositReceivedUsdc: enabled,
     });
     return user._id;
+  },
+});
+
+/** Resolve whether a sender should withdraw vault USDC before sending. */
+export const getVaultSendSenderByEthereumAddress = internalQuery({
+  args: {
+    ethereumAddress: v.string(),
+  },
+  handler: async (ctx, { ethereumAddress }) => {
+    const normalized = normalizeEvmAddress(ethereumAddress);
+    const candidates = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("useVaultUsdcWhenSending"), true))
+      .collect();
+
+    for (const user of candidates) {
+      if (identityIdMatchesEvmAddress(user.identityId, normalized)) {
+        return { userId: user._id };
+      }
+    }
+
+    return null;
   },
 });
 

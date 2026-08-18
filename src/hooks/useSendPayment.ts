@@ -61,6 +61,23 @@ type PaymentLeg = SendTokenParams & {
   isTax?: boolean;
 };
 
+function toConvexSendLegs(legs: PaymentLeg[]) {
+  return legs.map((leg) => ({
+    network: leg.token.network,
+    networkLabel: leg.token.networkLabel,
+    tokenAddress: leg.token.tokenAddress,
+    tokenId: leg.token.id,
+    symbol: leg.token.symbol,
+    tokenName: leg.token.name,
+    decimals: leg.token.decimals,
+    logoUrl: leg.token.logoUrl,
+    recipient: leg.recipient,
+    amountRaw: leg.amountRaw.toString(),
+    amountFormatted: leg.amountFormatted,
+    isTax: leg.isTax === true,
+  }));
+}
+
 function orderPaymentLegs(legs: PaymentLeg[]): PaymentLeg[] {
   return [...legs].sort((a, b) => {
     const aGas = isGasToken(a.token) ? 1 : 0;
@@ -110,6 +127,7 @@ export function useSendPayment(): SendPaymentResult {
   const { ready: txReady, send, simulatePayment } = useSendTransaction();
   const { ready: walletsReady, wallets } = useUserWallets();
   const sendPaymentAction = useAction(api.send.sendPayment);
+  const prepareVaultUsdcForSend = useAction(api.send.prepareVaultUsdcForSend);
   const [sending, setSending] = useState(false);
 
   const ethereumWallet = wallets.find((wallet) => wallet.chain === 'ethereum');
@@ -132,6 +150,16 @@ export function useSendPayment(): SendPaymentResult {
 
         setSending(true);
         try {
+          const convexLegs = toConvexSendLegs(orderedLegs);
+
+          if (ethereumWallet?.address) {
+            await prepareVaultUsdcForSend({
+              ethereumWalletId: ethereumWallet.id ?? '',
+              ethereumAddress: ethereumWallet.address,
+              legs: convexLegs,
+            });
+          }
+
           await simulatePayment(
             orderedLegs.map((leg) => ({
               token: leg.token,
@@ -142,6 +170,10 @@ export function useSendPayment(): SendPaymentResult {
 
           if (broadcastMode === 'frontend') {
             const ethereumFrom = ethereumWallet?.address ?? null;
+            if (!ethereumFrom) {
+              throw new Error('No Ethereum wallet available');
+            }
+
             const results: SendPaymentLegResult[] = [];
             const lastEvmHashByNetwork = new Map<string, string>();
             const nonceAllocator = ethereumFrom
@@ -243,20 +275,7 @@ export function useSendPayment(): SendPaymentResult {
             solanaWalletId: solanaWallet?.id ?? null,
             ethereumAddress: ethereumWallet.address,
             solanaAddress: solanaWallet?.address ?? null,
-            legs: orderedLegs.map((leg) => ({
-              network: leg.token.network,
-              networkLabel: leg.token.networkLabel,
-              tokenAddress: leg.token.tokenAddress,
-              tokenId: leg.token.id,
-              symbol: leg.token.symbol,
-              tokenName: leg.token.name,
-              decimals: leg.token.decimals,
-              logoUrl: leg.token.logoUrl,
-              recipient: leg.recipient,
-              amountRaw: leg.amountRaw.toString(),
-              amountFormatted: leg.amountFormatted,
-              isTax: leg.isTax === true,
-            })),
+            legs: convexLegs,
           });
 
           return {
@@ -284,6 +303,7 @@ export function useSendPayment(): SendPaymentResult {
     [
       ethereumWallet,
       send,
+      prepareVaultUsdcForSend,
       sendPaymentAction,
       simulatePayment,
       solanaWallet,

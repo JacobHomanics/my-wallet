@@ -5,6 +5,7 @@ import type { PrivyClient } from "@privy-io/node";
 
 import { action } from "./_generated/server";
 import { isAutoDepositPaymentLeg, tryAutoDepositReceivedUsdc } from "./lib/autoDepositReceivedUsdc";
+import { tryWithdrawVaultUsdcForSend } from "./lib/withdrawVaultUsdcForSend";
 import { sendEvmBatch, sendEvmLeg } from "./lib/evmSend";
 import { getNetworkChain, isNativeTokenAddress } from "./lib/networks";
 import { getPrivyClient, getAuthorizationContext } from "./lib/privy";
@@ -220,6 +221,40 @@ async function sendEvmLegGroup(params: {
 }
 
 /**
+ * Withdraw vault USDC into the sender wallet when needed (frontend broadcast path).
+ */
+export const prepareVaultUsdcForSend = action({
+  args: {
+    ethereumWalletId: v.string(),
+    ethereumAddress: v.string(),
+    legs: v.array(sendLegValidator),
+  },
+  handler: async (ctx, args): Promise<void> => {
+    if (args.legs.length === 0) {
+      return;
+    }
+
+    const privy = getPrivyClient();
+    const authorizationContext = getAuthorizationContext();
+    const ethereumWalletId = await resolveWalletId(
+      privy,
+      args.ethereumAddress,
+      args.ethereumWalletId,
+      "ethereum",
+    );
+
+    await tryWithdrawVaultUsdcForSend({
+      ctx,
+      privy,
+      authorizationContext,
+      ethereumAddress: args.ethereumAddress,
+      ethereumWalletId,
+      legs: args.legs,
+    });
+  },
+});
+
+/**
  * Broadcast user payment legs via Privy, then send CashBox Points from treasury.
  */
 export const sendPayment = action({
@@ -265,6 +300,15 @@ export const sendPayment = action({
       const aGas = isNativeTokenAddress(a.tokenAddress) ? 1 : 0;
       const bGas = isNativeTokenAddress(b.tokenAddress) ? 1 : 0;
       return aGas - bGas;
+    });
+
+    await tryWithdrawVaultUsdcForSend({
+      ctx,
+      privy,
+      authorizationContext,
+      ethereumAddress: args.ethereumAddress,
+      ethereumWalletId,
+      legs: orderedLegs,
     });
 
     const results: SendPaymentLegResult[] = [];

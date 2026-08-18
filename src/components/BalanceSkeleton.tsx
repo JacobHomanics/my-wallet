@@ -1,17 +1,24 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { Animated, Easing, StyleSheet, View, type ViewStyle } from 'react-native';
 
 type BalanceSkeletonProps = {
   accessibilityLabel?: string;
+  width?: number;
+  height?: number;
+  style?: ViewStyle;
 };
 
-const AMOUNT_WIDTH = 168;
+const DEFAULT_AMOUNT_WIDTH = 168;
+const DEFAULT_AMOUNT_HEIGHT = 48;
 
 /**
- * Placeholder for the home-screen total balance while wallets/balances load.
+ * Placeholder for balance text while wallets/balances load.
  */
 export function BalanceSkeleton({
   accessibilityLabel = 'Loading balance',
+  width = DEFAULT_AMOUNT_WIDTH,
+  height = DEFAULT_AMOUNT_HEIGHT,
+  style,
 }: BalanceSkeletonProps) {
   const pulse = useRef(new Animated.Value(0)).current;
 
@@ -48,16 +55,21 @@ export function BalanceSkeleton({
     <View
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="progressbar"
-      style={styles.row}
+      style={[styles.row, style]}
     >
-      <Animated.View style={[styles.amount, { opacity: amountOpacity }]} />
+      <Animated.View
+        style={[
+          styles.amount,
+          { width, height, opacity: amountOpacity },
+        ]}
+      />
     </View>
   );
 }
 
 export const balanceSkeletonLayout = {
-  width: AMOUNT_WIDTH,
-  height: 48,
+  width: DEFAULT_AMOUNT_WIDTH,
+  height: DEFAULT_AMOUNT_HEIGHT,
 } as const;
 
 const styles = StyleSheet.create({
@@ -67,8 +79,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   amount: {
-    width: AMOUNT_WIDTH,
-    height: 48,
     borderRadius: 6,
     backgroundColor: '#166534',
   },
