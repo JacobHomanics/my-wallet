@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -19,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/Avatar';
 import { BalanceSkeleton } from '@/components/BalanceSkeleton';
 import { BackButton } from '@/components/BackButton';
-import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
+import { SendConfigurationCollapsible } from '@/components/SendConfigurationCollapsible';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
@@ -36,7 +35,6 @@ import {
 import { useSendForm } from '@/hooks/useSendForm';
 import { useSendRecipientUsername } from '@/hooks/useSendRecipientUsername';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
-import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useSendSpendableTokens } from '@/hooks/useSendSpendableTokens';
 import { useVaultUsdcFundingSplits } from '@/hooks/useVaultUsdcFundingSplits';
 import { getNetworkChain } from '@/lib/alchemy/networks';
@@ -63,7 +61,6 @@ export function SendAmountScreen() {
     availableLabel,
     availableBalanceLoading,
   } = useSendSpendableTokens();
-  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const { allocationInputUnit, setAllocationInputUnit, broadcastMode, setBroadcastMode } =
     useSendDraftUi();
   const { accountNumber, recipientName, recipientProfilePhotoUrl, recipientIsFarcaster, recipientIsEns } =
@@ -339,49 +336,26 @@ export function SendAmountScreen() {
                   </Text>
                 </View>
 
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityState={{ expanded: showAdvanced }}
-                  onPress={toggleAdvanced}
-                  style={({ pressed }) => [
-                    styles.advancedToggle,
-                    pressed && styles.advancedTogglePressed,
-                  ]}
-                >
-                  <Text style={styles.advancedToggleText}>
-                    {showAdvanced
-                      ? 'Hide advanced details'
-                      : 'Show advanced details'}
-                  </Text>
-                  <Ionicons
-                    name={showAdvanced ? 'chevron-up' : 'chevron-down'}
-                    size={16}
-                    color="#5a7d6a"
-                  />
-                </Pressable>
-
-                {showAdvanced ? (
-                  <SendAdvancedDetails
-                    allocationInputUnit={allocationInputUnit}
-                    allocationInputs={allocationInputs}
-                    allocations={allocations}
-                    broadcastMode={broadcastMode}
-                    canAddToken={canAddToken}
-                    gasFunding={gasFunding}
-                    onAddToken={() => {
-                      setTokenPickerOpen(true);
-                    }}
-                    onAllocationAmountChange={setAllocationAmount}
-                    onAllocationInputUnitChange={setAllocationInputUnit}
-                    onBroadcastModeChange={setBroadcastMode}
-                    onOpenStrategyPicker={openStrategyPicker}
-                    onRemoveAllocation={removeAllocation}
-                    selectedStrategy={selectedStrategy}
-                    spendableTokens={spendableTokens}
-                    taxFunding={taxFunding}
-                    vaultUsdcFundingSplits={vaultUsdcFundingSplits}
-                  />
-                ) : null}
+                <SendConfigurationCollapsible
+                  allocationInputUnit={allocationInputUnit}
+                  allocationInputs={allocationInputs}
+                  allocations={allocations}
+                  broadcastMode={broadcastMode}
+                  canAddToken={canAddToken}
+                  gasFunding={gasFunding}
+                  onAddToken={() => {
+                    setTokenPickerOpen(true);
+                  }}
+                  onAllocationAmountChange={setAllocationAmount}
+                  onAllocationInputUnitChange={setAllocationInputUnit}
+                  onBroadcastModeChange={setBroadcastMode}
+                  onOpenStrategyPicker={openStrategyPicker}
+                  onRemoveAllocation={removeAllocation}
+                  selectedStrategy={selectedStrategy}
+                  spendableTokens={spendableTokens}
+                  taxFunding={taxFunding}
+                  vaultUsdcFundingSplits={vaultUsdcFundingSplits}
+                />
 
                 <Pressable
                   accessibilityRole="button"
@@ -607,21 +581,7 @@ const styles = StyleSheet.create({
     color: '#14532d',
     fontVariant: ['tabular-nums'],
   },
-  advancedToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-  },
-  advancedTogglePressed: {
-    opacity: 0.65,
-  },
-  advancedToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    marginRight: 4,
-  },
+
   continueButton: {
     marginTop: 32,
     alignItems: 'center',

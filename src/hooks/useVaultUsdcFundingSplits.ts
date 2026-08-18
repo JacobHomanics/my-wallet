@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 
 import { usePrivyEarn } from '@/hooks/usePrivyEarn';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
-import { useVaultSendSettings } from '@/hooks/useVaultSendSettings';
+import { useSendVaultUsdc } from '@/hooks/useSendVaultUsdc';
 import type { TaxFundingPick } from '@/lib/send/buildPaymentLegsWithTax';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
 import {
@@ -20,7 +20,7 @@ export function useVaultUsdcFundingSplits(
   taxFunding: TaxFundingPick | null | undefined,
 ): Map<string, VaultUsdcFundingSplit> {
   const { tokens } = useTokenBalances();
-  const { enabled: vaultSendEnabled } = useVaultSendSettings();
+  const { enabled: vaultSendEnabled } = useSendVaultUsdc();
   const { vault } = usePrivyEarn();
 
   return useMemo(() => {

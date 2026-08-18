@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -16,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
-import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
+import { SendConfigurationCollapsible } from '@/components/SendConfigurationCollapsible';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
@@ -34,8 +33,8 @@ import { useSendRecipientUsername } from '@/hooks/useSendRecipientUsername';
 import { useSendStatus } from '@/hooks/useSendStatus';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useSendTip } from '@/hooks/useSendTip';
-import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useSendSpendableTokens } from '@/hooks/useSendSpendableTokens';
+import { useSendVaultUsdc } from '@/hooks/useSendVaultUsdc';
 import { useVaultUsdcFundingSplits } from '@/hooks/useVaultUsdcFundingSplits';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { buildPaymentLegsWithTax } from '@/lib/send/buildPaymentLegsWithTax';
@@ -61,7 +60,6 @@ export function ConfirmSendScreen() {
   } = sendSpendable;
   const { sendPayment, sending } = useSendPayment();
   const { error, clearStatus, setError } = useSendStatus();
-  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const {
     accountNumber,
     recipientName,
@@ -78,6 +76,7 @@ export function ConfirmSendScreen() {
   } = useAppTax();
   const { allocationInputUnit, setAllocationInputUnit, broadcastMode, setBroadcastMode } =
     useSendDraftUi();
+  const { enabled: useVaultUsdcForSend } = useSendVaultUsdc();
   const {
     strategies,
     selectedStrategy,
@@ -211,7 +210,7 @@ export function ConfirmSendScreen() {
             amountFormatted: leg.amountFormatted,
             isTax: leg.isTax,
           })),
-          { broadcastMode },
+          { broadcastMode, useVaultUsdc: useVaultUsdcForSend },
         );
         resetSendDraft();
         refresh();
@@ -263,6 +262,7 @@ export function ConfirmSendScreen() {
     totalLabel,
     trimmedEthereum,
     trimmedSolana,
+    useVaultUsdcForSend,
   ]);
 
   const onCancelPress = useCallback(() => {
@@ -419,49 +419,26 @@ export function ConfirmSendScreen() {
 
             <Text style={styles.heroUsd}>{totalLabel}</Text>
 
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ expanded: showAdvanced }}
-              onPress={toggleAdvanced}
-              style={({ pressed }) => [
-                styles.advancedToggle,
-                pressed && styles.advancedTogglePressed,
-              ]}
-            >
-              <Text style={styles.advancedToggleText}>
-                {showAdvanced
-                  ? 'Hide advanced details'
-                  : 'Show advanced details'}
-              </Text>
-              <Ionicons
-                name={showAdvanced ? 'chevron-up' : 'chevron-down'}
-                size={16}
-                color="#5a7d6a"
-              />
-            </Pressable>
-
-            {showAdvanced ? (
-              <SendAdvancedDetails
-                allocationInputUnit={allocationInputUnit}
-                allocationInputs={allocationInputs}
-                allocations={allocations}
-                broadcastMode={broadcastMode}
-                canAddToken={canAddToken}
-                gasFunding={gasFunding}
-                onAddToken={() => {
-                  setTokenPickerOpen(true);
-                }}
-                onAllocationAmountChange={setAllocationAmount}
-                onAllocationInputUnitChange={setAllocationInputUnit}
-                onBroadcastModeChange={setBroadcastMode}
-                onOpenStrategyPicker={openStrategyPicker}
-                onRemoveAllocation={removeAllocation}
-                selectedStrategy={selectedStrategy}
-                spendableTokens={spendableTokens}
-                taxFunding={taxFunding}
-                vaultUsdcFundingSplits={vaultUsdcFundingSplits}
-              />
-            ) : null}
+            <SendConfigurationCollapsible
+              allocationInputUnit={allocationInputUnit}
+              allocationInputs={allocationInputs}
+              allocations={allocations}
+              broadcastMode={broadcastMode}
+              canAddToken={canAddToken}
+              gasFunding={gasFunding}
+              onAddToken={() => {
+                setTokenPickerOpen(true);
+              }}
+              onAllocationAmountChange={setAllocationAmount}
+              onAllocationInputUnitChange={setAllocationInputUnit}
+              onBroadcastModeChange={setBroadcastMode}
+              onOpenStrategyPicker={openStrategyPicker}
+              onRemoveAllocation={removeAllocation}
+              selectedStrategy={selectedStrategy}
+              spendableTokens={spendableTokens}
+              taxFunding={taxFunding}
+              vaultUsdcFundingSplits={vaultUsdcFundingSplits}
+            />
 
             {invalidReason ? (
               <Text style={styles.error}>{invalidReason}</Text>
@@ -732,22 +709,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#166534',
     fontVariant: ['tabular-nums'],
-  },
-  advancedToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    alignSelf: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
-  advancedTogglePressed: {
-    opacity: 0.65,
-  },
-  advancedToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#5a7d6a',
   },
   error: {
     marginTop: 16,

@@ -31,7 +31,12 @@ export async function tryWithdrawVaultUsdcForSend(params: {
   ethereumAddress: string;
   ethereumWalletId: string;
   legs: readonly VaultUsdcLeg[];
+  useVaultUsdc: boolean;
 }): Promise<void> {
+  if (!params.useVaultUsdc) {
+    return;
+  }
+
   const sender = await params.ctx.runQuery(
     internal.users.getVaultSendSenderByEthereumAddress,
     { ethereumAddress: params.ethereumAddress },
@@ -86,7 +91,7 @@ export async function tryWithdrawVaultUsdcForSend(params: {
   } catch (error) {
     console.error("[vault-send] vault position failed", { error });
     throw new Error(
-      "Could not read your vault balance. Try again or turn off “Use vault USDC when sending”.",
+      "Could not read your vault balance. Try again or turn off “Use vault balance when sending”.",
     );
   }
 

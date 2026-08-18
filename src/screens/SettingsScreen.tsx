@@ -194,7 +194,7 @@ export function SettingsScreen() {
               <View style={styles.toggleRow}>
                 <View style={styles.strategyRowText}>
                   <Text style={styles.strategyLabel}>
-                    Use vault USDC when sending
+                    Use vault balance when sending
                   </Text>
                   <Text style={styles.strategyDescription}>
                     When a payment needs USDC on Base, withdraw from your vault
@@ -202,7 +202,7 @@ export function SettingsScreen() {
                   </Text>
                 </View>
                 <Switch
-                  accessibilityLabel="Use vault USDC when sending"
+                  accessibilityLabel="Use vault balance when sending"
                   disabled={vaultSendLoading || vaultSendSaving}
                   trackColor={{ false: '#bbf7d0', true: '#86efac' }}
                   thumbColor={vaultSendEnabled ? '#166534' : '#f0fdf4'}

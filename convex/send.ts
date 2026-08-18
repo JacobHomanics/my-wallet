@@ -228,6 +228,7 @@ export const prepareVaultUsdcForSend = action({
     ethereumWalletId: v.string(),
     ethereumAddress: v.string(),
     legs: v.array(sendLegValidator),
+    useVaultUsdc: v.boolean(),
   },
   handler: async (ctx, args): Promise<void> => {
     if (args.legs.length === 0) {
@@ -250,6 +251,7 @@ export const prepareVaultUsdcForSend = action({
       ethereumAddress: args.ethereumAddress,
       ethereumWalletId,
       legs: args.legs,
+      useVaultUsdc: args.useVaultUsdc,
     });
   },
 });
@@ -264,6 +266,7 @@ export const sendPayment = action({
     ethereumAddress: v.string(),
     solanaAddress: v.union(v.string(), v.null()),
     legs: v.array(sendLegValidator),
+    useVaultUsdc: v.boolean(),
   },
   handler: async (ctx, args): Promise<SendPaymentResult> => {
     if (args.legs.length === 0) {
@@ -309,6 +312,7 @@ export const sendPayment = action({
       ethereumAddress: args.ethereumAddress,
       ethereumWalletId,
       legs: orderedLegs,
+      useVaultUsdc: args.useVaultUsdc,
     });
 
     const results: SendPaymentLegResult[] = [];

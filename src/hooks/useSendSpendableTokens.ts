@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { usePrivyEarn } from '@/hooks/usePrivyEarn';
 import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
-import { useVaultSendSettings } from '@/hooks/useVaultSendSettings';
+import { useSendVaultUsdc } from '@/hooks/useSendVaultUsdc';
 import { mergeVaultUsdcIntoTokens } from '@/lib/privy/mergeVaultUsdcIntoTokens';
 
 /**
@@ -13,7 +13,7 @@ import { mergeVaultUsdcIntoTokens } from '@/lib/privy/mergeVaultUsdcIntoTokens';
 export function useSendSpendableTokens() {
   const { tokens, loading, ready, refresh, ethereumAddress, solanaAddress } =
     useTokenBalances();
-  const { enabled: vaultSendEnabled } = useVaultSendSettings();
+  const { enabled: vaultSendEnabled } = useSendVaultUsdc();
   const { vault, position, loading: earnLoading } = usePrivyEarn();
 
   const tokensForSend = useMemo(() => {

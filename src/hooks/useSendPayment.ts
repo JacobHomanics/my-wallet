@@ -42,6 +42,7 @@ export type SendPaymentOutcome = {
 
 export type SendPaymentOptions = {
   broadcastMode?: SendBroadcastMode;
+  useVaultUsdc?: boolean;
 };
 
 export type SendPaymentResult = {
@@ -146,6 +147,7 @@ export function useSendPayment(): SendPaymentResult {
 
       return runExclusiveSend(async () => {
         const broadcastMode = options?.broadcastMode ?? 'backend';
+        const useVaultUsdc = options?.useVaultUsdc ?? true;
         const orderedLegs = orderPaymentLegs(legs);
 
         setSending(true);
@@ -157,6 +159,7 @@ export function useSendPayment(): SendPaymentResult {
               ethereumWalletId: ethereumWallet.id ?? '',
               ethereumAddress: ethereumWallet.address,
               legs: convexLegs,
+              useVaultUsdc,
             });
           }
 
@@ -276,6 +279,7 @@ export function useSendPayment(): SendPaymentResult {
             ethereumAddress: ethereumWallet.address,
             solanaAddress: solanaWallet?.address ?? null,
             legs: convexLegs,
+            useVaultUsdc,
           });
 
           return {

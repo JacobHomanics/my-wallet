@@ -47,6 +47,11 @@ export type SendDraft = {
    * wallets (no rewards).
    */
   broadcastMode: SendBroadcastMode;
+  /**
+   * When true for this send, include vault USDC in available balance and
+   * withdraw from the vault before broadcasting.
+   */
+  useVaultUsdc: boolean;
 };
 
 type DraftListener = () => void;
@@ -68,6 +73,7 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   allocationInputUnit: 'token',
   strategyId: null,
   broadcastMode: 'backend',
+  useVaultUsdc: true,
 };
 
 let sendDraft: SendDraft = { ...DEFAULT_SEND_DRAFT };
@@ -201,10 +207,16 @@ export function useSendDraftUi() {
     updateSendDraft({ broadcastMode });
   }, []);
 
+  const setUseVaultUsdc = useCallback((useVaultUsdc: boolean) => {
+    updateSendDraft({ useVaultUsdc });
+  }, []);
+
   return {
     allocationInputUnit: draft.allocationInputUnit,
     setAllocationInputUnit,
     broadcastMode: draft.broadcastMode,
     setBroadcastMode,
+    useVaultUsdc: draft.useVaultUsdc,
+    setUseVaultUsdc,
   };
 }

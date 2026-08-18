@@ -13,6 +13,7 @@ import { FrontendSendRewardsWarningModal } from '@/components/FrontendSendReward
 import { TokenIcon } from '@/components/TokenIcon';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
+import { useSendVaultUsdc } from '@/hooks/useSendVaultUsdc';
 import {
   formatRawTokenBalance,
   isUnpricedToken,
@@ -31,13 +32,16 @@ import {
 import type { PaymentStrategy } from '@/lib/strategies';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
 
-type SendAdvancedDetailsProps = {
+export type SendConfigurationFieldsProps = {
+  broadcastMode: SendBroadcastMode;
+  onBroadcastModeChange: (mode: SendBroadcastMode) => void;
+};
+
+export type SendTokenAllocationsProps = {
   selectedStrategy: PaymentStrategy;
   onOpenStrategyPicker: () => void;
   allocationInputUnit: AllocationInputUnit;
   onAllocationInputUnitChange: (unit: AllocationInputUnit) => void;
-  broadcastMode: SendBroadcastMode;
-  onBroadcastModeChange: (mode: SendBroadcastMode) => void;
   allocations: PaymentAllocation[];
   /** Fee-reserved balances — used for the Available line on each leg. */
   spendableTokens: OwnedToken[];
@@ -53,6 +57,9 @@ type SendAdvancedDetailsProps = {
   canAddToken: boolean;
   onAddToken: () => void;
 };
+
+export type SendAdvancedDetailsProps = SendConfigurationFieldsProps &
+  SendTokenAllocationsProps;
 
 function merchantAvailableToken(
   spendable: OwnedToken,
@@ -162,38 +169,17 @@ function ReservedAllocationRow({
   );
 }
 
-export function SendAdvancedDetails({
-  selectedStrategy,
-  onOpenStrategyPicker,
-  allocationInputUnit,
-  onAllocationInputUnitChange,
+export function SendConfigurationFields({
   broadcastMode,
   onBroadcastModeChange,
-  allocations,
-  spendableTokens,
-  taxFunding = null,
-  gasFunding = [],
-  vaultUsdcFundingSplits,
-  allocationInputs,
-  onAllocationAmountChange,
-  onRemoveAllocation,
-  canAddToken,
-  onAddToken,
-}: SendAdvancedDetailsProps) {
-  const {
-    formatFromUsd,
-    formatAmountInputFromUsd,
-    currencyCode,
-    currencySymbol,
-    rate,
-    defaultFormattedZero,
-  } = useFiatDisplay();
+}: SendConfigurationFieldsProps) {
   const [frontendWarningOpen, setFrontendWarningOpen] = useState(false);
-
-  const spendableById = new Map(
-    spendableTokens.map((token) => [token.id, token]),
-  );
-
+  const {
+    globallyEnabled: vaultGloballyEnabled,
+    perSendEnabled: useVaultUsdc,
+    setPerSendEnabled: setUseVaultUsdc,
+    globalLoading: vaultSettingsLoading,
+  } = useSendVaultUsdc();
   const frontendSendEnabled = broadcastMode === 'frontend';
 
   const onFrontendSendChange = useCallback(
@@ -220,22 +206,26 @@ export function SendAdvancedDetails({
   }, [onBroadcastModeChange]);
 
   return (
-    <View style={styles.advanced}>
-      <Pressable
-        accessibilityLabel={`Payment strategy ${selectedStrategy.label}`}
-        accessibilityRole="button"
-        onPress={onOpenStrategyPicker}
-        style={({ pressed }) => [
-          styles.strategyRow,
-          pressed && styles.strategyRowPressed,
-        ]}
-      >
-        <Text style={styles.strategyRowLabel}>Strategy</Text>
-        <Text style={styles.strategyRowValue} numberOfLines={1}>
-          {selectedStrategy.label}
-        </Text>
-        <Ionicons name="chevron-down" size={18} color="#86a894" />
-      </Pressable>
+    <>
+      <View style={styles.broadcastRow}>
+        <View style={styles.broadcastText}>
+          <Text style={styles.broadcastLabel}>Use vault balance</Text>
+          <Text style={styles.broadcastHint}>
+            {vaultGloballyEnabled
+              ? 'Withdraw from your vault into your wallet for this payment'
+              : 'Enable in Settings → Earn to use vault balance when sending'}
+          </Text>
+        </View>
+        <Switch
+          accessibilityLabel="Use vault balance for this payment"
+          disabled={!vaultGloballyEnabled || vaultSettingsLoading}
+          trackColor={{ false: '#bbf7d0', true: '#86efac' }}
+          thumbColor={useVaultUsdc && vaultGloballyEnabled ? '#166534' : '#f0fdf4'}
+          ios_backgroundColor="#bbf7d0"
+          value={vaultGloballyEnabled && useVaultUsdc}
+          onValueChange={setUseVaultUsdc}
+        />
+      </View>
 
       <View style={styles.advancedDivider} />
 
@@ -255,6 +245,62 @@ export function SendAdvancedDetails({
           onValueChange={onFrontendSendChange}
         />
       </View>
+
+      <FrontendSendRewardsWarningModal
+        visible={frontendWarningOpen}
+        onCancel={onCancelFrontendWarning}
+        onConfirm={onConfirmFrontendWarning}
+      />
+    </>
+  );
+}
+
+export function SendTokenAllocations({
+  selectedStrategy,
+  onOpenStrategyPicker,
+  allocationInputUnit,
+  onAllocationInputUnitChange,
+  allocations,
+  spendableTokens,
+  taxFunding = null,
+  gasFunding = [],
+  vaultUsdcFundingSplits,
+  allocationInputs,
+  onAllocationAmountChange,
+  onRemoveAllocation,
+  canAddToken,
+  onAddToken,
+}: SendTokenAllocationsProps) {
+  const {
+    formatFromUsd,
+    formatAmountInputFromUsd,
+    currencyCode,
+    currencySymbol,
+    rate,
+    defaultFormattedZero,
+  } = useFiatDisplay();
+
+  const spendableById = new Map(
+    spendableTokens.map((token) => [token.id, token]),
+  );
+
+  return (
+    <>
+      <Pressable
+        accessibilityLabel={`Payment strategy ${selectedStrategy.label}`}
+        accessibilityRole="button"
+        onPress={onOpenStrategyPicker}
+        style={({ pressed }) => [
+          styles.strategyRow,
+          pressed && styles.strategyRowPressed,
+        ]}
+      >
+        <Text style={styles.strategyRowLabel}>Strategy</Text>
+        <Text style={styles.strategyRowValue} numberOfLines={1}>
+          {selectedStrategy.label}
+        </Text>
+        <Ionicons name="chevron-down" size={18} color="#86a894" />
+      </Pressable>
 
       <View style={styles.advancedDivider} />
 
@@ -313,12 +359,6 @@ export function SendAdvancedDetails({
           </Pressable>
         </View>
       </View>
-
-      <FrontendSendRewardsWarningModal
-        visible={frontendWarningOpen}
-        onCancel={onCancelFrontendWarning}
-        onConfirm={onConfirmFrontendWarning}
-      />
 
       {allocations.length === 0 ? (
         <Text style={styles.allocationEmpty}>
@@ -494,6 +534,35 @@ export function SendAdvancedDetails({
           <Text style={styles.addTokenButtonText}>Add token</Text>
         </Pressable>
       ) : null}
+    </>
+  );
+}
+
+/** Broadcast mode and token allocation legs. */
+export function SendAdvancedDetails(props: SendAdvancedDetailsProps) {
+  return (
+    <View style={styles.advanced}>
+      <SendConfigurationFields
+        broadcastMode={props.broadcastMode}
+        onBroadcastModeChange={props.onBroadcastModeChange}
+      />
+      <View style={styles.advancedDivider} />
+      <SendTokenAllocations
+        allocationInputUnit={props.allocationInputUnit}
+        allocationInputs={props.allocationInputs}
+        allocations={props.allocations}
+        canAddToken={props.canAddToken}
+        gasFunding={props.gasFunding}
+        onAddToken={props.onAddToken}
+        onAllocationAmountChange={props.onAllocationAmountChange}
+        onAllocationInputUnitChange={props.onAllocationInputUnitChange}
+        onOpenStrategyPicker={props.onOpenStrategyPicker}
+        onRemoveAllocation={props.onRemoveAllocation}
+        selectedStrategy={props.selectedStrategy}
+        spendableTokens={props.spendableTokens}
+        taxFunding={props.taxFunding}
+        vaultUsdcFundingSplits={props.vaultUsdcFundingSplits}
+      />
     </View>
   );
 }
