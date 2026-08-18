@@ -36,6 +36,7 @@ import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useSendTip } from '@/hooks/useSendTip';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useSendSpendableTokens } from '@/hooks/useSendSpendableTokens';
+import { useVaultUsdcFundingSplits } from '@/hooks/useVaultUsdcFundingSplits';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { buildPaymentLegsWithTax } from '@/lib/send/buildPaymentLegsWithTax';
 import { formatSendError } from '@/lib/send/formatSendError';
@@ -126,6 +127,10 @@ export function ConfirmSendScreen() {
   } = form;
 
   const gasFunding = useGasFunding(tokens, spendableTokens, allocations, taxFunding);
+  const vaultUsdcFundingSplits = useVaultUsdcFundingSplits(
+    allocations,
+    taxFunding,
+  );
 
   const trimmedEthereum = resolvedEthereumRecipient;
   const trimmedSolana = resolvedSolanaRecipient;
@@ -454,6 +459,7 @@ export function ConfirmSendScreen() {
                 selectedStrategy={selectedStrategy}
                 spendableTokens={spendableTokens}
                 taxFunding={taxFunding}
+                vaultUsdcFundingSplits={vaultUsdcFundingSplits}
               />
             ) : null}
 

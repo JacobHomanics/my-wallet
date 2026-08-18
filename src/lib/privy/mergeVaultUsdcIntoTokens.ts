@@ -2,31 +2,7 @@ import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkLabel } from '@/lib/alchemy/networks';
 import type { EarnVaultDetails } from '@/lib/privy/earn';
 import { formatEarnRawAmount } from '@/lib/privy/earn';
-
-function getNetworkFromCaip2(caip2: string): string | null {
-  const match = /^eip155:(\d+)$/.exec(caip2.trim());
-  if (!match) {
-    return null;
-  }
-
-  const chainId = Number(match[1]);
-  const networks: Record<string, number> = {
-    'eth-mainnet': 1,
-    'base-mainnet': 8453,
-    'arb-mainnet': 42161,
-    'opt-mainnet': 10,
-    'polygon-mainnet': 137,
-    'avax-mainnet': 43114,
-  };
-
-  for (const [network, id] of Object.entries(networks)) {
-    if (id === chainId) {
-      return network;
-    }
-  }
-
-  return null;
-}
+import { getNetworkFromCaip2 } from '@/lib/privy/vaultUsdc';
 
 function mergeTokenBalance(
   token: OwnedToken,

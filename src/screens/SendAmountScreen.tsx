@@ -38,6 +38,7 @@ import { useSendRecipientUsername } from '@/hooks/useSendRecipientUsername';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useSendSpendableTokens } from '@/hooks/useSendSpendableTokens';
+import { useVaultUsdcFundingSplits } from '@/hooks/useVaultUsdcFundingSplits';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { isUnpricedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
@@ -120,6 +121,10 @@ export function SendAmountScreen() {
   } = form;
 
   const gasFunding = useGasFunding(tokens, spendableTokens, allocations, taxFunding);
+  const vaultUsdcFundingSplits = useVaultUsdcFundingSplits(
+    allocations,
+    taxFunding,
+  );
 
   const {
     hasRecipient,
@@ -374,6 +379,7 @@ export function SendAmountScreen() {
                     selectedStrategy={selectedStrategy}
                     spendableTokens={spendableTokens}
                     taxFunding={taxFunding}
+                    vaultUsdcFundingSplits={vaultUsdcFundingSplits}
                   />
                 ) : null}
 

@@ -23,6 +23,11 @@ import type { SendBroadcastMode } from '@/lib/send/broadcastMode';
 import type { TaxFundingPick } from '@/lib/send/buildPaymentLegsWithTax';
 import type { GasFundingPick } from '@/lib/send/gasReserves';
 import { REWARD_POINTS_LABEL } from '@/lib/rewardToken';
+import {
+  formatVaultUsdcFundingSplit,
+  getVaultUsdcTaxFundingKey,
+  type VaultUsdcFundingSplit,
+} from '@/lib/privy/vaultUsdc';
 import type { PaymentStrategy } from '@/lib/strategies';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
 
@@ -40,6 +45,8 @@ type SendAdvancedDetailsProps = {
   taxFunding?: TaxFundingPick | null;
   /** Native gas reserved on gas tokens for network fees. */
   gasFunding?: GasFundingPick[];
+  /** Vault vs wallet USDC split per allocation / tax leg. */
+  vaultUsdcFundingSplits?: ReadonlyMap<string, VaultUsdcFundingSplit>;
   allocationInputs: Record<string, string>;
   onAllocationAmountChange: (tokenId: string, value: string) => void;
   onRemoveAllocation: (tokenId: string) => void;
@@ -93,6 +100,7 @@ type ReservedAllocationRowProps = {
   formatAmountInputFromUsd: (usd: number) => string;
   formatFromUsd: (usd: number | null) => string | null;
   currencySymbol: string;
+  vaultFundingSplit?: VaultUsdcFundingSplit;
 };
 
 function ReservedAllocationRow({
@@ -104,6 +112,7 @@ function ReservedAllocationRow({
   formatAmountInputFromUsd,
   formatFromUsd,
   currencySymbol,
+  vaultFundingSplit,
 }: ReservedAllocationRowProps) {
   return (
     <View style={[styles.allocationRow, styles.taxAllocationRow]}>
@@ -124,6 +133,11 @@ function ReservedAllocationRow({
           <Text style={styles.allocationMeta} numberOfLines={1}>
             {token.networkLabel}
           </Text>
+          {vaultFundingSplit != null ? (
+            <Text style={styles.fundingSplit} numberOfLines={2}>
+              {formatVaultUsdcFundingSplit(vaultFundingSplit, token)}
+            </Text>
+          ) : null}
         </View>
       </View>
       <View style={styles.allocationControls}>
@@ -159,6 +173,7 @@ export function SendAdvancedDetails({
   spendableTokens,
   taxFunding = null,
   gasFunding = [],
+  vaultUsdcFundingSplits,
   allocationInputs,
   onAllocationAmountChange,
   onRemoveAllocation,
@@ -374,6 +389,14 @@ export function SendAdvancedDetails({
                   <Text style={styles.allocationMeta} numberOfLines={1}>
                     {spendable.networkLabel}
                   </Text>
+                  {vaultUsdcFundingSplits?.get(leg.token.id) != null ? (
+                    <Text style={styles.fundingSplit} numberOfLines={2}>
+                      {formatVaultUsdcFundingSplit(
+                        vaultUsdcFundingSplits.get(leg.token.id)!,
+                        spendable,
+                      )}
+                    </Text>
+                  ) : null}
                 </View>
               </View>
               <View style={styles.allocationControls}>
@@ -451,6 +474,9 @@ export function SendAdvancedDetails({
           formatFromUsd={formatFromUsd}
           token={taxFunding.token}
           usd={taxFunding.usd}
+          vaultFundingSplit={vaultUsdcFundingSplits?.get(
+            getVaultUsdcTaxFundingKey(taxFunding.token.id),
+          )}
         />
       ) : null}
 
@@ -625,6 +651,13 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontSize: 12,
     color: '#86a894',
+  },
+  fundingSplit: {
+    marginTop: 4,
+    fontSize: 12,
+    lineHeight: 16,
+    color: '#5a7d6a',
+    fontVariant: ['tabular-nums'],
   },
   allocationBalance: {
     flexShrink: 1,
