@@ -5,7 +5,10 @@ import { getEvmNativeCurrency } from '@/lib/send/rpc';
 import { simulateEvmTransfer } from '@/lib/send/simulateEvmTransfer';
 import { simulateSolanaTransfer } from '@/lib/send/simulateSolanaTransfer';
 import { fetchSolBalanceLamports } from '@/lib/send/solanaFees';
-import { isGasToken } from '@/lib/strategies/gasTokens';
+import {
+  networkSupportsStablecoinGas,
+  shouldDeferLegForGasPayment,
+} from '@/lib/strategies/gasTokens';
 
 export type SimulatePaymentLegsParams = {
   legs: readonly SendTokenParams[];
@@ -26,8 +29,8 @@ export async function simulatePaymentLegs(
   }
 
   const orderedLegs = [...params.legs].sort((a, b) => {
-    const aGas = isGasToken(a.token) ? 1 : 0;
-    const bGas = isGasToken(b.token) ? 1 : 0;
+    const aGas = shouldDeferLegForGasPayment(a.token) ? 1 : 0;
+    const bGas = shouldDeferLegForGasPayment(b.token) ? 1 : 0;
     return aGas - bGas;
   });
 
@@ -61,7 +64,13 @@ export async function simulatePaymentLegs(
 
         nativeRemaining.set(
           leg.token.network,
-          subtractDebit(balance, result.nativeDebitWei, leg.token.network, 'evm'),
+          subtractDebit(
+            balance,
+            result.nativeDebitWei,
+            leg.token.network,
+            'evm',
+            networkSupportsStablecoinGas(leg.token.network),
+          ),
         );
       } else {
         if (!params.solanaFrom) {
@@ -120,8 +129,15 @@ function subtractDebit(
   debit: bigint,
   network: string,
   chain: 'evm' | 'solana',
+  skipInsufficientNativeCheck = false,
 ): bigint {
+  if (debit <= 0n) {
+    return balance;
+  }
   if (balance < debit) {
+    if (skipInsufficientNativeCheck) {
+      return balance;
+    }
     throw new Error(
       chain === 'evm'
         ? `Not enough ${getEvmNativeCurrency(network).symbol} left on this network to cover fees for the remaining transfers.`

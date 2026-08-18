@@ -7,7 +7,8 @@ import { action } from "./_generated/server";
 import { isAutoDepositPaymentLeg, tryAutoDepositReceivedUsdc } from "./lib/autoDepositReceivedUsdc";
 import { tryWithdrawVaultUsdcForSend } from "./lib/withdrawVaultUsdcForSend";
 import { sendEvmBatch, sendEvmLeg } from "./lib/evmSend";
-import { getNetworkChain, isNativeTokenAddress } from "./lib/networks";
+import { shouldDeferLegForGasPayment } from "./lib/gasTokens";
+import { getNetworkChain } from "./lib/networks";
 import { getPrivyClient, getAuthorizationContext } from "./lib/privy";
 import { sendSolanaLeg } from "./lib/solanaSend";
 import { sendTreasuryReward } from "./lib/treasuryReward";
@@ -300,8 +301,8 @@ export const sendPayment = action({
     }
 
     const orderedLegs = [...args.legs].sort((a, b) => {
-      const aGas = isNativeTokenAddress(a.tokenAddress) ? 1 : 0;
-      const bGas = isNativeTokenAddress(b.tokenAddress) ? 1 : 0;
+      const aGas = shouldDeferLegForGasPayment(a.network, a.tokenAddress) ? 1 : 0;
+      const bGas = shouldDeferLegForGasPayment(b.network, b.tokenAddress) ? 1 : 0;
       return aGas - bGas;
     });
 

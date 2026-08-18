@@ -16,7 +16,7 @@ import { retrySendOperation } from '@/lib/send/retrySendOperation';
 import { runExclusiveSend } from '@/lib/send/runExclusiveSend';
 import { waitForEvmReceipt } from '@/lib/send/waitForEvmReceipt';
 import { waitForEvmSendSlot } from '@/lib/send/waitForEvmSendSlot';
-import { isGasToken } from '@/lib/strategies/gasTokens';
+import { shouldDeferLegForGasPayment } from '@/lib/strategies/gasTokens';
 
 export type SendPaymentLegResult = {
   hash: string;
@@ -81,8 +81,8 @@ function toConvexSendLegs(legs: PaymentLeg[]) {
 
 function orderPaymentLegs(legs: PaymentLeg[]): PaymentLeg[] {
   return [...legs].sort((a, b) => {
-    const aGas = isGasToken(a.token) ? 1 : 0;
-    const bGas = isGasToken(b.token) ? 1 : 0;
+    const aGas = shouldDeferLegForGasPayment(a.token) ? 1 : 0;
+    const bGas = shouldDeferLegForGasPayment(b.token) ? 1 : 0;
     return aGas - bGas;
   });
 }

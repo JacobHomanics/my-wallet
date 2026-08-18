@@ -47,7 +47,7 @@ export type SendTokenAllocationsProps = {
   spendableTokens: OwnedToken[];
   /** Single-token tax funding pick; reserved from Available on that token. */
   taxFunding?: TaxFundingPick | null;
-  /** Native gas reserved on gas tokens for network fees. */
+  /** Gas reserved on fee-paying tokens for network fees. */
   gasFunding?: GasFundingPick[];
   /** Vault vs wallet USDC split per allocation / tax leg. */
   vaultUsdcFundingSplits?: ReadonlyMap<string, VaultUsdcFundingSplit>;
