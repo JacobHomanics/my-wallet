@@ -3,7 +3,6 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -11,6 +10,8 @@ import {
   Text,
   View,
 } from 'react-native';
+
+import { BalanceSkeleton } from '@/components/BalanceSkeleton';
 
 import { DepositBankTipsModal } from '@/components/DepositBankTipsModal';
 import { BalanceBreakdownModal } from '@/components/BalanceBreakdownModal';
@@ -42,7 +43,7 @@ export function HomeScreen() {
     poll,
   } = useTokenBalances();
 
-  const { vaultBalanceUsd, refresh: refreshEarn } = usePrivyEarn();
+  const { vaultBalanceUsd, loading: earnLoading, refresh: refreshEarn } = usePrivyEarn();
 
   usePollTokenBalances(poll, {
     enabled: ready && Boolean(ethereumAddress || solanaAddress),
@@ -82,8 +83,157 @@ export function HomeScreen() {
   const earnBalanceLabel =
     formatFromUsd(vaultBalanceUsd) ?? defaultFormattedZero;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
-  const showActions =
-    ready && hasWallet && !(loading && tokens.length === 0);
+  const balanceLoading = ready && hasWallet && (loading || earnLoading);
+  const showBalanceError =
+    ready && hasWallet && !balanceLoading && Boolean(error) && tokens.length === 0;
+  const showActions = ready && hasWallet;
+
+  const renderBalance = () => {
+    if (balanceLoading) {
+      return <BalanceSkeleton />;
+    }
+
+    if (!ready) {
+      return <View style={styles.balancePlaceholder} />;
+    }
+
+    if (!hasWallet) {
+      return <Text style={styles.empty}>Creating your wallets…</Text>;
+    }
+
+    if (showBalanceError) {
+      return (
+        <View style={styles.errorBlock}>
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={onRefresh}
+            style={({ pressed }) => [
+              styles.retryButton,
+              pressed && styles.retryButtonPressed,
+            ]}
+          >
+            <Text style={styles.retryButtonText}>Try again</Text>
+          </Pressable>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.totalRow}>
+        <Text style={styles.total} accessibilityRole="header">
+          {totalLabel}
+        </Text>
+        <Pressable
+          accessibilityLabel="Balance breakdown"
+          accessibilityRole="button"
+          hitSlop={8}
+          onPress={openBreakdown}
+          style={({ pressed }) => [
+            styles.totalHelpButton,
+            pressed && styles.totalHelpButtonPressed,
+          ]}
+        >
+          <Ionicons name="help-circle-outline" size={22} color="#5a7d6a" />
+        </Pressable>
+      </View>
+    );
+  };
+
+  const renderActions = () => {
+    if (!showActions || showBalanceError) {
+      return null;
+    }
+
+    return (
+      <>
+        {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
+        <Pressable
+          accessibilityRole="link"
+          hitSlop={8}
+          onPress={() => {
+            navigation.navigate('tokenDetails');
+          }}
+          style={({ pressed }) => [pressed && styles.detailsLinkPressed]}
+        >
+          <Text style={styles.detailsLinkText}>Show advanced details</Text>
+        </Pressable>
+        <View style={styles.actionsGroup}>
+          <View style={styles.actionsRow}>
+            {canDeposit ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={openDepositTips}
+                style={({ pressed }) => [
+                  styles.actionButton,
+                  pressed && styles.actionButtonPressed,
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="archive-arrow-down-outline"
+                  size={18}
+                  color="#f8fafc"
+                />
+                <Text style={styles.actionButtonText}>Deposit</Text>
+              </Pressable>
+            ) : null}
+            <Pressable
+              accessibilityRole="button"
+              onPress={openWithdraw}
+              style={({ pressed }) => [
+                styles.actionButton,
+                pressed && styles.actionButtonPressed,
+              ]}
+            >
+              <Ionicons name="business-outline" size={18} color="#f0fdf4" />
+              <Text style={styles.actionButtonText}>Withdraw</Text>
+            </Pressable>
+          </View>
+          <View style={[styles.actionsRow, styles.payReceiveRequestRow]}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={openFreshSend}
+              style={({ pressed }) => [
+                styles.actionButton,
+                pressed && styles.actionButtonPressed,
+              ]}
+            >
+              <Ionicons name="arrow-up" size={18} color="#f0fdf4" />
+              <Text style={styles.actionButtonText}>Pay</Text>
+            </Pressable>
+          </View>
+          <View style={styles.actionsRow}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                navigation.navigate('receive');
+              }}
+              style={({ pressed }) => [
+                styles.actionButton,
+                pressed && styles.actionButtonPressed,
+              ]}
+            >
+              <Ionicons name="arrow-down" size={18} color="#f0fdf4" />
+              <Text style={styles.actionButtonText}>Receive</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                navigation.navigate('request');
+              }}
+              style={({ pressed }) => [
+                styles.actionButton,
+                pressed && styles.actionButtonPressed,
+              ]}
+            >
+              <Ionicons name="cash-outline" size={18} color="#f0fdf4" />
+              <Text style={styles.actionButtonText}>Request</Text>
+            </Pressable>
+          </View>
+        </View>
+      </>
+    );
+  };
 
   return (
     <>
@@ -99,143 +249,10 @@ export function HomeScreen() {
         style={styles.container}
       >
         <View style={styles.hero}>
-          {!ready || loading ? (
-            <ActivityIndicator color="#166534" />
-          ) : !hasWallet ? (
-            <Text style={styles.empty}>Creating your wallets…</Text>
-          ) : error && tokens.length === 0 ? (
-            <View style={styles.errorBlock}>
-              <Text style={styles.errorText}>{error}</Text>
-              <Pressable
-                accessibilityRole="button"
-                onPress={onRefresh}
-                style={({ pressed }) => [
-                  styles.retryButton,
-                  pressed && styles.retryButtonPressed,
-                ]}
-              >
-                <Text style={styles.retryButtonText}>Try again</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <>
-              <View style={styles.totalRow}>
-                <Text style={styles.total} accessibilityRole="header">
-                  {totalLabel}
-                </Text>
-                <Pressable
-                  accessibilityLabel="Balance breakdown"
-                  accessibilityRole="button"
-                  hitSlop={8}
-                  onPress={openBreakdown}
-                  style={({ pressed }) => [
-                    styles.totalHelpButton,
-                    pressed && styles.totalHelpButtonPressed,
-                  ]}
-                >
-                  <Ionicons
-                    name="help-circle-outline"
-                    size={22}
-                    color="#5a7d6a"
-                  />
-                </Pressable>
-              </View>
-              {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
-              {showActions ? (
-                <>
-                  <Pressable
-                    accessibilityRole="link"
-                    hitSlop={8}
-                    onPress={() => {
-                      navigation.navigate('tokenDetails');
-                    }}
-                    style={({ pressed }) => [
-                      pressed && styles.detailsLinkPressed,
-                    ]}
-                  >
-                    <Text style={styles.detailsLinkText}>
-                      Show advanced details
-                    </Text>
-                  </Pressable>
-                  <View style={styles.actionsGroup}>
-                    <View style={styles.actionsRow}>
-                      {canDeposit ? (
-                        <Pressable
-                          accessibilityRole="button"
-                          onPress={openDepositTips}
-                          style={({ pressed }) => [
-                            styles.actionButton,
-                            pressed && styles.actionButtonPressed,
-                          ]}
-                        >
-                          <MaterialCommunityIcons
-                            name="archive-arrow-down-outline"
-                            size={18}
-                            color="#f8fafc"
-                          />
-                          <Text style={styles.actionButtonText}>Deposit</Text>
-                        </Pressable>
-                      ) : null}
-                      <Pressable
-                        accessibilityRole="button"
-                        onPress={openWithdraw}
-                        style={({ pressed }) => [
-                          styles.actionButton,
-                          pressed && styles.actionButtonPressed,
-                        ]}
-                      >
-                        <Ionicons name="business-outline" size={18} color="#f0fdf4" />
-                        <Text style={styles.actionButtonText}>Withdraw</Text>
-                      </Pressable>
-                    </View>
-                    <View style={[styles.actionsRow, styles.payReceiveRequestRow]}>
-                      <Pressable
-                        accessibilityRole="button"
-                        onPress={openFreshSend}
-                        style={({ pressed }) => [
-                          styles.actionButton,
-                          pressed && styles.actionButtonPressed,
-                        ]}
-                      >
-                        <Ionicons name="arrow-up" size={18} color="#f0fdf4" />
-                        <Text style={styles.actionButtonText}>Pay</Text>
-                      </Pressable>
-                    </View>
-                    <View style={styles.actionsRow}>
-                      <Pressable
-                        accessibilityRole="button"
-                        onPress={() => {
-                          navigation.navigate('receive');
-                        }}
-                        style={({ pressed }) => [
-                          styles.actionButton,
-                          pressed && styles.actionButtonPressed,
-                        ]}
-                      >
-                        <Ionicons name="arrow-down" size={18} color="#f0fdf4" />
-                        <Text style={styles.actionButtonText}>Receive</Text>
-                      </Pressable>
-                      <Pressable
-                        accessibilityRole="button"
-                        onPress={() => {
-                          navigation.navigate('request');
-                        }}
-                        style={({ pressed }) => [
-                          styles.actionButton,
-                          pressed && styles.actionButtonPressed,
-                        ]}
-                      >
-                        <Ionicons name="cash-outline" size={18} color="#f0fdf4" />
-                        <Text style={styles.actionButtonText}>Request</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                </>
-              ) : null}
-            </>
-          )}
+          {renderBalance()}
+          {renderActions()}
         </View>
-        {showActions ? (
+        {showActions && !showBalanceError ? (
           <Pressable
             accessibilityRole="link"
             hitSlop={8}
@@ -293,6 +310,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+  },
+  balancePlaceholder: {
+    width: 220,
+    height: 48,
   },
   total: {
     fontSize: 48,
