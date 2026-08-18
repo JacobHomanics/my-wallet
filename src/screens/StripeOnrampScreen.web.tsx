@@ -13,12 +13,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton } from '@/components/BackButton';
 import { CryptoElements } from '@/components/stripe/CryptoElements';
 import { OnrampElement } from '@/components/stripe/OnrampElement';
-import { useAutoDepositOnrampUsdc } from '@/hooks/useAutoDepositOnrampUsdc';
 import { useCreateStripeOnrampSession } from '@/hooks/useCreateStripeOnrampSession';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useOnrampVaultDepositCompletion } from '@/hooks/useOnrampVaultDepositCompletion';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import { useStripeOnrampUiReady } from '@/hooks/useStripeOnrampUiReady';
-import { useTokenBalances } from '@/hooks/useTokenBalances';
 
 function DepositLoading({ message }: { message: string }) {
   return (
@@ -37,16 +36,21 @@ export function StripeOnrampScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goHome = usePopToHome();
-  const { refresh } = useTokenBalances();
-  const { getPriorBaseUsdcBalanceRaw, triggerAutoDeposit } =
-    useAutoDepositOnrampUsdc();
+  const {
+    getPriorBaseUsdcBalanceRaw,
+    completeOnramp,
+    completionMessage,
+    isVaultDepositing,
+    isComplete,
+  } = useOnrampVaultDepositCompletion();
   const { isCreating, error, createSession, isAvailable } =
     useCreateStripeOnrampSession();
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [fulfillmentComplete, setFulfillmentComplete] = useState(false);
+  const [onrampComplete, setOnrampComplete] = useState(false);
   const startedRef = useRef(false);
   const priorBalanceRawRef = useRef<bigint>(0n);
+  const completionStartedRef = useRef(false);
   const { uiReady, onReady } = useStripeOnrampUiReady(clientSecret);
 
   useEffect(() => {
@@ -69,20 +73,21 @@ export function StripeOnrampScreen() {
 
   const onSessionChange = useCallback(
     ({ session }: { session: OnrampSessionResult }) => {
-      if (session.status === 'fulfillment_complete') {
-        setFulfillmentComplete(true);
-        triggerAutoDeposit(priorBalanceRawRef.current);
-        void refresh();
+      if (session.status !== 'fulfillment_complete' || completionStartedRef.current) {
+        return;
       }
+      completionStartedRef.current = true;
+      setOnrampComplete(true);
+      void completeOnramp(priorBalanceRawRef.current);
     },
-    [refresh, triggerAutoDeposit],
+    [completeOnramp],
   );
 
   const showSessionLoader =
     isAvailable && !error && (isCreating || !clientSecret);
   const showEmbedLoader = Boolean(clientSecret) && !uiReady;
   const loadingMessage = 'Loading...';
-
+  const showCompletionOverlay = onrampComplete && (isVaultDepositing || isComplete);
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -92,17 +97,23 @@ export function StripeOnrampScreen() {
             <Pressable
               accessibilityLabel="Back to home"
               accessibilityRole="button"
+              disabled={isVaultDepositing}
               hitSlop={8}
               onPress={goHome}
               style={({ pressed }) => [
                 styles.webBack,
                 pressed && styles.webBackPressed,
+                isVaultDepositing && styles.webBackDisabled,
               ]}
             >
               <Text style={styles.webBackText}>Back</Text>
             </Pressable>
           ) : (
-            <BackButton accessibilityLabel="Back to home" onPress={goHome} />
+            <BackButton
+              accessibilityLabel="Back to home"
+              disabled={isVaultDepositing}
+              onPress={goHome}
+            />
           )}
           <Text style={styles.topBarTitle}>Deposit</Text>
           <View style={styles.topBarSpacer} />
@@ -136,6 +147,37 @@ export function StripeOnrampScreen() {
                   <DepositLoading message={loadingMessage} />
                 </View>
               ) : null}
+              {showCompletionOverlay ? (
+                <View style={styles.completionOverlay}>
+                  {isVaultDepositing ? (
+                    <DepositLoading message="Moving funds to your vault…" />
+                  ) : (
+                    <View style={styles.completionCard}>
+                      <Text
+                        style={
+                          completionMessage?.includes('could not') ||
+                          completionMessage?.includes('still arriving')
+                            ? styles.warningText
+                            : styles.successText
+                        }
+                      >
+                        {completionMessage}
+                      </Text>
+                      <Pressable
+                        accessibilityLabel="Done"
+                        accessibilityRole="button"
+                        onPress={goHome}
+                        style={({ pressed }) => [
+                          styles.doneButton,
+                          pressed && styles.doneButtonPressed,
+                        ]}
+                      >
+                        <Text style={styles.doneButtonText}>Done</Text>
+                      </Pressable>
+                    </View>
+                  )}
+                </View>
+              ) : null}
               <View
                 style={uiReady ? styles.onrampVisible : styles.onrampHidden}
               >
@@ -151,27 +193,6 @@ export function StripeOnrampScreen() {
             </View>
           ) : null}
         </ScrollView>
-
-        {fulfillmentComplete && (
-          <View
-            style={[
-              styles.doneBar,
-              { paddingBottom: Math.max(insets.bottom, 16) },
-            ]}
-          >
-            <Pressable
-              accessibilityLabel="Done"
-              accessibilityRole="button"
-              onPress={goHome}
-              style={({ pressed }) => [
-                styles.doneButton,
-                pressed && styles.doneButtonPressed,
-              ]}
-            >
-              <Text style={styles.doneButtonText}>Done</Text>
-            </Pressable>
-          </View>
-        )}
       </View>
     </View>
   );
@@ -215,6 +236,9 @@ const styles = StyleSheet.create({
   webBackPressed: {
     opacity: 0.7,
   },
+  webBackDisabled: {
+    opacity: 0.45,
+  },
   webBackText: {
     fontSize: 16,
     color: '#166534',
@@ -247,10 +271,34 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     zIndex: 1,
   },
+  completionOverlay: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 2,
+    backgroundColor: '#f0fdf4',
+  },
+  completionCard: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
+    paddingHorizontal: 24,
+  },
   loadingText: {
     fontSize: 15,
     fontWeight: '500',
     color: '#5a7d6a',
+    textAlign: 'center',
+  },
+  successText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#166534',
+    textAlign: 'center',
+  },
+  warningText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#b45309',
     textAlign: 'center',
   },
   errorText: {
@@ -259,11 +307,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: '#b91c1c',
     textAlign: 'center',
-  },
-  doneBar: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    backgroundColor: '#f0fdf4',
   },
   doneButton: {
     alignItems: 'center',

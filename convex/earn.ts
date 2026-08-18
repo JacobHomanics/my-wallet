@@ -150,7 +150,7 @@ export const autoDepositAfterOnramp = action({
     const privy = getPrivyClient();
     const authorizationContext = getAuthorizationContext();
 
-    await tryAutoDepositOnrampUsdc({
+    return await tryAutoDepositOnrampUsdc({
       ctx,
       privy,
       authorizationContext,

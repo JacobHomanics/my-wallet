@@ -27,10 +27,16 @@ export const ONRAMP_VAULT_DEPOSIT_GAS_BUFFER_RAW =
 
 const ONRAMP_BALANCE_WAIT_MS = 600_000;
 
+export type AutoDepositOnrampResult =
+  | { status: "skipped"; reason: "disabled" | "not_eligible" | "no_wallet" }
+  | { status: "deposited"; amount: string }
+  | { status: "nothing_to_deposit" }
+  | { status: "balance_timeout" }
+  | { status: "failed"; message: string };
+
 /**
  * After a successful Base USDC onramp, deposit the credited amount into the
- * user's earn vault when auto-deposit is enabled. Failures do not fail the
- * onramp flow.
+ * user's earn vault when auto-deposit is enabled.
  */
 export async function tryAutoDepositOnrampUsdc(params: {
   ctx: GenericActionCtx<DataModel>;
@@ -39,11 +45,11 @@ export async function tryAutoDepositOnrampUsdc(params: {
   ethereumWalletId: string;
   ethereumAddress: string;
   priorBalanceRaw: bigint;
-}): Promise<void> {
+}): Promise<AutoDepositOnrampResult> {
   const holder = params.ethereumAddress.trim();
   const walletId = params.ethereumWalletId.trim();
   if (!holder || !walletId) {
-    return;
+    return { status: "skipped", reason: "no_wallet" };
   }
 
   const recipient = await params.ctx.runQuery(
@@ -51,14 +57,14 @@ export async function tryAutoDepositOnrampUsdc(params: {
     { ethereumAddress: holder },
   );
   if (recipient == null) {
-    return;
+    return { status: "skipped", reason: "disabled" };
   }
 
   let vaultId: string;
   try {
     vaultId = getEarnVaultId();
   } catch {
-    return;
+    return { status: "skipped", reason: "not_eligible" };
   }
 
   let vault;
@@ -66,12 +72,12 @@ export async function tryAutoDepositOnrampUsdc(params: {
     vault = await fetchEarnVaultDetails(vaultId);
   } catch (error) {
     console.error("[onramp-auto-deposit] vault lookup failed", { error });
-    return;
+    return { status: "failed", message: "Could not load vault details." };
   }
 
   const vaultNetwork = getNetworkFromCaip2(vault.caip2);
   if (vaultNetwork !== "base-mainnet") {
-    return;
+    return { status: "skipped", reason: "not_eligible" };
   }
 
   const tokenAddress = vault.asset.address.trim();
@@ -92,7 +98,7 @@ export async function tryAutoDepositOnrampUsdc(params: {
       priorBalanceRaw: priorBalanceRaw.toString(),
       error,
     });
-    return;
+    return { status: "balance_timeout" };
   }
 
   const currentBalance = await fetchErc20Balance({
@@ -109,7 +115,7 @@ export async function tryAutoDepositOnrampUsdc(params: {
       : 0n;
 
   if (depositRaw <= 0n) {
-    return;
+    return { status: "nothing_to_deposit" };
   }
 
   let amountFormatted: string;
@@ -123,7 +129,7 @@ export async function tryAutoDepositOnrampUsdc(params: {
       depositRaw: depositRaw.toString(),
       error,
     });
-    return;
+    return { status: "failed", message: "Deposit amount was invalid." };
   }
 
   try {
@@ -162,6 +168,7 @@ export async function tryAutoDepositOnrampUsdc(params: {
         shouldRetry: isRetryableAutoDepositError,
       },
     );
+    return { status: "deposited", amount: amountFormatted };
   } catch (error) {
     console.error("[onramp-auto-deposit] deposit failed", {
       holder,
@@ -169,5 +176,10 @@ export async function tryAutoDepositOnrampUsdc(params: {
       tokenAddress: normalizeEvmAddress(tokenAddress),
       error,
     });
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Could not move funds into your vault.";
+    return { status: "failed", message };
   }
 }

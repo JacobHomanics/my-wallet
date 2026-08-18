@@ -9,11 +9,13 @@ import type { RootStackParamList } from '@/navigation/types';
 type BackButtonProps = {
   onPress?: () => void;
   accessibilityLabel?: string;
+  disabled?: boolean;
 };
 
 export function BackButton({
   onPress,
   accessibilityLabel = 'Go back',
+  disabled = false,
 }: BackButtonProps) {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -27,8 +29,13 @@ export function BackButton({
     <Pressable
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       hitSlop={12}
       onPress={() => {
+        if (disabled) {
+          return;
+        }
         if (onPress) {
           onPress();
           return;
@@ -37,7 +44,8 @@ export function BackButton({
       }}
       style={({ pressed }) => [
         styles.backButton,
-        pressed && styles.backButtonPressed,
+        pressed && !disabled && styles.backButtonPressed,
+        disabled && styles.backButtonDisabled,
       ]}
     >
       <Ionicons name="chevron-back" size={28} color="#166534" />
@@ -54,5 +62,8 @@ const styles = StyleSheet.create({
   },
   backButtonPressed: {
     opacity: 0.76,
+  },
+  backButtonDisabled: {
+    opacity: 0.45,
   },
 });
