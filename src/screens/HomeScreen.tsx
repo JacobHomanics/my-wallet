@@ -13,7 +13,9 @@ import {
 } from 'react-native';
 
 import { DepositBankTipsModal } from '@/components/DepositBankTipsModal';
+import { BalanceBreakdownModal } from '@/components/BalanceBreakdownModal';
 import { WithdrawUnsupportedModal } from '@/components/WithdrawUnsupportedModal';
+import { useBalanceBreakdownModal } from '@/hooks/useBalanceBreakdownModal';
 import { useDepositBankTipsModal } from '@/hooks/useDepositBankTipsModal';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
@@ -58,6 +60,8 @@ export function HomeScreen() {
   } = useDepositBankTipsModal(openDeposit);
   const { withdrawOpen, openWithdraw, closeWithdraw } =
     useWithdrawUnsupportedModal();
+  const { breakdownOpen, openBreakdown, closeBreakdown } =
+    useBalanceBreakdownModal();
   const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
 
   const onRefresh = useCallback(() => {
@@ -73,6 +77,10 @@ export function HomeScreen() {
   }, [totalUsd, vaultBalanceUsd]);
 
   const totalLabel = formatFromUsd(combinedTotalUsd) ?? defaultFormattedZero;
+  const accountBalanceLabel =
+    formatFromUsd(totalUsd) ?? defaultFormattedZero;
+  const earnBalanceLabel =
+    formatFromUsd(vaultBalanceUsd) ?? defaultFormattedZero;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
   const showActions =
     ready && hasWallet && !(loading && tokens.length === 0);
@@ -111,9 +119,27 @@ export function HomeScreen() {
             </View>
           ) : (
             <>
-              <Text style={styles.total} accessibilityRole="header">
-                {totalLabel}
-              </Text>
+              <View style={styles.totalRow}>
+                <Text style={styles.total} accessibilityRole="header">
+                  {totalLabel}
+                </Text>
+                <Pressable
+                  accessibilityLabel="Balance breakdown"
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  onPress={openBreakdown}
+                  style={({ pressed }) => [
+                    styles.totalHelpButton,
+                    pressed && styles.totalHelpButtonPressed,
+                  ]}
+                >
+                  <Ionicons
+                    name="help-circle-outline"
+                    size={22}
+                    color="#5a7d6a"
+                  />
+                </Pressable>
+              </View>
               {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
               {showActions ? (
                 <>
@@ -236,6 +262,12 @@ export function HomeScreen() {
         visible={withdrawOpen}
         onClose={closeWithdraw}
       />
+      <BalanceBreakdownModal
+        visible={breakdownOpen}
+        accountBalanceLabel={accountBalanceLabel}
+        earnBalanceLabel={earnBalanceLabel}
+        onClose={closeBreakdown}
+      />
     </>
   );
 }
@@ -256,6 +288,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  totalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
   total: {
     fontSize: 48,
     fontWeight: '700',
@@ -263,6 +301,13 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
+  },
+  totalHelpButton: {
+    marginTop: 4,
+    padding: 2,
+  },
+  totalHelpButtonPressed: {
+    opacity: 0.6,
   },
   empty: {
     fontSize: 15,
