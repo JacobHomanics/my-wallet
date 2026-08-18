@@ -43,7 +43,8 @@ export function formatSendError(error: unknown): string {
   if (
     lower.includes('replacement transaction underpriced') ||
     lower.includes('already known') ||
-    lower.includes('nonce too low')
+    lower.includes('nonce too low') ||
+    lower.includes('in-flight transaction limit reached for delegated accounts')
   ) {
     return 'A previous transfer on this network is still confirming. Please wait a moment and try again.';
   }

@@ -142,6 +142,42 @@ export async function fetchEarnWalletAction(
   );
 }
 
+const EARN_ACTION_POLL_MS = 2_000;
+const EARN_ACTION_POLL_MAX_ATTEMPTS = 30;
+
+export function isEarnActionPending(action: EarnWalletAction): boolean {
+  return action.status === "pending" || action.status === "processing";
+}
+
+export function isEarnActionSucceeded(action: EarnWalletAction): boolean {
+  return action.status === "succeeded";
+}
+
+export function isEarnActionFailed(action: EarnWalletAction): boolean {
+  return action.status === "failed" || action.status === "rejected";
+}
+
+/** Poll until a deposit/withdraw action reaches a terminal state. */
+export async function pollEarnWalletAction(
+  walletId: string,
+  actionId: string,
+): Promise<EarnWalletAction> {
+  let latest = await fetchEarnWalletAction(walletId, actionId);
+
+  for (
+    let attempt = 0;
+    isEarnActionPending(latest) && attempt < EARN_ACTION_POLL_MAX_ATTEMPTS;
+    attempt += 1
+  ) {
+    await new Promise((resolve) => {
+      setTimeout(resolve, EARN_ACTION_POLL_MS);
+    });
+    latest = await fetchEarnWalletAction(walletId, actionId);
+  }
+
+  return latest;
+}
+
 export async function depositToEarnVault(params: {
   privy: PrivyClient;
   authorizationContext: AuthorizationContext;
