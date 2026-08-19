@@ -5,7 +5,7 @@ import {
 } from '@react-navigation/bottom-tabs';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { CashboxIcon } from '@/components/CashboxIcon';
+import { ZitiIcon } from '@/components/ZitiIcon';
 import { ProfileDropdown } from '@/components/ProfileDropdown';
 import { useAppBrand } from '@/hooks/useAppBrand';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -29,7 +29,7 @@ function WebTopNav({ state, descriptors, navigation }: BottomTabBarProps) {
     <View style={styles.header}>
       <View style={styles.brandBlock}>
         <View style={styles.iconBadge}>
-          <CashboxIcon
+          <ZitiIcon
             size={22}
             color={theme.primaryText}
             detailColor={theme.primary}
@@ -83,7 +83,7 @@ function WebTopNav({ state, descriptors, navigation }: BottomTabBarProps) {
               }}
             >
               {route.name === 'home' ? (
-                <CashboxIcon
+                <ZitiIcon
                   size={18}
                   color={tint}
                   detailColor={

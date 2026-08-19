@@ -12,7 +12,7 @@ import type {
 } from '@/navigation/types';
 
 /** Custom URL scheme registered in app.json / Info.plist (Privy OAuth redirects). */
-export const APP_SCHEME = 'cashbox';
+export const APP_SCHEME = 'ziti';
 
 /**
  * Public https origin for QR / share links (and native deep-link prefixes).

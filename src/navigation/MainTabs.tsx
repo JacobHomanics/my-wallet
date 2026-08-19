@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { Platform } from 'react-native';
 
-import { CashboxIcon } from '@/components/CashboxIcon';
+import { ZitiIcon } from '@/components/ZitiIcon';
 import { useBottomTabBarStyle } from '@/hooks/useBottomTabBarStyle';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { ContactsStack } from '@/navigation/ContactsStack';
@@ -70,7 +70,7 @@ export function MainTabs() {
             title: 'Home',
             tabBarStyle: hideTabBar ? { display: 'none' } : tabBarStyle,
             tabBarIcon: ({ color, size }) => (
-              <CashboxIcon
+              <ZitiIcon
                 size={size}
                 color={color}
                 detailColor={colors.surface}

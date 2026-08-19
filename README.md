@@ -1,6 +1,6 @@
-# Cashbox
+# Ziti
 
-Expo app for Cashbox. Backend logic lives in Convex (`convex/`).
+Expo app for Ziti. Backend logic lives in Convex (`convex/`).
 
 ## Convex environment (send + rewards)
 

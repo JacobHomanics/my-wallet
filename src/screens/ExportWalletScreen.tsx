@@ -84,7 +84,7 @@ export function ExportWalletScreen() {
       ) : !isAuthenticated ? (
         <>
           <Text style={styles.hint}>
-            Log in with the same email or phone you use in Cashbox to continue.
+            Log in with the same email or phone you use in Ziti to continue.
           </Text>
           <Pressable
             accessibilityRole="button"

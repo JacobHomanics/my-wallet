@@ -38,7 +38,7 @@ export function FrontendSendRewardsWarningModal({
         >
           <Text style={styles.title}>No {REWARD_POINTS_LABEL}</Text>
           <Text style={styles.paragraph}>
-            Sending from this device skips the Cashbox backend, so you will not
+            Sending from this device skips the Ziti backend, so you will not
             receive any {REWARD_POINTS_LABEL} for this payment.
           </Text>
           <View style={styles.actions}>

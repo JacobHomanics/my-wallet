@@ -2,7 +2,7 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { colors } from '@/theme/colors';
 
-type CashboxIconProps = {
+type ZitiIconProps = {
   size?: number;
   color?: string;
   /** Cutout / detail color (background behind the icon). */
@@ -12,18 +12,18 @@ type CashboxIconProps = {
 /**
  * Brand mark: a cashbox with lid, coin slot, drawer, and dollar.
  */
-export function CashboxIcon({
+export function ZitiIcon({
   size = 32,
   color = colors.primary,
   detailColor = colors.bg,
-}: CashboxIconProps) {
+}: ZitiIconProps) {
   return (
     <Svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
       accessibilityRole="image"
-      accessibilityLabel="Cashbox"
+      accessibilityLabel="Ziti"
     >
       {/* Lid */}
       <Path
