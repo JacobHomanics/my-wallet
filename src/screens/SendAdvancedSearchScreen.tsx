@@ -38,6 +38,7 @@ import type { HomeStackParamList } from '@/navigation/types';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { webPressableMouseDownProps } from '@/hooks/useWebPressableMouseDown';
 
 function AdvancedSearchTabChip({
   label,
@@ -338,6 +339,7 @@ export function SendAdvancedSearchScreen() {
                           onPress={() => {
                             onSelectFarcasterRecent(hit);
                           }}
+                          {...webPressableMouseDownProps()}
                           style={({ pressed }) => [
                             styles.resultCard,
                             pressed && selectable && styles.resultCardPressed,
@@ -497,6 +499,7 @@ export function SendAdvancedSearchScreen() {
                         onPress={() => {
                           onSelectEnsRecent(hit);
                         }}
+                        {...webPressableMouseDownProps()}
                         style={({ pressed }) => [
                           styles.resultCard,
                           pressed && styles.resultCardPressed,
@@ -621,6 +624,7 @@ export function SendAdvancedSearchScreen() {
                         onPress={() => {
                           onSelectWalletRecent(hit);
                         }}
+                        {...webPressableMouseDownProps()}
                         style={({ pressed }) => [
                           styles.resultCard,
                           pressed && styles.resultCardPressed,

@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -20,6 +19,7 @@ import type { HomeStackParamList } from '@/navigation/types';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { webPressableMouseDownProps } from '@/hooks/useWebPressableMouseDown';
 
 type SendSearchContentProps = {
   tokenId?: string;
@@ -58,6 +58,7 @@ function RecipientOptionRow({
       accessibilityState={{ disabled: !selectable }}
       disabled={!selectable}
       onPress={onPress}
+      {...webPressableMouseDownProps()}
       style={({ pressed }) => [
         styles.option,
         pressed && selectable && styles.optionPressed,
@@ -104,14 +105,11 @@ export function SendSearchContent({
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const { sendToContact } = useSendToContact();
   const { recents } = useRecentSendRecipients();
-  const [isFocused, setIsFocused] = useState(false);
 
   const trimmed = query.trim();
   const hasResults = results.length > 0;
   const showResults = Boolean(trimmed);
-  const showRecentsWhenIdle = onSearchFocusChange ? isFocused : true;
-  const showRecents =
-    showRecentsWhenIdle && !trimmed && recents.length > 0;
+  const showRecents = !trimmed && recents.length > 0;
 
   const selectRecent = (item: RecentSendRecipient) => {
     sendToContact(
@@ -138,14 +136,10 @@ export function SendSearchContent({
           autoCapitalize="none"
           autoCorrect={false}
           onBlur={() => {
-            requestAnimationFrame(() => {
-              setIsFocused(false);
-              onSearchFocusChange?.(false);
-            });
+            onSearchFocusChange?.(false);
           }}
           onChangeText={setQuery}
           onFocus={() => {
-            setIsFocused(true);
             onSearchFocusChange?.(true);
           }}
           placeholder="Username or account number"
