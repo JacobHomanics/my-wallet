@@ -62,6 +62,7 @@ export function RewardsScreen() {
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const { copy, isCopied } = useCopyToClipboard();
   const { config: appConfig, loading: appConfigLoading } = useAppConfig();
+  const pointsPerUsdc = appConfig?.cashback.pointsPerUsdc ?? null;
   const {
     ready: redemptionReady,
     acting: redeeming,
@@ -70,7 +71,7 @@ export function RewardsScreen() {
     redeem,
     previewUsdcAmount,
     clearLastResult,
-  } = useCashbackRedemption();
+  } = useCashbackRedemption(pointsPerUsdc);
   const [pointsAmount, setPointsAmount] = useState('');
 
   usePollTokenBalances(poll, {
