@@ -109,7 +109,9 @@ export function SendSearchContent({
   const trimmed = query.trim();
   const hasResults = results.length > 0;
   const showResults = Boolean(trimmed);
-  const showRecents = isFocused && !trimmed && recents.length > 0;
+  const showRecentsWhenIdle = onSearchFocusChange ? isFocused : true;
+  const showRecents =
+    showRecentsWhenIdle && !trimmed && recents.length > 0;
 
   const selectRecent = (item: RecentSendRecipient) => {
     sendToContact(
@@ -136,8 +138,10 @@ export function SendSearchContent({
           autoCapitalize="none"
           autoCorrect={false}
           onBlur={() => {
-            setIsFocused(false);
-            onSearchFocusChange?.(false);
+            requestAnimationFrame(() => {
+              setIsFocused(false);
+              onSearchFocusChange?.(false);
+            });
           }}
           onChangeText={setQuery}
           onFocus={() => {
