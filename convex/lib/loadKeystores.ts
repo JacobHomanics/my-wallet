@@ -26,3 +26,27 @@ export async function loadTreasuryPrivateKey(): Promise<Hex> {
 
   return decryptKeystorePrivateKey(keystore, password);
 }
+
+/**
+ * Load + decrypt the cashback Ethereum V3 keystore from
+ * `convex/keystores/cashback.json`.
+ *
+ * Password: Convex env `CASHBACK_KEYSTORE_PASSWORD`.
+ */
+export async function loadCashbackPrivateKey(): Promise<Hex> {
+  const password = process.env.CASHBACK_KEYSTORE_PASSWORD;
+  if (!password) {
+    throw new Error("Missing CASHBACK_KEYSTORE_PASSWORD");
+  }
+
+  let keystore: object;
+  try {
+    keystore = require("../keystores/cashback.json") as object;
+  } catch {
+    throw new Error(
+      'Missing convex/keystores/cashback.json — run `pnpm keystore:cashback` to create it',
+    );
+  }
+
+  return decryptKeystorePrivateKey(keystore, password);
+}

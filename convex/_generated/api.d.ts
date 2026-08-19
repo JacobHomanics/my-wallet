@@ -8,12 +8,15 @@
  * @module
  */
 
+import type * as cashback from "../cashback.js";
 import type * as contacts from "../contacts.js";
 import type * as earn from "../earn.js";
 import type * as ens from "../ens.js";
 import type * as farcaster from "../farcaster.js";
 import type * as lib_autoDepositOnrampUsdc from "../lib/autoDepositOnrampUsdc.js";
 import type * as lib_autoDepositReceivedUsdc from "../lib/autoDepositReceivedUsdc.js";
+import type * as lib_cashbackConfig from "../lib/cashbackConfig.js";
+import type * as lib_cashbackUsdc from "../lib/cashbackUsdc.js";
 import type * as lib_decryptKeystore from "../lib/decryptKeystore.js";
 import type * as lib_earn from "../lib/earn.js";
 import type * as lib_encodeErc20Transfer from "../lib/encodeErc20Transfer.js";
@@ -28,6 +31,7 @@ import type * as lib_networks from "../lib/networks.js";
 import type * as lib_neynar from "../lib/neynar.js";
 import type * as lib_privy from "../lib/privy.js";
 import type * as lib_privyTransfer from "../lib/privyTransfer.js";
+import type * as lib_redeemPoints from "../lib/redeemPoints.js";
 import type * as lib_retrySendOperation from "../lib/retrySendOperation.js";
 import type * as lib_solanaSend from "../lib/solanaSend.js";
 import type * as lib_stripe from "../lib/stripe.js";
@@ -50,12 +54,15 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  cashback: typeof cashback;
   contacts: typeof contacts;
   earn: typeof earn;
   ens: typeof ens;
   farcaster: typeof farcaster;
   "lib/autoDepositOnrampUsdc": typeof lib_autoDepositOnrampUsdc;
   "lib/autoDepositReceivedUsdc": typeof lib_autoDepositReceivedUsdc;
+  "lib/cashbackConfig": typeof lib_cashbackConfig;
+  "lib/cashbackUsdc": typeof lib_cashbackUsdc;
   "lib/decryptKeystore": typeof lib_decryptKeystore;
   "lib/earn": typeof lib_earn;
   "lib/encodeErc20Transfer": typeof lib_encodeErc20Transfer;
@@ -70,6 +77,7 @@ declare const fullApi: ApiFromModules<{
   "lib/neynar": typeof lib_neynar;
   "lib/privy": typeof lib_privy;
   "lib/privyTransfer": typeof lib_privyTransfer;
+  "lib/redeemPoints": typeof lib_redeemPoints;
   "lib/retrySendOperation": typeof lib_retrySendOperation;
   "lib/solanaSend": typeof lib_solanaSend;
   "lib/stripe": typeof lib_stripe;

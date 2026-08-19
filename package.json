@@ -75,7 +75,8 @@
     "clear-all-temp": "rm -rf .expo ios android node_modules",
     "prepare": "husky",
     "check-types": "tsc --noEmit --incremental",
-    "keystore:treasury": "npx tsx scripts/create-treasury-keystore.ts"
+    "keystore:treasury": "npx tsx scripts/create-treasury-keystore.ts",
+    "keystore:cashback": "npx tsx scripts/create-cashback-keystore.ts"
   },
   "private": true
 }

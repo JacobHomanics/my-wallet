@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +16,7 @@ import { TokenIcon } from '@/components/TokenIcon';
 import { BalanceLoadErrorFooter } from '@/components/BalanceLoadErrorFooter';
 import { IconButton } from '@/components/IconButton';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
+import { useCashbackRedemption } from '@/hooks/useCashbackRedemption';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useRewardTokenBalance } from '@/hooks/useRewardTokenBalance';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
@@ -27,6 +29,10 @@ import {
   REWARD_TOKEN_NETWORK,
   REWARD_TOKEN_SYMBOL,
 } from '@/lib/rewardToken';
+import {
+  formatCashbackRateLabel,
+  parseWholePointsInput,
+} from '@/lib/cashback';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { ThemeColors } from '@/theme/types';
@@ -54,6 +60,16 @@ export function RewardsScreen() {
   } = useRewardTokenBalance();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const { copy, isCopied } = useCopyToClipboard();
+  const {
+    ready: redemptionReady,
+    acting: redeeming,
+    actionError: redemptionError,
+    lastResult: redemptionResult,
+    redeem,
+    previewUsdcAmount,
+    clearLastResult,
+  } = useCashbackRedemption();
+  const [pointsAmount, setPointsAmount] = useState('');
 
   usePollTokenBalances(poll, {
     enabled: ready && Boolean(ethereumAddress || solanaAddress),
@@ -67,6 +83,36 @@ export function RewardsScreen() {
   const loading = !ready || rewardLoading;
   const chainLabel = getNetworkLabel(REWARD_TOKEN_NETWORK);
   const contractCopied = isCopied('reward-contract');
+  const parsedPoints = parseWholePointsInput(pointsAmount);
+  const previewUsdc = previewUsdcAmount(pointsAmount);
+  const availableWhole = BigInt(
+    Math.floor(Number.parseFloat(rewardBalance) || 0),
+  );
+  const exceedsBalance =
+    parsedPoints != null && parsedPoints > availableWhole;
+  const canRedeem =
+    redemptionReady &&
+    !redeeming &&
+    parsedPoints != null &&
+    previewUsdc != null &&
+    !exceedsBalance;
+
+  const handleRedeem = useCallback(async () => {
+    const result = await redeem(pointsAmount);
+    if (result) {
+      setPointsAmount('');
+    }
+  }, [pointsAmount, redeem]);
+
+  const handlePointsChange = useCallback(
+    (value: string) => {
+      if (redemptionResult) {
+        clearLastResult();
+      }
+      setPointsAmount(value.replace(/[^\d]/g, ''));
+    },
+    [clearLastResult, redemptionResult],
+  );
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -119,6 +165,65 @@ export function RewardsScreen() {
                 Earn {REWARD_POINTS_LABEL} when you send or complete a payment
                 with someone else!
               </Text>
+
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Redeem for USDC</Text>
+                <Text style={styles.cardHint}>{formatCashbackRateLabel()}</Text>
+                <Text style={styles.inputLabel}>Points to redeem</Text>
+                <View style={styles.amountRow}>
+                  <TextInput
+                    accessibilityLabel="CashBox Points to redeem"
+                    editable={!redeeming && redemptionReady}
+                    keyboardType="number-pad"
+                    onChangeText={handlePointsChange}
+                    placeholder="0"
+                    placeholderTextColor="#86a894"
+                    style={styles.amountInput}
+                    value={pointsAmount}
+                  />
+                </View>
+                {previewUsdc != null ? (
+                  <Text style={styles.preview}>
+                    You will receive {previewUsdc} USDC
+                  </Text>
+                ) : pointsAmount.trim().length > 0 ? (
+                  <Text style={styles.previewMuted}>
+                    Enter a whole number of points
+                  </Text>
+                ) : null}
+                {exceedsBalance ? (
+                  <Text style={styles.error}>
+                    Not enough {REWARD_POINTS_LABEL} for this amount.
+                  </Text>
+                ) : null}
+                {redemptionError ? (
+                  <Text style={styles.error}>{redemptionError}</Text>
+                ) : null}
+                {redemptionResult ? (
+                  <Text style={styles.success}>
+                    Redeemed {redemptionResult.pointsAmount} points for{' '}
+                    {redemptionResult.usdcAmount} USDC.
+                  </Text>
+                ) : null}
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={!canRedeem}
+                  onPress={() => {
+                    void handleRedeem();
+                  }}
+                  style={({ pressed }) => [
+                    styles.primaryButton,
+                    !canRedeem && styles.buttonDisabled,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  {redeeming ? (
+                    <ActivityIndicator color={colors.primaryText} />
+                  ) : (
+                    <Text style={styles.primaryButtonText}>Redeem</Text>
+                  )}
+                </Pressable>
+              </View>
 
               <Pressable
                 accessibilityRole="button"
@@ -269,6 +374,88 @@ function createStyles(c: ThemeColors) {
     lineHeight: 22,
     color: c.textMuted,
     textAlign: 'center',
+  },
+  card: {
+    marginTop: 28,
+    width: '100%',
+    maxWidth: 320,
+    backgroundColor: c.surface,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.rowBorder,
+    padding: 20,
+    gap: 8,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: c.primary,
+  },
+  cardHint: {
+    fontSize: 13,
+    color: c.textMuted,
+    lineHeight: 18,
+  },
+  inputLabel: {
+    marginTop: 4,
+    fontSize: 14,
+    fontWeight: '600',
+    color: c.primary,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.rowBorder,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    backgroundColor: c.bg,
+    minHeight: 48,
+  },
+  amountInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 18,
+    color: c.primary,
+    fontVariant: ['tabular-nums'],
+  },
+  preview: {
+    fontSize: 14,
+    color: c.primary,
+    fontVariant: ['tabular-nums'],
+  },
+  previewMuted: {
+    fontSize: 14,
+    color: c.textMuted,
+  },
+  primaryButton: {
+    marginTop: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+    borderRadius: 12,
+    backgroundColor: c.primary,
+  },
+  primaryButtonText: {
+    color: c.primaryText,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonPressed: {
+    opacity: 0.85,
+  },
+  error: {
+    fontSize: 14,
+    color: c.danger,
+    lineHeight: 20,
+  },
+  success: {
+    fontSize: 14,
+    color: c.primary,
+    lineHeight: 20,
   },
   advancedToggle: {
     marginTop: 28,

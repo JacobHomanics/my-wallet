@@ -14,10 +14,14 @@ Set these on your Convex deployment (`npx convex env set KEY value`):
 | `PRIVY_EARN_VAULT_ID` | for Earn | Vault ID from Privy Dashboard → Wallet infrastructure → Earn |
 | `ALCHEMY_API_KEY` | yes | Used for EVM/Solana RPC + receipt polling |
 | `TREASURY_KEYSTORE_PASSWORD` | yes | Password for `convex/keystores/treasury.json` |
+| `CASHBACK_KEYSTORE_PASSWORD` | for cashback | Password for `convex/keystores/cashback.json` (USDC redemptions) |
+| `CASHBACK_POINTS_PER_USDC` | no | Whole CashBox Points per 1 USDC (default `100`) |
 | `REWARD_TOKEN_ADDRESS` | no | Defaults to Base reward token (CashBox Points) `0x4ed932ac83f77a5d4f3d950ab9ba90882ed06e55` |
 | `REWARD_CHAIN_ID` | no | Default `8453` (Base). Use `84532` for Base Sepolia |
 
 The treasury private key is **not** an env var — it lives in encrypted [`convex/keystores/treasury.json`](convex/keystores/). The decrypt password is Convex env `TREASURY_KEYSTORE_PASSWORD`.
+
+Cashback USDC redemptions use a separate encrypted [`convex/keystores/cashback.json`](convex/keystores/) wallet (`CASHBACK_KEYSTORE_PASSWORD`). Top up that address on Base with USDC (payouts) and ETH (gas).
 
 Client env vars are listed in `.env.example`.
 
@@ -30,6 +34,18 @@ TREASURY_KEYSTORE_PASSWORD='your-password' pnpm keystore:treasury -- --mnemonic 
 
 npx convex env set TREASURY_KEYSTORE_PASSWORD 'your-password'
 ```
+
+### Cashback keystore (USDC redemptions)
+
+```bash
+CASHBACK_KEYSTORE_PASSWORD='your-password' pnpm keystore:cashback -- --private-key 0x...
+# Fund the printed address on Base with USDC and a small amount of ETH
+
+npx convex env set CASHBACK_KEYSTORE_PASSWORD 'your-password'
+# Optional: npx convex env set CASHBACK_POINTS_PER_USDC '100'
+```
+
+Keep `app.config.ts` → `cashback.pointsPerUsdc` in sync with `CASHBACK_POINTS_PER_USDC` for accurate UI previews.
 
 ### Privy authorization key (user payment sends)
 
