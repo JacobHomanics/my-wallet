@@ -15,13 +15,13 @@ import {
   parseWholePointsAmount,
   pointsWholeToUsdcRaw,
 } from "./cashbackConfig";
+import { appConfig } from "../config/app.config";
 import { sendCashbackUsdc } from "./cashbackUsdc";
 import { sendEvmLeg } from "./evmSend";
 import { shouldSponsorGasForNetwork } from "./gasSponsorship";
 import { loadTreasuryPrivateKey } from "./loadKeystores";
 import { getAlchemyRpcUrl } from "./networks";
 import { waitForEvmReceipt } from "./waitForEvmReceipt";
-import { appConfig } from "../config/app.config";
 
 const DEFAULT_REWARD_TOKEN =
   "0x4ed932ac83f77a5d4f3d950ab9ba90882ed06e55" as const;
@@ -99,7 +99,7 @@ export async function redeemPointsForUsdc(
 
   if (userBalance < pointsRaw) {
     throw new Error(
-      `Insufficient CashBox Points. Required: ${formatUnits(pointsRaw, decimals)}, Available: ${formatUnits(userBalance, decimals)}`,
+      `Insufficient ${appConfig.brand.rewardPointsLabel}. Required: ${formatUnits(pointsRaw, decimals)}, Available: ${formatUnits(userBalance, decimals)}`,
     );
   }
 

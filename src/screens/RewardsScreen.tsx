@@ -31,6 +31,7 @@ import {
   REWARD_TOKEN_NETWORK,
   REWARD_TOKEN_SYMBOL,
 } from '@/lib/rewardToken';
+import { NETWORK_NAME } from '@/lib/brand';
 import {
   formatCashbackRateLabel,
   parseWholePointsInput,
@@ -40,7 +41,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import type { ThemeColors } from '@/theme/types';
 
 /**
- * Shows the user's CashBox Points balance earned from backend payments.
+ * Shows the user's Cashbox Points balance earned from backend payments.
  */
 export function RewardsScreen() {
   const colors = useThemeColors();
@@ -192,7 +193,7 @@ export function RewardsScreen() {
                 </Text>
               )}
               <Text style={styles.hint}>
-                Earn {REWARD_POINTS_LABEL} when you send with the Cashbox Network.
+                Earn {REWARD_POINTS_LABEL} when you send with through the {NETWORK_NAME}.
               </Text>
 
               <View style={styles.card}>
@@ -207,7 +208,7 @@ export function RewardsScreen() {
                 <Text style={styles.inputLabel}>Points to redeem</Text>
                 <View style={styles.amountRow}>
                   <TextInput
-                    accessibilityLabel="CashBox Points to redeem"
+                    accessibilityLabel={`${REWARD_POINTS_LABEL} to redeem`}
                     editable={!redeeming && redemptionReady}
                     keyboardType="number-pad"
                     onChangeText={handlePointsChange}

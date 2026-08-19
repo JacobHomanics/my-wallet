@@ -14,9 +14,10 @@ import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToMoneySettings } from '@/hooks/usePopToMoneySettings';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import { REWARD_POINTS_LABEL } from '@/lib/rewardToken';
+import { NETWORK_NAME } from '@/lib/brand';
 
 /**
- * Default send behavior: payment strategy, chain priority, and Cashbox Network.
+ * Default send behavior: payment strategy, chain priority, and ZitiCashbox Network.
  */
 export function SendSettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -127,7 +128,7 @@ export function SendSettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Send through Cashbox Network</Text>
+          <Text style={styles.sectionTitle}>Send through {NETWORK_NAME}</Text>
           <View style={styles.toggleRow}>
             <View style={styles.optionText}>
               <Text style={styles.optionLabel}>Default for new sends</Text>
@@ -142,7 +143,7 @@ export function SendSettingsScreen() {
               </Text>
             </View>
             <Switch
-              accessibilityLabel="Default send through Cashbox Network"
+              accessibilityLabel={`Default send through ${NETWORK_NAME}`}
               trackColor={{ false: '#bbf7d0', true: '#86efac' }}
               thumbColor={defaultCashboxNetwork ? '#166534' : '#f0fdf4'}
               ios_backgroundColor="#bbf7d0"

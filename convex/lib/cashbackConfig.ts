@@ -36,7 +36,9 @@ export function formatUsdcRaw(usdcRaw: bigint): string {
 export function parseWholePointsAmount(raw: string): bigint {
   const trimmed = raw.trim();
   if (!/^\d+$/.test(trimmed)) {
-    throw new Error("Enter a whole number of CashBox Points");
+    throw new Error(
+      `Enter a whole number of ${appConfig.brand.rewardPointsLabel}`,
+    );
   }
   const amount = BigInt(trimmed);
   if (amount <= 0n) {

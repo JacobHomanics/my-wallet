@@ -1,6 +1,6 @@
-# Ziti
+# ZitiCashbox
 
-Expo app for Ziti. Backend logic lives in Convex (`convex/`).
+Expo app for ZitiCashbox. Backend logic lives in Convex (`convex/`).
 
 ## Convex environment (send + rewards)
 
@@ -15,7 +15,7 @@ Set these on your Convex deployment (`npx convex env set KEY value`):
 | `ALCHEMY_API_KEY` | yes | Used for EVM/Solana RPC + receipt polling |
 | `TREASURY_KEYSTORE_PASSWORD` | yes | Password for `convex/keystores/treasury.json` |
 | `CASHBACK_KEYSTORE_PASSWORD` | for cashback | Password for `convex/keystores/cashback.json` (USDC redemptions) |
-| `REWARD_TOKEN_ADDRESS` | no | Defaults to Base reward token (CashBox Points) `0x4ed932ac83f77a5d4f3d950ab9ba90882ed06e55` |
+| `REWARD_TOKEN_ADDRESS` | no | Defaults to Base reward token (Cashbox Points) `0x4ed932ac83f77a5d4f3d950ab9ba90882ed06e55` |
 | `REWARD_CHAIN_ID` | no | Default `8453` (Base). Use `84532` for Base Sepolia |
 
 The treasury private key is **not** an env var — it lives in encrypted [`convex/keystores/treasury.json`](convex/keystores/). The decrypt password is Convex env `TREASURY_KEYSTORE_PASSWORD`.

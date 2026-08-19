@@ -1,4 +1,7 @@
 export const appConfig = {
+  brand: {
+    rewardPointsLabel: "Cashbox Points",
+  },
   /** When true, Privy pays gas on backend-initiated wallet sends (e.g. points redemption). */
   gasSponsorship: false,
   rewards: {

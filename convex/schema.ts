@@ -34,7 +34,7 @@ export default defineSchema({
   contacts: defineTable({
     /** Convex `users` document id of the contact list owner. */
     ownerId: v.optional(v.id("users")),
-    /** Set when the contact is a registered Ziti user. */
+  /** Set when the contact is a registered ZitiCashbox user. */
     contactUserId: v.optional(v.id("users")),
     /** Display name for address-book / advanced contacts. */
     name: v.optional(v.string()),

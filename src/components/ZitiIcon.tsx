@@ -1,6 +1,7 @@
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { APP_NAME } from '@/lib/brand';
 
 type ZitiIconProps = {
   size?: number;
@@ -27,7 +28,7 @@ export function ZitiIcon({
       height={size}
       viewBox="0 0 24 24"
       accessibilityRole="image"
-      accessibilityLabel="Ziti"
+      accessibilityLabel={APP_NAME}
     >
       {/* Lid */}
       <Path

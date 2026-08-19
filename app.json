@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Ziti",
+    "name": "ZitiCashbox",
     "slug": "ziti",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -40,7 +40,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Ziti to access your photos for your profile picture."
+          "photosPermission": "Allow ZitiCashbox to access your photos for your profile picture."
         }
       ]
     ]

@@ -1,5 +1,6 @@
 import {StyleSheet,  Modal, Pressable, Text, View } from 'react-native';
 
+import { APP_NAME, NETWORK_NAME } from '@/lib/brand';
 import { REWARD_POINTS_LABEL } from '@/lib/rewardToken';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
@@ -11,7 +12,7 @@ type FrontendSendRewardsWarningModalProps = {
 };
 
 /**
- * Warns that device-signed sends skip Cashbox Network benefits (points + gas sponsorship).
+ * Warns that device-signed sends skip ZitiCashbox Network benefits (points + gas sponsorship).
  */
 export function FrontendSendRewardsWarningModal({
   visible,
@@ -28,7 +29,7 @@ export function FrontendSendRewardsWarningModal({
       onRequestClose={onCancel}
     >
       <Pressable
-        accessibilityLabel="Dismiss Cashbox Network warning"
+        accessibilityLabel={`Dismiss ${NETWORK_NAME} warning`}
         accessibilityRole="button"
         onPress={onCancel}
         style={styles.backdrop}
@@ -40,9 +41,9 @@ export function FrontendSendRewardsWarningModal({
           }}
           style={styles.card}
         >
-          <Text style={styles.title}>Leave Cashbox Network?</Text>
+          <Text style={styles.title}>Leave {NETWORK_NAME}?</Text>
           <Text style={styles.paragraph}>
-            Sending from this device skips the Ziti backend, so you will not
+            Sending from this device skips the {APP_NAME} backend, so you will not
             receive any {REWARD_POINTS_LABEL} or gas sponsorship for this
             payment.
           </Text>

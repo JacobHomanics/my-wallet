@@ -21,7 +21,7 @@ import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
 
 /**
- * Search Ziti usernames and account numbers during send.
+ * Search ZitiCashbox usernames and account numbers during send.
  */
 export function SendSearchScreen() {
   const styles = useThemedStyles(createStyles);

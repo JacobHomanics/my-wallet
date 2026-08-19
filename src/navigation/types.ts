@@ -43,7 +43,7 @@ export type HomeStackParamList = {
     ethereumRecipient?: string;
     solanaRecipient?: string;
   } | undefined;
-  /** Ziti username / account number search during send. */
+  /** ZitiCashbox username / account number search during send. */
   sendSearch: {
     tokenId?: string;
     usdAmount?: string;

@@ -1,3 +1,5 @@
+import { REWARD_POINTS_LABEL } from '@/lib/brand';
+
 export function parseWholePointsInput(raw: string): bigint | null {
   const trimmed = raw.trim();
   if (!/^\d+$/.test(trimmed)) {
@@ -40,8 +42,8 @@ export function formatCashbackActionError(message: string): string {
   if (message.includes('Gas sponsorship is not enabled')) {
     return 'Redemption requires a small amount of ETH on Base for network fees.';
   }
-  if (message.includes('Insufficient CashBox Points')) {
-    return 'Not enough CashBox Points for this redemption.';
+  if (message.includes('Insufficient') && message.includes('Points')) {
+    return `Not enough ${REWARD_POINTS_LABEL} for this redemption.`;
   }
   if (message.includes('Insufficient cashback USDC balance')) {
     return 'Cashback is temporarily unavailable. Please try again later.';

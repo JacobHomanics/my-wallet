@@ -16,7 +16,7 @@ function getSnapshot(): boolean {
   return defaultCashboxNetwork;
 }
 
-/** Whether new sends default to Cashbox Network (backend broadcast). */
+/** Whether new sends default to ZitiCashbox Network (backend broadcast). */
 export function getDefaultCashboxNetwork(): boolean {
   return getSnapshot();
 }
@@ -32,7 +32,7 @@ function setDefaultCashboxNetworkValue(enabled: boolean): void {
 }
 
 /**
- * App default for routing sends through Cashbox Network. Send flow may override.
+ * App default for routing sends through ZitiCashbox Network. Send flow may override.
  */
 export function useDefaultCashboxNetwork(): {
   defaultCashboxNetwork: boolean;

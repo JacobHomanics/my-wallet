@@ -13,6 +13,7 @@ import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useOnrampSettings } from '@/hooks/useOnrampSettings';
 import { usePaymentStrategy } from '@/hooks/usePaymentStrategy';
 import { usePopToSettings } from '@/hooks/usePopToSettings';
+import { NETWORK_NAME } from '@/lib/brand';
 import type { ProfileStackParamList } from '@/navigation/types';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
@@ -39,7 +40,7 @@ export function MoneySettingsScreen() {
   const sendSettingsSummary = [
     selectedStrategy.label,
     selectedChainPriority.label,
-    defaultCashboxNetwork ? 'Cashbox Network' : 'Device send',
+    defaultCashboxNetwork ? NETWORK_NAME : 'Device send',
     defaultCashboxNetwork && appConfig.gasSponsorship
       ? defaultGasSponsorship
         ? 'Gas sponsored where available'

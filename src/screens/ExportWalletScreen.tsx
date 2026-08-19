@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useExportPrivateKey } from '@/hooks/useExportPrivateKey';
+import { APP_NAME } from '@/lib/brand';
 import type { UserWallet } from '@/hooks/useUserWallets.shared';
 import type { RootStackParamList } from '@/navigation/types';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
@@ -89,7 +90,7 @@ export function ExportWalletScreen() {
       ) : !isAuthenticated ? (
         <>
           <Text style={styles.hint}>
-            Log in with the same email or phone you use in Ziti to continue.
+            Log in with the same email or phone you use in {APP_NAME} to continue.
           </Text>
           <Pressable
             accessibilityRole="button"

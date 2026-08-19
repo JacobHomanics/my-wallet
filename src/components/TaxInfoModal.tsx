@@ -3,6 +3,7 @@ import {StyleSheet,  Modal, Pressable, Text, View } from 'react-native';
 import type { ThemeColors } from '@/theme/types';
 
 import { useAppTax } from '@/hooks/useAppTax';
+import { APP_NAME } from '@/lib/brand';
 
 type TaxInfoModalProps = {
   visible: boolean;
@@ -44,7 +45,7 @@ export function TaxInfoModal({ visible, onClose }: TaxInfoModalProps) {
               and improve the platform.
             </Text>
             <Text style={styles.paragraph}>
-              {`The rate depends on gas sponsorship: ${sponsoredRatePercentLabel}% when Cashbox pays network fees on supported chains, and ${unsponsoredRatePercentLabel}% when you pay network fees yourself.`}
+              {`The rate depends on gas sponsorship: ${sponsoredRatePercentLabel}% when ${APP_NAME} pays network fees on supported chains, and ${unsponsoredRatePercentLabel}% when you pay network fees yourself.`}
             </Text>
             <Text style={styles.paragraph}>
               {
