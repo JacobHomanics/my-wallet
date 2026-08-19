@@ -1,10 +1,10 @@
 import { useCallback, useMemo } from 'react';
 
+import { useAppConfig } from '@/hooks/useAppConfig';
 import {
   computePayerTotalUsd,
   computeTaxUsd,
   formatTaxRatePercent,
-  getTaxConfig,
   maxMerchantUsdForAvailable,
   resolveTaxRate,
   taxRawFromAmount,
@@ -29,14 +29,25 @@ export type AppTaxResult = TaxConfig & {
 };
 
 /**
- * App-wide tax-on-top config from `src/configs/app.config.ts`.
+ * App-wide tax-on-top config from Convex (`convex/config/app.config.ts`).
  * Defaults to the sponsored rate when gas sponsorship is unspecified.
  */
 export function useAppTax(gasSponsorship: boolean = true): AppTaxResult {
-  const config = useMemo(() => getTaxConfig(), []);
+  const { config: appConfig } = useAppConfig();
+  const config = appConfig?.tax ?? {
+    sponsoredRate: 0,
+    unsponsoredRate: 0,
+    evmAddress: '',
+    solanaAddress: '',
+  };
   const rate = useMemo(
-    () => resolveTaxRate(gasSponsorship),
-    [gasSponsorship],
+    () =>
+      appConfig != null
+        ? resolveTaxRate(gasSponsorship)
+        : gasSponsorship
+          ? config.sponsoredRate
+          : config.unsponsoredRate,
+    [appConfig, config.sponsoredRate, config.unsponsoredRate, gasSponsorship],
   );
 
   const taxUsdFor = useCallback(

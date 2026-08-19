@@ -1,25 +1,18 @@
-import { appConfig } from '@/configs/app.config';
+import { getCachedAppConfig } from '@/hooks/useAppConfig';
+import type { TaxConfig } from '@/lib/appConfig.types';
+
+export type { TaxConfig } from '@/lib/appConfig.types';
 
 /** Basis points scale: 10_000 bps = 100%. */
 const BPS_SCALE = 10_000n;
 
-export type TaxConfig = {
-  /** Fraction of merchant payment when gas is sponsored (0.01 = 1%). */
-  sponsoredRate: number;
-  /** Fraction of merchant payment when the payer covers gas (0.015 = 1.5%). */
-  unsponsoredRate: number;
-  evmAddress: string;
-  solanaAddress: string;
-};
-
-/** App-wide tax wallets + rates from `src/configs/app.config.ts`. */
+/** App-wide tax wallets + rates from Convex (`convex/config/app.config.ts`). */
 export function getTaxConfig(): TaxConfig {
-  return {
-    sponsoredRate: appConfig.tax.sponsoredRate,
-    unsponsoredRate: appConfig.tax.unsponsoredRate,
-    evmAddress: appConfig.tax.evmAddress,
-    solanaAddress: appConfig.tax.solanaAddress,
-  };
+  const config = getCachedAppConfig();
+  if (config == null) {
+    throw new Error('App config not loaded');
+  }
+  return config.tax;
 }
 
 /** Service fee rate for the current gas sponsorship preference. */

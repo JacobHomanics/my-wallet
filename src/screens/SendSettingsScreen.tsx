@@ -6,8 +6,8 @@ import { BackButton } from '@/components/BackButton';
 import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { SupportedChainsCollapsible } from '@/components/SupportedChainsCollapsible';
+import { useAppConfig } from '@/hooks/useAppConfig';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
-import { appConfig } from '@/configs/app.config';
 import { useDefaultCashboxNetwork } from '@/hooks/useDefaultCashboxNetwork';
 import { useDefaultGasSponsorship } from '@/hooks/useDefaultGasSponsorship';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -45,7 +45,8 @@ export function SendSettingsScreen() {
     useDefaultCashboxNetwork();
   const { defaultGasSponsorship, setDefaultGasSponsorship } =
     useDefaultGasSponsorship();
-  const gasSponsorshipAvailable = appConfig.gasSponsorship;
+  const { config: appConfig } = useAppConfig();
+  const gasSponsorshipAvailable = appConfig?.gasSponsorship ?? false;
 
   return (
     <View style={styles.container}>

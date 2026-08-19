@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import { appConfig } from '@/configs/app.config';
+import { getCachedAppConfig, useAppConfig } from '@/hooks/useAppConfig';
 import { getDefaultGasSponsorship } from '@/hooks/useDefaultGasSponsorship';
 import {
   getSendDraftSnapshot,
@@ -10,7 +10,7 @@ import {
 
 /** Whether the developer enabled gas sponsorship in app config. */
 export function isGasSponsorshipAvailable(): boolean {
-  return appConfig.gasSponsorship;
+  return getCachedAppConfig()?.gasSponsorship ?? false;
 }
 
 function resolveGasSponsorship(
@@ -32,8 +32,9 @@ export function useGasSponsorship(): {
   setGasSponsorship: (enabled: boolean) => void;
   gasSponsorshipAvailable: boolean;
 } {
+  const { config } = useAppConfig();
   const draft = useSendDraft();
-  const gasSponsorshipAvailable = isGasSponsorshipAvailable();
+  const gasSponsorshipAvailable = config?.gasSponsorship ?? false;
   const gasSponsorship = gasSponsorshipAvailable
     ? resolveGasSponsorship(draft.broadcastMode, draft.gasSponsorship)
     : false;

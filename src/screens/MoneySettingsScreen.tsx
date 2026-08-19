@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
-import { appConfig } from '@/configs/app.config';
+import { useAppConfig } from '@/hooks/useAppConfig';
 import { useChainPriority } from '@/hooks/useChainPriority';
 import { useDefaultCashboxNetwork } from '@/hooks/useDefaultCashboxNetwork';
 import { useDefaultGasSponsorship } from '@/hooks/useDefaultGasSponsorship';
@@ -36,12 +36,13 @@ export function MoneySettingsScreen() {
   const { selectedDestinationLabel } = useOnrampSettings();
   const { defaultCashboxNetwork } = useDefaultCashboxNetwork();
   const { defaultGasSponsorship } = useDefaultGasSponsorship();
+  const { config: appConfig } = useAppConfig();
 
   const sendSettingsSummary = [
     selectedStrategy.label,
     selectedChainPriority.label,
     defaultCashboxNetwork ? NETWORK_NAME : 'Device send',
-    defaultCashboxNetwork && appConfig.gasSponsorship
+    defaultCashboxNetwork && appConfig?.gasSponsorship
       ? defaultGasSponsorship
         ? 'Gas sponsored where available'
         : 'You pay gas'

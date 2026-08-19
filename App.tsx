@@ -3,6 +3,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { EnsureAppConfig } from '@/components/EnsureAppConfig';
 import { EnsureConvexUser } from '@/components/EnsureConvexUser';
 import { EnsureEmbeddedWallets } from '@/components/EnsureEmbeddedWallets';
 import { AuthFlowProvider } from '@/lib/privy/context/AuthFlowContext';
@@ -19,6 +20,7 @@ export default function App() {
         <PrivyProvider>
           <AuthFlowProvider>
             <EnsureEmbeddedWallets />
+            <EnsureAppConfig />
             <EnsureConvexUser />
             <RootNavigator />
           </AuthFlowProvider>

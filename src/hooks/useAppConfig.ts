@@ -32,8 +32,13 @@ function loadAppConfig(
   return inflightConfig;
 }
 
+/** Session cache for non-hook callers (e.g. send payment builders). */
+export function getCachedAppConfig(): PublicAppConfig | null {
+  return cachedConfig;
+}
+
 /**
- * Rewards + cashback settings from Convex (`convex/config/app.config.ts`).
+ * Rewards, cashback, tax, and gas sponsorship from Convex (`convex/config/app.config.ts`).
  * Fetched once per app session (not a live subscription).
  */
 export function useAppConfig(): UseAppConfigResult {
