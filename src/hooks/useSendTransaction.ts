@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
   getEmbeddedConnectedWallet,
-  useSendTransaction as usePrivySendTransaction,
   useWallets,
 } from '@privy-io/react-auth';
 import {
@@ -19,7 +18,12 @@ import {
   prepareErc20EvmSend,
   prepareNativeEvmSend,
 } from '@/lib/send/prepareEvmSend';
-import { getEvmChainId, toHexQuantity } from '@/lib/send/rpc';
+import {
+  getEvmAddChainParams,
+  getEvmChainId,
+  toHexQuantity,
+} from '@/lib/send/rpc';
+import { sendPrivyEvmTransaction } from '@/lib/send/sendPrivyEvmTransaction';
 import { simulatePaymentLegs } from '@/lib/send/simulatePaymentLegs';
 import { assertSolanaFeePayerFunds } from '@/lib/send/solanaFees';
 import { getNetworkChain } from '@/lib/alchemy/networks';
@@ -30,11 +34,49 @@ import type {
   SendTransactionResult,
 } from '@/hooks/useSendTransaction.shared';
 
+type Eip1193Provider = {
+  request: (args: {
+    method: string;
+    params?: unknown[];
+  }) => Promise<unknown>;
+};
+
+async function ensureEvmChain(
+  provider: Eip1193Provider,
+  network: string,
+): Promise<void> {
+  const chainId = getEvmChainId(network);
+  const hexChainId = toHexQuantity(BigInt(chainId));
+
+  try {
+    await provider.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: hexChainId }],
+    });
+  } catch (error) {
+    const code =
+      typeof error === 'object' &&
+      error &&
+      'code' in error &&
+      typeof (error as { code: unknown }).code === 'number'
+        ? (error as { code: number }).code
+        : null;
+
+    if (code !== 4902 && code !== -32603) {
+      throw error;
+    }
+
+    await provider.request({
+      method: 'wallet_addEthereumChain',
+      params: [getEvmAddChainParams(network)],
+    });
+  }
+}
+
 /**
  * Sends EVM (native + ERC-20) and Solana (SOL + SPL) transfers via Privy (web).
  */
 export function useSendTransaction(): SendTransactionResult {
-  const { sendTransaction } = usePrivySendTransaction();
   const { wallets: ethereumWallets, ready: ethereumReady } = useWallets();
   const { wallets: solanaWallets, ready: solanaReady } = useSolanaWallets();
   const { signAndSendTransaction } = useSignAndSendTransaction();
@@ -74,59 +116,58 @@ export function useSendTransaction(): SendTransactionResult {
             throw new Error('No Ethereum wallet available');
           }
 
-          const chainId = getEvmChainId(params.token.network);
+          const provider = (await wallet.getEthereumProvider()) as Eip1193Provider;
+          const accounts = (await provider.request({
+            method: 'eth_requestAccounts',
+          })) as string[];
+          const from = accounts[0] ?? wallet.address;
+
+          await ensureEvmChain(provider, params.token.network);
+
+          const network = params.token.network;
           const isNative = isNativeTokenAddress(params.token.tokenAddress);
 
-          // Headless: Privy's confirmation modal uses DOM/Headless UI and
-          // crashes under react-native-web (hooks mismatch → white screen).
-          // The Send screen is already the confirmation UI.
-          const request = isNative
-            ? await (async () => {
-                const prepared = await prepareNativeEvmSend({
-                  network: params.token.network,
-                  from: wallet.address,
-                  to: params.recipient.trim(),
-                  amountRaw: params.amountRaw,
-                });
-                return {
-                  to: params.recipient.trim(),
-                  value: prepared.value,
-                  gas: prepared.gas,
-                  maxFeePerGas: prepared.maxFeePerGas,
-                  maxPriorityFeePerGas: prepared.maxPriorityFeePerGas,
-                  chainId,
-                  ...(params.nonce != null
-                    ? { nonce: Number(BigInt(params.nonce)) }
-                    : {}),
-                };
-              })()
-            : await (async () => {
-                const data = encodeErc20Transfer(
-                  params.recipient.trim(),
-                  params.amountRaw,
-                );
-                const fees = await prepareErc20EvmSend({
-                  network: params.token.network,
-                  from: wallet.address,
-                  to: params.token.tokenAddress!,
-                  data,
-                });
-                return {
-                  ...fees,
-                  to: params.token.tokenAddress!,
-                  data,
-                  value: toHexQuantity(0n),
-                  chainId,
-                  ...(params.nonce != null
-                    ? { nonce: Number(BigInt(params.nonce)) }
-                    : {}),
-                };
-              })();
+          if (isNative) {
+            const prepared = await prepareNativeEvmSend({
+              network,
+              from,
+              to: params.recipient.trim(),
+              amountRaw: params.amountRaw,
+            });
+            const hash = await sendPrivyEvmTransaction({
+              provider,
+              network,
+              from,
+              to: params.recipient.trim(),
+              value: prepared.value,
+              gas: prepared.gas,
+              maxFeePerGas: prepared.maxFeePerGas,
+              maxPriorityFeePerGas: prepared.maxPriorityFeePerGas,
+              nonce: params.nonce,
+            });
+            return { hash, chain: 'ethereum' };
+          }
 
-          const { hash } = await sendTransaction(request, {
-            address: wallet.address,
-            uiOptions: { showWalletUIs: false },
-            ...(params.sponsor ? { sponsor: true } : {}),
+          const data = encodeErc20Transfer(
+            params.recipient.trim(),
+            params.amountRaw,
+          );
+          const fees = await prepareErc20EvmSend({
+            network,
+            from,
+            to: params.token.tokenAddress!,
+            data,
+          });
+          const hash = await sendPrivyEvmTransaction({
+            provider,
+            network,
+            from,
+            to: params.token.tokenAddress!,
+            data,
+            gas: fees.gas,
+            maxFeePerGas: fees.maxFeePerGas,
+            maxPriorityFeePerGas: fees.maxPriorityFeePerGas,
+            nonce: params.nonce,
           });
 
           return { hash, chain: 'ethereum' };
@@ -167,7 +208,6 @@ export function useSendTransaction(): SendTransactionResult {
           chain: 'solana:mainnet',
           options: {
             uiOptions: { showWalletUIs: false },
-            // Alchemy Solana often lacks `signatureSubscribe`; return after broadcast.
             optimisticBroadcast: true,
             ...(params.sponsor ? { sponsor: true } : {}),
           },
@@ -181,12 +221,7 @@ export function useSendTransaction(): SendTransactionResult {
         setSending(false);
       }
     },
-    [
-      ethereumWallets,
-      sendTransaction,
-      signAndSendTransaction,
-      solanaWallets,
-    ],
+    [ethereumWallets, signAndSendTransaction, solanaWallets],
   );
 
   return { ready, sending, send, simulatePayment };

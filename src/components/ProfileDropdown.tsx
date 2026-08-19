@@ -13,6 +13,9 @@ import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useProfilePhoto } from '@/hooks/useProfilePhoto';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type ProfileDropdownProps = {
   onOpenProfile?: () => void;
@@ -24,6 +27,9 @@ type ProfileDropdownProps = {
 export function ProfileDropdown({
   onOpenProfile,
 }: ProfileDropdownProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const { displayName, avatarSeed } = useProfileIdentity();
   const { profilePhotoUrl } = useProfilePhoto();
   const {
@@ -92,7 +98,7 @@ export function ProfileDropdown({
                 pressState.pressed && styles.menuItemPressed,
               ]}
             >
-              <Ionicons name="person-outline" size={18} color="#166534" />
+              <Ionicons name="person-outline" size={18} color={colors.primary} />
               <Text style={styles.menuItemLabel}>Profile</Text>
             </Pressable>
           ) : null}
@@ -110,7 +116,7 @@ export function ProfileDropdown({
               pressState.pressed && styles.menuItemPressed,
             ]}
           >
-            <Ionicons name="log-out-outline" size={18} color="#b91c1c" />
+            <Ionicons name="log-out-outline" size={18} color={colors.danger} />
             <Text style={[styles.menuItemLabel, styles.menuItemDanger]}>
               Log out
             </Text>
@@ -130,7 +136,8 @@ export function ProfileDropdown({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     position: 'relative',
     zIndex: 20,
@@ -144,9 +151,9 @@ const styles = StyleSheet.create({
     paddingRight: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: '#dcfce7',
+    backgroundColor: c.surfaceMuted,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     boxShadow: '0 1px 2px rgba(22, 101, 52, 0.08)',
   },
   triggerActive: {
@@ -156,7 +163,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   menu: {
     position: 'absolute',
@@ -165,10 +172,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
     minWidth: 220,
     paddingVertical: 6,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     boxShadow: '0 8px 24px rgba(22, 101, 52, 0.12)',
     zIndex: 30,
   },
@@ -180,15 +187,15 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   menuItemPressed: {
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   menuItemLabel: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#166534',
+    color: c.primary,
   },
   menuItemDanger: {
-    color: '#b91c1c',
+    color: c.danger,
   },
   separator: {
     height: StyleSheet.hairlineWidth,
@@ -197,3 +204,4 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
 });
+}

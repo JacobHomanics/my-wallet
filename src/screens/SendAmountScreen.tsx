@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
+import {StyleSheet, 
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -17,18 +15,18 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
+import { BalanceSkeleton } from '@/components/BalanceSkeleton';
 import { BackButton } from '@/components/BackButton';
-import { BalanceLoadErrorFooter } from '@/components/BalanceLoadErrorFooter';
-import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
+import { SendConfigurationCollapsible } from '@/components/SendConfigurationCollapsible';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useGasFunding } from '@/hooks/useGasFunding';
+import { useGasSponsorship } from '@/hooks/useGasSponsorship';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendAmountRecipientDisplay } from '@/hooks/useSendAmountRecipientDisplay';
 import { useClearSendRecipientOnBack } from '@/hooks/useClearSendRecipientOnBack';
-import { useGasSponsorship } from '@/hooks/useGasSponsorship';
 import {
   updateSendDraft,
   useSendDraft,
@@ -37,27 +35,38 @@ import {
 import { useSendForm } from '@/hooks/useSendForm';
 import { useSendRecipientUsername } from '@/hooks/useSendRecipientUsername';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
-import { useShowAdvanced } from '@/hooks/useShowAdvanced';
-import { useSpendableTokens } from '@/hooks/useSpendableTokens';
-import { useTokenBalances } from '@/hooks/useTokenBalances';
+import { useSendSpendableTokens } from '@/hooks/useSendSpendableTokens';
+import { useVaultUsdcFundingSplits } from '@/hooks/useVaultUsdcFundingSplits';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { isUnpricedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 /**
  * Send step 2 — enter amount and review allocation / tax before confirm.
  */
 export function SendAmountScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'sendAmount'>>();
-  const { tokens, loading, ready, error, refresh, refreshing, ethereumAddress, solanaAddress } =
-    useTokenBalances();
-  const { spendableTokens, availableUsd, availableLabel } =
-    useSpendableTokens(tokens);
-  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const {
+    tokens,
+    loading,
+    ready,
+    ethereumAddress,
+    solanaAddress,
+    spendableTokens,
+    availableUsd,
+    availableLabel,
+    availableBalanceLoading,
+  } = useSendSpendableTokens();
   const { allocationInputUnit, setAllocationInputUnit, broadcastMode, setBroadcastMode } =
     useSendDraftUi();
   const { gasSponsorship, setGasSponsorship } = useGasSponsorship();
@@ -74,7 +83,7 @@ export function SendAmountScreen() {
     onSelectStrategy,
   } = useSendStrategyPicker();
   const [tokenPickerOpen, setTokenPickerOpen] = useState(false);
-  const { currencySymbol, formatFromUsd, formatServiceFeeFromUsd, defaultFormattedZero, defaultServiceFeeFormattedZero, parseDisplayInputToUsd } =
+  const { currencySymbol, formatFromUsd, defaultFormattedZero, parseDisplayInputToUsd } =
     useFiatDisplay();
 
   useEffect(() => {
@@ -115,7 +124,11 @@ export function SendAmountScreen() {
     addAllocation,
   } = form;
 
-  const gasFunding = useGasFunding(tokens, spendableTokens, allocations, taxFunding);
+  const gasFunding = useGasFunding(tokens, allocations, taxFunding);
+  const vaultUsdcFundingSplits = useVaultUsdcFundingSplits(
+    allocations,
+    taxFunding,
+  );
 
   const {
     hasRecipient,
@@ -130,16 +143,9 @@ export function SendAmountScreen() {
   });
 
   const totalLabel = availableLabel;
-  const balancePlaceholder = `${currencySymbol}—.——`;
-  const displayAvailableLabel = error ? balancePlaceholder : totalLabel;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
 
-  const onRefresh = useCallback(() => {
-    refresh();
-  }, [refresh]);
-
-  const taxLabel =
-    formatServiceFeeFromUsd(taxUsd) ?? defaultServiceFeeFormattedZero;
+  const taxLabel = formatFromUsd(taxUsd) ?? defaultFormattedZero;
   const payerTotalLabel =
     (payerTotalUsd != null ? formatFromUsd(payerTotalUsd) : null) ??
     defaultFormattedZero;
@@ -236,8 +242,8 @@ export function SendAmountScreen() {
             <View style={styles.topBarSpacer} />
           </View>
 
-          {!ready || loading ? (
-            <ActivityIndicator color="#166534" style={styles.loader} />
+          {!ready || (loading && tokens.length === 0) ? (
+            <ActivityIndicator color={colors.primary} style={styles.loader} />
           ) : !hasWallet ? (
             <Text style={styles.empty}>Creating your wallets…</Text>
           ) : (
@@ -250,10 +256,37 @@ export function SendAmountScreen() {
               style={styles.flex}
             >
               <View style={styles.formBody}>
+                {hasRecipient && primaryLabel ? (
+                  <View style={styles.recipientSection}>
+                    <Text style={styles.label}>{recipientFieldLabel}</Text>
+                    <View
+                      style={[styles.fieldRow, styles.fieldRowDisabled]}
+                    >
+                      <Avatar
+                        label={primaryLabel}
+                        photoUrl={recipientProfilePhotoUrl}
+                        seed={recipientUsername ?? primaryLabel}
+                        size={32}
+                        showFarcasterBadge={recipientIsFarcaster}
+                        showEnsBadge={recipientIsEns}
+                        style={styles.recipientAvatar}
+                      />
+                      <Text
+                        style={styles.recipientValue}
+                        selectable
+                        numberOfLines={1}
+                        ellipsizeMode="middle"
+                      >
+                        {primaryLabel}
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
+
                 <View
                   accessibilityLabel={
-                    error
-                      ? 'Available balance unavailable'
+                    availableBalanceLoading
+                      ? 'Loading available balance'
                       : `Available Balance: ${totalLabel}`
                   }
                   style={[
@@ -263,52 +296,18 @@ export function SendAmountScreen() {
                   ]}
                 >
                   <Text style={styles.balanceLabel}>Available Balance:</Text>
-                  <Text
-                    style={[
-                      styles.balanceValue,
-                      error && styles.balanceValueUnavailable,
-                    ]}
-                  >
-                    {displayAvailableLabel}
-                  </Text>
-                </View>
-                {error ? (
-                  <BalanceLoadErrorFooter
-                    onRetry={onRefresh}
-                    retrying={refreshing}
-                    style={styles.balanceUnavailableFooter}
-                  />
-                ) : null}
-
-                {hasRecipient && primaryLabel ? (
-                  <>
-                    <View style={styles.sectionDivider} />
-                    <View style={styles.recipientSection}>
-                      <Text style={styles.label}>{recipientFieldLabel}</Text>
-                      <View
-                        style={[styles.fieldRow, styles.fieldRowDisabled]}
-                      >
-                        <Avatar
-                          label={primaryLabel}
-                          photoUrl={recipientProfilePhotoUrl}
-                          seed={recipientUsername ?? primaryLabel}
-                          size={32}
-                          showFarcasterBadge={recipientIsFarcaster}
-                          showEnsBadge={recipientIsEns}
-                          style={styles.recipientAvatar}
-                        />
-                        <Text
-                          style={styles.recipientValue}
-                          selectable
-                          numberOfLines={1}
-                          ellipsizeMode="middle"
-                        >
-                          {primaryLabel}
-                        </Text>
-                      </View>
+                  {availableBalanceLoading ? (
+                    <View style={styles.balanceValueSkeletonWrap}>
+                      <BalanceSkeleton
+                        accessibilityLabel="Loading available balance"
+                        height={20}
+                        width={88}
+                      />
                     </View>
-                  </>
-                ) : null}
+                  ) : (
+                    <Text style={styles.balanceValue}>{totalLabel}</Text>
+                  )}
+                </View>
 
                 <Text style={styles.label}>Amount</Text>
                 <View
@@ -334,62 +333,39 @@ export function SendAmountScreen() {
                 <TaxDetailsCollapsible
                   gasSponsorship={gasSponsorship}
                   showEvm={showTaxEvm}
-                  showRatePercent={false}
                   showSolana={showTaxSolana}
+                  style={styles.taxSection}
                   taxLabel={taxLabel}
                 />
-
-                <View style={styles.totalSection}>
-                  <Text style={styles.totalLabel}>Total</Text>
-                  <Text accessibilityRole="header" style={styles.totalValue}>
+                <View style={styles.payerTotalRow}>
+                  <Text style={styles.payerTotalLabel}>Total</Text>
+                  <Text style={styles.payerTotalValue}>
                     {payerTotalLabel}
                   </Text>
                 </View>
 
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityState={{ expanded: showAdvanced }}
-                  onPress={toggleAdvanced}
-                  style={({ pressed }) => [
-                    styles.advancedToggle,
-                    pressed && styles.advancedTogglePressed,
-                  ]}
-                >
-                  <Text style={styles.advancedToggleText}>
-                    {showAdvanced
-                      ? 'Hide advanced details'
-                      : 'Show advanced details'}
-                  </Text>
-                  <Ionicons
-                    name={showAdvanced ? 'chevron-up' : 'chevron-down'}
-                    size={16}
-                    color="#5a7d6a"
-                  />
-                </Pressable>
-
-                {showAdvanced ? (
-                  <SendAdvancedDetails
-                    allocationInputUnit={allocationInputUnit}
-                    allocationInputs={allocationInputs}
-                    allocations={allocations}
-                    broadcastMode={broadcastMode}
-                    canAddToken={canAddToken}
-                    gasFunding={gasFunding}
-                    gasSponsorship={gasSponsorship}
-                    onAddToken={() => {
-                      setTokenPickerOpen(true);
-                    }}
-                    onAllocationAmountChange={setAllocationAmount}
-                    onAllocationInputUnitChange={setAllocationInputUnit}
-                    onBroadcastModeChange={setBroadcastMode}
-                    onGasSponsorshipChange={setGasSponsorship}
-                    onOpenStrategyPicker={openStrategyPicker}
-                    onRemoveAllocation={removeAllocation}
-                    selectedStrategy={selectedStrategy}
-                    spendableTokens={spendableTokens}
-                    taxFunding={taxFunding}
-                  />
-                ) : null}
+                <SendConfigurationCollapsible
+                  allocationInputUnit={allocationInputUnit}
+                  allocationInputs={allocationInputs}
+                  allocations={allocations}
+                  broadcastMode={broadcastMode}
+                  canAddToken={canAddToken}
+                  gasFunding={gasFunding}
+                  gasSponsorship={gasSponsorship}
+                  onAddToken={() => {
+                    setTokenPickerOpen(true);
+                  }}
+                  onAllocationAmountChange={setAllocationAmount}
+                  onAllocationInputUnitChange={setAllocationInputUnit}
+                  onBroadcastModeChange={setBroadcastMode}
+                  onGasSponsorshipChange={setGasSponsorship}
+                  onOpenStrategyPicker={openStrategyPicker}
+                  onRemoveAllocation={removeAllocation}
+                  selectedStrategy={selectedStrategy}
+                  spendableTokens={spendableTokens}
+                  taxFunding={taxFunding}
+                  vaultUsdcFundingSplits={vaultUsdcFundingSplits}
+                />
 
                 <Pressable
                   accessibilityRole="button"
@@ -433,10 +409,11 @@ export function SendAmountScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -458,7 +435,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -475,7 +452,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   loader: {
     marginTop: 48,
@@ -484,7 +461,7 @@ const styles = StyleSheet.create({
     marginTop: 48,
     paddingHorizontal: 24,
     fontSize: 15,
-    color: '#86a894',
+    color: c.textSubtle,
     textAlign: 'center',
   },
   form: {
@@ -492,35 +469,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   balanceRow: {
-    paddingRight: 16,
-  },
-  sectionDivider: {
-    alignSelf: 'stretch',
     marginTop: 12,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#86d4a4',
-    marginBottom: 4,
+    paddingRight: 16,
   },
   balanceLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     marginRight: 8,
   },
   balanceValue: {
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
     textAlign: 'right',
   },
-  balanceValueUnavailable: {
-    color: '#86a894',
-  },
-  balanceUnavailableFooter: {
-    marginTop: 10,
-    paddingBottom: 4,
+  balanceValueSkeletonWrap: {
+    flex: 1,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingRight: 8,
   },
   formBody: {
     flex: 1,
@@ -541,7 +511,7 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
   },
   label: {
@@ -549,7 +519,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -557,77 +527,76 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: c.inputBorder,
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 8,
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     minHeight: 52,
   },
   fieldRowDisabled: {
-    backgroundColor: '#dcfce7',
+    backgroundColor: c.surfaceMuted,
   },
   fieldRowError: {
-    borderColor: '#fca5a5',
+    borderColor: c.dangerBorder,
   },
   fieldInput: {
     flex: 1,
     paddingVertical: 14,
     paddingRight: 8,
     fontSize: 16,
-    color: '#166534',
+    color: c.primary,
   },
   amountPrefix: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     marginRight: 4,
   },
   fieldError: {
     marginTop: 8,
     fontSize: 13,
-    color: '#b91c1c',
+    color: c.danger,
   },
-  totalSection: {
-    marginTop: 24,
-    alignSelf: 'stretch',
-    alignItems: 'center',
-    gap: 8,
+  taxSection: {
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: c.inputBorder,
+    borderRadius: 12,
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingVertical: 14,
+    backgroundColor: c.surfaceMuted,
   },
-  totalLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  totalValue: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#166534',
-    letterSpacing: -0.6,
-    textAlign: 'center',
-    fontVariant: ['tabular-nums'],
-  },
-  advancedToggle: {
+  payerTotalRow: {
+    marginTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: c.inputBorder,
+    borderRadius: 12,
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingVertical: 14,
+    backgroundColor: c.surfaceMuted,
   },
-  advancedTogglePressed: {
-    opacity: 0.65,
+  payerTotalLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: c.text,
   },
-  advancedToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    marginRight: 4,
+  payerTotalValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: c.text,
+    fontVariant: ['tabular-nums'],
   },
+
   continueButton: {
     marginTop: 32,
     alignItems: 'center',
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -639,7 +608,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   continueButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -647,7 +616,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 13,
     lineHeight: 18,
-    color: '#5a7d6a',
+    color: c.textMuted,
     textAlign: 'center',
   },
 });
+}

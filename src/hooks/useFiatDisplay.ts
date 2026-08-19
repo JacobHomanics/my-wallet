@@ -9,6 +9,7 @@ import {
   formatFiatValue,
   formatFiatValueWithDigits,
   formatServiceFeeAmountInput,
+  formatSignedFiatValue,
   getCurrencySymbol,
   parseFiatInput,
   serviceFeeFractionDigits,
@@ -113,19 +114,13 @@ export function useFiatDisplay() {
 
   const formatSignedFromUsd = useCallback(
     (usd: number): string | null => {
-      if (!Number.isFinite(usd)) {
+      const display = convertFromUsd(usd);
+      if (display == null) {
         return null;
       }
-      if (usd === 0) {
-        return defaultFormattedZero;
-      }
-      const absolute = formatFromUsd(Math.abs(usd));
-      if (!absolute) {
-        return null;
-      }
-      return usd > 0 ? `+${absolute}` : `-${absolute}`;
+      return formatSignedFiatValue(display, currencyCode);
     },
-    [defaultFormattedZero, formatFromUsd],
+    [convertFromUsd, currencyCode],
   );
 
   return {

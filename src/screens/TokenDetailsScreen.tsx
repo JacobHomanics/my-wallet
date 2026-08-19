@@ -13,7 +13,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
-import { BalanceLoadErrorFooter } from '@/components/BalanceLoadErrorFooter';
 import { TokenChainSection } from '@/components/TokenChainSection';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useExpandedNetworks } from '@/hooks/useExpandedNetworks';
@@ -24,8 +23,14 @@ import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useTokensByChain } from '@/hooks/useTokensByChain';
 import type { TokenChainGroup } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export function TokenDetailsScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const navigation =
@@ -50,7 +55,7 @@ export function TokenDetailsScreen() {
   const { availableLabel } = useSpendableTokens(tokens);
   const chainGroups = useTokensByChain(tokens);
   const { expandedNetworks, isExpanded, toggleNetwork } = useExpandedNetworks();
-  const { formatFromUsd, defaultFormattedZero, currencySymbol } = useFiatDisplay();
+  const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
 
   const onRefresh = useCallback(() => {
     refresh();
@@ -79,10 +84,7 @@ export function TokenDetailsScreen() {
     [expandedNetworks, isExpanded, onTokenPress, toggleNetwork],
   );
 
-  const balancePlaceholder = `${currencySymbol}—.——`;
   const ledgerLabel = formatFromUsd(totalUsd) ?? defaultFormattedZero;
-  const displayAvailableLabel = error ? balancePlaceholder : availableLabel;
-  const displayLedgerLabel = error ? balancePlaceholder : ledgerLabel;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
 
   return (
@@ -118,52 +120,37 @@ export function TokenDetailsScreen() {
 
         <View style={styles.summary}>
           <View
-            accessibilityLabel={
-              error
-                ? 'Available balance unavailable'
-                : `Available Balance: ${availableLabel}`
-            }
+            accessibilityLabel={`Available Balance: ${availableLabel}`}
             style={styles.balanceRow}
           >
             <Text style={styles.balanceLabel}>Available Balance:</Text>
-            <Text
-              style={[
-                styles.balanceValue,
-                error && styles.balanceValueUnavailable,
-              ]}
-            >
-              {displayAvailableLabel}
-            </Text>
+            <Text style={styles.balanceValue}>{availableLabel}</Text>
           </View>
           <View
-            accessibilityLabel={
-              error
-                ? 'Total balance unavailable'
-                : `Total Balance: ${ledgerLabel}`
-            }
+            accessibilityLabel={`Total Balance: ${ledgerLabel}`}
             style={styles.balanceRow}
           >
             <Text style={styles.balanceLabel}>Total Balance:</Text>
-            <Text
-              style={[
-                styles.balanceValue,
-                error && styles.balanceValueUnavailable,
-              ]}
-            >
-              {displayLedgerLabel}
-            </Text>
+            <Text style={styles.balanceValue}>{ledgerLabel}</Text>
           </View>
-          {error ? (
-            <BalanceLoadErrorFooter
-              onRetry={onRefresh}
-              retrying={refreshing}
-              style={styles.balanceUnavailableFooter}
-            />
-          ) : null}
         </View>
 
         {!hasWallet || loading ? (
-          <ActivityIndicator color="#166534" style={styles.loader} />
+          <ActivityIndicator color={colors.primary} style={styles.loader} />
+        ) : error && tokens.length === 0 ? (
+          <View style={styles.errorBlock}>
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onRefresh}
+              style={({ pressed }) => [
+                styles.retryButton,
+                pressed && styles.retryButtonPressed,
+              ]}
+            >
+              <Text style={styles.retryButtonText}>Try again</Text>
+            </Pressable>
+          </View>
         ) : (
           <FlatList
             contentContainerStyle={
@@ -175,6 +162,9 @@ export function TokenDetailsScreen() {
               <Text style={styles.empty}>
                 No tokens found on Ethereum or Solana.
               </Text>
+            }
+            ListHeaderComponent={
+              error ? <Text style={styles.errorBanner}>{error}</Text> : null
             }
             refreshControl={
               <RefreshControl
@@ -192,11 +182,12 @@ export function TokenDetailsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     minHeight: 0,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   content: {
     flex: 1,
@@ -217,7 +208,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -234,7 +225,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   summary: {
     paddingHorizontal: 24,
@@ -246,9 +237,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -256,22 +247,15 @@ const styles = StyleSheet.create({
   balanceLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
   balanceValue: {
     flexShrink: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
     textAlign: 'right',
-  },
-  balanceValueUnavailable: {
-    color: '#86a894',
-  },
-  balanceUnavailableFooter: {
-    paddingTop: 4,
-    paddingBottom: 8,
   },
   loader: {
     marginTop: 48,
@@ -280,8 +264,39 @@ const styles = StyleSheet.create({
     marginTop: 48,
     paddingHorizontal: 24,
     fontSize: 15,
-    color: '#86a894',
+    color: c.textSubtle,
     textAlign: 'center',
+  },
+  errorBlock: {
+    marginTop: 48,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    gap: 16,
+  },
+  errorText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: c.danger,
+    textAlign: 'center',
+  },
+  errorBanner: {
+    marginBottom: 12,
+    fontSize: 13,
+    color: c.danger,
+  },
+  retryButton: {
+    backgroundColor: c.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  retryButtonPressed: {
+    opacity: 0.85,
+  },
+  retryButtonText: {
+    color: c.primaryText,
+    fontSize: 15,
+    fontWeight: '600',
   },
   list: {
     flex: 1,
@@ -298,3 +313,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
 });
+}

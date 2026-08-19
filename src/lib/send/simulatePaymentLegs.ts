@@ -1,3 +1,4 @@
+import { fetchErc20Balance } from '@/lib/send/fetchErc20Balance';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import type { SendTokenParams } from '@/hooks/useSendTransaction.shared';
 import { fetchNativeBalanceWei } from '@/lib/send/prepareEvmSend';
@@ -5,7 +6,10 @@ import { getEvmNativeCurrency } from '@/lib/send/rpc';
 import { simulateEvmTransfer } from '@/lib/send/simulateEvmTransfer';
 import { simulateSolanaTransfer } from '@/lib/send/simulateSolanaTransfer';
 import { fetchSolBalanceLamports } from '@/lib/send/solanaFees';
-import { isGasToken } from '@/lib/strategies/gasTokens';
+import {
+  isBaseGasPaymentToken,
+  shouldDeferLegForGasPayment,
+} from '@/lib/strategies/gasTokens';
 
 export type SimulatePaymentLegsParams = {
   legs: readonly SendTokenParams[];
@@ -26,13 +30,15 @@ export async function simulatePaymentLegs(
   }
 
   const orderedLegs = [...params.legs].sort((a, b) => {
-    const aGas = isGasToken(a.token) ? 1 : 0;
-    const bGas = isGasToken(b.token) ? 1 : 0;
+    const aGas = shouldDeferLegForGasPayment(a.token) ? 1 : 0;
+    const bGas = shouldDeferLegForGasPayment(b.token) ? 1 : 0;
     return aGas - bGas;
   });
 
   /** Remaining native balance after prior simulated legs, keyed by network. */
   const nativeRemaining = new Map<string, bigint>();
+  /** Remaining ERC-20 balance for Privy self-gas stables, keyed by token id. */
+  const selfGasTokenRemaining = new Map<string, bigint>();
 
   for (const leg of orderedLegs) {
     const chain = getNetworkChain(leg.token.network);
@@ -50,6 +56,19 @@ export async function simulatePaymentLegs(
           () => fetchNativeBalanceWei(leg.token.network, params.ethereumFrom!),
         );
 
+        const tokenBalance = isBaseGasPaymentToken(leg.token)
+          ? await getOrFetchSelfGasToken(
+              selfGasTokenRemaining,
+              leg.token,
+              () =>
+                fetchErc20Balance({
+                  network: leg.token.network,
+                  tokenAddress: leg.token.tokenAddress!,
+                  holder: params.ethereumFrom!,
+                }),
+            )
+          : undefined;
+
         const result = await simulateEvmTransfer({
           network: leg.token.network,
           from: params.ethereumFrom,
@@ -58,12 +77,27 @@ export async function simulatePaymentLegs(
           amountRaw: leg.amountRaw,
           nativeBalanceWei: balance,
           gasSponsored: leg.sponsor === true,
+          tokenBalanceRaw: tokenBalance,
+          token: leg.token,
         });
 
         nativeRemaining.set(
           leg.token.network,
-          subtractDebit(balance, result.nativeDebitWei, leg.token.network, 'evm'),
+          subtractDebit(
+            balance,
+            result.nativeDebitWei,
+            leg.token.network,
+            'evm',
+            isBaseGasPaymentToken(leg.token),
+          ),
         );
+
+        if (result.tokenDebitRaw > 0n && tokenBalance != null) {
+          selfGasTokenRemaining.set(
+            leg.token.id,
+            subtractTokenDebit(tokenBalance, result.tokenDebitRaw, leg.token.symbol),
+          );
+        }
       } else {
         if (!params.solanaFrom) {
           throw new Error('No Solana wallet available');
@@ -103,6 +137,20 @@ export async function simulatePaymentLegs(
   }
 }
 
+async function getOrFetchSelfGasToken(
+  cache: Map<string, bigint>,
+  token: { id: string },
+  fetchBalance: () => Promise<bigint>,
+): Promise<bigint> {
+  const cached = cache.get(token.id);
+  if (cached != null) {
+    return cached;
+  }
+  const balance = await fetchBalance();
+  cache.set(token.id, balance);
+  return balance;
+}
+
 async function getOrFetchNative(
   cache: Map<string, bigint>,
   network: string,
@@ -122,12 +170,35 @@ function subtractDebit(
   debit: bigint,
   network: string,
   chain: 'evm' | 'solana',
+  skipInsufficientNativeCheck = false,
 ): bigint {
+  if (debit <= 0n) {
+    return balance;
+  }
   if (balance < debit) {
+    if (skipInsufficientNativeCheck) {
+      return balance;
+    }
     throw new Error(
       chain === 'evm'
         ? `Not enough ${getEvmNativeCurrency(network).symbol} left on this network to cover fees for the remaining transfers.`
         : 'This transfer needs more SOL for network fees than is currently available to spend.',
+    );
+  }
+  return balance - debit;
+}
+
+function subtractTokenDebit(
+  balance: bigint,
+  debit: bigint,
+  symbol: string,
+): bigint {
+  if (debit <= 0n) {
+    return balance;
+  }
+  if (balance < debit) {
+    throw new Error(
+      `Not enough ${symbol} left to cover the remaining transfers and network fees.`,
     );
   }
   return balance - debit;

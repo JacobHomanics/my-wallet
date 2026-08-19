@@ -2,12 +2,11 @@ import { useCallback } from 'react';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
+import {StyleSheet, 
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -18,11 +17,15 @@ import { SendSearchContent } from '@/components/SendSearchContent';
 import { useContactSearch } from '@/hooks/useContactSearch';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import type { HomeStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
 
 /**
- * Search Cashbox usernames and account numbers during send.
+ * Search Ziti usernames and account numbers during send.
  */
 export function SendSearchScreen() {
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const navigation =
@@ -93,10 +96,11 @@ export function SendSearchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -118,7 +122,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -135,6 +139,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
 });
+}

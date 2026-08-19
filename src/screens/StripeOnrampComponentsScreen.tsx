@@ -1,8 +1,7 @@
-import { useEffect, useRef } from 'react';
-import {
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {StyleSheet, 
   ActivityIndicator,
   Pressable,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -10,28 +9,48 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useOnrampVaultDepositCompletion } from '@/hooks/useOnrampVaultDepositCompletion';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import { usePrivyFiatOnramp } from '@/hooks/usePrivyFiatOnramp';
-import { useTokenBalances } from '@/hooks/useTokenBalances';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 /**
  * Privy prebuilt fiat onramp (Stripe Embedded Components among providers).
  * @see https://docs.privy.io/wallets/funding/fiat-onramp
  */
 export function StripeOnrampComponentsScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goHome = usePopToHome();
-  const { refresh } = useTokenBalances();
+  const {
+    getPriorBaseUsdcBalanceRaw,
+    completeOnramp,
+    completionMessage,
+    isVaultDepositing,
+    isComplete,
+  } = useOnrampVaultDepositCompletion();
   const { isAvailable, isFunding, status, error, startFund } =
     usePrivyFiatOnramp();
   const startedRef = useRef(false);
+  const priorBalanceRawRef = useRef<bigint>(0n);
+  const [onrampSucceeded, setOnrampSucceeded] = useState(false);
+
+  const finishOnramp = useCallback(async () => {
+    setOnrampSucceeded(true);
+    await completeOnramp(priorBalanceRawRef.current);
+  }, [completeOnramp]);
 
   useEffect(() => {
     if (startedRef.current || !isAvailable) {
       return;
     }
     startedRef.current = true;
+    priorBalanceRawRef.current = getPriorBaseUsdcBalanceRaw();
     void (async () => {
       const result = await startFund();
       if (result === 'exited') {
@@ -39,13 +58,14 @@ export function StripeOnrampComponentsScreen() {
         return;
       }
       if (result === 'confirmed' || result === 'submitted') {
-        void refresh();
+        await finishOnramp();
       }
     })();
-  }, [goHome, isAvailable, refresh, startFund]);
+  }, [finishOnramp, getPriorBaseUsdcBalanceRaw, goHome, isAvailable, startFund]);
 
   const onRetry = () => {
     startedRef.current = true;
+    priorBalanceRawRef.current = getPriorBaseUsdcBalanceRaw();
     void (async () => {
       const result = await startFund();
       if (result === 'exited') {
@@ -53,16 +73,17 @@ export function StripeOnrampComponentsScreen() {
         return;
       }
       if (result === 'confirmed' || result === 'submitted') {
-        void refresh();
+        await finishOnramp();
       }
     })();
   };
 
-  const showSuccess = status === 'confirmed' || status === 'submitted';
-  const successMessage =
+  const showOnrampSuccess =
+    onrampSucceeded || status === 'confirmed' || status === 'submitted';
+  const pendingVaultMessage =
     status === 'confirmed'
-      ? 'Deposit confirmed. Funds should appear in your wallet shortly.'
-      : 'Deposit submitted. Final confirmation may take a moment.';
+      ? 'Deposit confirmed. Waiting for funds to arrive…'
+      : 'Deposit submitted. Waiting for funds to arrive…';
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -72,17 +93,23 @@ export function StripeOnrampComponentsScreen() {
             <Pressable
               accessibilityLabel="Back to home"
               accessibilityRole="button"
+              disabled={isVaultDepositing}
               hitSlop={8}
               onPress={goHome}
               style={({ pressed }) => [
                 styles.webBack,
                 pressed && styles.webBackPressed,
+                isVaultDepositing && styles.webBackDisabled,
               ]}
             >
               <Text style={styles.webBackText}>Back</Text>
             </Pressable>
           ) : (
-            <BackButton accessibilityLabel="Back to home" onPress={goHome} />
+            <BackButton
+              accessibilityLabel="Back to home"
+              disabled={isVaultDepositing}
+              onPress={goHome}
+            />
           )}
           <Text style={styles.topBarTitle}>Deposit</Text>
           <View style={styles.topBarSpacer} />
@@ -102,7 +129,7 @@ export function StripeOnrampComponentsScreen() {
 
           {isFunding ? (
             <View accessibilityRole="progressbar" style={styles.loadingPanel}>
-              <ActivityIndicator color="#166534" size="large" />
+              <ActivityIndicator color={colors.primary} size="large" />
               <Text style={styles.loadingText}>Opening deposit…</Text>
             </View>
           ) : null}
@@ -124,9 +151,26 @@ export function StripeOnrampComponentsScreen() {
             </View>
           ) : null}
 
-          {!isFunding && showSuccess ? (
+          {!isFunding && showOnrampSuccess && isVaultDepositing ? (
+            <View accessibilityRole="progressbar" style={styles.loadingPanel}>
+              <ActivityIndicator color={colors.primary} size="large" />
+              <Text style={styles.loadingText}>{pendingVaultMessage}</Text>
+              <Text style={styles.hintText}>Moving funds to your vault…</Text>
+            </View>
+          ) : null}
+
+          {!isFunding && showOnrampSuccess && isComplete ? (
             <View style={styles.messageBlock}>
-              <Text style={styles.successText}>{successMessage}</Text>
+              <Text
+                style={
+                  completionMessage?.includes('could not') ||
+                  completionMessage?.includes('still arriving')
+                    ? styles.warningText
+                    : styles.successText
+                }
+              >
+                {completionMessage}
+              </Text>
               <Pressable
                 accessibilityLabel="Done"
                 accessibilityRole="button"
@@ -141,7 +185,7 @@ export function StripeOnrampComponentsScreen() {
             </View>
           ) : null}
 
-          {!isFunding && !error && !showSuccess && isAvailable ? (
+          {!isFunding && !error && !showOnrampSuccess && isAvailable ? (
             <View style={styles.messageBlock}>
               <Text style={styles.hintText}>
                 Complete the deposit in the Privy window, or start again if you
@@ -166,10 +210,11 @@ export function StripeOnrampComponentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   shell: {
     flex: 1,
@@ -189,7 +234,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#14532d',
+    color: c.text,
   },
   topBarSpacer: {
     width: 64,
@@ -201,9 +246,12 @@ const styles = StyleSheet.create({
   webBackPressed: {
     opacity: 0.7,
   },
+  webBackDisabled: {
+    opacity: 0.45,
+  },
   webBackText: {
     fontSize: 16,
-    color: '#166534',
+    color: c.primary,
     fontWeight: '500',
   },
   body: {
@@ -221,7 +269,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textAlign: 'center',
   },
   messageBlock: {
@@ -232,25 +280,31 @@ const styles = StyleSheet.create({
   hintText: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#5a7d6a',
+    color: c.textMuted,
     textAlign: 'center',
   },
   successText: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#166534',
+    color: c.primary,
+    textAlign: 'center',
+  },
+  warningText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#b45309',
     textAlign: 'center',
   },
   errorText: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
   },
   primaryButton: {
     alignItems: 'center',
     alignSelf: 'stretch',
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -259,8 +313,9 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   primaryButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
 });
+}

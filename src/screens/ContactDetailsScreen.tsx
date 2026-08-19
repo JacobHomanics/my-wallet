@@ -21,6 +21,9 @@ import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToContacts } from '@/hooks/usePopToContacts';
 import { useSendToContact } from '@/hooks/useSendToContact';
 import type { ContactsStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 function DetailField({
   label,
@@ -31,6 +34,8 @@ function DetailField({
   value: string;
   copyKey: string;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const { copy, isCopied } = useCopyToClipboard();
 
   return (
@@ -54,7 +59,7 @@ function DetailField({
           <Ionicons
             name={isCopied(copyKey) ? 'checkmark' : 'copy-outline'}
             size={18}
-            color="#5a7d6a"
+            color={colors.textMuted}
           />
         </Pressable>
       </View>
@@ -66,6 +71,9 @@ function DetailField({
 }
 
 export function ContactDetailsScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goContacts = usePopToContacts();
@@ -139,7 +147,7 @@ export function ContactDetailsScreen() {
                 isDeleting && styles.deleteButtonDisabled,
               ]}
             >
-              <Ionicons name="trash-outline" size={20} color="#ffffff" />
+              <Ionicons name="trash-outline" size={20} color={colors.primaryText} />
             </Pressable>
           ) : (
             <View style={styles.topBarSpacer} />
@@ -155,7 +163,7 @@ export function ContactDetailsScreen() {
           showsVerticalScrollIndicator={false}
         >
           {isLoading ? (
-            <ActivityIndicator color="#166534" style={styles.loader} />
+            <ActivityIndicator color={colors.primary} style={styles.loader} />
           ) : notFound || !contact ? (
             <Text style={styles.empty}>Contact not found.</Text>
           ) : (
@@ -250,7 +258,7 @@ export function ContactDetailsScreen() {
                     pressed && styles.sendButtonPressed,
                   ]}
                 >
-                  <Ionicons name="send" size={18} color="#f0fdf4" />
+                  <Ionicons name="send" size={18} color={colors.primaryText} />
                   <Text style={styles.sendButtonText}>Send</Text>
                 </Pressable>
               ) : null}
@@ -273,10 +281,11 @@ export function ContactDetailsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   content: {
     flex: 1,
@@ -295,7 +304,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -306,7 +315,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#b91c1c',
+    backgroundColor: c.danger,
     borderRadius: 10,
   },
   deleteButtonPressed: {
@@ -327,7 +336,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   body: {
     paddingHorizontal: 24,
@@ -340,7 +349,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 22,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     textAlign: 'center',
   },
   loader: {
@@ -349,16 +358,16 @@ const styles = StyleSheet.create({
   empty: {
     marginTop: 48,
     fontSize: 15,
-    color: '#86a894',
+    color: c.textSubtle,
     textAlign: 'center',
   },
   card: {
     width: '100%',
     maxWidth: 420,
     marginTop: 16,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -375,7 +384,7 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -392,7 +401,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 16,
     lineHeight: 22,
-    color: '#166534',
+    color: c.primary,
   },
   accountNumber: {
     width: '100%',
@@ -407,7 +416,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 12,
@@ -416,8 +425,9 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   sendButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
-});
+  });
+}

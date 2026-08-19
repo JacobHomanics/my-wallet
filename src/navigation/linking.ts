@@ -12,7 +12,7 @@ import type {
 } from '@/navigation/types';
 
 /** Custom URL scheme registered in app.json / Info.plist (Privy OAuth redirects). */
-export const APP_SCHEME = 'cashbox';
+export const APP_SCHEME = 'ziti';
 
 /**
  * Public https origin for QR / share links (and native deep-link prefixes).
@@ -125,6 +125,7 @@ const PROFILE_STACK_HISTORY: Partial<
   profileSettings: ['index', 'settings'],
   onrampSettings: ['index', 'settings'],
   sendSettings: ['index', 'settings'],
+  earnSettings: ['index', 'settings'],
 };
 
 function hydrateSendDraftFromNavState(state: NavState | undefined): void {
@@ -462,6 +463,12 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               index: '',
             },
           },
+          earn: {
+            path: 'earn',
+            screens: {
+              index: '',
+            },
+          },
           profile: {
             path: 'profile',
             screens: {
@@ -470,6 +477,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               profileSettings: 'settings/profile',
               onrampSettings: 'settings/onramp',
               sendSettings: 'settings/send',
+              earnSettings: 'settings/earn',
             },
           },
         },

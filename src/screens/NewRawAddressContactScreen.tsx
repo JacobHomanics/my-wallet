@@ -21,11 +21,17 @@ import { usePopToContacts } from '@/hooks/usePopToContacts';
 import { useWalletBalanceSearch } from '@/hooks/useWalletBalanceSearch';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import type { ContactsStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 /**
  * Add an external contact by name and EVM/Solana addresses.
  */
 export function NewRawAddressContactScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goContacts = usePopToContacts();
@@ -132,7 +138,7 @@ export function NewRawAddressContactScreen() {
                       pressed && styles.clearSearchButtonPressed,
                     ]}
                   >
-                    <Ionicons name="close-circle" size={18} color="#5a7d6a" />
+                    <Ionicons name="close-circle" size={18} color={colors.textMuted} />
                   </Pressable>
                 ) : null}
               </View>
@@ -142,7 +148,7 @@ export function NewRawAddressContactScreen() {
               ) : null}
 
               {isSearching ? (
-                <ActivityIndicator color="#166534" style={styles.loader} />
+                <ActivityIndicator color={colors.primary} style={styles.loader} />
               ) : null}
 
               {walletResult ? (
@@ -214,7 +220,7 @@ export function NewRawAddressContactScreen() {
               ]}
             >
               {isAdding ? (
-                <ActivityIndicator color="#f0fdf4" />
+                <ActivityIndicator color={colors.primaryText} />
               ) : (
                 <Text style={styles.addButtonText}>Add contact</Text>
               )}
@@ -226,10 +232,11 @@ export function NewRawAddressContactScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   content: {
     flex: 1,
@@ -248,7 +255,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -265,7 +272,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   body: {
     paddingHorizontal: 24,
@@ -278,17 +285,17 @@ const styles = StyleSheet.create({
   error: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#b91c1c',
+    color: c.danger,
   },
   empty: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#86a894',
+    color: c.textSubtle,
   },
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     padding: 16,
     gap: 14,
@@ -299,29 +306,29 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   input: {
     width: '100%',
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    color: '#166534',
+    color: c.primary,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     width: '100%',
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 10,
     paddingHorizontal: 14,
   },
@@ -329,7 +336,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 48,
     fontSize: 15,
-    color: '#166534',
+    color: c.primary,
   },
   clearSearchButton: {
     width: 24,
@@ -348,9 +355,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -363,16 +370,16 @@ const styles = StyleSheet.create({
   resultLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   resultDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
   addButton: {
     marginTop: 4,
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 10,
@@ -385,8 +392,9 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   addButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 15,
     fontWeight: '600',
   },
 });
+}

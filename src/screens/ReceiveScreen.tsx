@@ -1,9 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import {
+import {StyleSheet, 
   ActivityIndicator,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -17,9 +16,15 @@ import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import { useReceiveAddressUrl } from '@/hooks/useReceiveAddressUrl';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 /** Share address QR + account number (no amount request). */
 export function ReceiveScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goHome = usePopToHome();
@@ -62,7 +67,7 @@ export function ReceiveScreen() {
           style={styles.flex}
         >
           {!ready || !url ? (
-            <ActivityIndicator color="#166534" style={styles.loader} />
+            <ActivityIndicator color={colors.primary} style={styles.loader} />
           ) : (
             <>
               <View style={styles.qrWrap}>
@@ -70,7 +75,7 @@ export function ReceiveScreen() {
                   data={url}
                   padding={16}
                   size={180}
-                  color="#166534"
+                  color={colors.primary}
                   style={styles.qr}
                 />
               </View>
@@ -127,10 +132,11 @@ export function ReceiveScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -152,7 +158,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -167,7 +173,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#166534',
+    color: c.primary,
   },
   body: {
     alignItems: 'center',
@@ -178,12 +184,12 @@ const styles = StyleSheet.create({
     marginTop: 48,
   },
   qrWrap: {
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderRadius: 16,
     padding: 8,
   },
   qr: {
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
   },
   identitySection: {
     width: '100%',
@@ -210,9 +216,10 @@ const styles = StyleSheet.create({
   copyLinkText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   copyLinkTextCopied: {
-    color: '#15803d',
+    color: c.success,
   },
 });
+}

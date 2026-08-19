@@ -1,14 +1,8 @@
-/** Formats a fiat amount with the currency symbol (e.g. $1,234.56). */
-export function formatFiatValue(
-  value: number | null,
+function formatFiatWithFractionDigits(
+  value: number,
   currencyCode: string,
+  fractionDigits: number,
 ): string | null {
-  if (value == null || !Number.isFinite(value)) {
-    return null;
-  }
-
-  const fractionDigits = fiatFractionDigits(currencyCode, value);
-
   try {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -19,6 +13,19 @@ export function formatFiatValue(
   } catch {
     return null;
   }
+}
+
+/** Formats a fiat amount with the currency symbol (e.g. $1,234.56). */
+export function formatFiatValue(
+  value: number | null,
+  currencyCode: string,
+): string | null {
+  if (value == null || !Number.isFinite(value)) {
+    return null;
+  }
+
+  const fractionDigits = fiatFractionDigits(currencyCode, value);
+  return formatFiatWithFractionDigits(value, currencyCode, fractionDigits);
 }
 
 export const SERVICE_FEE_FRACTION_DIGITS = 2;
@@ -42,16 +49,7 @@ export function formatFiatValueWithDigits(
   const digits =
     currencyCode === 'JPY' || currencyCode === 'KRW' ? 0 : fractionDigits;
 
-  try {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currencyCode,
-      maximumFractionDigits: digits,
-      minimumFractionDigits: digits,
-    }).format(value);
-  } catch {
-    return null;
-  }
+  return formatFiatWithFractionDigits(value, currencyCode, digits);
 }
 
 /** Formats a service fee amount for amount inputs (no currency symbol). */
@@ -67,6 +65,77 @@ export function formatServiceFeeAmountInput(
     return String(Math.round(value));
   }
   return value.toFixed(digits);
+}
+
+/**
+ * Formats a non-negative fiat amount, using extra decimals when standard
+ * precision would round a non-zero value to zero (e.g. $0.004 → $0.0040).
+ */
+function formatSmallAwareFiatAbsolute(
+  absValue: number,
+  currencyCode: string,
+): string | null {
+  if (!Number.isFinite(absValue) || absValue < 0) {
+    return null;
+  }
+  if (absValue === 0) {
+    return formatFiatValue(0, currencyCode);
+  }
+
+  const standardDigits = fiatFractionDigits(currencyCode, absValue);
+  const standardFormatted = formatFiatWithFractionDigits(
+    absValue,
+    currencyCode,
+    standardDigits,
+  );
+  const zeroFormatted = formatFiatWithFractionDigits(
+    0,
+    currencyCode,
+    standardDigits,
+  );
+
+  if (standardFormatted !== zeroFormatted) {
+    return standardFormatted;
+  }
+
+  const smallDigits =
+    currencyCode === 'JPY' || currencyCode === 'KRW' ? 0 : 4;
+  const smallFormatted = formatFiatWithFractionDigits(
+    absValue,
+    currencyCode,
+    smallDigits,
+  );
+  const smallZeroFormatted = formatFiatWithFractionDigits(
+    0,
+    currencyCode,
+    smallDigits,
+  );
+
+  if (smallFormatted !== smallZeroFormatted || smallDigits >= 6) {
+    return smallFormatted;
+  }
+
+  return formatFiatWithFractionDigits(absValue, currencyCode, 6);
+}
+
+/** Formats a signed fiat change (e.g. $0.0040, -$1.23). */
+export function formatSignedFiatValue(
+  value: number,
+  currencyCode: string,
+): string | null {
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+  if (value === 0) {
+    return formatFiatValue(0, currencyCode);
+  }
+
+  const absolute = formatSmallAwareFiatAbsolute(Math.abs(value), currencyCode);
+  if (!absolute) {
+    return null;
+  }
+
+  return value < 0 ? `-${absolute}` : absolute;
 }
 
 function fiatFractionDigits(currencyCode: string, value: number): number {

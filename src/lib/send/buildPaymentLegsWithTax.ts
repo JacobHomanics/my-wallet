@@ -5,8 +5,12 @@ import {
   type OwnedToken,
 } from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkChain } from '@/lib/alchemy/networks';
+import {
+  baseSelfGasLegCount,
+  totalSelfGasReserveRaw,
+} from '@/lib/send/gasReserves';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
-import { isGasToken } from '@/lib/strategies/gasTokens';
+import { isBaseGasPaymentToken, isGasToken } from '@/lib/strategies/gasTokens';
 import { isStablecoin } from '@/lib/strategies/stablecoins';
 import { computeTaxUsd, getTaxConfig } from '@/lib/tax';
 
@@ -66,6 +70,7 @@ export function pickTaxFundingToken(
   candidates: readonly OwnedToken[],
   taxUsd: number,
   reservedRawByTokenId: ReadonlyMap<string, bigint> = new Map(),
+  options?: { skipSelfGasReserve?: boolean },
 ): TaxFundingPick | null {
   if (!(taxUsd > 0) || candidates.length === 0) {
     return null;
@@ -82,7 +87,20 @@ export function pickTaxFundingToken(
     if (reserved >= token.rawBalance) {
       continue;
     }
-    const availableRaw = token.rawBalance - reserved;
+    const gasReserve =
+      options?.skipSelfGasReserve || !isBaseGasPaymentToken(token)
+        ? 0n
+        : totalSelfGasReserveRaw(
+            token,
+            baseSelfGasLegCount({
+              hasMerchantLeg: reserved > 0n,
+              hasTaxLeg: true,
+            }),
+          );
+    const availableRaw =
+      token.rawBalance > reserved + gasReserve
+        ? token.rawBalance - reserved - gasReserve
+        : 0n;
     const availableUsd = estimateTokenAmountUsd(token, availableRaw);
     if (availableUsd == null || availableUsd + 0.005 < taxUsd) {
       continue;
@@ -238,7 +256,9 @@ export function reserveTaxHeadroomOnTokens(
     return [...tokens];
   }
 
-  const funding = pickTaxFundingToken(tokens, taxUsd);
+  const funding = pickTaxFundingToken(tokens, taxUsd, new Map(), {
+    skipSelfGasReserve: true,
+  });
   if (!funding) {
     return [...tokens];
   }

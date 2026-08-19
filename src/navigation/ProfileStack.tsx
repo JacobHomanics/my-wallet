@@ -35,6 +35,10 @@ export function ProfileStack() {
         name="sendSettings"
         component={profileStackScreens.sendSettings}
       />
+      <NativeStack.Screen
+        name="earnSettings"
+        component={profileStackScreens.earnSettings}
+      />
     </NativeStack.Navigator>
   );
 }

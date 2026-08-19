@@ -48,8 +48,15 @@ export type SendDraft = {
    * wallets (no rewards).
    */
   broadcastMode: SendBroadcastMode;
-  /** When set, overrides default gas sponsorship for this send only. */
+  /**
+   * When set, overrides default gas sponsorship for this send only.
+   */
   gasSponsorship: boolean | null;
+  /**
+   * When true for this send, include vault USDC in available balance and
+   * withdraw from the vault before broadcasting.
+   */
+  useVaultUsdc: boolean;
 };
 
 type DraftListener = () => void;
@@ -72,6 +79,7 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   strategyId: null,
   broadcastMode: 'backend',
   gasSponsorship: null,
+  useVaultUsdc: true,
 };
 
 function freshSendDraft(): SendDraft {
@@ -216,10 +224,16 @@ export function useSendDraftUi() {
     });
   }, []);
 
+  const setUseVaultUsdc = useCallback((useVaultUsdc: boolean) => {
+    updateSendDraft({ useVaultUsdc });
+  }, []);
+
   return {
     allocationInputUnit: draft.allocationInputUnit,
     setAllocationInputUnit,
     broadcastMode: draft.broadcastMode,
     setBroadcastMode,
+    useVaultUsdc: draft.useVaultUsdc,
+    setUseVaultUsdc,
   };
 }

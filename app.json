@@ -1,18 +1,18 @@
 {
   "expo": {
-    "name": "Cashbox",
-    "slug": "cashbox",
+    "name": "Ziti",
+    "slug": "ziti",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "cashbox",
+    "scheme": "ziti",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jacobhomanics.cashbox"
+      "bundleIdentifier": "com.jacobhomanics.ziti"
     },
     "android": {
-      "package": "com.jacobhomanics.cashbox",
+      "package": "com.jacobhomanics.ziti",
       "adaptiveIcon": {
         "backgroundColor": "#dcfce7",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -40,7 +40,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Cashbox to access your photos for your profile picture."
+          "photosPermission": "Allow Ziti to access your photos for your profile picture."
         }
       ]
     ]

@@ -2,11 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
+import {StyleSheet, 
   ActivityIndicator,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -23,8 +22,14 @@ import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useReceivePaymentUrl } from '@/hooks/useReceivePaymentUrl';
 import type { HomeStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export function ReceiveQrScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const navigation =
@@ -76,7 +81,7 @@ export function ReceiveQrScreen() {
 
         <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
           {!ready || !url ? (
-            <ActivityIndicator color="#166534" style={styles.loader} />
+            <ActivityIndicator color={colors.primary} style={styles.loader} />
           ) : (
             <>
               <Text style={styles.amount} accessibilityRole="header">
@@ -97,7 +102,7 @@ export function ReceiveQrScreen() {
                   data={url}
                   padding={16}
                   size={200}
-                  color="#166534"
+                  color={colors.primary}
                   style={styles.qr}
                 />
               </View>
@@ -154,10 +159,11 @@ export function ReceiveQrScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   content: {
     flex: 1,
@@ -179,7 +185,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -194,7 +200,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#166534',
+    color: c.primary,
   },
   body: {
     alignItems: 'center',
@@ -208,7 +214,7 @@ const styles = StyleSheet.create({
   amount: {
     fontSize: 36,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     letterSpacing: -0.5,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
@@ -221,12 +227,12 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   qrWrap: {
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderRadius: 16,
     padding: 8,
   },
   qr: {
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
   },
   identitySection: {
     width: '100%',
@@ -253,9 +259,10 @@ const styles = StyleSheet.create({
   copyLinkText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   copyLinkTextCopied: {
-    color: '#15803d',
+    color: c.success,
   },
 });
+}

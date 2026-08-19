@@ -22,11 +22,17 @@ import {
   REWARD_TOKEN_SYMBOL,
 } from '@/lib/rewardToken';
 import type { HomeStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 /**
  * Shown after a successful multi-token payment from the confirm screen.
  */
 export function SentScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
@@ -60,7 +66,7 @@ export function SentScreen() {
 
         <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
           <View style={styles.resultIcon}>
-            <Ionicons name="checkmark-circle" size={48} color="#15803d" />
+            <Ionicons name="checkmark-circle" size={48} color={colors.success} />
           </View>
           <Text style={styles.resultTitle}>Sent</Text>
           <Text style={styles.heroUsd}>{usdLabel}</Text>
@@ -124,7 +130,7 @@ export function SentScreen() {
             <Ionicons
               name={showAdvanced ? 'chevron-up' : 'chevron-down'}
               size={16}
-              color="#5a7d6a"
+              color={colors.textMuted}
             />
           </Pressable>
 
@@ -209,6 +215,8 @@ function SummaryRow({
   value: string;
   mono?: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
+
   return (
     <View style={styles.summaryRow}>
       <Text style={styles.summaryLabel}>{label}</Text>
@@ -223,10 +231,11 @@ function SummaryRow({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -248,7 +257,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -265,13 +274,13 @@ const styles = StyleSheet.create({
   resultTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     marginBottom: 8,
   },
   heroUsd: {
     fontSize: 36,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     letterSpacing: -0.6,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
@@ -285,7 +294,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -300,7 +309,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 18,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
   },
   rewardSection: {
@@ -312,14 +321,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   rewardValue: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#15803d',
+    color: c.success,
     fontVariant: ['tabular-nums'],
   },
   rewardFailedText: {
@@ -344,15 +353,15 @@ const styles = StyleSheet.create({
   advancedToggleText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
   advanced: {
     marginTop: 8,
     alignSelf: 'stretch',
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     paddingHorizontal: 16,
     paddingVertical: 4,
   },
@@ -370,11 +379,11 @@ const styles = StyleSheet.create({
   tokenSymbol: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   tokenMeta: {
     fontSize: 13,
-    color: '#86a894',
+    color: c.textSubtle,
   },
   summaryRow: {
     paddingBottom: 14,
@@ -383,14 +392,14 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   summaryValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   summaryMono: {
     fontVariant: ['tabular-nums'],
@@ -398,13 +407,13 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
+    backgroundColor: c.rowBorder,
   },
   primaryButton: {
     marginTop: 28,
     alignItems: 'center',
     alignSelf: 'stretch',
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -413,8 +422,9 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   primaryButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
-});
+  });
+}

@@ -3,22 +3,24 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { Platform } from 'react-native';
 
-import { CashboxIcon } from '@/components/CashboxIcon';
+import { ZitiIcon } from '@/components/ZitiIcon';
 import { useBottomTabBarStyle } from '@/hooks/useBottomTabBarStyle';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ContactsStack } from '@/navigation/ContactsStack';
+import { EarnStack } from '@/navigation/EarnStack';
 import { HomeStack } from '@/navigation/HomeStack';
 import { MainTabBar } from '@/navigation/MainTabBar';
 import { ProfileStack } from '@/navigation/ProfileStack';
 import { RewardsStack } from '@/navigation/RewardsStack';
 import type { MainTabParamList } from '@/navigation/types';
-import { colors } from '@/theme/colors';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export function MainTabs() {
   const isDesktopWeb = useIsDesktopWeb();
   const tabBarStyle = useBottomTabBarStyle();
+  const colors = useThemeColors();
 
   return (
     <Tab.Navigator
@@ -33,8 +35,8 @@ export function MainTabs() {
           },
         },
         tabBarPosition: isDesktopWeb ? 'top' : 'bottom',
-        tabBarActiveTintColor: '#166534',
-        tabBarInactiveTintColor: '#86a894',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSubtle,
         tabBarStyle,
         tabBarLabelStyle: {
           lineHeight: 13,
@@ -69,7 +71,7 @@ export function MainTabs() {
             title: 'Home',
             tabBarStyle: hideTabBar ? { display: 'none' } : tabBarStyle,
             tabBarIcon: ({ color, size }) => (
-              <CashboxIcon
+              <ZitiIcon
                 size={size}
                 color={color}
                 detailColor={colors.surface}
@@ -119,6 +121,20 @@ export function MainTabs() {
         }}
       />
       <Tab.Screen
+        name="earn"
+        component={EarnStack}
+        options={{
+          title: 'Earn',
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              name={focused ? 'trending-up' : 'trending-up-outline'}
+              color={color}
+              size={size}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
         name="profile"
         component={ProfileStack}
         options={({ route }) => {
@@ -129,7 +145,8 @@ export function MainTabs() {
             (focusedRoute === 'settings' ||
               focusedRoute === 'profileSettings' ||
               focusedRoute === 'onrampSettings' ||
-              focusedRoute === 'sendSettings');
+              focusedRoute === 'sendSettings' ||
+              focusedRoute === 'earnSettings');
 
           return {
             title: 'Profile',

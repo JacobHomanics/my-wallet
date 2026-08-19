@@ -1,11 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
+import {StyleSheet, 
   ActivityIndicator,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -25,8 +24,14 @@ import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useUserWallets } from '@/hooks/useUserWallets';
 import { useWalletIdentityId } from '@/hooks/useWalletIdentityId';
 import type { ProfileStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export function ProfileScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
@@ -65,7 +70,7 @@ export function ProfileScreen() {
           pressed && styles.settingsButtonPressed,
         ]}
       >
-        <Ionicons name="settings-outline" size={24} color="#166534" />
+        <Ionicons name="settings-outline" size={24} color={colors.primary} />
       </Pressable>
 
       <ScrollView
@@ -124,7 +129,7 @@ export function ProfileScreen() {
           <Ionicons
             name={showAdvanced ? 'chevron-up' : 'chevron-down'}
             size={16}
-            color="#5a7d6a"
+            color={colors.textMuted}
           />
         </Pressable>
 
@@ -132,7 +137,7 @@ export function ProfileScreen() {
           <View style={styles.advancedSection}>
             <Text style={styles.sectionTitle}>Wallet</Text>
             {!ready ? (
-              <ActivityIndicator color="#166534" style={styles.loader} />
+              <ActivityIndicator color={colors.primary} style={styles.loader} />
             ) : wallets.length === 0 ? (
               <Text style={styles.empty}>Creating your wallet…</Text>
             ) : (
@@ -174,10 +179,11 @@ export function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   settingsButton: {
     position: 'absolute',
@@ -202,14 +208,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     letterSpacing: -0.5,
   },
   subtitle: {
     marginTop: 12,
     fontSize: 16,
     lineHeight: 24,
-    color: '#3f6b52',
+    color: c.textSecondary,
     textAlign: 'center',
   },
   section: {
@@ -238,7 +244,7 @@ const styles = StyleSheet.create({
   advancedToggleText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
   advancedSection: {
     width: '100%',
@@ -249,7 +255,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -258,6 +264,7 @@ const styles = StyleSheet.create({
   },
   empty: {
     fontSize: 15,
-    color: '#86a894',
+    color: c.textSubtle,
   },
 });
+}

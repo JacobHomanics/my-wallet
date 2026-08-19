@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import {
@@ -21,21 +21,26 @@ import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import { useSendToContact } from '@/hooks/useSendToContact';
 import type { HomeStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
 
 /**
  * Send step 1 — choose the recipient via search or contacts.
  */
 export function SendScreen() {
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const route = useRoute<RouteProp<HomeStackParamList, 'send'>>();
   const goHome = usePopToHome();
   const { sendToContact } = useSendToContact();
   const search = useContactSearch();
+  const [searchFocused, setSearchFocused] = useState(false);
 
   const tokenId = route.params?.tokenId;
   const usdAmount = route.params?.usdAmount;
-  const showContacts = !search.query.trim();
+  const showContacts = !search.query.trim() && !searchFocused;
 
   const onSelectContact = useCallback(
     (contact: ContactListItem) => {
@@ -91,6 +96,7 @@ export function SendScreen() {
               results={search.results}
               isSearching={search.isSearching}
               showEmpty={search.showEmpty}
+              onSearchFocusChange={setSearchFocused}
             />
 
             {showContacts ? (
@@ -106,10 +112,11 @@ export function SendScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -131,7 +138,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -148,19 +155,20 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   contactsSection: {
     marginTop: 24,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#d1fae5',
+    borderTopColor: c.rowBorder,
     paddingTop: 8,
   },
   contactsTitle: {
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     paddingVertical: 8,
   },
 });
+}

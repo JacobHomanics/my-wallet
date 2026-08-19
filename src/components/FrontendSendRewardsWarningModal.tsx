@@ -1,6 +1,8 @@
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import {StyleSheet,  Modal, Pressable, Text, View } from 'react-native';
 
 import { REWARD_POINTS_LABEL } from '@/lib/rewardToken';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
 
 type FrontendSendRewardsWarningModalProps = {
   visible: boolean;
@@ -16,6 +18,8 @@ export function FrontendSendRewardsWarningModal({
   onCancel,
   onConfirm,
 }: FrontendSendRewardsWarningModalProps) {
+  const styles = useThemedStyles(createStyles);
+
   return (
     <Modal
       animationType="fade"
@@ -38,8 +42,9 @@ export function FrontendSendRewardsWarningModal({
         >
           <Text style={styles.title}>Leave Cashbox Network?</Text>
           <Text style={styles.paragraph}>
-            Sending outside the Cashbox Network signs on this device. You will
-            not earn {REWARD_POINTS_LABEL} or gas sponsorship for this payment.
+            Sending from this device skips the Ziti backend, so you will not
+            receive any {REWARD_POINTS_LABEL} or gas sponsorship for this
+            payment.
           </Text>
           <View style={styles.actions}>
             <Pressable
@@ -71,7 +76,8 @@ export function FrontendSendRewardsWarningModal({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(15, 40, 25, 0.45)',
@@ -80,7 +86,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 16,
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
@@ -88,13 +94,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     marginBottom: 8,
   },
   paragraph: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#3f5f4c',
+    color: c.textSecondary,
     marginBottom: 20,
   },
   actions: {
@@ -106,13 +112,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#dcfce7',
+    backgroundColor: c.surfaceMuted,
   },
   confirmButton: {
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
   },
   buttonPressed: {
     opacity: 0.85,
@@ -120,11 +126,12 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   confirmButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#f0fdf4',
+    color: c.primaryText,
   },
 });
+}

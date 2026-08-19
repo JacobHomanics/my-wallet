@@ -12,6 +12,9 @@ import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useOnrampSettings } from '@/hooks/useOnrampSettings';
 import { usePopToSettings } from '@/hooks/usePopToSettings';
 import type { DepositMethodId } from '@/lib/stripe/depositMethods';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 function DepositProviderIcon({ id }: { id: DepositMethodId }) {
   if (id === 'stripe-embedded-components') {
@@ -24,6 +27,9 @@ function DepositProviderIcon({ id }: { id: DepositMethodId }) {
  * Choose which asset/network Stripe should preselect for new onramp sessions.
  */
 export function OnrampSettingsScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goSettings = usePopToSettings();
@@ -133,7 +139,7 @@ export function OnrampSettingsScreen() {
             <View style={styles.optionText}>
               <Text style={styles.optionLabel}>{selectedNetwork.label}</Text>
             </View>
-            <Ionicons name="chevron-down" size={18} color="#86a894" />
+            <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
           </Pressable>
         </View>
 
@@ -159,7 +165,7 @@ export function OnrampSettingsScreen() {
             <View style={styles.optionText}>
               <Text style={styles.optionLabel}>{selectedCurrency.label}</Text>
             </View>
-            <Ionicons name="chevron-down" size={18} color="#86a894" />
+            <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
           </Pressable>
         </View>
       </ScrollView>
@@ -195,10 +201,11 @@ export function OnrampSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   content: {
     width: '100%',
@@ -228,12 +235,12 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     letterSpacing: -0.5,
     textAlign: 'center',
   },
@@ -245,7 +252,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -253,9 +260,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -267,16 +274,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
   providerRowSelected: {
-    borderColor: '#86efac',
-    backgroundColor: '#f7fee7',
+    borderColor: c.borderStrong,
+    backgroundColor: c.surfaceMuted,
   },
   optionText: {
     flex: 1,
@@ -286,11 +293,12 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   optionLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
 });
+}

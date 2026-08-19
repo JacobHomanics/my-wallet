@@ -1,6 +1,8 @@
 import { createStackNavigator } from '@react-navigation/stack';
 
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useThemeColors } from '@/hooks/useThemeColors';
+
 import {
   PROFILE_STACK_INITIAL_ROUTE,
   profileStackScreens,
@@ -11,6 +13,7 @@ const WebStack = createStackNavigator<ProfileStackParamList>();
 
 export function ProfileStack() {
   const isDesktopWeb = useIsDesktopWeb();
+  const colors = useThemeColors();
 
   return (
     <WebStack.Navigator
@@ -20,7 +23,7 @@ export function ProfileStack() {
         animation: isDesktopWeb ? 'none' : 'slide_from_right',
         cardStyle: {
           flex: 1,
-          backgroundColor: '#f0fdf4',
+          backgroundColor: colors.bg,
           height: '100%',
         },
       }}
@@ -41,6 +44,10 @@ export function ProfileStack() {
       <WebStack.Screen
         name="sendSettings"
         component={profileStackScreens.sendSettings}
+      />
+      <WebStack.Screen
+        name="earnSettings"
+        component={profileStackScreens.earnSettings}
       />
     </WebStack.Navigator>
   );

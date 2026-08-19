@@ -11,6 +11,9 @@ import {
 import { AccountNumberInfoModal } from '@/components/AccountNumberInfoModal';
 import { useAccountNumberInfoModal } from '@/hooks/useAccountNumberInfoModal';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type AccountNumberProps = {
   identityId?: string | null;
@@ -26,6 +29,9 @@ export function AccountNumber({
   username,
   style,
 }: AccountNumberProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const { copy, isCopied } = useCopyToClipboard();
   const { infoOpen, openInfo, closeInfo } = useAccountNumberInfoModal();
 
@@ -74,7 +80,7 @@ export function AccountNumber({
               <Ionicons
                 name="help-circle-outline"
                 size={16}
-                color="#5a7d6a"
+                color={colors.textMuted}
               />
             </Pressable>
           ) : null}
@@ -102,7 +108,7 @@ export function AccountNumber({
             <Ionicons
               name={isCopied(copyKey) ? 'checkmark' : 'copy-outline'}
               size={compact ? 15 : 18}
-              color={isCopied(copyKey) ? '#15803d' : '#166534'}
+              color={isCopied(copyKey) ? colors.success : colors.primary}
             />
           </Pressable>
         </View>
@@ -115,7 +121,8 @@ export function AccountNumber({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     width: '100%',
     maxWidth: 360,
@@ -123,9 +130,9 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 8,
@@ -159,7 +166,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -176,13 +183,13 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
   },
   valueCompact: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#3f6b52',
+    color: c.textSecondary,
   },
   copyButton: {
     width: 32,
@@ -195,3 +202,4 @@ const styles = StyleSheet.create({
     height: 28,
   },
 });
+}

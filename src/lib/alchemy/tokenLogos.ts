@@ -35,9 +35,11 @@ const NATIVE_LOGOS: Record<string, string> = {
 const TOKEN_LOGOS: Record<string, string> = {
   // Ethereum USDC
   'eth-mainnet:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': TW.usdc,
-  // Base native USDC + bridged USDbC + WETH
+  // Base native USDC + bridged USDbC + gas-payment stables + WETH
   'base-mainnet:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': TW.usdc,
   'base-mainnet:0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca': TW.usdc,
+  'base-mainnet:0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42': TW.usdc,
+  'base-mainnet:0xfde4c96c8593536e31f229ea8f37b2ada2699bb2': TW.usdc,
   [`base-mainnet:${OP_STACK_WETH}`]: TW.eth,
   // Arbitrum USDC + WETH
   'arb-mainnet:0xaf88d065e77c8cc2239327c5edb3a432268e5831': TW.usdc,

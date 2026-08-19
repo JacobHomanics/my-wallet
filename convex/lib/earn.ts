@@ -1,0 +1,257 @@
+import type { AuthorizationContext, PrivyClient } from "@privy-io/node";
+
+/** Matches @privy-io/node base URL + /v1 paths (not /api/v1). */
+const PRIVY_API_BASE = "https://api.privy.io/v1";
+
+export type EarnAsset = {
+  address: string;
+  symbol: string;
+  decimals: number;
+};
+
+export type EarnVaultDetails = {
+  id: string;
+  name: string;
+  vault_address: string;
+  asset: EarnAsset;
+  caip2: string;
+  user_apy: number | null;
+  app_apy: number | null;
+  tvl_usd: number | null;
+  available_liquidity_usd: number | null;
+  provider: string;
+};
+
+export type EarnVaultPosition = {
+  asset: EarnAsset;
+  total_deposited: string;
+  total_withdrawn: string;
+  assets_in_vault: string;
+  shares_in_vault: string;
+};
+
+export type EarnWalletAction = {
+  id: string;
+  wallet_id: string;
+  type: string;
+  status: string;
+  amount?: string | null;
+  raw_amount?: string | null;
+  asset?: string | null;
+  decimals?: number | null;
+  share_amount?: string | null;
+  created_at?: string;
+  failure_reason?: { message: string } | null;
+};
+
+export function getEarnVaultId(): string {
+  const vaultId = process.env.PRIVY_EARN_VAULT_ID?.trim();
+  if (!vaultId) {
+    throw new Error(
+      "Missing PRIVY_EARN_VAULT_ID. Configure a vault in Privy Dashboard → Wallet infrastructure → Earn, then set the vault ID on Convex.",
+    );
+  }
+  return vaultId;
+}
+
+function parsePrivyEarnApiError(error: unknown, action: "deposit" | "withdraw"): never {
+  const fallback =
+    action === "deposit"
+      ? "Deposit failed. Try again shortly."
+      : "Withdrawal failed. Try again shortly.";
+
+  if (!(error instanceof Error)) {
+    throw new Error(fallback);
+  }
+
+  const message = error.message;
+  const jsonMatch = message.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      const payload = JSON.parse(jsonMatch[0]) as {
+        error?: string;
+        code?: string;
+      };
+      if (payload.error) {
+        throw new Error(payload.error);
+      }
+    } catch (parsed) {
+      if (parsed instanceof Error && parsed.message !== message) {
+        throw parsed;
+      }
+    }
+  }
+
+  throw new Error(message || fallback);
+}
+
+function getPrivyBasicAuthHeader(): { appId: string; authorization: string } {
+  const appId = process.env.PRIVY_APP_ID;
+  const appSecret = process.env.PRIVY_APP_SECRET;
+  if (!appId || !appSecret) {
+    throw new Error("Missing PRIVY_APP_ID or PRIVY_APP_SECRET");
+  }
+  const credentials = Buffer.from(`${appId}:${appSecret}`).toString("base64");
+  return { appId, authorization: `Basic ${credentials}` };
+}
+
+async function privyGet<T>(path: string): Promise<T> {
+  const { appId, authorization } = getPrivyBasicAuthHeader();
+  const response = await fetch(`${PRIVY_API_BASE}${path}`, {
+    method: "GET",
+    headers: {
+      "privy-app-id": appId,
+      Authorization: authorization,
+    },
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    if (response.status === 404) {
+      throw new Error(
+        `Earn vault not found (${path}). Confirm PRIVY_EARN_VAULT_ID matches the vault ID in Privy Dashboard → Wallet infrastructure → Earn, and that PRIVY_APP_ID / PRIVY_APP_SECRET on Convex match the same Privy app.`,
+      );
+    }
+    throw new Error(`Privy GET ${path} failed (${response.status}): ${body}`);
+  }
+
+  return (await response.json()) as T;
+}
+
+export async function fetchEarnVaultDetails(
+  vaultId: string,
+): Promise<EarnVaultDetails> {
+  return privyGet<EarnVaultDetails>(`/earn/ethereum/vaults/${vaultId}`);
+}
+
+export async function fetchEarnVaultPosition(
+  walletId: string,
+  vaultId: string,
+): Promise<EarnVaultPosition> {
+  return privyGet<EarnVaultPosition>(
+    `/wallets/${walletId}/earn/ethereum/vaults?vault_id=${encodeURIComponent(vaultId)}`,
+  );
+}
+
+export async function fetchEarnWalletAction(
+  walletId: string,
+  actionId: string,
+): Promise<EarnWalletAction> {
+  return privyGet<EarnWalletAction>(
+    `/wallets/${walletId}/actions/${actionId}`,
+  );
+}
+
+const EARN_ACTION_POLL_MS = 2_000;
+const EARN_ACTION_POLL_MAX_ATTEMPTS = 30;
+
+export function isEarnActionPending(action: EarnWalletAction): boolean {
+  return action.status === "pending" || action.status === "processing";
+}
+
+export function isEarnActionSucceeded(action: EarnWalletAction): boolean {
+  return action.status === "succeeded";
+}
+
+export function isEarnActionFailed(action: EarnWalletAction): boolean {
+  return action.status === "failed" || action.status === "rejected";
+}
+
+/** Poll until a deposit/withdraw action reaches a terminal state. */
+export async function pollEarnWalletAction(
+  walletId: string,
+  actionId: string,
+): Promise<EarnWalletAction> {
+  let latest = await fetchEarnWalletAction(walletId, actionId);
+
+  for (
+    let attempt = 0;
+    isEarnActionPending(latest) && attempt < EARN_ACTION_POLL_MAX_ATTEMPTS;
+    attempt += 1
+  ) {
+    await new Promise((resolve) => {
+      setTimeout(resolve, EARN_ACTION_POLL_MS);
+    });
+    latest = await fetchEarnWalletAction(walletId, actionId);
+  }
+
+  return latest;
+}
+
+export async function depositToEarnVault(params: {
+  privy: PrivyClient;
+  authorizationContext: AuthorizationContext;
+  walletId: string;
+  vaultId: string;
+  amount: string;
+}): Promise<EarnWalletAction> {
+  try {
+    const result = await params.privy.wallets().earn().ethereum().deposit(
+      params.walletId,
+      {
+        vault_id: params.vaultId,
+        amount: params.amount,
+        authorization_context: params.authorizationContext,
+      },
+    );
+
+    return mapEarnWalletAction(result);
+  } catch (error) {
+    parsePrivyEarnApiError(error, "deposit");
+  }
+}
+
+function mapEarnWalletAction(result: {
+  id: string;
+  wallet_id: string;
+  type: string;
+  status: string;
+  amount?: string | null;
+  raw_amount?: string | null;
+  asset?: string | null;
+  decimals?: number | null;
+  share_amount?: string | null;
+  created_at?: string;
+  failure_reason?: { message: string } | null;
+}): EarnWalletAction {
+  return {
+    id: result.id,
+    wallet_id: result.wallet_id,
+    type: result.type,
+    status: result.status,
+    amount: result.amount ?? null,
+    raw_amount: result.raw_amount ?? null,
+    asset: result.asset ?? null,
+    decimals: result.decimals ?? null,
+    share_amount: result.share_amount ?? null,
+    created_at: result.created_at,
+    failure_reason: result.failure_reason ?? null,
+  };
+}
+
+export async function withdrawFromEarnVault(params: {
+  privy: PrivyClient;
+  authorizationContext: AuthorizationContext;
+  walletId: string;
+  vaultId: string;
+  amount?: string;
+  rawAmount?: string;
+}): Promise<EarnWalletAction> {
+  try {
+    const withdrawBody = params.rawAmount
+      ? { vault_id: params.vaultId, raw_amount: params.rawAmount }
+      : { vault_id: params.vaultId, amount: params.amount! };
+
+    const result = await params.privy.wallets().earn().ethereum().withdraw(
+      params.walletId,
+      {
+        ...withdrawBody,
+        authorization_context: params.authorizationContext,
+      },
+    );
+
+    return mapEarnWalletAction(result);
+  } catch (error) {
+    parsePrivyEarnApiError(error, "withdraw");
+  }
+}

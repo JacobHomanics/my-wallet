@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 
 import type { ProfileStackParamList } from '@/navigation/types';
+import { EarnSettingsScreen } from '@/screens/EarnSettingsScreen';
 import { OnrampSettingsScreen } from '@/screens/OnrampSettingsScreen';
 import { ProfileScreen } from '@/screens/ProfileScreen';
 import { ProfileSettingsScreen } from '@/screens/ProfileSettingsScreen';
@@ -15,4 +16,5 @@ export const profileStackScreens = {
   profileSettings: ProfileSettingsScreen,
   onrampSettings: OnrampSettingsScreen,
   sendSettings: SendSettingsScreen,
+  earnSettings: EarnSettingsScreen,
 } as const satisfies Record<keyof ProfileStackParamList, ComponentType<object>>;

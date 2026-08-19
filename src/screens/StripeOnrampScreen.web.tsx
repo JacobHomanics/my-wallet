@@ -15,14 +15,20 @@ import { CryptoElements } from '@/components/stripe/CryptoElements';
 import { OnrampElement } from '@/components/stripe/OnrampElement';
 import { useCreateStripeOnrampSession } from '@/hooks/useCreateStripeOnrampSession';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useOnrampVaultDepositCompletion } from '@/hooks/useOnrampVaultDepositCompletion';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import { useStripeOnrampUiReady } from '@/hooks/useStripeOnrampUiReady';
-import { useTokenBalances } from '@/hooks/useTokenBalances';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 function DepositLoading({ message }: { message: string }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   return (
     <View accessibilityRole="progressbar" style={styles.loadingPanel}>
-      <ActivityIndicator color="#166534" size="large" />
+      <ActivityIndicator color={colors.primary} size="large" />
       <Text style={styles.loadingText}>{message}</Text>
     </View>
   );
@@ -33,16 +39,26 @@ function DepositLoading({ message }: { message: string }) {
  * Supports Base / Ethereum and Avalanche destinations.
  */
 export function StripeOnrampScreen() {
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goHome = usePopToHome();
-  const { refresh } = useTokenBalances();
+  const {
+    getPriorBaseUsdcBalanceRaw,
+    completeOnramp,
+    completionMessage,
+    isVaultDepositing,
+    isComplete,
+  } = useOnrampVaultDepositCompletion();
   const { isCreating, error, createSession, isAvailable } =
     useCreateStripeOnrampSession();
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [fulfillmentComplete, setFulfillmentComplete] = useState(false);
+  const [onrampComplete, setOnrampComplete] = useState(false);
   const startedRef = useRef(false);
+  const priorBalanceRawRef = useRef<bigint>(0n);
+  const completionStartedRef = useRef(false);
   const { uiReady, onReady } = useStripeOnrampUiReady(clientSecret);
 
   useEffect(() => {
@@ -50,6 +66,7 @@ export function StripeOnrampScreen() {
       return;
     }
     startedRef.current = true;
+    priorBalanceRawRef.current = getPriorBaseUsdcBalanceRaw();
     let cancelled = false;
     void (async () => {
       const session = await createSession();
@@ -60,23 +77,25 @@ export function StripeOnrampScreen() {
     return () => {
       cancelled = true;
     };
-  }, [createSession]);
+  }, [createSession, getPriorBaseUsdcBalanceRaw]);
 
   const onSessionChange = useCallback(
     ({ session }: { session: OnrampSessionResult }) => {
-      if (session.status === 'fulfillment_complete') {
-        setFulfillmentComplete(true);
-        void refresh();
+      if (session.status !== 'fulfillment_complete' || completionStartedRef.current) {
+        return;
       }
+      completionStartedRef.current = true;
+      setOnrampComplete(true);
+      void completeOnramp(priorBalanceRawRef.current);
     },
-    [refresh],
+    [completeOnramp],
   );
 
   const showSessionLoader =
     isAvailable && !error && (isCreating || !clientSecret);
   const showEmbedLoader = Boolean(clientSecret) && !uiReady;
   const loadingMessage = 'Loading...';
-
+  const showCompletionOverlay = onrampComplete && (isVaultDepositing || isComplete);
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -86,17 +105,23 @@ export function StripeOnrampScreen() {
             <Pressable
               accessibilityLabel="Back to home"
               accessibilityRole="button"
+              disabled={isVaultDepositing}
               hitSlop={8}
               onPress={goHome}
               style={({ pressed }) => [
                 styles.webBack,
                 pressed && styles.webBackPressed,
+                isVaultDepositing && styles.webBackDisabled,
               ]}
             >
               <Text style={styles.webBackText}>Back</Text>
             </Pressable>
           ) : (
-            <BackButton accessibilityLabel="Back to home" onPress={goHome} />
+            <BackButton
+              accessibilityLabel="Back to home"
+              disabled={isVaultDepositing}
+              onPress={goHome}
+            />
           )}
           <Text style={styles.topBarTitle}>Deposit</Text>
           <View style={styles.topBarSpacer} />
@@ -130,6 +155,37 @@ export function StripeOnrampScreen() {
                   <DepositLoading message={loadingMessage} />
                 </View>
               ) : null}
+              {showCompletionOverlay ? (
+                <View style={styles.completionOverlay}>
+                  {isVaultDepositing ? (
+                    <DepositLoading message="Moving funds to your vault…" />
+                  ) : (
+                    <View style={styles.completionCard}>
+                      <Text
+                        style={
+                          completionMessage?.includes('could not') ||
+                          completionMessage?.includes('still arriving')
+                            ? styles.warningText
+                            : styles.successText
+                        }
+                      >
+                        {completionMessage}
+                      </Text>
+                      <Pressable
+                        accessibilityLabel="Done"
+                        accessibilityRole="button"
+                        onPress={goHome}
+                        style={({ pressed }) => [
+                          styles.doneButton,
+                          pressed && styles.doneButtonPressed,
+                        ]}
+                      >
+                        <Text style={styles.doneButtonText}>Done</Text>
+                      </Pressable>
+                    </View>
+                  )}
+                </View>
+              ) : null}
               <View
                 style={uiReady ? styles.onrampVisible : styles.onrampHidden}
               >
@@ -145,36 +201,16 @@ export function StripeOnrampScreen() {
             </View>
           ) : null}
         </ScrollView>
-
-        {fulfillmentComplete && (
-          <View
-            style={[
-              styles.doneBar,
-              { paddingBottom: Math.max(insets.bottom, 16) },
-            ]}
-          >
-            <Pressable
-              accessibilityLabel="Done"
-              accessibilityRole="button"
-              onPress={goHome}
-              style={({ pressed }) => [
-                styles.doneButton,
-                pressed && styles.doneButtonPressed,
-              ]}
-            >
-              <Text style={styles.doneButtonText}>Done</Text>
-            </Pressable>
-          </View>
-        )}
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   shell: {
     flex: 1,
@@ -197,7 +233,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#14532d',
+    color: c.text,
   },
   topBarSpacer: {
     width: 64,
@@ -209,9 +245,12 @@ const styles = StyleSheet.create({
   webBackPressed: {
     opacity: 0.7,
   },
+  webBackDisabled: {
+    opacity: 0.45,
+  },
   webBackText: {
     fontSize: 16,
-    color: '#166534',
+    color: c.primary,
     fontWeight: '500',
   },
   body: {
@@ -235,34 +274,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFill,
     zIndex: 1,
   },
+  completionOverlay: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 2,
+    backgroundColor: c.bg,
+  },
+  completionCard: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
+    paddingHorizontal: 24,
+  },
   loadingText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#5a7d6a',
+    color: c.textMuted,
+    textAlign: 'center',
+  },
+  successText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: c.primary,
+    textAlign: 'center',
+  },
+  warningText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#b45309',
     textAlign: 'center',
   },
   errorText: {
     marginTop: 24,
     fontSize: 15,
     lineHeight: 22,
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
-  },
-  doneBar: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    backgroundColor: '#f0fdf4',
   },
   doneButton: {
     alignItems: 'center',
     alignSelf: 'stretch',
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -271,8 +329,9 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   doneButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
-});
+  });
+}

@@ -8,6 +8,7 @@ import {
   getEvmNativeCurrency,
   toHexQuantity,
 } from '@/lib/send/rpc';
+import { canPayOwnTransferGas } from '@/lib/strategies/gasTokens';
 
 type JsonRpcResponse = {
   result?: string;
@@ -241,7 +242,8 @@ export async function prepareErc20EvmSend(options: {
     estimateEvmFeeFields(options.network, true, gas),
   ]);
 
-  if (balance < fees.maxFeeWei) {
+  const paysOwnGas = canPayOwnTransferGas(options.network, options.to);
+  if (!paysOwnGas && balance < fees.maxFeeWei) {
     throw new Error(
       `Not enough ${nativeGasTokenSymbol(options.network)} on this network to pay for the token transfer fee.`,
     );

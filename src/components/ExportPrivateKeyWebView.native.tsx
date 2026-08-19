@@ -2,6 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type ExportPrivateKeyWebViewProps = {
   uri: string | null;
@@ -17,6 +20,9 @@ export function ExportPrivateKeyWebView({
   uri,
   onClose,
 }: ExportPrivateKeyWebViewProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
 
   return (
@@ -39,7 +45,7 @@ export function ExportPrivateKeyWebView({
               pressed && styles.closeButtonPressed,
             ]}
           >
-            <Ionicons name="close" size={22} color="#166534" />
+            <Ionicons name="close" size={22} color={colors.primary} />
           </Pressable>
         </View>
 
@@ -69,10 +75,11 @@ export function ExportPrivateKeyWebView({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   header: {
     flexDirection: 'row',
@@ -81,12 +88,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#d1fae5',
+    borderBottomColor: c.rowBorder,
   },
   title: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   closeButton: {
     padding: 4,
@@ -96,6 +103,7 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
 });
+}

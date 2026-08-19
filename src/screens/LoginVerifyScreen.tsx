@@ -2,11 +2,10 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useState } from 'react';
-import {
+import {StyleSheet, 
   ActivityIndicator,
   Keyboard,
   Pressable,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -18,8 +17,14 @@ import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useResendLoginCode } from '@/hooks/useResendLoginCode';
 import { useVerifyLoginCode } from '@/hooks/useVerifyLoginCode';
 import type { RootStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export function LoginVerifyScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
@@ -124,7 +129,7 @@ export function LoginVerifyScreen() {
         />
 
         {isPending ? (
-          <ActivityIndicator color="#166534" style={styles.spinner} />
+          <ActivityIndicator color={colors.primary} style={styles.spinner} />
         ) : null}
 
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
@@ -141,7 +146,7 @@ export function LoginVerifyScreen() {
           ]}
         >
           {isResendPending ? (
-            <ActivityIndicator color="#5a7d6a" />
+            <ActivityIndicator color={colors.textMuted} />
           ) : (
             <Text
               style={[
@@ -160,10 +165,11 @@ export function LoginVerifyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   header: {
     paddingHorizontal: 8,
@@ -179,7 +185,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     letterSpacing: -0.5,
   },
   subtitle: {
@@ -187,7 +193,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     fontSize: 16,
     lineHeight: 24,
-    color: '#3f6b52',
+    color: c.textSecondary,
     textAlign: 'center',
   },
   spinner: {
@@ -196,7 +202,7 @@ const styles = StyleSheet.create({
   error: {
     marginTop: 16,
     fontSize: 14,
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
   },
   resendButton: {
@@ -211,11 +217,12 @@ const styles = StyleSheet.create({
   resendText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#166534',
+    color: c.primary,
     textAlign: 'center',
   },
   resendTextDisabled: {
-    color: '#5a7d6a',
+    color: c.textMuted,
     opacity: 0.7,
   },
 });
+}

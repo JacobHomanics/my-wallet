@@ -30,9 +30,15 @@ import {
   type TaxFundingPick,
 } from '@/lib/send/buildPaymentLegsWithTax';
 import {
+  totalSelfGasReserveRaw,
+  transferGasReserveRaw,
+  typicalBaseSelfGasLegCount,
+} from '@/lib/send/gasReserves';
+import {
   allocatePaymentUsd,
   type PaymentAllocation,
 } from '@/lib/strategies/allocatePayment';
+import { isGasToken, isBaseGasPaymentToken } from '@/lib/strategies/gasTokens';
 import type { PaymentStrategyId } from '@/lib/strategies';
 import { isValidRecipientAddress } from '@/lib/validation';
 import { tryDecodeWalletIdentity } from '@/lib/walletIdentity';
@@ -125,24 +131,22 @@ function refreshAllocationTokens(
   allocations: PaymentAllocation[],
   walletTokens: OwnedToken[],
   spendableTokens: OwnedToken[],
-  useWalletBalance: boolean,
+  tokensForMerchantAllocation: OwnedToken[],
 ): PaymentAllocation[] {
-  const balanceTokens = useWalletBalance ? walletTokens : spendableTokens;
-
   return allocations.flatMap((leg) => {
     const token = walletTokens.find((item) => item.id === leg.token.id);
     if (!token) {
       return [];
     }
 
-    const balanceToken =
-      balanceTokens.find((item) => item.id === leg.token.id) ?? token;
+    const maxRaw = maxManualAllocationRaw(
+      token,
+      tokensForMerchantAllocation,
+      spendableTokens,
+    );
 
-    // Clamp to spendable balance (fee reserves may shrink gas tokens after draft).
-    const amountRaw =
-      leg.amountRaw > balanceToken.rawBalance
-        ? balanceToken.rawBalance
-        : leg.amountRaw;
+    // Clamp to spendable balance (gas reserves + tax headroom).
+    const amountRaw = leg.amountRaw > maxRaw ? maxRaw : leg.amountRaw;
 
     const usd =
       amountRaw <= 0n
@@ -219,10 +223,25 @@ function maxManualAllocationRaw(
 
   const merchantCap =
     tokensForMerchantAllocation.find((item) => item.id === walletToken.id) ??
-    spendableTokens.find((item) => item.id === walletToken.id) ??
-    walletToken;
+    spendableTokens.find((item) => item.id === walletToken.id);
 
-  return merchantCap.rawBalance > 0n ? merchantCap.rawBalance : 0n;
+  // Spendable lists already subtract gas via applyGasReserves — do not reserve twice.
+  if (merchantCap != null) {
+    return merchantCap.rawBalance > 0n ? merchantCap.rawBalance : 0n;
+  }
+
+  let cap = walletToken.rawBalance > 0n ? walletToken.rawBalance : 0n;
+  if (isBaseGasPaymentToken(walletToken) && cap > 0n) {
+    const expectedGas = totalSelfGasReserveRaw(
+      walletToken,
+      typicalBaseSelfGasLegCount(),
+    );
+    cap = cap > expectedGas ? cap - expectedGas : 0n;
+  } else if (isGasToken(walletToken) && cap > 0n) {
+    const fee = transferGasReserveRaw(walletToken);
+    cap = cap > fee ? cap - fee : 0n;
+  }
+  return cap;
 }
 
 export function useSendForm(
@@ -295,9 +314,11 @@ export function useSendForm(
 
   const tipUsd =
     additionalUsd != null && additionalUsd > 0 ? additionalUsd : 0;
-  const usdAmount = amountUsd ?? parseDisplayInputToUsd(amount);
-  const requestedUsd =
-    usdAmount != null && usdAmount > 0 ? usdAmount + tipUsd : usdAmount;
+  const baseUsdAmount = amountUsd ?? parseDisplayInputToUsd(amount);
+  const bootstrapRequestedUsd =
+    baseUsdAmount != null && baseUsdAmount > 0
+      ? baseUsdAmount + tipUsd
+      : baseUsdAmount;
 
   // Tip changes need a fresh strategy allocation (manual legs stay at base).
   useEffect(() => {
@@ -328,35 +349,35 @@ export function useSendForm(
    * "typed available balance" as max merchant — that would hide insufficient
    * funds when tax makes the grand total exceed holdings.
    */
-  const targetUsd = (() => {
-    if (requestedUsd == null || !(requestedUsd > 0)) {
-      return requestedUsd;
+  const bootstrapTargetUsd = (() => {
+    if (bootstrapRequestedUsd == null || !(bootstrapRequestedUsd > 0)) {
+      return bootstrapRequestedUsd;
     }
     if (maxAvailableUsd == null || !(maxAvailableUsd >= 0)) {
-      return requestedUsd;
+      return bootstrapRequestedUsd;
     }
     const maxMerchant = maxMerchantUsdFor(maxAvailableUsd);
-    if (requestedUsd <= maxMerchant + 0.000001) {
-      return Math.min(requestedUsd, maxMerchant);
+    if (bootstrapRequestedUsd <= maxMerchant + 0.000001) {
+      return Math.min(bootstrapRequestedUsd, maxMerchant);
     }
     // Slight overshoot of max sendable merchant (display rounding).
-    if (requestedUsd <= maxMerchant + 0.015) {
+    if (bootstrapRequestedUsd <= maxMerchant + 0.015) {
       return maxMerchant;
     }
-    return requestedUsd;
+    return bootstrapRequestedUsd;
   })();
 
   /** Leave headroom on one preferred token so a single tax transfer can fit. */
   const tokensForMerchantAllocation = useMemo(() => {
-    if (targetUsd == null || !(targetUsd > 0)) {
+    if (bootstrapTargetUsd == null || !(bootstrapTargetUsd > 0)) {
       return spendableTokens;
     }
-    const taxUsdNeeded = taxUsdFor(targetUsd);
+    const taxUsdNeeded = taxUsdFor(bootstrapTargetUsd);
     if (!(taxUsdNeeded > 0)) {
       return spendableTokens;
     }
     return reserveTaxHeadroomOnTokens(spendableTokens, taxUsdNeeded);
-  }, [spendableTokens, targetUsd, taxUsdFor]);
+  }, [bootstrapTargetUsd, spendableTokens, taxUsdFor]);
 
   const strategyPreferredTokenId = useMemo(() => {
     if (!preferredTokenId) {
@@ -370,7 +391,7 @@ export function useSendForm(
   }, [preferredTokenId, walletTokens]);
 
   const strategyPlan = useMemo(() => {
-    if (targetUsd == null || targetUsd <= 0) {
+    if (bootstrapTargetUsd == null || bootstrapTargetUsd <= 0) {
       return {
         allocations: [] as PaymentAllocation[],
         filledUsd: 0,
@@ -382,16 +403,16 @@ export function useSendForm(
 
     return allocatePaymentUsd({
       tokens: tokensForMerchantAllocation,
-      usdAmount: targetUsd,
+      usdAmount: bootstrapTargetUsd,
       strategyId,
       chainPriorityId: selectedChainPriorityId,
       preferredTokenId: strategyPreferredTokenId,
     });
   }, [
+    bootstrapTargetUsd,
     selectedChainPriorityId,
     strategyId,
     strategyPreferredTokenId,
-    targetUsd,
     tokensForMerchantAllocation,
   ]);
 
@@ -474,10 +495,27 @@ export function useSendForm(
     walletTokens,
   ]);
 
-  const resolvedManualMerchant = (() => {
-    const manual = manualMerchantAllocations ?? draftStoredLegs.merchant;
+  const clampedManualMerchantAllocations = useMemo(() => {
+    if (manualMerchantAllocations == null) {
+      return null;
+    }
+    return refreshAllocationTokens(
+      manualMerchantAllocations,
+      walletTokens,
+      spendableTokens,
+      tokensForMerchantAllocation,
+    );
+  }, [
+    manualMerchantAllocations,
+    spendableTokens,
+    tokensForMerchantAllocation,
+    walletTokens,
+  ]);
+
+  const resolvedManualMerchant = useMemo(() => {
+    const manual = clampedManualMerchantAllocations ?? draftStoredLegs.merchant;
     return manual != null && manual.length > 0 ? manual : null;
-  })();
+  }, [clampedManualMerchantAllocations, draftStoredLegs.merchant]);
   const isManualPayment = resolvedManualMerchant != null;
 
   const merchantAllocations = useMemo(() => {
@@ -489,15 +527,53 @@ export function useSendForm(
       base,
       walletTokens,
       spendableTokens,
-      isManualPayment,
+      tokensForMerchantAllocation,
     );
   }, [
-    isManualPayment,
     resolvedManualMerchant,
     spendableTokens,
     strategyPlan.allocations,
+    tokensForMerchantAllocation,
     walletTokens,
   ]);
+
+  const manualSyncedAmountUsd = useMemo(() => {
+    if (manualMerchantAllocations == null || amountLocked || tipUsd > 0) {
+      return null;
+    }
+    const totalUsd = merchantAllocations.reduce((sum, leg) => sum + leg.usd, 0);
+    return totalUsd > 0 ? totalUsd : null;
+  }, [amountLocked, manualMerchantAllocations, merchantAllocations, tipUsd]);
+
+  const usdAmount = manualSyncedAmountUsd ?? baseUsdAmount;
+  const requestedUsd =
+    usdAmount != null && usdAmount > 0 ? usdAmount + tipUsd : usdAmount;
+
+  const targetUsd = (() => {
+    if (requestedUsd == null || !(requestedUsd > 0)) {
+      return requestedUsd;
+    }
+    if (maxAvailableUsd == null || !(maxAvailableUsd >= 0)) {
+      return requestedUsd;
+    }
+    const maxMerchant = maxMerchantUsdFor(maxAvailableUsd);
+    if (requestedUsd <= maxMerchant + 0.000001) {
+      return Math.min(requestedUsd, maxMerchant);
+    }
+    if (requestedUsd <= maxMerchant + 0.015) {
+      return maxMerchant;
+    }
+    return requestedUsd;
+  })();
+
+  const displayAmount = useMemo(() => {
+    if (manualSyncedAmountUsd != null) {
+      return manualSyncedAmountUsd > 0
+        ? formatAmountInputFromUsd(manualSyncedAmountUsd)
+        : '';
+    }
+    return amount;
+  }, [amount, formatAmountInputFromUsd, manualSyncedAmountUsd]);
 
   const additionalLegs = useMemo(() => {
     const base =
@@ -508,12 +584,13 @@ export function useSendForm(
       base,
       walletTokens,
       spendableTokens,
-      true,
+      tokensForMerchantAllocation,
     );
   }, [
     additionalAllocations,
     preferredAdditionalSeed,
     spendableTokens,
+    tokensForMerchantAllocation,
     walletTokens,
   ]);
 
@@ -526,7 +603,7 @@ export function useSendForm(
     updateSendDraft({
       ethereumRecipient,
       solanaRecipient,
-      amount,
+      amount: displayAmount,
       amountLocked,
       manualLegs: manualLegsFromAllocations(
         isManualPayment ? merchantAllocations : null,
@@ -539,8 +616,8 @@ export function useSendForm(
   }, [
     additionalLegs,
     allocationInputs,
-    amount,
     amountLocked,
+    displayAmount,
     ethereumRecipient,
     isManualPayment,
     merchantAllocations,
@@ -598,23 +675,15 @@ export function useSendForm(
   // Merchant legs must fit; tax must fit on a single leftover token.
   const legsWithinBalance = useMemo(() => {
     const legsFit = allocations.every((leg) => {
-      const balanceSource = isUnpricedToken(leg.token)
-        ? walletTokens
-        : isManualPayment
-          ? walletTokens
-          : spendableTokens;
-      const balance = balanceSource.find((item) => item.id === leg.token.id);
-      return balance != null && leg.amountRaw <= balance.rawBalance;
+      const maxRaw = maxManualAllocationRaw(
+        leg.token,
+        tokensForMerchantAllocation,
+        spendableTokens,
+      );
+      return leg.amountRaw <= maxRaw;
     });
     return legsFit && (taxUsd <= 0 || taxFunding != null);
-  }, [
-    allocations,
-    isManualPayment,
-    spendableTokens,
-    taxFunding,
-    taxUsd,
-    walletTokens,
-  ]);
+  }, [allocations, spendableTokens, taxFunding, taxUsd, tokensForMerchantAllocation]);
   const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
   const hasPositiveMerchantLeg = merchantAllocations.some(
     (leg) => leg.amountRaw > 0n,
@@ -807,7 +876,7 @@ export function useSendForm(
       }
 
       const merchantBase =
-        manualMerchantAllocations ??
+        clampedManualMerchantAllocations ??
         strategyPlan.allocations.map((leg) => ({ ...leg }));
       const index = merchantBase.findIndex((leg) => leg.token.id === tokenId);
       if (index < 0) {
@@ -908,7 +977,7 @@ export function useSendForm(
       }
 
       const merchantBase =
-        manualMerchantAllocations ??
+        clampedManualMerchantAllocations ??
         strategyPlan.allocations.map((leg) => ({ ...leg }));
       const next = merchantBase.filter((leg) => leg.token.id !== tokenId);
       setAllocationInputs((current) => {
@@ -947,17 +1016,20 @@ export function useSendForm(
       }
 
       const merchantBase =
-        manualMerchantAllocations ??
+        clampedManualMerchantAllocations ??
         strategyPlan.allocations.map((leg) => ({ ...leg }));
       if (merchantBase.some((leg) => leg.token.id === tokenId)) {
         return;
       }
 
-      const amountRaw = maxManualAllocationRaw(
-        token,
-        tokensForMerchantAllocation,
-        spendableTokens,
-      );
+      const hasRequestedAmount = requestedUsd != null && requestedUsd > 0;
+      const amountRaw = hasRequestedAmount
+        ? maxManualAllocationRaw(
+            token,
+            tokensForMerchantAllocation,
+            spendableTokens,
+          )
+        : 0n;
       const amountFormatted =
         amountRaw > 0n
           ? formatRawTokenBalance(amountRaw, token.decimals)
@@ -977,26 +1049,51 @@ export function useSendForm(
         ...current,
         [tokenId]: amountFormatted,
       }));
-      applyMerchantLegEdits(next, true);
+      applyMerchantLegEdits(next, hasRequestedAmount);
   };
 
   const resolvedAllocationInputs = useMemo(() => {
     const resolved: Record<string, string> = { ...allocationInputs };
     for (const leg of allocations) {
-      if (resolved[leg.token.id] == null) {
-        resolved[leg.token.id] =
-          allocationInputUnit === 'usd'
-            ? leg.usd > 0
-              ? formatAmountInputFromUsd(leg.usd)
-              : leg.amountFormatted
-            : leg.amountFormatted;
+      const fromLeg =
+        allocationInputUnit === 'usd' && !isUnpricedToken(leg.token)
+          ? leg.usd > 0
+            ? formatAmountInputFromUsd(leg.usd)
+            : leg.amountFormatted
+          : leg.amountFormatted;
+
+      const existing = resolved[leg.token.id];
+      if (existing == null) {
+        resolved[leg.token.id] = fromLeg;
+        continue;
+      }
+
+      const existingRaw =
+        allocationInputUnit === 'usd' && !isUnpricedToken(leg.token)
+          ? (() => {
+              const usdValue = parseDisplayInputToUsd(existing);
+              if (usdValue == null) {
+                return null;
+              }
+              return parseUsdAmountToTokenRaw(String(usdValue), leg.token);
+            })()
+          : parseTokenAmountToRaw(existing, leg.token.decimals);
+
+      if (existingRaw != null && existingRaw > leg.amountRaw) {
+        resolved[leg.token.id] = fromLeg;
       }
     }
     return resolved;
-  }, [allocationInputUnit, allocationInputs, allocations, formatAmountInputFromUsd]);
+  }, [
+    allocationInputUnit,
+    allocationInputs,
+    allocations,
+    formatAmountInputFromUsd,
+    parseDisplayInputToUsd,
+  ]);
 
   return {
-    amount,
+    amount: displayAmount,
     requestedUsd,
     taxUsd,
     payerTotalUsd,

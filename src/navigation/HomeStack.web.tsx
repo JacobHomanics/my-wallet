@@ -1,6 +1,8 @@
 import { createStackNavigator } from '@react-navigation/stack';
 
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useThemeColors } from '@/hooks/useThemeColors';
+
 import {
   HOME_STACK_INITIAL_ROUTE,
   homeStackScreens,
@@ -11,6 +13,7 @@ const WebStack = createStackNavigator<HomeStackParamList>();
 
 export function HomeStack() {
   const isDesktopWeb = useIsDesktopWeb();
+  const colors = useThemeColors();
 
   return (
     <WebStack.Navigator
@@ -20,7 +23,7 @@ export function HomeStack() {
         animation: isDesktopWeb ? 'none' : 'slide_from_right',
         cardStyle: {
           flex: 1,
-          backgroundColor: '#f0fdf4',
+          backgroundColor: colors.bg,
           // Absolute-fill cards so nested ScrollViews get a bounded height
           // (required for touch scrolling on iOS Safari).
           height: '100%',

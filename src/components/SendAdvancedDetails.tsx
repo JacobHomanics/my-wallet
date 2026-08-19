@@ -13,6 +13,7 @@ import { FrontendSendRewardsWarningModal } from '@/components/FrontendSendReward
 import { TokenIcon } from '@/components/TokenIcon';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
+import { useSendVaultUsdc } from '@/hooks/useSendVaultUsdc';
 import {
   formatRawTokenBalance,
   isUnpricedToken,
@@ -23,31 +24,47 @@ import type { SendBroadcastMode } from '@/lib/send/broadcastMode';
 import type { TaxFundingPick } from '@/lib/send/buildPaymentLegsWithTax';
 import type { GasFundingPick } from '@/lib/send/gasReserves';
 import { REWARD_POINTS_LABEL } from '@/lib/rewardToken';
+import {
+  formatVaultUsdcFundingSplit,
+  getVaultUsdcTaxFundingKey,
+  type VaultUsdcFundingSplit,
+} from '@/lib/privy/vaultUsdc';
 import type { PaymentStrategy } from '@/lib/strategies';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
-type SendAdvancedDetailsProps = {
-  selectedStrategy: PaymentStrategy;
-  onOpenStrategyPicker: () => void;
-  allocationInputUnit: AllocationInputUnit;
-  onAllocationInputUnitChange: (unit: AllocationInputUnit) => void;
+export type SendConfigurationFieldsProps = {
   broadcastMode: SendBroadcastMode;
   onBroadcastModeChange: (mode: SendBroadcastMode) => void;
   gasSponsorship: boolean;
   onGasSponsorshipChange: (enabled: boolean) => void;
+};
+
+export type SendTokenAllocationsProps = {
+  selectedStrategy: PaymentStrategy;
+  onOpenStrategyPicker: () => void;
+  allocationInputUnit: AllocationInputUnit;
+  onAllocationInputUnitChange: (unit: AllocationInputUnit) => void;
   allocations: PaymentAllocation[];
   /** Fee-reserved balances — used for the Available line on each leg. */
   spendableTokens: OwnedToken[];
   /** Single-token tax funding pick; reserved from Available on that token. */
   taxFunding?: TaxFundingPick | null;
-  /** Native gas reserved on gas tokens for network fees. */
+  /** Gas reserved on fee-paying tokens for network fees. */
   gasFunding?: GasFundingPick[];
+  /** Vault vs wallet USDC split per allocation / tax leg. */
+  vaultUsdcFundingSplits?: ReadonlyMap<string, VaultUsdcFundingSplit>;
   allocationInputs: Record<string, string>;
   onAllocationAmountChange: (tokenId: string, value: string) => void;
   onRemoveAllocation: (tokenId: string) => void;
   canAddToken: boolean;
   onAddToken: () => void;
 };
+
+export type SendAdvancedDetailsProps = SendConfigurationFieldsProps &
+  SendTokenAllocationsProps;
 
 function merchantAvailableToken(
   spendable: OwnedToken,
@@ -95,9 +112,7 @@ type ReservedAllocationRowProps = {
   formatAmountInputFromUsd: (usd: number) => string;
   formatFromUsd: (usd: number | null) => string | null;
   currencySymbol: string;
-  /** When set, overrides USD display formatting (e.g. service fee precision). */
-  formatUsdInputFromUsd?: (usd: number) => string;
-  formatUsdFromUsd?: (usd: number | null) => string | null;
+  vaultFundingSplit?: VaultUsdcFundingSplit;
 };
 
 function ReservedAllocationRow({
@@ -109,11 +124,9 @@ function ReservedAllocationRow({
   formatAmountInputFromUsd,
   formatFromUsd,
   currencySymbol,
-  formatUsdInputFromUsd,
-  formatUsdFromUsd,
+  vaultFundingSplit,
 }: ReservedAllocationRowProps) {
-  const formatUsdInput = formatUsdInputFromUsd ?? formatAmountInputFromUsd;
-  const formatUsd = formatUsdFromUsd ?? formatFromUsd;
+  const styles = useThemedStyles(createStyles);
 
   return (
     <View style={[styles.allocationRow, styles.taxAllocationRow]}>
@@ -134,6 +147,11 @@ function ReservedAllocationRow({
           <Text style={styles.allocationMeta} numberOfLines={1}>
             {token.networkLabel}
           </Text>
+          {vaultFundingSplit != null ? (
+            <Text style={styles.fundingSplit} numberOfLines={2}>
+              {formatVaultUsdcFundingSplit(vaultFundingSplit, token)}
+            </Text>
+          ) : null}
         </View>
       </View>
       <View style={styles.allocationControls}>
@@ -143,14 +161,14 @@ function ReservedAllocationRow({
         <View style={styles.taxAmountBox}>
           <Text style={styles.taxAmountText}>
             {allocationInputUnit === 'usd'
-              ? formatUsdInput(usd)
+              ? formatAmountInputFromUsd(usd)
               : amountFormatted}
           </Text>
         </View>
         <Text style={styles.allocationSecondary} numberOfLines={1}>
           {allocationInputUnit === 'usd'
             ? amountFormatted
-            : (formatUsd(usd) ?? '—')}
+            : (formatFromUsd(usd) ?? '—')}
         </Text>
         <View style={styles.allocationRemove} />
       </View>
@@ -158,46 +176,27 @@ function ReservedAllocationRow({
   );
 }
 
-export function SendAdvancedDetails({
-  selectedStrategy,
-  onOpenStrategyPicker,
-  allocationInputUnit,
-  onAllocationInputUnitChange,
+export function SendConfigurationFields({
   broadcastMode,
   onBroadcastModeChange,
   gasSponsorship,
   onGasSponsorshipChange,
-  allocations,
-  spendableTokens,
-  taxFunding = null,
-  gasFunding = [],
-  allocationInputs,
-  onAllocationAmountChange,
-  onRemoveAllocation,
-  canAddToken,
-  onAddToken,
-}: SendAdvancedDetailsProps) {
-  const {
-    formatFromUsd,
-    formatAmountInputFromUsd,
-    formatServiceFeeFromUsd,
-    formatServiceFeeAmountInputFromUsd,
-    currencyCode,
-    currencySymbol,
-    rate,
-    defaultFormattedZero,
-  } = useFiatDisplay();
+}: SendConfigurationFieldsProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const [frontendWarningOpen, setFrontendWarningOpen] = useState(false);
+  const {
+    globallyEnabled: vaultGloballyEnabled,
+    perSendEnabled: useVaultUsdc,
+    setPerSendEnabled: setUseVaultUsdc,
+    globalLoading: vaultSettingsLoading,
+  } = useSendVaultUsdc();
+  const frontendSendEnabled = broadcastMode === 'frontend';
 
-  const spendableById = new Map(
-    spendableTokens.map((token) => [token.id, token]),
-  );
-
-  const cashboxNetworkEnabled = broadcastMode === 'backend';
-
-  const onCashboxNetworkChange = useCallback(
+  const onFrontendSendChange = useCallback(
     (enabled: boolean) => {
-      if (enabled) {
+      if (!enabled) {
         onBroadcastModeChange('backend');
         return;
       }
@@ -219,42 +218,48 @@ export function SendAdvancedDetails({
     onBroadcastModeChange('frontend');
   }, [onBroadcastModeChange, onGasSponsorshipChange]);
 
+  const cashboxNetworkEnabled = broadcastMode === 'backend';
+
   return (
-    <View style={styles.advanced}>
-      <Pressable
-        accessibilityLabel={`Payment strategy ${selectedStrategy.label}`}
-        accessibilityRole="button"
-        onPress={onOpenStrategyPicker}
-        style={({ pressed }) => [
-          styles.strategyRow,
-          pressed && styles.strategyRowPressed,
-        ]}
-      >
-        <Text style={styles.strategyRowLabel}>Strategy</Text>
-        <Text style={styles.strategyRowValue} numberOfLines={1}>
-          {selectedStrategy.label}
-        </Text>
-        <Ionicons name="chevron-down" size={18} color="#86a894" />
-      </Pressable>
+    <>
+      <View style={styles.broadcastRow}>
+        <View style={styles.broadcastText}>
+          <Text style={styles.broadcastLabel}>Use vault balance</Text>
+          <Text style={styles.broadcastHint}>
+            {vaultGloballyEnabled
+              ? 'When you make an eligible payment, automatically move money from your vault into your balance'
+              : 'Turn on in Settings → Earn settings to use your vault for eligible payments'}
+          </Text>
+        </View>
+        <Switch
+          accessibilityLabel="Use vault balance for this payment"
+          disabled={!vaultGloballyEnabled || vaultSettingsLoading}
+          trackColor={{ false: colors.border, true: colors.borderStrong }}
+          thumbColor={
+            useVaultUsdc && vaultGloballyEnabled ? colors.primary : colors.bg
+          }
+          ios_backgroundColor={colors.border}
+          value={vaultGloballyEnabled && useVaultUsdc}
+          onValueChange={setUseVaultUsdc}
+        />
+      </View>
 
       <View style={styles.advancedDivider} />
 
       <View style={styles.broadcastRow}>
         <View style={styles.broadcastText}>
-          <Text style={styles.broadcastLabel}>Send through Cashbox Network</Text>
+          <Text style={styles.broadcastLabel}>Send from this device</Text>
           <Text style={styles.broadcastHint}>
-            {cashboxNetworkEnabled
-              ? `Earn ${REWARD_POINTS_LABEL} and gas sponsorship on supported chains`
-              : `Signs on this device; no ${REWARD_POINTS_LABEL} or gas sponsorship`}
+            Skips backend broadcast, {REWARD_POINTS_LABEL}, and gas sponsorship
           </Text>
         </View>
         <Switch
-          accessibilityLabel="Send through Cashbox Network"
-          trackColor={{ false: '#bbf7d0', true: '#86efac' }}
-          thumbColor={cashboxNetworkEnabled ? '#166534' : '#f0fdf4'}
-          ios_backgroundColor="#bbf7d0"
-          value={cashboxNetworkEnabled}
-          onValueChange={onCashboxNetworkChange}
+          accessibilityLabel="Send from this device"
+          trackColor={{ false: colors.border, true: colors.borderStrong }}
+          thumbColor={frontendSendEnabled ? colors.primary : colors.bg}
+          ios_backgroundColor={colors.border}
+          value={frontendSendEnabled}
+          onValueChange={onFrontendSendChange}
         />
       </View>
 
@@ -273,15 +278,74 @@ export function SendAdvancedDetails({
             </View>
             <Switch
               accessibilityLabel="Gas sponsorship where available"
-              trackColor={{ false: '#bbf7d0', true: '#86efac' }}
-              thumbColor={gasSponsorship ? '#166534' : '#f0fdf4'}
-              ios_backgroundColor="#bbf7d0"
+              trackColor={{ false: colors.border, true: colors.borderStrong }}
+              thumbColor={gasSponsorship ? colors.primary : colors.bg}
+              ios_backgroundColor={colors.border}
               value={gasSponsorship}
               onValueChange={onGasSponsorshipChange}
             />
           </View>
         </>
       ) : null}
+
+      <FrontendSendRewardsWarningModal
+        visible={frontendWarningOpen}
+        onCancel={onCancelFrontendWarning}
+        onConfirm={onConfirmFrontendWarning}
+      />
+    </>
+  );
+}
+
+export function SendTokenAllocations({
+  selectedStrategy,
+  onOpenStrategyPicker,
+  allocationInputUnit,
+  onAllocationInputUnitChange,
+  allocations,
+  spendableTokens,
+  taxFunding = null,
+  gasFunding = [],
+  vaultUsdcFundingSplits,
+  allocationInputs,
+  onAllocationAmountChange,
+  onRemoveAllocation,
+  canAddToken,
+  onAddToken,
+}: SendTokenAllocationsProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
+  const {
+    formatFromUsd,
+    formatAmountInputFromUsd,
+    currencyCode,
+    currencySymbol,
+    rate,
+    defaultFormattedZero,
+  } = useFiatDisplay();
+
+  const spendableById = new Map(
+    spendableTokens.map((token) => [token.id, token]),
+  );
+
+  return (
+    <>
+      <Pressable
+        accessibilityLabel={`Payment strategy ${selectedStrategy.label}`}
+        accessibilityRole="button"
+        onPress={onOpenStrategyPicker}
+        style={({ pressed }) => [
+          styles.strategyRow,
+          pressed && styles.strategyRowPressed,
+        ]}
+      >
+        <Text style={styles.strategyRowLabel}>Strategy</Text>
+        <Text style={styles.strategyRowValue} numberOfLines={1}>
+          {selectedStrategy.label}
+        </Text>
+        <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
+      </Pressable>
 
       <View style={styles.advancedDivider} />
 
@@ -341,12 +405,6 @@ export function SendAdvancedDetails({
         </View>
       </View>
 
-      <FrontendSendRewardsWarningModal
-        visible={frontendWarningOpen}
-        onCancel={onCancelFrontendWarning}
-        onConfirm={onConfirmFrontendWarning}
-      />
-
       {allocations.length === 0 ? (
         <Text style={styles.allocationEmpty}>
           Add a token below to get started.
@@ -356,10 +414,6 @@ export function SendAdvancedDetails({
           const spendable = spendableById.get(leg.token.id) ?? leg.token;
           const unpriced = isUnpricedToken(spendable);
           const availableToken = merchantAvailableToken(spendable, taxFunding);
-          const taxRawOnLeg =
-            taxFunding != null && taxFunding.token.id === leg.token.id
-              ? taxFunding.amountRaw
-              : 0n;
           const inputValue =
             allocationInputs[leg.token.id] ??
             (allocationInputUnit === 'usd' && !unpriced
@@ -367,7 +421,7 @@ export function SendAdvancedDetails({
                 ? String(leg.usd)
                 : leg.amountFormatted
               : leg.amountFormatted);
-          const exceeds = leg.amountRaw + taxRawOnLeg > spendable.rawBalance;
+          const exceeds = leg.amountRaw > availableToken.rawBalance;
           const secondaryValue = unpriced
             ? null
             : allocationInputUnit === 'usd'
@@ -416,6 +470,14 @@ export function SendAdvancedDetails({
                   <Text style={styles.allocationMeta} numberOfLines={1}>
                     {spendable.networkLabel}
                   </Text>
+                  {vaultUsdcFundingSplits?.get(leg.token.id) != null ? (
+                    <Text style={styles.fundingSplit} numberOfLines={2}>
+                      {formatVaultUsdcFundingSplit(
+                        vaultUsdcFundingSplits.get(leg.token.id)!,
+                        spendable,
+                      )}
+                    </Text>
+                  ) : null}
                 </View>
               </View>
               <View style={styles.allocationControls}>
@@ -435,7 +497,7 @@ export function SendAdvancedDetails({
                     onAllocationAmountChange(leg.token.id, value);
                   }}
                   placeholder="0"
-                  placeholderTextColor="#86a894"
+                  placeholderTextColor={colors.textSubtle}
                   style={[
                     styles.allocationInput,
                     exceeds ? styles.allocationInputError : null,
@@ -461,7 +523,7 @@ export function SendAdvancedDetails({
                     pressed && styles.allocationRemovePressed,
                   ]}
                 >
-                  <Ionicons name="trash-outline" size={18} color="#b91c1c" />
+                  <Ionicons name="trash-outline" size={18} color={colors.danger} />
                 </Pressable>
               </View>
             </View>
@@ -491,10 +553,11 @@ export function SendAdvancedDetails({
           currencySymbol={currencySymbol}
           formatAmountInputFromUsd={formatAmountInputFromUsd}
           formatFromUsd={formatFromUsd}
-          formatUsdFromUsd={formatServiceFeeFromUsd}
-          formatUsdInputFromUsd={formatServiceFeeAmountInputFromUsd}
           token={taxFunding.token}
           usd={taxFunding.usd}
+          vaultFundingSplit={vaultUsdcFundingSplits?.get(
+            getVaultUsdcTaxFundingKey(taxFunding.token.id),
+          )}
         />
       ) : null}
 
@@ -508,22 +571,56 @@ export function SendAdvancedDetails({
             pressed && styles.addTokenButtonPressed,
           ]}
         >
-          <Ionicons name="add" size={18} color="#166534" />
+          <Ionicons name="add" size={18} color={colors.primary} />
           <Text style={styles.addTokenButtonText}>Add token</Text>
         </Pressable>
       ) : null}
+    </>
+  );
+}
+
+/** Broadcast mode and token allocation legs. */
+export function SendAdvancedDetails(props: SendAdvancedDetailsProps) {
+  const styles = useThemedStyles(createStyles);
+
+  return (
+    <View style={styles.advanced}>
+      <SendConfigurationFields
+        broadcastMode={props.broadcastMode}
+        onBroadcastModeChange={props.onBroadcastModeChange}
+        gasSponsorship={props.gasSponsorship}
+        onGasSponsorshipChange={props.onGasSponsorshipChange}
+      />
+      <View style={styles.advancedDivider} />
+      <SendTokenAllocations
+        allocationInputUnit={props.allocationInputUnit}
+        allocationInputs={props.allocationInputs}
+        allocations={props.allocations}
+        canAddToken={props.canAddToken}
+        gasFunding={props.gasFunding}
+        onAddToken={props.onAddToken}
+        onAllocationAmountChange={props.onAllocationAmountChange}
+        onAllocationInputUnitChange={props.onAllocationInputUnitChange}
+        onOpenStrategyPicker={props.onOpenStrategyPicker}
+        onRemoveAllocation={props.onRemoveAllocation}
+        selectedStrategy={props.selectedStrategy}
+        spendableTokens={props.spendableTokens}
+        taxFunding={props.taxFunding}
+        vaultUsdcFundingSplits={props.vaultUsdcFundingSplits}
+      />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   advanced: {
     marginTop: 8,
     alignSelf: 'stretch',
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     paddingHorizontal: 14,
     paddingTop: 4,
     paddingBottom: 12,
@@ -533,7 +630,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -552,7 +649,7 @@ const styles = StyleSheet.create({
   unitToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#dcfce7',
+    backgroundColor: c.surfaceMuted,
     borderRadius: 8,
     padding: 2,
   },
@@ -562,7 +659,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   unitToggleOptionActive: {
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
   },
   unitToggleOptionPressed: {
     opacity: 0.7,
@@ -570,14 +667,14 @@ const styles = StyleSheet.create({
   unitToggleText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
   unitToggleTextActive: {
-    color: '#166534',
+    color: c.primary,
   },
   advancedDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
+    backgroundColor: c.rowBorder,
   },
   strategyRow: {
     flexDirection: 'row',
@@ -598,12 +695,12 @@ const styles = StyleSheet.create({
   broadcastLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   broadcastHint: {
     fontSize: 12,
     lineHeight: 16,
-    color: '#86a894',
+    color: c.textSubtle,
   },
   strategyRowPressed: {
     opacity: 0.7,
@@ -611,7 +708,7 @@ const styles = StyleSheet.create({
   strategyRowLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     marginRight: 12,
   },
   strategyRowValue: {
@@ -619,12 +716,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     fontSize: 14,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     marginRight: 8,
   },
   allocationEmpty: {
     fontSize: 14,
-    color: '#86a894',
+    color: c.textSubtle,
     paddingVertical: 10,
   },
   allocationRow: {
@@ -633,7 +730,7 @@ const styles = StyleSheet.create({
   },
   taxAllocationRow: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#d1fae5',
+    borderTopColor: c.rowBorder,
     marginTop: 4,
     paddingTop: 12,
   },
@@ -656,25 +753,32 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   taxBadge: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
   allocationMeta: {
     marginTop: 2,
     fontSize: 12,
-    color: '#86a894',
+    color: c.textSubtle,
+  },
+  fundingSplit: {
+    marginTop: 4,
+    fontSize: 12,
+    lineHeight: 16,
+    color: c.textMuted,
+    fontVariant: ['tabular-nums'],
   },
   allocationBalance: {
     flexShrink: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
   },
   allocationControls: {
@@ -685,42 +789,42 @@ const styles = StyleSheet.create({
   allocationInputPrefix: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   allocationInput: {
     flex: 1,
     minWidth: 0,
     height: 40,
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: c.inputBorder,
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 0,
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     textAlign: 'right',
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
     fontVariant: ['tabular-nums'],
   },
   allocationInputError: {
-    borderColor: '#fca5a5',
+    borderColor: c.dangerBorder,
   },
   taxAmountBox: {
     flex: 1,
     minWidth: 0,
     height: 40,
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 10,
     paddingHorizontal: 10,
     justifyContent: 'center',
-    backgroundColor: '#ecfdf5',
+    backgroundColor: c.surfaceHighlight,
   },
   taxAmountText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textAlign: 'right',
     fontVariant: ['tabular-nums'],
   },
@@ -730,7 +834,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     fontVariant: ['tabular-nums'],
   },
   allocationRemove: {
@@ -749,10 +853,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: c.inputBorder,
     borderStyle: 'dashed',
     borderRadius: 10,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   addTokenButtonPressed: {
     opacity: 0.7,
@@ -761,6 +865,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontSize: 14,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
-});
+  });
+}

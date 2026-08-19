@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -16,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
-import { SendAdvancedDetails } from '@/components/SendAdvancedDetails';
+import { SendConfigurationCollapsible } from '@/components/SendConfigurationCollapsible';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
@@ -25,38 +24,51 @@ import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { usePopToSend } from '@/hooks/usePopToSend';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useGasFunding } from '@/hooks/useGasFunding';
-import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useGasSponsorship } from '@/hooks/useGasSponsorship';
+import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { resetSendDraft, useSendDraft, useSendDraftUi } from '@/hooks/useSendDraft';
 import { useSendAmountRecipientDisplay } from '@/hooks/useSendAmountRecipientDisplay';
 import { useSendForm } from '@/hooks/useSendForm';
 import { useSendPayment } from '@/hooks/useSendPayment';
 import { useSendRecipientUsername } from '@/hooks/useSendRecipientUsername';
+import { addRecentSendRecipient } from '@/hooks/useRecentSendRecipients';
 import { useSendStatus } from '@/hooks/useSendStatus';
 import { useSendStrategyPicker } from '@/hooks/useStrategyPicker';
 import { useSendTip } from '@/hooks/useSendTip';
-import { useShowAdvanced } from '@/hooks/useShowAdvanced';
-import { useSpendableTokens } from '@/hooks/useSpendableTokens';
-import { useTokenBalances } from '@/hooks/useTokenBalances';
+import { useSendSpendableTokens } from '@/hooks/useSendSpendableTokens';
+import { useSendVaultUsdc } from '@/hooks/useSendVaultUsdc';
+import { useVaultUsdcFundingSplits } from '@/hooks/useVaultUsdcFundingSplits';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { buildPaymentLegsWithTax } from '@/lib/send/buildPaymentLegsWithTax';
 import { formatSendError } from '@/lib/send/formatSendError';
 import { isUnpricedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 /**
  * Review + execute a multi-token payment prepared on the Send screen.
  */
 export function ConfirmSendScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const { tokens, loading, ready, refresh } = useTokenBalances();
-  const { spendableTokens, availableUsd } = useSpendableTokens(tokens);
+  const { refresh, ...sendSpendable } = useSendSpendableTokens();
+  const {
+    tokens,
+    loading,
+    ready,
+    spendableTokens,
+    availableUsd,
+    availableBalanceLoading,
+  } = sendSpendable;
   const { sendPayment, sending } = useSendPayment();
   const { error, clearStatus, setError } = useSendStatus();
-  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const {
     accountNumber,
     recipientName,
@@ -74,6 +86,7 @@ export function ConfirmSendScreen() {
   } = useAppTax(gasSponsorship);
   const { allocationInputUnit, setAllocationInputUnit, broadcastMode, setBroadcastMode } =
     useSendDraftUi();
+  const { enabled: useVaultUsdcForSend } = useSendVaultUsdc();
   const {
     strategies,
     selectedStrategy,
@@ -89,7 +102,6 @@ export function ConfirmSendScreen() {
   const openFreshSend = useOpenFreshSend();
   const {
     formatFromUsd,
-    formatServiceFeeFromUsd,
     currencySymbol,
   } = useFiatDisplay();
 
@@ -123,7 +135,11 @@ export function ConfirmSendScreen() {
     addAllocation,
   } = form;
 
-  const gasFunding = useGasFunding(tokens, spendableTokens, allocations, taxFunding);
+  const gasFunding = useGasFunding(tokens, allocations, taxFunding);
+  const vaultUsdcFundingSplits = useVaultUsdcFundingSplits(
+    allocations,
+    taxFunding,
+  );
 
   const trimmedEthereum = resolvedEthereumRecipient;
   const trimmedSolana = resolvedSolanaRecipient;
@@ -141,13 +157,16 @@ export function ConfirmSendScreen() {
 
   const baseUsd =
     requestedUsd != null ? Math.max(0, requestedUsd - tipUsd) : null;
-  const taxLabel = taxUsd > 0 ? formatServiceFeeFromUsd(taxUsd) : null;
+  const taxLabel = taxUsd > 0 ? formatFromUsd(taxUsd) : null;
   const totalLabel =
     (payerTotalUsd != null ? formatFromUsd(payerTotalUsd) : null) ??
     (requestedUsd != null ? formatFromUsd(requestedUsd) : null) ??
     `${currencySymbol}${amount || '0'}`;
-  const availableLabel =
-    insufficientFunds ? formatFromUsd(filledUsd) : null;
+  const showInsufficientFunds =
+    insufficientFunds && !availableBalanceLoading;
+  const availableLabel = showInsufficientFunds
+    ? formatFromUsd(filledUsd)
+    : null;
 
   const taxFundingChain = taxFunding
     ? getNetworkChain(taxFunding.token.network)
@@ -163,12 +182,14 @@ export function ConfirmSendScreen() {
     [baseUsd, setTipPercent],
   );
 
-  const canSend = canContinue && allocations.length > 0;
+  const canSend =
+    canContinue && allocations.length > 0 && !availableBalanceLoading;
 
   const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
 
-  const invalidReason =
-    insufficientFunds
+  const invalidReason = availableBalanceLoading
+    ? null
+    : showInsufficientFunds
       ? 'Insufficient funds for this payment.'
       : allocations.length === 0 || !hasPositiveLeg
         ? 'Add at least one token with an amount in advanced details.'
@@ -204,8 +225,18 @@ export function ConfirmSendScreen() {
             amountFormatted: leg.amountFormatted,
             isTax: leg.isTax,
           })),
-          { broadcastMode, gasSponsorship },
+          { broadcastMode, gasSponsorship, useVaultUsdc: useVaultUsdcForSend },
         );
+        addRecentSendRecipient({
+          identityId: accountNumber.trim() || null,
+          evmAddress: trimmedEthereum || null,
+          solanaAddress: trimmedSolana || null,
+          username: recipientUsername,
+          name: recipientName,
+          profilePhotoUrl: recipientProfilePhotoUrl,
+          isFarcaster: recipientIsFarcaster,
+          isEns: recipientIsEns,
+        });
         resetSendDraft();
         refresh();
         navigation.navigate('sent', {
@@ -236,14 +267,15 @@ export function ConfirmSendScreen() {
     })();
   }, [
     allocations,
+    accountNumber,
     broadcastMode,
-    gasSponsorship,
     canSend,
     clearStatus,
     navigation,
     primaryLabel,
     recipientIsFarcaster,
     recipientIsEns,
+    recipientName,
     recipientProfilePhotoUrl,
     recipientUsername,
     refresh,
@@ -257,6 +289,7 @@ export function ConfirmSendScreen() {
     totalLabel,
     trimmedEthereum,
     trimmedSolana,
+    useVaultUsdcForSend,
   ]);
 
   const onCancelPress = useCallback(() => {
@@ -323,19 +356,9 @@ export function ConfirmSendScreen() {
         </View>
 
         {!ready || (loading && tokens.length === 0) ? (
-          <ActivityIndicator color="#166534" style={styles.loader} />
+          <ActivityIndicator color={colors.primary} style={styles.loader} />
         ) : (
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
-            {availableLabel ? (
-              <Text style={styles.availableUsd}>
-                Available Balance: {availableLabel}
-              </Text>
-            ) : null}
-
-            {availableLabel && hasRecipient && primaryLabel ? (
-              <View style={styles.toDivider} />
-            ) : null}
-
             {hasRecipient && primaryLabel ? (
               <View style={styles.toSection}>
                 <Text style={styles.recipientLabel}>{recipientFieldLabel}</Text>
@@ -359,9 +382,14 @@ export function ConfirmSendScreen() {
                 </View>
               </View>
             ) : null}
-
-            {!availableLabel && hasRecipient && primaryLabel ? (
+            {hasRecipient && primaryLabel ? (
               <View style={styles.toDivider} />
+            ) : null}
+
+            {availableLabel ? (
+              <Text style={styles.availableUsd}>
+                Available Balance: {availableLabel}
+              </Text>
             ) : null}
 
             <View style={styles.tipSection}>
@@ -412,63 +440,35 @@ export function ConfirmSendScreen() {
               <TaxDetailsCollapsible
                 gasSponsorship={gasSponsorship}
                 showEvm={taxFundingChain === 'ethereum'}
-                showRatePercent={false}
                 showSolana={taxFundingChain === 'solana'}
                 taxLabel={taxLabel}
               />
             ) : null}
 
-            <View style={styles.totalSection}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text accessibilityRole="header" style={styles.totalValue}>
-                {totalLabel}
-              </Text>
-            </View>
+            <Text style={styles.heroUsd}>{totalLabel}</Text>
 
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ expanded: showAdvanced }}
-              onPress={toggleAdvanced}
-              style={({ pressed }) => [
-                styles.advancedToggle,
-                pressed && styles.advancedTogglePressed,
-              ]}
-            >
-              <Text style={styles.advancedToggleText}>
-                {showAdvanced
-                  ? 'Hide advanced details'
-                  : 'Show advanced details'}
-              </Text>
-              <Ionicons
-                name={showAdvanced ? 'chevron-up' : 'chevron-down'}
-                size={16}
-                color="#5a7d6a"
-              />
-            </Pressable>
-
-            {showAdvanced ? (
-              <SendAdvancedDetails
-                allocationInputUnit={allocationInputUnit}
-                allocationInputs={allocationInputs}
-                allocations={allocations}
-                broadcastMode={broadcastMode}
-                canAddToken={canAddToken}
-                gasFunding={gasFunding}
-                gasSponsorship={gasSponsorship}
-                onAddToken={() => {
-                  setTokenPickerOpen(true);
-                }}
-                onAllocationAmountChange={setAllocationAmount}
-                onAllocationInputUnitChange={setAllocationInputUnit}
-                onBroadcastModeChange={setBroadcastMode}
-                onGasSponsorshipChange={setGasSponsorship}
-                onOpenStrategyPicker={openStrategyPicker}
-                onRemoveAllocation={removeAllocation}
-                selectedStrategy={selectedStrategy}
-                spendableTokens={spendableTokens}
-                taxFunding={taxFunding}
-              />
-            ) : null}
+            <SendConfigurationCollapsible
+              allocationInputUnit={allocationInputUnit}
+              allocationInputs={allocationInputs}
+              allocations={allocations}
+              broadcastMode={broadcastMode}
+              canAddToken={canAddToken}
+              gasFunding={gasFunding}
+              gasSponsorship={gasSponsorship}
+              onAddToken={() => {
+                setTokenPickerOpen(true);
+              }}
+              onAllocationAmountChange={setAllocationAmount}
+              onAllocationInputUnitChange={setAllocationInputUnit}
+              onBroadcastModeChange={setBroadcastMode}
+              onGasSponsorshipChange={setGasSponsorship}
+              onOpenStrategyPicker={openStrategyPicker}
+              onRemoveAllocation={removeAllocation}
+              selectedStrategy={selectedStrategy}
+              spendableTokens={spendableTokens}
+              taxFunding={taxFunding}
+              vaultUsdcFundingSplits={vaultUsdcFundingSplits}
+            />
 
             {invalidReason ? (
               <Text style={styles.error}>{invalidReason}</Text>
@@ -503,7 +503,7 @@ export function ConfirmSendScreen() {
                 ]}
               >
                 {sending ? (
-                  <ActivityIndicator color="#f0fdf4" />
+                  <ActivityIndicator color={colors.primaryText} />
                 ) : (
                   <Text style={styles.primaryButtonText}>Submit</Text>
                 )}
@@ -573,10 +573,11 @@ export function ConfirmSendScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -598,7 +599,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -615,7 +616,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   loader: {
     marginTop: 48,
@@ -626,23 +627,11 @@ const styles = StyleSheet.create({
     paddingTop: 28,
     alignItems: 'center',
   },
-  totalSection: {
+  heroUsd: {
     marginTop: 24,
-    alignSelf: 'stretch',
-    alignItems: 'center',
-    gap: 8,
-  },
-  totalLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#5a7d6a',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  totalValue: {
     fontSize: 36,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     letterSpacing: -0.6,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
@@ -651,7 +640,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 18,
     fontWeight: '600',
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },
@@ -674,7 +663,7 @@ const styles = StyleSheet.create({
   tipLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -683,8 +672,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#86d4a4',
-    backgroundColor: '#fff',
+    borderColor: c.inputBorder,
+    backgroundColor: c.surface,
   },
   tipPercentButtonDisabled: {
     opacity: 0.45,
@@ -695,23 +684,23 @@ const styles = StyleSheet.create({
   tipPercentButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   tipFieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: c.inputBorder,
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 8,
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     minHeight: 52,
   },
   tipPrefix: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     marginRight: 4,
   },
   tipInput: {
@@ -719,7 +708,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingRight: 8,
     fontSize: 16,
-    color: '#166534',
+    color: c.primary,
   },
   toSection: {
     alignSelf: 'stretch',
@@ -735,7 +724,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -749,30 +738,14 @@ const styles = StyleSheet.create({
     minWidth: 0,
     fontSize: 18,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
-  },
-  advancedToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    alignSelf: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
-  advancedTogglePressed: {
-    opacity: 0.65,
-  },
-  advancedToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#5a7d6a',
   },
   error: {
     marginTop: 16,
     fontSize: 24,
     lineHeight: 32,
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
     alignSelf: 'stretch',
   },
@@ -786,9 +759,9 @@ const styles = StyleSheet.create({
   secondaryButton: {
     flex: 1,
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: c.inputBorder,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -800,14 +773,14 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   secondaryButtonText: {
-    color: '#166534',
+    color: c.primary,
     fontSize: 16,
     fontWeight: '600',
   },
   primaryButton: {
     alignItems: 'center',
     alignSelf: 'stretch',
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -823,7 +796,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   primaryButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -837,7 +810,7 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 400,
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     borderRadius: 14,
     paddingHorizontal: 20,
     paddingTop: 20,
@@ -846,13 +819,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     marginBottom: 8,
   },
   modalBody: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#3f6b52',
+    color: c.textSecondary,
     marginBottom: 20,
   },
   modalActions: {
@@ -865,8 +838,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#86d4a4',
-    backgroundColor: '#fff',
+    borderColor: c.inputBorder,
+    backgroundColor: c.surface,
   },
   modalSecondaryButtonPressed: {
     opacity: 0.85,
@@ -874,14 +847,14 @@ const styles = StyleSheet.create({
   modalSecondaryButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   modalPrimaryButton: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
   },
   modalPrimaryButtonPressed: {
     opacity: 0.85,
@@ -889,6 +862,7 @@ const styles = StyleSheet.create({
   modalPrimaryButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#f0fdf4',
+    color: c.primaryText,
   },
 });
+}

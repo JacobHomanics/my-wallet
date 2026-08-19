@@ -18,12 +18,18 @@ import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useProfilePhotoSettings } from '@/hooks/useProfilePhotoSettings';
 import { useUsernameAvailability } from '@/hooks/useUsernameAvailability';
 import { useUsernameSettings } from '@/hooks/useUsernameSettings';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 /**
  * Edit profile photo and username (opened from Settings).
  * Layout mirrors the first-time onboarding screen.
  */
 export function ProfileSettingsScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goSettings = usePopToSettings();
@@ -140,7 +146,7 @@ export function ProfileSettingsScreen() {
             ]}
           >
             {isUploadingPhoto ? (
-              <ActivityIndicator color="#166534" />
+              <ActivityIndicator color={colors.primary} />
             ) : (
               <Text style={styles.secondaryButtonText}>
                 {profilePhotoUrl ? 'Change photo' : 'Add photo'}
@@ -195,7 +201,7 @@ export function ProfileSettingsScreen() {
           ]}
         >
           {isSavingUsername ? (
-            <ActivityIndicator color="#f0fdf4" />
+            <ActivityIndicator color={colors.primaryText} />
           ) : (
             <Text style={styles.saveButtonText}>Save username</Text>
           )}
@@ -205,10 +211,11 @@ export function ProfileSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   content: {
     width: '100%',
@@ -238,12 +245,12 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     letterSpacing: -0.5,
     textAlign: 'center',
   },
@@ -267,7 +274,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#fecaca',
     alignItems: 'center',
@@ -284,46 +291,46 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
   input: {
     width: '100%',
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#166534',
+    color: c.primary,
   },
   hint: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#86a894',
+    color: c.textSubtle,
     textAlign: 'center',
   },
   error: {
     marginTop: 8,
     fontSize: 13,
     lineHeight: 18,
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
   },
   available: {
     marginTop: 8,
     fontSize: 13,
     lineHeight: 18,
-    color: '#166534',
+    color: c.primary,
     textAlign: 'center',
   },
   secondaryButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#dcfce7',
+    backgroundColor: c.surfaceMuted,
     minWidth: 140,
     alignItems: 'center',
   },
@@ -331,14 +338,14 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   secondaryButtonText: {
-    color: '#166534',
+    color: c.primary,
     fontSize: 15,
     fontWeight: '600',
   },
   saveButton: {
     marginTop: 32,
     width: '100%',
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 12,
@@ -350,7 +357,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   saveButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -358,3 +365,4 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
 });
+}

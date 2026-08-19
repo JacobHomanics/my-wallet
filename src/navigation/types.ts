@@ -43,7 +43,7 @@ export type HomeStackParamList = {
     ethereumRecipient?: string;
     solanaRecipient?: string;
   } | undefined;
-  /** Cashbox username / account number search during send. */
+  /** Ziti username / account number search during send. */
   sendSearch: {
     tokenId?: string;
     usdAmount?: string;
@@ -89,6 +89,10 @@ export type RewardsStackParamList = {
   index: undefined;
 };
 
+export type EarnStackParamList = {
+  index: undefined;
+};
+
 export type ContactsStackParamList = {
   index: undefined;
   newContact: undefined;
@@ -106,12 +110,14 @@ export type ProfileStackParamList = {
   profileSettings: undefined;
   onrampSettings: undefined;
   sendSettings: undefined;
+  earnSettings: undefined;
 };
 
 export type MainTabParamList = {
   home: NavigatorScreenParams<HomeStackParamList> | undefined;
   contacts: NavigatorScreenParams<ContactsStackParamList> | undefined;
   rewards: NavigatorScreenParams<RewardsStackParamList> | undefined;
+  earn: NavigatorScreenParams<EarnStackParamList> | undefined;
   profile: NavigatorScreenParams<ProfileStackParamList> | undefined;
 };
 

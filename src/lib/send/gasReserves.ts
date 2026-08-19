@@ -10,7 +10,16 @@ import {
   SOLANA_TX_FEE_LAMPORTS,
   solanaSpendableFeeBudget,
 } from '@/lib/send/solanaFees';
-import { isGasToken } from '@/lib/strategies/gasTokens';
+import type { TaxFundingPick } from '@/lib/send/buildPaymentLegsWithTax';
+import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
+import {
+  BASE_PRIVY_TRANSFER_GAS_RESERVE_RAW,
+  canPayOwnTransferGas,
+  hasGasReserve,
+  isBaseGasPaymentToken,
+  isGasToken,
+} from '@/lib/strategies/gasTokens';
+import { getTaxConfig } from '@/lib/tax';
 
 /** Typical EVM transfer gas limits (units). */
 export const EVM_NATIVE_TRANSFER_GAS = 21_000n;
@@ -91,7 +100,7 @@ export type GasFundingPick = {
 };
 
 /**
- * Native gas reserved on each gas token (wallet balance minus spendable).
+ * Gas reserved on fee-paying tokens (wallet balance minus spendable).
  * When `usedNetworks` is set, only gas tokens on those networks are included.
  */
 export function resolveGasFunding(
@@ -105,7 +114,7 @@ export function resolveGasFunding(
   const picks: GasFundingPick[] = [];
 
   for (const wallet of walletTokens) {
-    if (!isGasToken(wallet) || wallet.rawBalance <= 0n) {
+    if (!hasGasReserve(wallet) || wallet.rawBalance <= 0n) {
       continue;
     }
     if (
@@ -137,6 +146,93 @@ export function resolveGasFunding(
           ? wallet.usdValue * (Number(amountRaw) / Number(wallet.rawBalance))
           : 0),
     });
+  }
+
+  return picks.sort((a, b) => b.usd - a.usd);
+}
+
+function buildGasFundingPick(
+  wallet: OwnedToken,
+  amountRaw: bigint,
+): GasFundingPick {
+  return {
+    token: wallet,
+    amountRaw,
+    amountFormatted: formatRawTokenBalance(amountRaw, wallet.decimals),
+    usd:
+      estimateTokenAmountUsd(wallet, amountRaw) ??
+      (wallet.usdValue != null && wallet.rawBalance > 0n
+        ? wallet.usdValue * (Number(amountRaw) / Number(wallet.rawBalance))
+        : 0),
+  };
+}
+
+/**
+ * Gas reserved for the tokens in this payment only (not every gas token in the
+ * wallet). Base USDC/EURC/USDT show their own gas; native ETH is omitted when
+ * it is not paying for any leg.
+ */
+export function resolveGasFundingForPayment(
+  walletTokens: readonly OwnedToken[],
+  allocations: readonly PaymentAllocation[],
+  taxFunding: TaxFundingPick | null | undefined,
+  feeEstimates?: ReadonlyMap<string, NetworkGasFeeEstimate>,
+): GasFundingPick[] {
+  const legs = [
+    ...allocations.filter((leg) => leg.amountRaw > 0n),
+    ...(taxFunding != null && taxFunding.amountRaw > 0n
+      ? [{ token: taxFunding.token }]
+      : []),
+  ];
+  if (legs.length === 0) {
+    return [];
+  }
+
+  const walletById = new Map(
+    walletTokens.map((token) => [token.id, token] as const),
+  );
+  const reserveByTokenId = new Map<string, bigint>();
+
+  for (const leg of legs) {
+    const token = leg.token;
+    const wallet = walletById.get(token.id) ?? token;
+    const estimate = feeEstimates?.get(token.network);
+
+    if (canPayOwnTransferGas(token.network, token.tokenAddress)) {
+      const reserve = isBaseGasPaymentToken(token)
+        ? selfGasReserveRaw(token.network, wallet)
+        : feeReserveRawForNetwork(token.network, wallet, estimate, false);
+      const prior = reserveByTokenId.get(token.id) ?? 0n;
+      reserveByTokenId.set(token.id, prior + reserve);
+      continue;
+    }
+
+    const native = walletTokens.find(
+      (item) => item.network === token.network && isGasToken(item),
+    );
+    if (native == null) {
+      continue;
+    }
+    const fee = feeReserveRawForNetwork(
+      token.network,
+      native,
+      estimate,
+      true,
+    );
+    const prior = reserveByTokenId.get(native.id) ?? 0n;
+    reserveByTokenId.set(native.id, prior + fee);
+  }
+
+  const picks: GasFundingPick[] = [];
+  for (const [tokenId, amountRaw] of reserveByTokenId) {
+    if (amountRaw <= 0n) {
+      continue;
+    }
+    const wallet = walletById.get(tokenId);
+    if (wallet == null) {
+      continue;
+    }
+    picks.push(buildGasFundingPick(wallet, amountRaw));
   }
 
   return picks.sort((a, b) => b.usd - a.usd);
@@ -271,22 +367,106 @@ export function networkFeeReserveRaw(
   }
 
   const plan = planEvmFeeReserve(network, withBalance, estimate);
-  return plan?.reserveWei ?? 0n;
+  if (plan == null) {
+    return 0n;
+  }
+  let total = 0n;
+  for (const reserve of plan.reserveByGasPayerId.values()) {
+    total += reserve;
+  }
+  return total;
+}
+
+export type EvmFeeReservePlan = {
+  /** Raw units reserved on each fee-paying token. */
+  reserveByGasPayerId: Map<string, bigint>;
+  spendableTokenIds: Set<string>;
+};
+
+function scalePrivyGasReserveRaw(decimals: number): bigint {
+  if (decimals === 6) {
+    return BASE_PRIVY_TRANSFER_GAS_RESERVE_RAW;
+  }
+  if (decimals < 6) {
+    return (
+      BASE_PRIVY_TRANSFER_GAS_RESERVE_RAW /
+      10n ** BigInt(6 - decimals)
+    );
+  }
+  return (
+    BASE_PRIVY_TRANSFER_GAS_RESERVE_RAW *
+    10n ** BigInt(decimals - 6)
+  );
+}
+
+function selfGasReserveRaw(
+  network: string,
+  token: OwnedToken,
+): bigint {
+  // Privy Transfer API debits a fixed raw headroom on Base stables — do not
+  // derive from USD × balance (float drift vs Convex `PRIVY_TRANSFER_GAS_RESERVE_RAW`).
+  if (isBaseGasPaymentToken(token)) {
+    return scalePrivyGasReserveRaw(token.decimals);
+  }
+
+  const fromUsd = usdFeeToRaw(token, typicalFeeUsd(network, true));
+  if (fromUsd != null && fromUsd > 0n) {
+    return fromUsd;
+  }
+  return 10_000n;
+}
+
+/** Privy Transfer API legs that debit gas from the same Base stablecoin. */
+export function baseSelfGasLegCount(options: {
+  hasMerchantLeg: boolean;
+  hasTaxLeg: boolean;
+}): number {
+  let count = 0;
+  if (options.hasMerchantLeg) {
+    count += 1;
+  }
+  if (options.hasTaxLeg) {
+    count += 1;
+  }
+  return count;
+}
+
+/** Typical merchant + service-fee legs when tax-on-top is enabled. */
+export function typicalBaseSelfGasLegCount(): number {
+  return getTaxConfig().sponsoredRate > 0 ? 2 : 1;
+}
+
+/** Total raw gas headroom for multiple self-gas legs on one token. */
+export function totalSelfGasReserveRaw(
+  token: OwnedToken,
+  legCount: number,
+): bigint {
+  if (legCount <= 0 || !isBaseGasPaymentToken(token)) {
+    return 0n;
+  }
+  return selfGasReserveRaw(token.network, token) * BigInt(legCount);
+}
+
+/** Per-transfer gas headroom for a token that pays its own network fee. */
+export function transferGasReserveRaw(token: OwnedToken): bigint {
+  if (isBaseGasPaymentToken(token)) {
+    return selfGasReserveRaw(token.network, token);
+  }
+  if (isGasToken(token)) {
+    return feeReserveRawForNetwork(token.network, token, undefined, false);
+  }
+  return 0n;
 }
 
 /**
- * Chooses how many EVM balances are actually sendable given current native gas.
- * Prefer highest-USD ERC-20s first; leftover native above one transfer fee stays
- * spendable. Avoids all-or-nothing so dust ETH does not hide a funded USDC.
+ * Chooses how many EVM balances are actually sendable given current gas funds.
+ * Native gas funds other ERC-20s; Base USDC/EURC/USDT only fund themselves.
  */
 export function planEvmFeeReserve(
   network: string,
   onNetwork: OwnedToken[],
   estimate: NetworkGasFeeEstimate | undefined,
-): {
-  reserveWei: bigint;
-  spendableTokenIds: Set<string>;
-} | null {
+): EvmFeeReservePlan | null {
   const withBalance = onNetwork.filter((token) => token.rawBalance > 0n);
   if (withBalance.length === 0) {
     return null;
@@ -294,9 +474,12 @@ export function planEvmFeeReserve(
 
   const gasToken = withBalance.find((token) => isGasToken(token));
   const gasRaw = gasToken?.rawBalance ?? 0n;
-  const erc20Tokens = [
-    ...withBalance.filter((token) => !isGasToken(token)),
-  ].sort((a, b) => (b.usdValue ?? 0) - (a.usdValue ?? 0));
+  const selfGasTokens = withBalance.filter((token) =>
+    isBaseGasPaymentToken(token),
+  );
+  const needsNativeGasTokens = withBalance
+    .filter((token) => !isGasToken(token) && !isBaseGasPaymentToken(token))
+    .sort((a, b) => (b.usdValue ?? 0) - (a.usdValue ?? 0));
 
   const erc20Fee = feeReserveRawForNetwork(
     network,
@@ -312,9 +495,10 @@ export function planEvmFeeReserve(
   );
 
   const spendableTokenIds = new Set<string>();
+  const reserveByGasPayerId = new Map<string, bigint>();
   let used = 0n;
 
-  for (const token of erc20Tokens) {
+  for (const token of needsNativeGasTokens) {
     const next = used + erc20Fee;
     if (gasRaw >= next) {
       spendableTokenIds.add(token.id);
@@ -322,27 +506,44 @@ export function planEvmFeeReserve(
     }
   }
 
-  let reserveWei = used;
+  let nativeReserve = used;
   if (gasToken) {
     const leftover = gasRaw - used;
-    if (leftover >= nativeFee) {
-      reserveWei = used + nativeFee;
-      spendableTokenIds.add(gasToken.id);
-    } else if (
-      spendableTokenIds.size === 0 &&
-      gasRaw >= nativeFee
-    ) {
-      reserveWei = nativeFee;
+    if (leftover >= nativeFee || (used === 0n && gasRaw >= nativeFee)) {
       spendableTokenIds.add(gasToken.id);
     }
-    // Else: ERC-20s funded; leftover dust stays locked in `used`.
+
+    if (used > 0n) {
+      // Native gas funds other ERC-20 legs on this network.
+      nativeReserve =
+        leftover >= nativeFee ? used + nativeFee : used;
+      if (nativeReserve > 0n) {
+        reserveByGasPayerId.set(gasToken.id, nativeReserve);
+      }
+    } else if (selfGasTokens.length === 0 && gasRaw >= nativeFee) {
+      // No Base stables in wallet — reserve native gas for native sends.
+      reserveByGasPayerId.set(gasToken.id, nativeFee);
+    }
+    // When self-gas stables cover their own fees, do not reserve native ETH.
+  }
+
+  for (const token of selfGasTokens) {
+    // Merchant + service-fee legs each pay gas from the same Base stablecoin.
+    const reserveRaw = totalSelfGasReserveRaw(
+      token,
+      typicalBaseSelfGasLegCount(),
+    );
+    if (token.rawBalance > reserveRaw) {
+      spendableTokenIds.add(token.id);
+      reserveByGasPayerId.set(token.id, reserveRaw);
+    }
   }
 
   if (spendableTokenIds.size === 0) {
     return null;
   }
 
-  return { reserveWei, spendableTokenIds };
+  return { reserveByGasPayerId, spendableTokenIds };
 }
 
 /**
@@ -424,7 +625,7 @@ export function applyGasReserves(
   }
 
   const networks = new Set(tokens.map((token) => token.network));
-  const reserveByNetwork = new Map<string, bigint>();
+  const reserveByTokenId = new Map<string, bigint>();
   const spendableIdsByNetwork = new Map<string, Set<string> | 'all' | 'none'>();
 
   for (const network of networks) {
@@ -440,10 +641,12 @@ export function applyGasReserves(
     if (network === 'solana-mainnet') {
       const plan = planSolanaFeeReserve(onNetwork);
       if (plan == null) {
-        reserveByNetwork.set(network, 0n);
         spendableIdsByNetwork.set(network, 'none');
       } else {
-        reserveByNetwork.set(network, plan.reserveLamports);
+        const gasToken = onNetwork.find((token) => isGasToken(token));
+        if (gasToken != null && plan.reserveLamports > 0n) {
+          reserveByTokenId.set(gasToken.id, plan.reserveLamports);
+        }
         spendableIdsByNetwork.set(network, plan.spendableTokenIds);
       }
       continue;
@@ -455,16 +658,17 @@ export function applyGasReserves(
       feeEstimates.get(network),
     );
     if (plan == null) {
-      reserveByNetwork.set(network, 0n);
       spendableIdsByNetwork.set(network, 'none');
     } else {
-      reserveByNetwork.set(network, plan.reserveWei);
+      for (const [tokenId, reserve] of plan.reserveByGasPayerId) {
+        reserveByTokenId.set(tokenId, reserve);
+      }
       spendableIdsByNetwork.set(network, plan.spendableTokenIds);
     }
   }
 
   return tokens.map((token) => {
-    const reserve = reserveByNetwork.get(token.network) ?? 0n;
+    const reserve = reserveByTokenId.get(token.id) ?? 0n;
     const spendable = spendableIdsByNetwork.get(token.network) ?? 'all';
 
     const isSpendable =
@@ -483,7 +687,7 @@ export function applyGasReserves(
       };
     }
 
-    if (!isGasToken(token) || reserve <= 0n) {
+    if (reserve <= 0n) {
       return token;
     }
 

@@ -14,6 +14,16 @@ export default defineSchema({
      * Missing/`false` means onboarding is still required.
      */
     onboardingCompleted: v.optional(v.boolean()),
+    /**
+     * Auto-deposit received or onramped Base USDC into the earn vault. Defaults to on;
+     * set explicitly to `false` to opt out.
+     */
+    autoDepositReceivedUsdc: v.optional(v.boolean()),
+    /**
+     * Withdraw vault USDC into the wallet before sending when payment legs
+     * need Base USDC. Defaults to on; set explicitly to `false` to opt out.
+     */
+    useVaultUsdcWhenSending: v.optional(v.boolean()),
   })
     .index("by_externalId", ["externalId"])
     .index("by_username", ["username"])
@@ -22,7 +32,7 @@ export default defineSchema({
   contacts: defineTable({
     /** Convex `users` document id of the contact list owner. */
     ownerId: v.optional(v.id("users")),
-    /** Set when the contact is a registered Cashbox user. */
+    /** Set when the contact is a registered Ziti user. */
     contactUserId: v.optional(v.id("users")),
     /** Display name for address-book / advanced contacts. */
     name: v.optional(v.string()),
