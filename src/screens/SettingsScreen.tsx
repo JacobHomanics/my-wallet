@@ -95,7 +95,18 @@ export function SettingsScreen() {
               />
             )}
             <Text style={styles.topBarTitle}>Settings</Text>
-            <View style={styles.topBarSpacer} />
+            <Pressable
+              accessibilityLabel="Log out"
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={requestSignOut}
+              style={({ pressed }) => [
+                styles.logoutHeaderButton,
+                pressed && styles.logoutHeaderButtonPressed,
+              ]}
+            >
+              <Ionicons name="log-out-outline" size={22} color={colors.textMuted} />
+            </Pressable>
           </View>
 
           <View style={styles.sections}>
@@ -188,17 +199,6 @@ export function SettingsScreen() {
                 <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
               </Pressable>
             </View>
-
-            <Pressable
-              accessibilityRole="button"
-              onPress={requestSignOut}
-              style={({ pressed }) => [
-                styles.logoutButton,
-                pressed && styles.logoutButtonPressed,
-              ]}
-            >
-              <Text style={styles.logoutButtonText}>Log out</Text>
-            </Pressable>
           </View>
         </View>
       </ScrollView>
@@ -262,8 +262,14 @@ function createStyles(c: ThemeColors) {
     fontWeight: '600',
     color: c.primary,
   },
-  topBarSpacer: {
+  logoutHeaderButton: {
     width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutHeaderButtonPressed: {
+    opacity: 0.7,
   },
   webBack: {
     minWidth: 44,
@@ -325,23 +331,5 @@ function createStyles(c: ThemeColors) {
     lineHeight: 18,
     color: c.textSubtle,
   },
-  logoutButton: {
-    width: '100%',
-    maxWidth: 420,
-    marginTop: 32,
-    backgroundColor: c.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  logoutButtonPressed: {
-    opacity: 0.85,
-  },
-  logoutButtonText: {
-    color: c.primaryText,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
+  });
 }
