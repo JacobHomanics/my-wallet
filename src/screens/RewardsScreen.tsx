@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
@@ -18,6 +18,7 @@ import { IconButton } from '@/components/IconButton';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useCashbackRedemption } from '@/hooks/useCashbackRedemption';
+import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useRewardTokenBalance } from '@/hooks/useRewardTokenBalance';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
@@ -62,6 +63,12 @@ export function RewardsScreen() {
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const { copy, isCopied } = useCopyToClipboard();
   const { config: appConfig, loading: appConfigLoading } = useAppConfig();
+  const {
+    formatFromUsd,
+    selectedCurrency,
+    ratesLoading,
+    defaultFormattedZero,
+  } = useFiatDisplay();
   const pointsPerUsdc = appConfig?.cashback.pointsPerUsdc ?? null;
   const {
     ready: redemptionReady,
@@ -88,6 +95,17 @@ export function RewardsScreen() {
   const contractCopied = isCopied('reward-contract');
   const parsedPoints = parseWholePointsInput(pointsAmount);
   const previewUsdc = previewUsdcAmount(pointsAmount);
+  const previewFiat = useMemo(() => {
+    if (previewUsdc == null) {
+      return null;
+    }
+    const usd = Number(previewUsdc);
+    if (!Number.isFinite(usd) || usd <= 0) {
+      return null;
+    }
+    return formatFromUsd(usd);
+  }, [formatFromUsd, previewUsdc]);
+  const unitFiatLabel = formatFromUsd(1) ?? defaultFormattedZero;
   const availableWhole = BigInt(
     Math.floor(Number.parseFloat(rewardBalance) || 0),
   );
@@ -102,7 +120,11 @@ export function RewardsScreen() {
     !exceedsBalance;
   const cashbackRateLabel =
     appConfig != null
-      ? formatCashbackRateLabel(appConfig.cashback.pointsPerUsdc)
+      ? formatCashbackRateLabel(appConfig.cashback.pointsPerUsdc, unitFiatLabel)
+      : null;
+  const redemptionSuccessFiat =
+    redemptionResult != null
+      ? formatFromUsd(Number(redemptionResult.usdcAmount))
       : null;
 
   const handleRedeem = useCallback(async () => {
@@ -174,10 +196,12 @@ export function RewardsScreen() {
               </Text>
 
               <View style={styles.card}>
-                <Text style={styles.cardTitle}>Redeem for USDC</Text>
+                <Text style={styles.cardTitle}>
+                  Redeem for {selectedCurrency.code}
+                </Text>
                 {cashbackRateLabel ? (
                   <Text style={styles.cardHint}>{cashbackRateLabel}</Text>
-                ) : appConfigLoading ? (
+                ) : appConfigLoading || ratesLoading ? (
                   <Text style={styles.cardHint}>Loading rate…</Text>
                 ) : null}
                 <Text style={styles.inputLabel}>Points to redeem</Text>
@@ -193,10 +217,12 @@ export function RewardsScreen() {
                     value={pointsAmount}
                   />
                 </View>
-                {previewUsdc != null ? (
+                {previewFiat != null ? (
                   <Text style={styles.preview}>
-                    You will receive {previewUsdc} USDC
+                    You will receive {previewFiat}
                   </Text>
+                ) : pointsAmount.trim().length > 0 && ratesLoading ? (
+                  <Text style={styles.previewMuted}>Loading conversion…</Text>
                 ) : pointsAmount.trim().length > 0 ? (
                   <Text style={styles.previewMuted}>
                     Enter a whole number of points
@@ -210,10 +236,10 @@ export function RewardsScreen() {
                 {redemptionError ? (
                   <Text style={styles.error}>{redemptionError}</Text>
                 ) : null}
-                {redemptionResult ? (
+                {redemptionResult && redemptionSuccessFiat ? (
                   <Text style={styles.success}>
                     Redeemed {redemptionResult.pointsAmount} points for{' '}
-                    {redemptionResult.usdcAmount} USDC.
+                    {redemptionSuccessFiat}.
                   </Text>
                 ) : null}
                 <Pressable

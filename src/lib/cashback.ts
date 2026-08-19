@@ -29,8 +29,11 @@ export function pointsWholeToUsdcAmount(
   return `${whole}.${fractionText}`;
 }
 
-export function formatCashbackRateLabel(pointsPerUsdc: number): string {
-  return `${pointsPerUsdc} points = 1 USDC`;
+export function formatCashbackRateLabel(
+  pointsPerUsdc: number,
+  formattedUnitAmount: string,
+): string {
+  return `${pointsPerUsdc} points = ${formattedUnitAmount}`;
 }
 
 export function formatCashbackActionError(message: string): string {
