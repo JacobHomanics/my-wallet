@@ -12,6 +12,13 @@ type ColorThemeListener = () => void;
 
 const COLOR_THEME_STORAGE_KEY = 'colorThemeId';
 
+function normalizeStoredColorThemeId(stored: string): ColorThemeId | null {
+  if (getColorThemeOption(stored as ColorThemeId)) {
+    return stored as ColorThemeId;
+  }
+  return null;
+}
+
 function readStoredColorThemeId(): ColorThemeId | null {
   if (typeof window === 'undefined') {
     return null;
@@ -19,8 +26,8 @@ function readStoredColorThemeId(): ColorThemeId | null {
 
   try {
     const stored = window.localStorage.getItem(COLOR_THEME_STORAGE_KEY);
-    if (stored && getColorThemeOption(stored as ColorThemeId)) {
-      return stored as ColorThemeId;
+    if (stored) {
+      return normalizeStoredColorThemeId(stored);
     }
   } catch {
     // Ignore quota / private-mode storage errors.
@@ -93,7 +100,7 @@ function setSelectedColorThemeId(id: ColorThemeId): void {
 applyWebThemeMeta(getThemeColorsSnapshot());
 
 /**
- * User preference for the app color theme (pesto or marinara).
+ * User preference for the app color theme (pesto, marinara, mixed, or mixed reversed).
  */
 export function useColorTheme(): {
   options: readonly ColorThemeOption[];

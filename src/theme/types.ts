@@ -22,7 +22,7 @@ export type ThemeColors = {
   success: string;
 };
 
-export type ColorThemeId = 'pesto' | 'marinara';
+export type ColorThemeId = 'pesto' | 'marinara' | 'mixed' | 'mixedReverse';
 
 export type ColorThemeOption = {
   id: ColorThemeId;
