@@ -15,6 +15,9 @@ import {
 } from '@/components/SendAdvancedDetails';
 import { SendAdvancedDetailsCollapsible } from '@/components/SendAdvancedDetailsCollapsible';
 import { useSendConfiguration } from '@/hooks/useSendConfiguration';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export type SendConfigurationCollapsibleProps = SendAdvancedDetailsProps & {
   style?: StyleProp<ViewStyle>;
@@ -32,6 +35,9 @@ export function SendConfigurationCollapsible({
   onOpenStrategyPicker,
   ...tokenAllocationProps
 }: SendConfigurationCollapsibleProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const { showConfiguration, toggleConfiguration } = useSendConfiguration();
 
   return (
@@ -54,7 +60,7 @@ export function SendConfigurationCollapsible({
         <Ionicons
           name={showConfiguration ? 'chevron-up' : 'chevron-down'}
           size={16}
-          color="#5a7d6a"
+          color={colors.textMuted}
         />
       </Pressable>
 
@@ -80,7 +86,8 @@ export function SendConfigurationCollapsible({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   section: {
     marginTop: 16,
     alignSelf: 'stretch',
@@ -98,15 +105,15 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
   panel: {
     marginTop: 8,
     alignSelf: 'stretch',
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     paddingHorizontal: 14,
     paddingTop: 4,
     paddingBottom: 12,
@@ -116,3 +123,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#d1fae5',
   },
 });
+}

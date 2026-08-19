@@ -11,6 +11,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { ChainPriorityId, ChainPriorityOption } from '@/lib/chainPriority';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type ChainPriorityPickerModalProps = {
   visible: boolean;
@@ -30,6 +33,9 @@ export function ChainPriorityPickerModal({
   onClose,
   onSelect,
 }: ChainPriorityPickerModalProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
 
   const renderOption = useCallback(
@@ -53,7 +59,7 @@ export function ChainPriorityPickerModal({
             <Text style={styles.optionDescription}>{item.description}</Text>
           </View>
           {selected ? (
-            <Ionicons name="checkmark-circle" size={22} color="#166534" />
+            <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
           ) : (
             <View style={styles.optionSpacer} />
           )}
@@ -88,7 +94,7 @@ export function ChainPriorityPickerModal({
               pressed && styles.modalClosePressed,
             ]}
           >
-            <Ionicons name="close" size={22} color="#166534" />
+            <Ionicons name="close" size={22} color={colors.primary} />
           </Pressable>
         </View>
 
@@ -103,10 +109,11 @@ export function ChainPriorityPickerModal({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   modalTopBar: {
     flexDirection: 'row',
@@ -115,14 +122,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#d1fae5',
+    borderBottomColor: c.rowBorder,
   },
   modalTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     paddingLeft: 40,
   },
   modalClose: {
@@ -143,15 +150,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
   optionSelected: {
-    borderColor: '#166534',
+    borderColor: c.primary,
   },
   optionPressed: {
     opacity: 0.85,
@@ -164,14 +171,15 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   optionDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
   optionSpacer: {
     width: 22,
   },
 });
+}

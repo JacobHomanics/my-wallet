@@ -18,11 +18,17 @@ import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useOnrampVaultDepositCompletion } from '@/hooks/useOnrampVaultDepositCompletion';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import { useStripeOnrampUiReady } from '@/hooks/useStripeOnrampUiReady';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 function DepositLoading({ message }: { message: string }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   return (
     <View accessibilityRole="progressbar" style={styles.loadingPanel}>
-      <ActivityIndicator color="#166534" size="large" />
+      <ActivityIndicator color={colors.primary} size="large" />
       <Text style={styles.loadingText}>{message}</Text>
     </View>
   );
@@ -33,6 +39,8 @@ function DepositLoading({ message }: { message: string }) {
  * Supports Base / Ethereum and Avalanche destinations.
  */
 export function StripeOnrampScreen() {
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goHome = usePopToHome();
@@ -198,10 +206,11 @@ export function StripeOnrampScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   shell: {
     flex: 1,
@@ -224,7 +233,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#14532d',
+    color: c.text,
   },
   topBarSpacer: {
     width: 64,
@@ -241,7 +250,7 @@ const styles = StyleSheet.create({
   },
   webBackText: {
     fontSize: 16,
-    color: '#166534',
+    color: c.primary,
     fontWeight: '500',
   },
   body: {
@@ -265,7 +274,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFill,
@@ -274,7 +283,7 @@ const styles = StyleSheet.create({
   completionOverlay: {
     ...StyleSheet.absoluteFill,
     zIndex: 2,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   completionCard: {
     flex: 1,
@@ -286,13 +295,13 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textAlign: 'center',
   },
   successText: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#166534',
+    color: c.primary,
     textAlign: 'center',
   },
   warningText: {
@@ -305,13 +314,13 @@ const styles = StyleSheet.create({
     marginTop: 24,
     fontSize: 15,
     lineHeight: 22,
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
   },
   doneButton: {
     alignItems: 'center',
     alignSelf: 'stretch',
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -320,8 +329,9 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   doneButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
-});
+  });
+}

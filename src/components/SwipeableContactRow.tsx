@@ -9,6 +9,9 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 import { Avatar } from '@/components/Avatar';
 import type { ContactListItem } from '@/hooks/useContacts';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const DELETE_WIDTH = 72;
 /** Progress (0–1) before the trash icon fades in. */
@@ -32,6 +35,9 @@ export function SwipeableContactRow({
   onOpen,
   onClose,
 }: SwipeableContactRowProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const swipeableRef = useRef<Swipeable | null>(null);
 
   const renderRightActions = (
@@ -100,13 +106,14 @@ export function SwipeableContactRow({
             <Text style={styles.contactSubtitle}>{contact.subtitle}</Text>
           ) : null}
         </View>
-        <Ionicons name="chevron-forward" size={18} color="#86a894" />
+        <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />
       </TouchableOpacity>
     </Swipeable>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   swipeContainer: {
     width: '100%',
     marginTop: 12,
@@ -115,9 +122,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -129,13 +136,13 @@ const styles = StyleSheet.create({
   contactLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   contactSubtitle: {
     marginTop: 4,
     fontSize: 13,
     lineHeight: 18,
-    color: '#86a894',
+    color: c.textSubtle,
   },
   deleteSlot: {
     width: DELETE_WIDTH,
@@ -150,3 +157,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
+}

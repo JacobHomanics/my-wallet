@@ -19,11 +19,17 @@ import { useEnsResolve } from '@/hooks/useEnsResolve';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToContacts } from '@/hooks/usePopToContacts';
 import type { ContactsStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 /**
  * Resolve and add an ENS name as a contact.
  */
 export function NewEnsContactScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goContacts = usePopToContacts();
@@ -101,7 +107,7 @@ export function NewEnsContactScreen() {
           {resolveError ? <Text style={styles.error}>{resolveError}</Text> : null}
 
           {isResolving || isAdding ? (
-            <ActivityIndicator color="#166534" style={styles.loader} />
+            <ActivityIndicator color={colors.primary} style={styles.loader} />
           ) : null}
 
           {result ? (
@@ -152,10 +158,11 @@ export function NewEnsContactScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   content: {
     flex: 1,
@@ -174,7 +181,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -191,7 +198,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   body: {
     paddingHorizontal: 24,
@@ -201,30 +208,30 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
   input: {
     width: '100%',
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#166534',
+    color: c.primary,
   },
   hint: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#86a894',
+    color: c.textSubtle,
   },
   error: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#b91c1c',
+    color: c.danger,
   },
   loader: {
     marginTop: 16,
@@ -237,16 +244,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
   resultCardPressed: {
     opacity: 0.85,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   resultCardDisabled: {
     opacity: 0.55,
@@ -259,17 +266,18 @@ const styles = StyleSheet.create({
   resultLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   resultDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
   empty: {
     marginTop: 16,
     fontSize: 15,
-    color: '#86a894',
+    color: c.textSubtle,
     textAlign: 'center',
   },
 });
+}

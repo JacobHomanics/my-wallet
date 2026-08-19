@@ -9,8 +9,9 @@ import { ZitiIcon } from '@/components/ZitiIcon';
 import { ProfileDropdown } from '@/components/ProfileDropdown';
 import { useAppBrand } from '@/hooks/useAppBrand';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { colors } from '@/theme/colors';
+import type { ThemeColors } from '@/theme/types';
 
 const TAB_ICONS = {
   contacts: { focused: 'people', outline: 'people-outline' },
@@ -24,6 +25,7 @@ type TabRouteName = keyof typeof TAB_ICONS;
 function WebTopNav({ state, descriptors, navigation }: BottomTabBarProps) {
   const { name, tagline } = useAppBrand();
   const theme = useThemeColors();
+  const styles = useThemedStyles(createStyles);
 
   return (
     <View style={styles.header}>
@@ -86,9 +88,7 @@ function WebTopNav({ state, descriptors, navigation }: BottomTabBarProps) {
                 <ZitiIcon
                   size={18}
                   color={tint}
-                  detailColor={
-                    isFocused ? colors.border : colors.surface
-                  }
+                  detailColor={isFocused ? theme.border : theme.surface}
                 />
               ) : icons ? (
                 <Ionicons
@@ -126,77 +126,79 @@ export function MainTabBar(props: BottomTabBarProps) {
   return <BottomTabBar {...props} />;
 }
 
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 24,
-    minHeight: 64,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: colors.surface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    boxShadow: '0 1px 3px rgba(22, 101, 52, 0.08)',
-    zIndex: 10,
-  },
-  brandBlock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flexShrink: 0,
-  },
-  iconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandText: {
-    gap: 2,
-  },
-  brand: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.primary,
-    letterSpacing: -0.3,
-  },
-  tagline: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  links: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    flex: 1,
-    gap: 8,
-    marginLeft: 16,
-  },
-  link: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-  },
-  linkActive: {
-    backgroundColor: colors.border,
-  },
-  linkHovered: {
-    backgroundColor: colors.surfaceMuted,
-  },
-  linkLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textMuted,
-  },
-  linkLabelActive: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-});
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 24,
+      minHeight: 64,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      backgroundColor: c.surface,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border,
+      boxShadow: `0 1px 3px ${c.primaryOverlay}`,
+      zIndex: 10,
+    },
+    brandBlock: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      flexShrink: 0,
+    },
+    iconBadge: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: c.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    brandText: {
+      gap: 2,
+    },
+    brand: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: c.primary,
+      letterSpacing: -0.3,
+    },
+    tagline: {
+      fontSize: 12,
+      color: c.textMuted,
+    },
+    links: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      flex: 1,
+      gap: 8,
+      marginLeft: 16,
+    },
+    link: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 999,
+    },
+    linkActive: {
+      backgroundColor: c.border,
+    },
+    linkHovered: {
+      backgroundColor: c.surfaceMuted,
+    },
+    linkLabel: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: c.textMuted,
+    },
+    linkLabelActive: {
+      color: c.primary,
+      fontWeight: '600',
+    },
+  });
+}

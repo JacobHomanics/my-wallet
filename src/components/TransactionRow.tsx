@@ -2,6 +2,8 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import type { WalletTransaction } from '@/lib/alchemy/fetchWalletTransactions';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
 
 function formatTimestamp(timestampMs: number): string {
   const date = new Date(timestampMs);
@@ -31,6 +33,8 @@ export function TransactionRow({
   item: WalletTransaction;
   formatSignedUsd: (usd: number) => string | null;
 }) {
+  const styles = useThemedStyles(createStyles);
+
   const amountLabel = (() => {
     if (item.usdDelta != null && Number.isFinite(item.usdDelta)) {
       return formatSignedUsd(item.usdDelta) ?? '—';
@@ -72,7 +76,8 @@ export function TransactionRow({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -80,7 +85,7 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#d1fae5',
+    borderBottomColor: c.rowBorder,
   },
   rowText: {
     flex: 1,
@@ -90,24 +95,25 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 13,
     fontWeight: '400',
-    color: '#86a894',
+    color: c.textSubtle,
   },
   recipients: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
   },
   amount: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
   },
   amountIn: {
-    color: '#15803d',
+    color: c.success,
   },
   amountOut: {
-    color: '#b91c1c',
+    color: c.danger,
   },
 });
+}

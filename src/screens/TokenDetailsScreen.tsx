@@ -23,8 +23,14 @@ import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useTokensByChain } from '@/hooks/useTokensByChain';
 import type { TokenChainGroup } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export function TokenDetailsScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const navigation =
@@ -130,7 +136,7 @@ export function TokenDetailsScreen() {
         </View>
 
         {!hasWallet || loading ? (
-          <ActivityIndicator color="#166534" style={styles.loader} />
+          <ActivityIndicator color={colors.primary} style={styles.loader} />
         ) : error && tokens.length === 0 ? (
           <View style={styles.errorBlock}>
             <Text style={styles.errorText}>{error}</Text>
@@ -176,11 +182,12 @@ export function TokenDetailsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     minHeight: 0,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   content: {
     flex: 1,
@@ -201,7 +208,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -218,7 +225,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   summary: {
     paddingHorizontal: 24,
@@ -230,9 +237,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -240,13 +247,13 @@ const styles = StyleSheet.create({
   balanceLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
   balanceValue: {
     flexShrink: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
     textAlign: 'right',
   },
@@ -257,7 +264,7 @@ const styles = StyleSheet.create({
     marginTop: 48,
     paddingHorizontal: 24,
     fontSize: 15,
-    color: '#86a894',
+    color: c.textSubtle,
     textAlign: 'center',
   },
   errorBlock: {
@@ -269,16 +276,16 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
   },
   errorBanner: {
     marginBottom: 12,
     fontSize: 13,
-    color: '#b91c1c',
+    color: c.danger,
   },
   retryButton: {
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
@@ -287,7 +294,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   retryButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -306,3 +313,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
 });
+}

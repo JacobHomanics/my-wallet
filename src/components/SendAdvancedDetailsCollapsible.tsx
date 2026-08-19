@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import {
+import {StyleSheet, 
   Pressable,
-  StyleSheet,
   Text,
   View,
   type StyleProp,
@@ -10,6 +9,9 @@ import {
 
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import type { ReactNode } from 'react';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type SendAdvancedDetailsCollapsibleProps = {
   children: ReactNode;
@@ -23,6 +25,9 @@ export function SendAdvancedDetailsCollapsible({
   children,
   style,
 }: SendAdvancedDetailsCollapsibleProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
 
   return (
@@ -45,7 +50,7 @@ export function SendAdvancedDetailsCollapsible({
         <Ionicons
           name={showAdvanced ? 'chevron-up' : 'chevron-down'}
           size={16}
-          color="#5a7d6a"
+          color={colors.textMuted}
         />
       </Pressable>
 
@@ -54,7 +59,8 @@ export function SendAdvancedDetailsCollapsible({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   section: {
     marginTop: 4,
     alignSelf: 'stretch',
@@ -72,9 +78,10 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
   content: {
     alignSelf: 'stretch',
   },
 });
+}

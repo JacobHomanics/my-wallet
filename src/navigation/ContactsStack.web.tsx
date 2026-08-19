@@ -1,6 +1,8 @@
 import { createStackNavigator } from '@react-navigation/stack';
 
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useThemeColors } from '@/hooks/useThemeColors';
+
 import {
   CONTACTS_STACK_INITIAL_ROUTE,
   contactsStackScreens,
@@ -11,6 +13,7 @@ const WebStack = createStackNavigator<ContactsStackParamList>();
 
 export function ContactsStack() {
   const isDesktopWeb = useIsDesktopWeb();
+  const colors = useThemeColors();
 
   return (
     <WebStack.Navigator
@@ -20,7 +23,7 @@ export function ContactsStack() {
         animation: isDesktopWeb ? 'none' : 'slide_from_right',
         cardStyle: {
           flex: 1,
-          backgroundColor: '#f0fdf4',
+          backgroundColor: colors.bg,
           height: '100%',
         },
       }}

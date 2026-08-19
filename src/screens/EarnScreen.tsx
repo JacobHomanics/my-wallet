@@ -18,8 +18,14 @@ import {
   formatEarnApy,
   formatEarnRawAmount,
 } from '@/lib/privy/earn';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { useThemeColors } from '@/hooks/useThemeColors';
+import type { ThemeColors } from '@/theme/types';
 
 export function EarnScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const {
     ready,
@@ -123,7 +129,7 @@ export function EarnScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {loading ? (
-            <ActivityIndicator color="#166534" />
+            <ActivityIndicator color={colors.primary} />
           ) : !configured ? (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Set up Privy Earn</Text>
@@ -205,7 +211,7 @@ export function EarnScreen() {
                     ]}
                   >
                     {acting ? (
-                      <ActivityIndicator color="#f0fdf4" />
+                      <ActivityIndicator color={colors.primaryText} />
                     ) : (
                       <Text style={styles.primaryButtonText}>Deposit</Text>
                     )}
@@ -244,10 +250,11 @@ export function EarnScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -269,7 +276,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -289,14 +296,14 @@ const styles = StyleSheet.create({
   heroLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   heroBalance: {
     fontSize: 56,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     letterSpacing: -1,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
@@ -305,7 +312,7 @@ const styles = StyleSheet.create({
     maxWidth: 320,
     fontSize: 15,
     lineHeight: 22,
-    color: '#5a7d6a',
+    color: c.textMuted,
     textAlign: 'center',
   },
   heroMeta: {
@@ -315,63 +322,63 @@ const styles = StyleSheet.create({
   },
   statLine: {
     fontSize: 14,
-    color: '#5a7d6a',
+    color: c.textMuted,
     textAlign: 'center',
   },
   card: {
     width: '100%',
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     padding: 20,
     gap: 8,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
   },
   hint: {
     fontSize: 13,
-    color: '#5a7d6a',
+    color: c.textMuted,
     lineHeight: 18,
   },
   bodyText: {
     fontSize: 14,
-    color: '#166534',
+    color: c.primary,
     lineHeight: 20,
   },
   code: {
     fontFamily: 'monospace',
     fontSize: 13,
-    color: '#166534',
-    backgroundColor: '#ecfdf5',
+    color: c.primary,
+    backgroundColor: c.surfaceHighlight,
     padding: 12,
     borderRadius: 8,
   },
   link: {
-    color: '#166534',
+    color: c.primary,
     fontWeight: '600',
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   fieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: c.inputBorder,
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 8,
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     minHeight: 52,
   },
   fieldRowDisabled: {
-    backgroundColor: '#dcfce7',
+    backgroundColor: c.surfaceMuted,
   },
   balanceRow: {
     paddingRight: 16,
@@ -379,14 +386,14 @@ const styles = StyleSheet.create({
   balanceLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     marginRight: 8,
   },
   balanceValue: {
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
     textAlign: 'right',
   },
@@ -394,23 +401,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 14,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
     minHeight: 48,
   },
   amountPrefix: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     marginRight: 4,
   },
   amountInput: {
     flex: 1,
     paddingVertical: 12,
     fontSize: 18,
-    color: '#166534',
+    color: c.primary,
   },
   actions: {
     flexDirection: 'row',
@@ -423,7 +430,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 48,
     borderRadius: 12,
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
   },
   secondaryButton: {
     flex: 1,
@@ -431,17 +438,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 48,
     borderRadius: 12,
-    backgroundColor: '#ecfdf5',
+    backgroundColor: c.surfaceHighlight,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
   },
   primaryButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
   secondaryButtonText: {
-    color: '#166534',
+    color: c.primary,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -453,14 +460,15 @@ const styles = StyleSheet.create({
   },
   error: {
     fontSize: 14,
-    color: '#b91c1c',
+    color: c.danger,
     lineHeight: 20,
   },
   disclaimer: {
     fontSize: 12,
-    color: '#86a894',
+    color: c.textSubtle,
     lineHeight: 17,
     textAlign: 'center',
     paddingHorizontal: 8,
   },
 });
+}

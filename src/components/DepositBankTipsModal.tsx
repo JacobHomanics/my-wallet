@@ -1,4 +1,7 @@
-import { Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import {StyleSheet,  Modal, Pressable, Switch, Text, View } from 'react-native';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type DepositBankTipsModalProps = {
   visible: boolean;
@@ -18,6 +21,9 @@ export function DepositBankTipsModal({
   onClose,
   onContinue,
 }: DepositBankTipsModalProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   return (
     <Modal
       animationType="fade"
@@ -62,7 +68,7 @@ export function DepositBankTipsModal({
             <Switch
               accessibilityLabel="Do not show again"
               trackColor={{ false: '#bbf7d0', true: '#86efac' }}
-              thumbColor={doNotShowAgain ? '#166534' : '#f0fdf4'}
+              thumbColor={doNotShowAgain ? colors.primary : colors.bg}
               ios_backgroundColor="#bbf7d0"
               value={doNotShowAgain}
               onValueChange={onDoNotShowAgainChange}
@@ -98,7 +104,8 @@ export function DepositBankTipsModal({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(15, 40, 25, 0.45)',
@@ -107,23 +114,23 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 16,
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
   },
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     marginBottom: 12,
   },
   paragraph: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#3f6b52',
+    color: c.textSecondary,
     marginBottom: 12,
   },
   bold: {
@@ -140,7 +147,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '500',
-    color: '#3f6b52',
+    color: c.textSecondary,
   },
   actions: {
     flexDirection: 'row',
@@ -152,13 +159,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#dcfce7',
+    backgroundColor: c.surfaceMuted,
   },
   continueButton: {
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
   },
   buttonPressed: {
     opacity: 0.85,
@@ -166,11 +173,12 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   continueButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#f0fdf4',
+    color: c.primaryText,
   },
 });
+}

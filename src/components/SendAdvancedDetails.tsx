@@ -31,6 +31,9 @@ import {
 } from '@/lib/privy/vaultUsdc';
 import type { PaymentStrategy } from '@/lib/strategies';
 import type { PaymentAllocation } from '@/lib/strategies/allocatePayment';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export type SendConfigurationFieldsProps = {
   broadcastMode: SendBroadcastMode;
@@ -121,6 +124,8 @@ function ReservedAllocationRow({
   currencySymbol,
   vaultFundingSplit,
 }: ReservedAllocationRowProps) {
+  const styles = useThemedStyles(createStyles);
+
   return (
     <View style={[styles.allocationRow, styles.taxAllocationRow]}>
       <View style={styles.allocationHeader}>
@@ -173,6 +178,9 @@ export function SendConfigurationFields({
   broadcastMode,
   onBroadcastModeChange,
 }: SendConfigurationFieldsProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const [frontendWarningOpen, setFrontendWarningOpen] = useState(false);
   const {
     globallyEnabled: vaultGloballyEnabled,
@@ -219,9 +227,11 @@ export function SendConfigurationFields({
         <Switch
           accessibilityLabel="Use vault balance for this payment"
           disabled={!vaultGloballyEnabled || vaultSettingsLoading}
-          trackColor={{ false: '#bbf7d0', true: '#86efac' }}
-          thumbColor={useVaultUsdc && vaultGloballyEnabled ? '#166534' : '#f0fdf4'}
-          ios_backgroundColor="#bbf7d0"
+          trackColor={{ false: colors.border, true: colors.borderStrong }}
+          thumbColor={
+            useVaultUsdc && vaultGloballyEnabled ? colors.primary : colors.bg
+          }
+          ios_backgroundColor={colors.border}
           value={vaultGloballyEnabled && useVaultUsdc}
           onValueChange={setUseVaultUsdc}
         />
@@ -238,9 +248,9 @@ export function SendConfigurationFields({
         </View>
         <Switch
           accessibilityLabel="Send from this device"
-          trackColor={{ false: '#bbf7d0', true: '#86efac' }}
-          thumbColor={frontendSendEnabled ? '#166534' : '#f0fdf4'}
-          ios_backgroundColor="#bbf7d0"
+          trackColor={{ false: colors.border, true: colors.borderStrong }}
+          thumbColor={frontendSendEnabled ? colors.primary : colors.bg}
+          ios_backgroundColor={colors.border}
           value={frontendSendEnabled}
           onValueChange={onFrontendSendChange}
         />
@@ -271,6 +281,9 @@ export function SendTokenAllocations({
   canAddToken,
   onAddToken,
 }: SendTokenAllocationsProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const {
     formatFromUsd,
     formatAmountInputFromUsd,
@@ -299,7 +312,7 @@ export function SendTokenAllocations({
         <Text style={styles.strategyRowValue} numberOfLines={1}>
           {selectedStrategy.label}
         </Text>
-        <Ionicons name="chevron-down" size={18} color="#86a894" />
+        <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
       </Pressable>
 
       <View style={styles.advancedDivider} />
@@ -452,7 +465,7 @@ export function SendTokenAllocations({
                     onAllocationAmountChange(leg.token.id, value);
                   }}
                   placeholder="0"
-                  placeholderTextColor="#86a894"
+                  placeholderTextColor={colors.textSubtle}
                   style={[
                     styles.allocationInput,
                     exceeds ? styles.allocationInputError : null,
@@ -478,7 +491,7 @@ export function SendTokenAllocations({
                     pressed && styles.allocationRemovePressed,
                   ]}
                 >
-                  <Ionicons name="trash-outline" size={18} color="#b91c1c" />
+                  <Ionicons name="trash-outline" size={18} color={colors.danger} />
                 </Pressable>
               </View>
             </View>
@@ -526,7 +539,7 @@ export function SendTokenAllocations({
             pressed && styles.addTokenButtonPressed,
           ]}
         >
-          <Ionicons name="add" size={18} color="#166534" />
+          <Ionicons name="add" size={18} color={colors.primary} />
           <Text style={styles.addTokenButtonText}>Add token</Text>
         </Pressable>
       ) : null}
@@ -536,6 +549,8 @@ export function SendTokenAllocations({
 
 /** Broadcast mode and token allocation legs. */
 export function SendAdvancedDetails(props: SendAdvancedDetailsProps) {
+  const styles = useThemedStyles(createStyles);
+
   return (
     <View style={styles.advanced}>
       <SendConfigurationFields
@@ -563,14 +578,15 @@ export function SendAdvancedDetails(props: SendAdvancedDetailsProps) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   advanced: {
     marginTop: 8,
     alignSelf: 'stretch',
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     paddingHorizontal: 14,
     paddingTop: 4,
     paddingBottom: 12,
@@ -580,7 +596,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -599,7 +615,7 @@ const styles = StyleSheet.create({
   unitToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#dcfce7',
+    backgroundColor: c.surfaceMuted,
     borderRadius: 8,
     padding: 2,
   },
@@ -609,7 +625,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   unitToggleOptionActive: {
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
   },
   unitToggleOptionPressed: {
     opacity: 0.7,
@@ -617,14 +633,14 @@ const styles = StyleSheet.create({
   unitToggleText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
   unitToggleTextActive: {
-    color: '#166534',
+    color: c.primary,
   },
   advancedDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
+    backgroundColor: c.rowBorder,
   },
   strategyRow: {
     flexDirection: 'row',
@@ -645,12 +661,12 @@ const styles = StyleSheet.create({
   broadcastLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   broadcastHint: {
     fontSize: 12,
     lineHeight: 16,
-    color: '#86a894',
+    color: c.textSubtle,
   },
   strategyRowPressed: {
     opacity: 0.7,
@@ -658,7 +674,7 @@ const styles = StyleSheet.create({
   strategyRowLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     marginRight: 12,
   },
   strategyRowValue: {
@@ -666,12 +682,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     fontSize: 14,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     marginRight: 8,
   },
   allocationEmpty: {
     fontSize: 14,
-    color: '#86a894',
+    color: c.textSubtle,
     paddingVertical: 10,
   },
   allocationRow: {
@@ -680,7 +696,7 @@ const styles = StyleSheet.create({
   },
   taxAllocationRow: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#d1fae5',
+    borderTopColor: c.rowBorder,
     marginTop: 4,
     paddingTop: 12,
   },
@@ -703,32 +719,32 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   taxBadge: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
   allocationMeta: {
     marginTop: 2,
     fontSize: 12,
-    color: '#86a894',
+    color: c.textSubtle,
   },
   fundingSplit: {
     marginTop: 4,
     fontSize: 12,
     lineHeight: 16,
-    color: '#5a7d6a',
+    color: c.textMuted,
     fontVariant: ['tabular-nums'],
   },
   allocationBalance: {
     flexShrink: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
   },
   allocationControls: {
@@ -739,42 +755,42 @@ const styles = StyleSheet.create({
   allocationInputPrefix: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   allocationInput: {
     flex: 1,
     minWidth: 0,
     height: 40,
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: c.inputBorder,
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 0,
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     textAlign: 'right',
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
     fontVariant: ['tabular-nums'],
   },
   allocationInputError: {
-    borderColor: '#fca5a5',
+    borderColor: c.dangerBorder,
   },
   taxAmountBox: {
     flex: 1,
     minWidth: 0,
     height: 40,
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 10,
     paddingHorizontal: 10,
     justifyContent: 'center',
-    backgroundColor: '#ecfdf5',
+    backgroundColor: c.surfaceHighlight,
   },
   taxAmountText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textAlign: 'right',
     fontVariant: ['tabular-nums'],
   },
@@ -784,7 +800,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     fontVariant: ['tabular-nums'],
   },
   allocationRemove: {
@@ -803,10 +819,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: c.inputBorder,
     borderStyle: 'dashed',
     borderRadius: 10,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   addTokenButtonPressed: {
     opacity: 0.7,
@@ -815,6 +831,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontSize: 14,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
-});
+  });
+}

@@ -1,10 +1,9 @@
 import { useCallback } from 'react';
-import {
+import {StyleSheet, 
   ActivityIndicator,
   FlatList,
   Pressable,
   RefreshControl,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -17,8 +16,14 @@ import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import { useTransactionFilter } from '@/hooks/useTransactionFilter';
 import { useWalletTransactions } from '@/hooks/useWalletTransactions';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export function TransactionsScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goHome = usePopToHome();
@@ -100,7 +105,7 @@ export function TransactionsScreen() {
         </View>
 
         {loading ? (
-          <ActivityIndicator color="#166534" style={styles.loader} />
+          <ActivityIndicator color={colors.primary} style={styles.loader} />
         ) : error && transactions.length === 0 ? (
           <View style={styles.errorBlock}>
             <Text style={styles.errorText}>{error}</Text>
@@ -151,10 +156,11 @@ export function TransactionsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   content: {
     flex: 1,
@@ -173,7 +179,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -190,7 +196,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   filterRow: {
     flexDirection: 'row',
@@ -199,7 +205,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     padding: 2,
     gap: 2,
-    backgroundColor: '#dcfce7',
+    backgroundColor: c.surfaceMuted,
     borderRadius: 10,
   },
   filterOption: {
@@ -210,7 +216,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   filterOptionSelected: {
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
   },
   filterOptionPressed: {
     opacity: 0.75,
@@ -218,10 +224,10 @@ const styles = StyleSheet.create({
   filterOptionText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
   filterOptionTextSelected: {
-    color: '#166534',
+    color: c.primary,
   },
   loader: {
     marginTop: 48,
@@ -230,7 +236,7 @@ const styles = StyleSheet.create({
     marginTop: 48,
     paddingHorizontal: 24,
     fontSize: 15,
-    color: '#86a894',
+    color: c.textSubtle,
     textAlign: 'center',
   },
   errorBlock: {
@@ -242,16 +248,16 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
   },
   errorBanner: {
     marginBottom: 12,
     fontSize: 13,
-    color: '#b91c1c',
+    color: c.danger,
   },
   retryButton: {
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
@@ -260,7 +266,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   retryButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -276,3 +282,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
 });
+}

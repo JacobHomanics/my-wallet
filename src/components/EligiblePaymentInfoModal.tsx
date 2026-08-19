@@ -1,4 +1,6 @@
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import {StyleSheet,  Modal, Pressable, Text, View } from 'react-native';
+import type { ThemeColors } from '@/theme/types';
 
 type EligiblePaymentInfoModalProps = {
   visible: boolean;
@@ -12,6 +14,8 @@ export function EligiblePaymentInfoModal({
   visible,
   onClose,
 }: EligiblePaymentInfoModalProps) {
+  const styles = useThemedStyles(createStyles);
+
   return (
     <Modal
       animationType="fade"
@@ -56,7 +60,8 @@ export function EligiblePaymentInfoModal({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(15, 40, 25, 0.45)',
@@ -65,17 +70,17 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 16,
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
   },
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     marginBottom: 12,
   },
   body: {
@@ -84,7 +89,7 @@ const styles = StyleSheet.create({
   paragraph: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#3f6b52',
+    color: c.textSecondary,
   },
   closeButton: {
     marginTop: 16,
@@ -100,6 +105,7 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
 });
+}

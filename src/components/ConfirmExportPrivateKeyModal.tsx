@@ -1,4 +1,6 @@
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import {StyleSheet,  Modal, Pressable, Text, View } from 'react-native';
+import type { ThemeColors } from '@/theme/types';
 
 type ConfirmExportPrivateKeyModalProps = {
   visible: boolean;
@@ -16,6 +18,8 @@ export function ConfirmExportPrivateKeyModal({
   onCancel,
   onConfirm,
 }: ConfirmExportPrivateKeyModalProps) {
+  const styles = useThemedStyles(createStyles);
+
   const label = walletLabel.trim() || 'wallet';
 
   return (
@@ -72,7 +76,8 @@ export function ConfirmExportPrivateKeyModal({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(15, 40, 25, 0.45)',
@@ -81,23 +86,23 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 16,
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
   },
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     marginBottom: 10,
   },
   paragraph: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#3f6b52',
+    color: c.textSecondary,
   },
   actions: {
     marginTop: 18,
@@ -114,7 +119,7 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   exportButton: {
     paddingHorizontal: 14,
@@ -131,3 +136,4 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
 });
+}

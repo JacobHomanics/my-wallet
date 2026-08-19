@@ -17,6 +17,9 @@ import type {
   OwnedToken,
   TokenChainGroup,
 } from '@/lib/alchemy/fetchTokensByAddress';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { useThemeColors } from '@/hooks/useThemeColors';
+import type { ThemeColors } from '@/theme/types';
 
 type TokenPickerModalProps = {
   visible: boolean;
@@ -37,6 +40,9 @@ export function TokenPickerModal({
   onClose,
   onSelect,
 }: TokenPickerModalProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const excluded = useMemo(() => new Set(excludeTokenIds), [excludeTokenIds]);
 
@@ -92,7 +98,7 @@ export function TokenPickerModal({
               pressed && styles.modalClosePressed,
             ]}
           >
-            <Ionicons name="close" size={22} color="#166534" />
+            <Ionicons name="close" size={22} color={colors.primary} />
           </Pressable>
         </View>
 
@@ -112,10 +118,11 @@ export function TokenPickerModal({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   modalTopBar: {
     flexDirection: 'row',
@@ -124,14 +131,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#d1fae5',
+    borderBottomColor: c.rowBorder,
   },
   modalTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     paddingLeft: 40,
   },
   modalClose: {
@@ -155,7 +162,8 @@ const styles = StyleSheet.create({
   },
   empty: {
     fontSize: 15,
-    color: '#86a894',
+    color: c.textSubtle,
     textAlign: 'center',
   },
 });
+}

@@ -19,8 +19,14 @@ import { useSendLoginCode } from '@/hooks/useSendLoginCode';
 import type { LoginMethod } from '@/lib/privy/context/AuthFlowContext.shared';
 import { isValidEmail, isValidPhoneNumber } from '@/lib/validation';
 import type { RootStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export function LoginScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'login'>>();
@@ -112,7 +118,7 @@ export function LoginScreen() {
           placeholder={
             method === 'email' ? 'you@example.com' : '+1 (555) 555-5555'
           }
-          placeholderTextColor="#86a894"
+          placeholderTextColor={colors.textSubtle}
           style={styles.input}
           value={value}
           onChangeText={setValue}
@@ -134,7 +140,7 @@ export function LoginScreen() {
           ]}
         >
           {isPending ? (
-            <ActivityIndicator color="#f0fdf4" />
+            <ActivityIndicator color={colors.primaryText} />
           ) : (
             <Text style={styles.buttonText}>Continue</Text>
           )}
@@ -153,6 +159,8 @@ function MethodChip({
   selected: boolean;
   onPress: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -166,10 +174,11 @@ function MethodChip({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   header: {
     paddingHorizontal: 8,
@@ -185,7 +194,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     letterSpacing: -0.5,
   },
   subtitle: {
@@ -193,7 +202,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     fontSize: 16,
     lineHeight: 24,
-    color: '#3f6b52',
+    color: c.textSecondary,
     textAlign: 'center',
   },
   methodRow: {
@@ -206,44 +215,44 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#86d4a4',
-    backgroundColor: '#fff',
+    borderColor: c.inputBorder,
+    backgroundColor: c.surface,
   },
   chipSelected: {
-    backgroundColor: '#166534',
-    borderColor: '#166534',
+    backgroundColor: c.primary,
+    borderColor: c.primary,
   },
   chipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#365c45',
+    color: c.textSecondary,
   },
   chipTextSelected: {
-    color: '#f0fdf4',
+    color: c.primaryText,
   },
   input: {
     width: '100%',
     maxWidth: 360,
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: c.inputBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#166534',
-    backgroundColor: '#fff',
+    color: c.primary,
+    backgroundColor: c.surface,
   },
   error: {
     marginTop: 12,
     fontSize: 14,
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
   },
   button: {
     marginTop: 24,
     minWidth: 160,
     alignItems: 'center',
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
@@ -255,8 +264,9 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   buttonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
-});
+  });
+}

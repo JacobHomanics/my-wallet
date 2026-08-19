@@ -17,11 +17,17 @@ import { useNeedsOnboarding } from '@/hooks/useNeedsOnboarding';
 import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import type { RootStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 /**
  * First-time setup for username + optional profile photo. Skippable.
  */
 export function OnboardingScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -87,7 +93,7 @@ export function OnboardingScreen() {
   if (isOnboardingLoading || onboardingStatus === 'idle') {
     return (
       <View style={[styles.container, styles.loading]}>
-        <ActivityIndicator color="#166534" size="large" />
+        <ActivityIndicator color={colors.primary} size="large" />
       </View>
     );
   }
@@ -150,7 +156,7 @@ export function OnboardingScreen() {
             ]}
           >
             {photo.isUploading ? (
-              <ActivityIndicator color="#166534" />
+              <ActivityIndicator color={colors.primary} />
             ) : (
               <Text style={styles.secondaryButtonText}>
                 {photo.profilePhotoUrl ? 'Change photo' : 'Add photo'}
@@ -203,7 +209,7 @@ export function OnboardingScreen() {
           ]}
         >
           {isContinuing ? (
-            <ActivityIndicator color="#f0fdf4" />
+            <ActivityIndicator color={colors.primaryText} />
           ) : (
             <Text style={styles.continueButtonText}>Continue</Text>
           )}
@@ -219,7 +225,7 @@ export function OnboardingScreen() {
           ]}
         >
           {isSkipping ? (
-            <ActivityIndicator color="#5a7d6a" />
+            <ActivityIndicator color={colors.textMuted} />
           ) : (
             <Text style={styles.skipButtonText}>Skip for now</Text>
           )}
@@ -229,10 +235,11 @@ export function OnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   loading: {
     alignItems: 'center',
@@ -248,7 +255,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     letterSpacing: -0.5,
     textAlign: 'center',
   },
@@ -256,7 +263,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     lineHeight: 24,
-    color: '#3f6b52',
+    color: c.textSecondary,
     textAlign: 'center',
   },
   photoBlock: {
@@ -279,7 +286,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#fecaca',
     alignItems: 'center',
@@ -296,45 +303,45 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
   input: {
     width: '100%',
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#166534',
+    color: c.primary,
   },
   hint: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#86a894',
+    color: c.textSubtle,
     textAlign: 'center',
   },
   error: {
     marginTop: 8,
     fontSize: 13,
     lineHeight: 18,
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
   },
   available: {
     marginTop: 8,
     fontSize: 13,
     lineHeight: 18,
-    color: '#166534',
+    color: c.primary,
     textAlign: 'center',
   },
   continueButton: {
     marginTop: 32,
     width: '100%',
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 12,
@@ -346,7 +353,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   continueButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -354,7 +361,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#dcfce7',
+    backgroundColor: c.surfaceMuted,
     minWidth: 140,
     alignItems: 'center',
   },
@@ -362,7 +369,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   secondaryButtonText: {
-    color: '#166534',
+    color: c.primary,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -383,7 +390,8 @@ const styles = StyleSheet.create({
   skipButtonText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textDecorationLine: 'underline',
   },
 });
+}

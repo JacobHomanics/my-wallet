@@ -12,6 +12,9 @@ import {
   type TokenChainGroup,
 } from '@/lib/alchemy/fetchTokensByAddress';
 import { getNetworkIconUrl } from '@/lib/alchemy/networkIcons';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const TokenRow = memo(function TokenRow({
   token,
@@ -25,6 +28,7 @@ const TokenRow = memo(function TokenRow({
   showNetworkMeta?: boolean;
   onPress: (tokenId: string) => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   const { formatFromUsd } = useFiatDisplay();
   const fiatLabel = formatFromUsd(token.usdValue);
   const meta = showNetworkMeta
@@ -97,6 +101,8 @@ const ChainHeader = memo(function ChainHeader({
   onToggle: () => void;
   compact?: boolean;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const [failedIconUrl, setFailedIconUrl] = useState<string | null>(null);
   const showIcon = Boolean(iconUrl) && iconUrl !== failedIconUrl;
 
@@ -154,7 +160,7 @@ const ChainHeader = memo(function ChainHeader({
         <Ionicons
           name={expanded ? 'chevron-down' : 'chevron-forward'}
           size={compact ? 14 : 16}
-          color="#86a894"
+          color={colors.textSubtle}
         />
       </View>
     </Pressable>
@@ -183,6 +189,7 @@ export const TokenChainSection = memo(function TokenChainSection({
   selectedTokenId?: string | null;
   showNetworkMeta?: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
   const { formatFromUsd } = useFiatDisplay();
   const isUnknown = group.network === UNKNOWN_TOKEN_NETWORK;
   const subgroups = group.subgroups ?? [];
@@ -266,14 +273,15 @@ export const TokenChainSection = memo(function TokenChainSection({
   );
 });
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   chainSection: {
     gap: 4,
   },
   chainDivider: {
     marginTop: 12,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
+    backgroundColor: c.rowBorder,
   },
   unknownSubgroups: {
     gap: 8,
@@ -293,14 +301,14 @@ const styles = StyleSheet.create({
   nestedLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#3f6b52',
+    color: c.textSecondary,
   },
   nestedChainIcon: {
     width: 18,
     height: 18,
     borderRadius: 9,
     overflow: 'hidden',
-    backgroundColor: '#d1fae5',
+    backgroundColor: c.rowBorder,
   },
   nestedChainIconImage: {
     width: 18,
@@ -311,14 +319,14 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     overflow: 'hidden',
-    backgroundColor: '#d1fae5',
+    backgroundColor: c.rowBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   nestedChainIconFallbackText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#3f6b52',
+    color: c.textSecondary,
   },
   chainHeader: {
     flexDirection: 'row',
@@ -342,7 +350,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     overflow: 'hidden',
-    backgroundColor: '#d1fae5',
+    backgroundColor: c.rowBorder,
   },
   chainIconImage: {
     width: 22,
@@ -353,14 +361,14 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     overflow: 'hidden',
-    backgroundColor: '#d1fae5',
+    backgroundColor: c.rowBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   chainIconFallbackText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#3f6b52',
+    color: c.textSecondary,
   },
   chainHeaderText: {
     flex: 1,
@@ -370,11 +378,11 @@ const styles = StyleSheet.create({
   chainLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#365c45',
+    color: c.textSecondary,
   },
   chainMeta: {
     fontSize: 12,
-    color: '#86a894',
+    color: c.textSubtle,
   },
   chainHeaderRight: {
     flexDirection: 'row',
@@ -384,7 +392,7 @@ const styles = StyleSheet.create({
   chainUsd: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#5a7d6a',
+    color: c.textMuted,
     fontVariant: ['tabular-nums'],
   },
   chainTokens: {
@@ -402,7 +410,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   tokenRowSelected: {
-    backgroundColor: '#d1fae5',
+    backgroundColor: c.rowBorder,
   },
   tokenRowPressed: {
     opacity: 0.65,
@@ -422,11 +430,11 @@ const styles = StyleSheet.create({
   tokenSymbol: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   tokenMeta: {
     fontSize: 13,
-    color: '#86a894',
+    color: c.textSubtle,
   },
   tokenRight: {
     alignItems: 'flex-end',
@@ -436,12 +444,13 @@ const styles = StyleSheet.create({
   tokenBalance: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
   },
   tokenUsd: {
     fontSize: 13,
-    color: '#5a7d6a',
+    color: c.textMuted,
     fontVariant: ['tabular-nums'],
   },
-});
+  });
+}

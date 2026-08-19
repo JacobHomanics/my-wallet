@@ -19,6 +19,9 @@ import {
   useContacts,
   type ContactListItem,
 } from '@/hooks/useContacts';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { useThemeColors } from '@/hooks/useThemeColors';
+import type { ThemeColors } from '@/theme/types';
 
 type ContactPickerContentProps = {
   onSelect: (contact: ContactListItem) => void;
@@ -59,6 +62,8 @@ function ContactsTabChip({
   selected: boolean;
   onPress: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -80,6 +85,8 @@ function ContactPickerRow({
   contact: ContactListItem;
   onSelect: (contact: ContactListItem) => void;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const selectable = canSelectContact(contact);
   const label = contactDisplayLabel(contact);
   const description = contactDescription(contact);
@@ -113,7 +120,7 @@ function ContactPickerRow({
           <Text style={styles.optionDescription}>{description}</Text>
         ) : null}
       </View>
-      <Ionicons name="chevron-forward" size={18} color="#86a894" />
+      <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />
     </Pressable>
   );
 }
@@ -153,6 +160,9 @@ function CollapsibleSection({
   onSelect: (contact: ContactListItem) => void;
   nested?: boolean;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   return (
     <View style={[styles.section, nested && styles.nestedSection]}>
       <Pressable
@@ -171,7 +181,7 @@ function CollapsibleSection({
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={16}
-          color="#5a7d6a"
+          color={colors.textMuted}
         />
       </Pressable>
       {expanded ? (
@@ -200,6 +210,7 @@ function WalletChainSections({
   onToggleMultiChain: () => void;
   onSelect: (contact: ContactListItem) => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   const groups = groupWalletContactsByChain(contacts);
 
   return (
@@ -243,6 +254,9 @@ function CollapsibleGroup({
   onToggle: () => void;
   children: ReactNode;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   return (
     <View style={styles.section}>
       <Pressable
@@ -258,7 +272,7 @@ function CollapsibleGroup({
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={16}
-          color="#5a7d6a"
+          color={colors.textMuted}
         />
       </Pressable>
       {expanded ? <View style={styles.groupBody}>{children}</View> : null}
@@ -273,6 +287,9 @@ export function ContactPickerContent({
   onSelect,
   active = true,
 }: ContactPickerContentProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const { userContacts, farcasterContacts, ensContacts, externalContacts, isLoading } =
     useContacts();
   const {
@@ -404,7 +421,7 @@ export function ContactPickerContent({
         ) : null}
 
         {isLoading ? (
-          <ActivityIndicator color="#166534" style={styles.loader} />
+          <ActivityIndicator color={colors.primary} style={styles.loader} />
         ) : !hasFilteredResults ? (
           <Text style={styles.empty}>{emptyMessage}</Text>
         ) : isContactsTab ? (
@@ -431,7 +448,7 @@ export function ContactPickerContent({
                   <Ionicons
                     name={walletsExpanded ? 'chevron-up' : 'chevron-down'}
                     size={16}
-                    color="#5a7d6a"
+                    color={colors.textMuted}
                   />
                 </Pressable>
                 {walletsExpanded ? (
@@ -511,7 +528,7 @@ export function ContactPickerContent({
                       <Ionicons
                         name={walletsExpanded ? 'chevron-up' : 'chevron-down'}
                         size={16}
-                        color="#5a7d6a"
+                        color={colors.textMuted}
                       />
                     </Pressable>
                     {walletsExpanded ? (
@@ -557,7 +574,8 @@ export function ContactPickerContent({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   root: {
     width: '100%',
   },
@@ -570,7 +588,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     padding: 4,
     gap: 4,
-    backgroundColor: '#dcfce7',
+    backgroundColor: c.surfaceMuted,
     borderRadius: 12,
   },
   tabChip: {
@@ -582,16 +600,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   tabChipSelected: {
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
   },
   tabChipText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textAlign: 'center',
   },
   tabChipTextSelected: {
-    color: '#166534',
+    color: c.primary,
   },
   list: {
     paddingHorizontal: 24,
@@ -601,14 +619,14 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     marginTop: 16,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#166534',
+    color: c.primary,
   },
   loader: {
     marginTop: 48,
@@ -616,7 +634,7 @@ const styles = StyleSheet.create({
   empty: {
     marginTop: 48,
     fontSize: 15,
-    color: '#86a894',
+    color: c.textSubtle,
     textAlign: 'center',
   },
   section: {
@@ -652,7 +670,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -665,9 +683,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     marginTop: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -686,11 +704,12 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   optionDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
 });
+}

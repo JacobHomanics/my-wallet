@@ -1,13 +1,17 @@
-import { StyleSheet, Text, View } from 'react-native';
+import {StyleSheet,  Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { usePopToHome } from '@/hooks/usePopToHome';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
 
 /**
  * Native stub — Stripe embedded onramp mounts a DOM widget (web / WebView).
  */
 export function StripeOnrampScreen() {
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const goHome = usePopToHome();
 
@@ -25,10 +29,11 @@ export function StripeOnrampScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
     paddingHorizontal: 16,
   },
   topBar: {
@@ -42,7 +47,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#14532d',
+    color: c.text,
   },
   topBarSpacer: {
     width: 40,
@@ -55,3 +60,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+}

@@ -16,11 +16,17 @@ import { useEligiblePaymentInfoModal } from '@/hooks/useEligiblePaymentInfoModal
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToSettings } from '@/hooks/usePopToSettings';
 import { useVaultSendSettings } from '@/hooks/useVaultSendSettings';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 /**
  * Vault auto-deposit and use-vault-balance preferences (opened from Settings).
  */
 export function EarnSettingsScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goSettings = usePopToSettings();
@@ -86,7 +92,7 @@ export function EarnSettingsScreen() {
               pressed && styles.helpButtonPressed,
             ]}
           >
-            <Ionicons name="help-circle-outline" size={22} color="#5a7d6a" />
+            <Ionicons name="help-circle-outline" size={22} color={colors.textMuted} />
           </Pressable>
         </View>
 
@@ -140,10 +146,11 @@ export function EarnSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   content: {
     width: '100%',
@@ -173,7 +180,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   titleRow: {
     flexDirection: 'row',
@@ -184,7 +191,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     letterSpacing: -0.5,
     textAlign: 'center',
   },
@@ -204,9 +211,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -219,11 +226,12 @@ const styles = StyleSheet.create({
   toggleLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   toggleDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#86a894',
+    color: c.textSubtle,
   },
 });
+}

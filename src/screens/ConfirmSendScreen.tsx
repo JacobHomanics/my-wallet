@@ -42,11 +42,17 @@ import { buildPaymentLegsWithTax } from '@/lib/send/buildPaymentLegsWithTax';
 import { formatSendError } from '@/lib/send/formatSendError';
 import { isUnpricedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 /**
  * Review + execute a multi-token payment prepared on the Send screen.
  */
 export function ConfirmSendScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const navigation =
@@ -348,7 +354,7 @@ export function ConfirmSendScreen() {
         </View>
 
         {!ready || (loading && tokens.length === 0) ? (
-          <ActivityIndicator color="#166534" style={styles.loader} />
+          <ActivityIndicator color={colors.primary} style={styles.loader} />
         ) : (
           <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
             {hasRecipient && primaryLabel ? (
@@ -492,7 +498,7 @@ export function ConfirmSendScreen() {
                 ]}
               >
                 {sending ? (
-                  <ActivityIndicator color="#f0fdf4" />
+                  <ActivityIndicator color={colors.primaryText} />
                 ) : (
                   <Text style={styles.primaryButtonText}>Submit</Text>
                 )}
@@ -562,10 +568,11 @@ export function ConfirmSendScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -587,7 +594,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -604,7 +611,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   loader: {
     marginTop: 48,
@@ -619,7 +626,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     fontSize: 36,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     letterSpacing: -0.6,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
@@ -628,7 +635,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 18,
     fontWeight: '600',
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },
@@ -651,7 +658,7 @@ const styles = StyleSheet.create({
   tipLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -660,8 +667,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#86d4a4',
-    backgroundColor: '#fff',
+    borderColor: c.inputBorder,
+    backgroundColor: c.surface,
   },
   tipPercentButtonDisabled: {
     opacity: 0.45,
@@ -672,23 +679,23 @@ const styles = StyleSheet.create({
   tipPercentButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   tipFieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: c.inputBorder,
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 8,
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     minHeight: 52,
   },
   tipPrefix: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     marginRight: 4,
   },
   tipInput: {
@@ -696,7 +703,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingRight: 8,
     fontSize: 16,
-    color: '#166534',
+    color: c.primary,
   },
   toSection: {
     alignSelf: 'stretch',
@@ -712,7 +719,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -726,14 +733,14 @@ const styles = StyleSheet.create({
     minWidth: 0,
     fontSize: 18,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
   },
   error: {
     marginTop: 16,
     fontSize: 24,
     lineHeight: 32,
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
     alignSelf: 'stretch',
   },
@@ -747,9 +754,9 @@ const styles = StyleSheet.create({
   secondaryButton: {
     flex: 1,
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: c.inputBorder,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -761,14 +768,14 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   secondaryButtonText: {
-    color: '#166534',
+    color: c.primary,
     fontSize: 16,
     fontWeight: '600',
   },
   primaryButton: {
     alignItems: 'center',
     alignSelf: 'stretch',
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -784,7 +791,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   primaryButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -798,7 +805,7 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 400,
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     borderRadius: 14,
     paddingHorizontal: 20,
     paddingTop: 20,
@@ -807,13 +814,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     marginBottom: 8,
   },
   modalBody: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#3f6b52',
+    color: c.textSecondary,
     marginBottom: 20,
   },
   modalActions: {
@@ -826,8 +833,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#86d4a4',
-    backgroundColor: '#fff',
+    borderColor: c.inputBorder,
+    backgroundColor: c.surface,
   },
   modalSecondaryButtonPressed: {
     opacity: 0.85,
@@ -835,14 +842,14 @@ const styles = StyleSheet.create({
   modalSecondaryButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   modalPrimaryButton: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
   },
   modalPrimaryButtonPressed: {
     opacity: 0.85,
@@ -850,6 +857,7 @@ const styles = StyleSheet.create({
   modalPrimaryButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#f0fdf4',
+    color: c.primaryText,
   },
 });
+}

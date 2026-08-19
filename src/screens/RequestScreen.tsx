@@ -1,10 +1,9 @@
 import { useCallback } from 'react';
-import {
+import {StyleSheet, 
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -19,9 +18,13 @@ import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import { useReceiveAmount } from '@/hooks/useReceiveAmount';
 import type { HomeStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
 
 /** Amount entry for a payment request QR. */
 export function RequestScreen() {
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const navigation =
@@ -121,10 +124,11 @@ export function RequestScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -146,7 +150,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -161,7 +165,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#166534',
+    color: c.primary,
   },
   form: {
     flexGrow: 1,
@@ -174,7 +178,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -182,9 +186,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: c.inputBorder,
     borderRadius: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     paddingHorizontal: 14,
     minHeight: 52,
   },
@@ -194,25 +198,25 @@ const styles = StyleSheet.create({
   amountPrefix: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     marginRight: 4,
   },
   fieldInput: {
     flex: 1,
     fontSize: 20,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     paddingVertical: 12,
   },
   fieldError: {
     marginTop: 8,
     fontSize: 13,
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
   },
   continueButton: {
     marginTop: 28,
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
@@ -224,8 +228,9 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   continueButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
 });
+}

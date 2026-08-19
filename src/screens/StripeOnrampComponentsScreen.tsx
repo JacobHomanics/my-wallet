@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
+import {StyleSheet, 
   ActivityIndicator,
   Pressable,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -13,12 +12,18 @@ import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useOnrampVaultDepositCompletion } from '@/hooks/useOnrampVaultDepositCompletion';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import { usePrivyFiatOnramp } from '@/hooks/usePrivyFiatOnramp';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 /**
  * Privy prebuilt fiat onramp (Stripe Embedded Components among providers).
  * @see https://docs.privy.io/wallets/funding/fiat-onramp
  */
 export function StripeOnrampComponentsScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goHome = usePopToHome();
@@ -124,7 +129,7 @@ export function StripeOnrampComponentsScreen() {
 
           {isFunding ? (
             <View accessibilityRole="progressbar" style={styles.loadingPanel}>
-              <ActivityIndicator color="#166534" size="large" />
+              <ActivityIndicator color={colors.primary} size="large" />
               <Text style={styles.loadingText}>Opening deposit…</Text>
             </View>
           ) : null}
@@ -148,7 +153,7 @@ export function StripeOnrampComponentsScreen() {
 
           {!isFunding && showOnrampSuccess && isVaultDepositing ? (
             <View accessibilityRole="progressbar" style={styles.loadingPanel}>
-              <ActivityIndicator color="#166534" size="large" />
+              <ActivityIndicator color={colors.primary} size="large" />
               <Text style={styles.loadingText}>{pendingVaultMessage}</Text>
               <Text style={styles.hintText}>Moving funds to your vault…</Text>
             </View>
@@ -205,10 +210,11 @@ export function StripeOnrampComponentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   shell: {
     flex: 1,
@@ -228,7 +234,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#14532d',
+    color: c.text,
   },
   topBarSpacer: {
     width: 64,
@@ -245,7 +251,7 @@ const styles = StyleSheet.create({
   },
   webBackText: {
     fontSize: 16,
-    color: '#166534',
+    color: c.primary,
     fontWeight: '500',
   },
   body: {
@@ -263,7 +269,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textAlign: 'center',
   },
   messageBlock: {
@@ -274,13 +280,13 @@ const styles = StyleSheet.create({
   hintText: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#5a7d6a',
+    color: c.textMuted,
     textAlign: 'center',
   },
   successText: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#166534',
+    color: c.primary,
     textAlign: 'center',
   },
   warningText: {
@@ -292,13 +298,13 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
   },
   primaryButton: {
     alignItems: 'center',
     alignSelf: 'stretch',
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -307,8 +313,9 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   primaryButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
 });
+}

@@ -3,12 +3,14 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { ZitiIcon } from '@/components/ZitiIcon';
 import { useAppBrand } from '@/hooks/useAppBrand';
 import { useSplashRedirect } from '@/hooks/useSplashRedirect';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { colors } from '@/theme/colors';
+import type { ThemeColors } from '@/theme/types';
 
 export function SplashScreen() {
   const { name } = useAppBrand();
-  const theme = useThemeColors();
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   useSplashRedirect();
 
   return (
@@ -21,34 +23,36 @@ export function SplashScreen() {
           detailColor={colors.primary}
         />
       </View>
-      <ActivityIndicator size="large" color={theme.primary} style={styles.spinner} />
+      <ActivityIndicator size="large" color={colors.primary} style={styles.spinner} />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.bg,
-  },
-  iconBadge: {
-    width: 72,
-    height: 72,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  brand: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.primary,
-    letterSpacing: -0.5,
-  },
-  spinner: {
-    marginTop: 24,
-  },
-});
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.bg,
+    },
+    iconBadge: {
+      width: 72,
+      height: 72,
+      borderRadius: 20,
+      backgroundColor: c.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 20,
+    },
+    brand: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: c.primary,
+      letterSpacing: -0.5,
+    },
+    spinner: {
+      marginTop: 24,
+    },
+  });
+}

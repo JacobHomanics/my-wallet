@@ -1,8 +1,10 @@
 import { memo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import {StyleSheet,  Text, View } from 'react-native';
 import { Image } from 'expo-image';
 
 import { getNetworkIconUrl } from '@/lib/alchemy/networkIcons';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
 
 type TokenIconProps = {
   symbol: string;
@@ -23,6 +25,7 @@ export const TokenIcon = memo(function TokenIcon({
   size = 40,
   showNetworkBadge = true,
 }: TokenIconProps) {
+  const styles = useThemedStyles(createStyles);
   const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
   const [failedChainUrl, setFailedChainUrl] = useState<string | null>(null);
   const chainIconUrl = getNetworkIconUrl(network);
@@ -89,18 +92,19 @@ export const TokenIcon = memo(function TokenIcon({
   );
 });
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   logo: {
-    backgroundColor: '#d1fae5',
+    backgroundColor: c.rowBorder,
   },
   logoFallback: {
-    backgroundColor: '#d1fae5',
+    backgroundColor: c.rowBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoFallbackText: {
     fontWeight: '700',
-    color: '#3f6b52',
+    color: c.textSecondary,
   },
   chainBadgeWrap: {
     position: 'absolute',
@@ -108,7 +112,8 @@ const styles = StyleSheet.create({
     bottom: -2,
     overflow: 'hidden',
     borderWidth: 1.5,
-    borderColor: '#ffffff',
-    backgroundColor: '#f0fdf4',
+    borderColor: c.surface,
+    backgroundColor: c.bg,
   },
 });
+}

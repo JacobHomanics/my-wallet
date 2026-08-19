@@ -1,10 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Pressable, StyleSheet } from 'react-native';
+import {StyleSheet,  Pressable } from 'react-native';
 
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import type { RootStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type BackButtonProps = {
   onPress?: () => void;
@@ -17,6 +20,9 @@ export function BackButton({
   accessibilityLabel = 'Go back',
   disabled = false,
 }: BackButtonProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const isDesktopWeb = useIsDesktopWeb();
@@ -48,12 +54,13 @@ export function BackButton({
         disabled && styles.backButtonDisabled,
       ]}
     >
-      <Ionicons name="chevron-back" size={28} color="#166534" />
+      <Ionicons name="chevron-back" size={28} color={colors.primary} />
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   backButton: {
     width: 44,
     height: 44,
@@ -67,3 +74,4 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
 });
+}

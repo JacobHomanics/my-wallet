@@ -2,10 +2,9 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
-import {
+import {StyleSheet, 
   ActivityIndicator,
   Pressable,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -15,6 +14,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useExportPrivateKey } from '@/hooks/useExportPrivateKey';
 import type { UserWallet } from '@/hooks/useUserWallets.shared';
 import type { RootStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 /**
  * Hosted page for private-key export (`/export`). Used by native WebViews and
@@ -22,6 +24,9 @@ import type { RootStackParamList } from '@/navigation/types';
  * @see https://docs.privy.io/recipes/mobile-key-export
  */
 export function ExportWalletScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -80,7 +85,7 @@ export function ExportWalletScreen() {
       </Text>
 
       {!isReady ? (
-        <ActivityIndicator color="#166534" style={styles.loader} />
+        <ActivityIndicator color={colors.primary} style={styles.loader} />
       ) : !isAuthenticated ? (
         <>
           <Text style={styles.hint}>
@@ -117,7 +122,7 @@ export function ExportWalletScreen() {
           ]}
         >
           {isExporting ? (
-            <ActivityIndicator color="#f0fdf4" />
+            <ActivityIndicator color={colors.primaryText} />
           ) : (
             <Text style={styles.buttonText}>Export {wallet.label} key</Text>
           )}
@@ -129,17 +134,18 @@ export function ExportWalletScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     letterSpacing: -0.5,
     textAlign: 'center',
   },
@@ -148,7 +154,7 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     fontSize: 16,
     lineHeight: 24,
-    color: '#3f6b52',
+    color: c.textSecondary,
     textAlign: 'center',
   },
   address: {
@@ -156,7 +162,7 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     fontSize: 13,
     lineHeight: 18,
-    color: '#5a7d6a',
+    color: c.textMuted,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },
@@ -165,7 +171,7 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     fontSize: 15,
     lineHeight: 22,
-    color: '#5a7d6a',
+    color: c.textMuted,
     textAlign: 'center',
   },
   loader: {
@@ -173,7 +179,7 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 28,
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
@@ -187,7 +193,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   buttonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -196,7 +202,8 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     fontSize: 14,
     lineHeight: 20,
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
   },
 });
+}

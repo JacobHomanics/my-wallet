@@ -17,6 +17,9 @@ import type { RecentSendRecipient } from '@/hooks/useRecentSendRecipients';
 import { useRecentSendRecipients } from '@/hooks/useRecentSendRecipients';
 import { useSendToContact } from '@/hooks/useSendToContact';
 import type { HomeStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type SendSearchContentProps = {
   tokenId?: string;
@@ -45,6 +48,9 @@ function RecipientOptionRow({
   selectable: boolean;
   onPress: () => void;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   return (
     <Pressable
       accessibilityLabel={`Select ${label}`}
@@ -72,7 +78,7 @@ function RecipientOptionRow({
           <Text style={styles.optionDescription}>No account number yet</Text>
         ) : null}
       </View>
-      <Ionicons name="chevron-forward" size={18} color="#86a894" />
+      <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />
     </Pressable>
   );
 }
@@ -91,6 +97,9 @@ export function SendSearchContent({
   showEmpty,
   onSearchFocusChange,
 }: SendSearchContentProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const { sendToContact } = useSendToContact();
@@ -121,7 +130,7 @@ export function SendSearchContent({
   return (
     <View>
       <View style={styles.searchRow}>
-        <Ionicons name="search" size={18} color="#5a7d6a" />
+        <Ionicons name="search" size={18} color={colors.textMuted} />
         <TextInput
           accessibilityLabel="Search usernames or account numbers"
           autoCapitalize="none"
@@ -136,7 +145,7 @@ export function SendSearchContent({
             onSearchFocusChange?.(true);
           }}
           placeholder="Username or account number"
-          placeholderTextColor="#86a894"
+          placeholderTextColor={colors.textSubtle}
           returnKeyType="search"
           style={styles.searchInput}
           value={query}
@@ -152,7 +161,7 @@ export function SendSearchContent({
               pressed && styles.clearSearchButtonPressed,
             ]}
           >
-            <Ionicons name="close-circle" size={18} color="#5a7d6a" />
+            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
           </Pressable>
         ) : null}
       </View>
@@ -200,7 +209,7 @@ export function SendSearchContent({
 
       {showResults ? (
         isSearching && !hasResults ? (
-          <ActivityIndicator color="#166534" style={styles.loader} />
+          <ActivityIndicator color={colors.primary} style={styles.loader} />
         ) : (
           <View style={showEmpty ? styles.listEmpty : styles.list}>
             {showEmpty ? (
@@ -239,7 +248,7 @@ export function SendSearchContent({
 
                 {isSearching ? (
                   <ActivityIndicator
-                    color="#166534"
+                    color={colors.primary}
                     style={styles.inlineLoader}
                   />
                 ) : null}
@@ -252,7 +261,8 @@ export function SendSearchContent({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -262,15 +272,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     gap: 10,
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
   },
   searchInput: {
     flex: 1,
     minHeight: 48,
     fontSize: 15,
-    color: '#166534',
+    color: c.primary,
   },
   clearSearchButton: {
     width: 24,
@@ -299,16 +309,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     marginBottom: 4,
   },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -327,16 +337,16 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   optionDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
   empty: {
     fontSize: 15,
-    color: '#86a894',
+    color: c.textSubtle,
     textAlign: 'center',
   },
   advancedSearch: {
@@ -351,6 +361,7 @@ const styles = StyleSheet.create({
   advancedSearchText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
-});
+  });
+}

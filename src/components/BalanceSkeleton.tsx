@@ -1,5 +1,7 @@
 import { useEffect, useMemo } from 'react';
-import { Animated, Easing, StyleSheet, View, type ViewStyle } from 'react-native';
+import {StyleSheet,  Animated, Easing, View, type ViewStyle } from 'react-native';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
 
 type BalanceSkeletonProps = {
   accessibilityLabel?: string;
@@ -20,6 +22,8 @@ export function BalanceSkeleton({
   height = DEFAULT_AMOUNT_HEIGHT,
   style,
 }: BalanceSkeletonProps) {
+  const styles = useThemedStyles(createStyles);
+
   const pulse = useMemo(() => new Animated.Value(0), []);
 
   useEffect(() => {
@@ -72,7 +76,8 @@ export const balanceSkeletonLayout = {
   height: DEFAULT_AMOUNT_HEIGHT,
 } as const;
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -80,6 +85,7 @@ const styles = StyleSheet.create({
   },
   amount: {
     borderRadius: 6,
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
   },
 });
+}

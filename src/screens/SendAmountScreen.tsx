@@ -2,13 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
+import {StyleSheet, 
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -40,11 +39,17 @@ import { useVaultUsdcFundingSplits } from '@/hooks/useVaultUsdcFundingSplits';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { isUnpricedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 /**
  * Send step 2 — enter amount and review allocation / tax before confirm.
  */
 export function SendAmountScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const navigation =
@@ -236,7 +241,7 @@ export function SendAmountScreen() {
           </View>
 
           {!ready || (loading && tokens.length === 0) ? (
-            <ActivityIndicator color="#166534" style={styles.loader} />
+            <ActivityIndicator color={colors.primary} style={styles.loader} />
           ) : !hasWallet ? (
             <Text style={styles.empty}>Creating your wallets…</Text>
           ) : (
@@ -399,10 +404,11 @@ export function SendAmountScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -424,7 +430,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -441,7 +447,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   loader: {
     marginTop: 48,
@@ -450,7 +456,7 @@ const styles = StyleSheet.create({
     marginTop: 48,
     paddingHorizontal: 24,
     fontSize: 15,
-    color: '#86a894',
+    color: c.textSubtle,
     textAlign: 'center',
   },
   form: {
@@ -464,14 +470,14 @@ const styles = StyleSheet.create({
   balanceLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     marginRight: 8,
   },
   balanceValue: {
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
     textAlign: 'right',
   },
@@ -500,7 +506,7 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
   },
   label: {
@@ -508,7 +514,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -516,46 +522,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: c.inputBorder,
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 8,
-    backgroundColor: '#fff',
+    backgroundColor: c.surface,
     minHeight: 52,
   },
   fieldRowDisabled: {
-    backgroundColor: '#dcfce7',
+    backgroundColor: c.surfaceMuted,
   },
   fieldRowError: {
-    borderColor: '#fca5a5',
+    borderColor: c.dangerBorder,
   },
   fieldInput: {
     flex: 1,
     paddingVertical: 14,
     paddingRight: 8,
     fontSize: 16,
-    color: '#166534',
+    color: c.primary,
   },
   amountPrefix: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     marginRight: 4,
   },
   fieldError: {
     marginTop: 8,
     fontSize: 13,
-    color: '#b91c1c',
+    color: c.danger,
   },
   taxSection: {
     marginTop: 16,
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: c.inputBorder,
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 16,
     paddingVertical: 14,
-    backgroundColor: '#dcfce7',
+    backgroundColor: c.surfaceMuted,
   },
   payerTotalRow: {
     marginTop: 10,
@@ -563,29 +569,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: '#86d4a4',
+    borderColor: c.inputBorder,
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 16,
     paddingVertical: 14,
-    backgroundColor: '#dcfce7',
+    backgroundColor: c.surfaceMuted,
   },
   payerTotalLabel: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#14532d',
+    color: c.text,
   },
   payerTotalValue: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#14532d',
+    color: c.text,
     fontVariant: ['tabular-nums'],
   },
 
   continueButton: {
     marginTop: 32,
     alignItems: 'center',
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 10,
@@ -597,7 +603,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   continueButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -605,7 +611,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 13,
     lineHeight: 18,
-    color: '#5a7d6a',
+    color: c.textMuted,
     textAlign: 'center',
   },
 });
+}

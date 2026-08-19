@@ -25,11 +25,17 @@ import {
   REWARD_TOKEN_NETWORK,
   REWARD_TOKEN_SYMBOL,
 } from '@/lib/rewardToken';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { useThemeColors } from '@/hooks/useThemeColors';
+import type { ThemeColors } from '@/theme/types';
 
 /**
  * Shows the user's CashBox Points balance earned from backend payments.
  */
 export function RewardsScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const {
     ready,
@@ -80,7 +86,7 @@ export function RewardsScreen() {
           style={styles.flex}
         >
           {loading ? (
-            <ActivityIndicator color="#166534" />
+            <ActivityIndicator color={colors.primary} />
           ) : !hasWallet ? (
             <Text style={styles.empty}>Creating your wallets…</Text>
           ) : (
@@ -111,7 +117,7 @@ export function RewardsScreen() {
                 <Ionicons
                   name={showAdvanced ? 'chevron-up' : 'chevron-down'}
                   size={16}
-                  color="#5a7d6a"
+                  color={colors.textMuted}
                 />
               </Pressable>
 
@@ -156,7 +162,7 @@ export function RewardsScreen() {
                         <Ionicons
                           name={contractCopied ? 'checkmark' : 'copy-outline'}
                           size={14}
-                          color="#5a7d6a"
+                          color={colors.textMuted}
                         />
                       </Pressable>
                     </View>
@@ -174,10 +180,11 @@ export function RewardsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   flex: {
     flex: 1,
@@ -199,7 +206,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -221,14 +228,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 13,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   balance: {
     fontSize: 56,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     letterSpacing: -1,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
@@ -238,7 +245,7 @@ const styles = StyleSheet.create({
     maxWidth: 320,
     fontSize: 15,
     lineHeight: 22,
-    color: '#5a7d6a',
+    color: c.textMuted,
     textAlign: 'center',
   },
   advancedToggle: {
@@ -256,7 +263,7 @@ const styles = StyleSheet.create({
   advancedToggleText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
   advanced: {
     position: 'absolute',
@@ -265,9 +272,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 320,
     alignSelf: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 4,
@@ -286,11 +293,11 @@ const styles = StyleSheet.create({
   tokenSymbol: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   tokenMeta: {
     fontSize: 12,
-    color: '#86a894',
+    color: c.textSubtle,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
@@ -308,7 +315,7 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -325,12 +332,13 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 13,
     lineHeight: 18,
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
   },
   empty: {
     fontSize: 15,
-    color: '#86a894',
+    color: c.textSubtle,
     textAlign: 'center',
   },
 });
+}

@@ -12,10 +12,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
+import { ColorThemePickerModal } from '@/components/ColorThemePickerModal';
 import { ConfirmLogoutModal } from '@/components/ConfirmLogoutModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
+import { useColorThemePicker } from '@/hooks/useColorThemePicker';
 import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -23,8 +25,14 @@ import { useOnrampSettings } from '@/hooks/useOnrampSettings';
 import { usePopToProfile } from '@/hooks/usePopToProfile';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import type { ProfileStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export function SettingsScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const navigation =
@@ -64,6 +72,15 @@ export function SettingsScreen() {
     closePicker: closeDisplayCurrencyPicker,
     onSelectOption: onSelectDisplayCurrency,
   } = useDisplayCurrencyPicker();
+  const {
+    options: colorThemeOptions,
+    selectedTheme,
+    selectedColorThemeId,
+    pickerOpen: colorThemePickerOpen,
+    openPicker: openColorThemePicker,
+    closePicker: closeColorThemePicker,
+    onSelectOption: onSelectColorTheme,
+  } = useColorThemePicker();
   const { selectedDestinationLabel } = useOnrampSettings();
 
   return (
@@ -125,7 +142,7 @@ export function SettingsScreen() {
                     Username and profile photo
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#86a894" />
+                <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />
               </Pressable>
             </View>
 
@@ -148,7 +165,7 @@ export function SettingsScreen() {
                     Default destination: {selectedDestinationLabel}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#86a894" />
+                <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />
               </Pressable>
             </View>
 
@@ -171,7 +188,28 @@ export function SettingsScreen() {
                     Vault auto-deposit and use vault balance
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#86a894" />
+                <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />
+              </Pressable>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Appearance</Text>
+              <Pressable
+                accessibilityLabel={`Color theme ${selectedTheme.label}`}
+                accessibilityRole="button"
+                onPress={openColorThemePicker}
+                style={({ pressed }) => [
+                  styles.strategyRow,
+                  pressed && styles.strategyRowPressed,
+                ]}
+              >
+                <View style={styles.strategyRowText}>
+                  <Text style={styles.strategyLabel}>{selectedTheme.label}</Text>
+                  <Text style={styles.strategyDescription}>
+                    {selectedTheme.description}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
               </Pressable>
             </View>
 
@@ -194,7 +232,7 @@ export function SettingsScreen() {
                     {selectedCurrency.description}
                   </Text>
                 </View>
-                <Ionicons name="chevron-down" size={18} color="#86a894" />
+                <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
               </Pressable>
             </View>
 
@@ -217,7 +255,7 @@ export function SettingsScreen() {
                     {selectedStrategy.description}
                   </Text>
                 </View>
-                <Ionicons name="chevron-down" size={18} color="#86a894" />
+                <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
               </Pressable>
             </View>
 
@@ -240,7 +278,7 @@ export function SettingsScreen() {
                     {selectedChainPriority.description}
                   </Text>
                 </View>
-                <Ionicons name="chevron-down" size={18} color="#86a894" />
+                <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
               </Pressable>
             </View>
 
@@ -282,6 +320,14 @@ export function SettingsScreen() {
         visible={displayCurrencyPickerOpen}
       />
 
+      <ColorThemePickerModal
+        onClose={closeColorThemePicker}
+        onSelect={onSelectColorTheme}
+        options={colorThemeOptions}
+        selectedColorThemeId={selectedColorThemeId}
+        visible={colorThemePickerOpen}
+      />
+
       <ConfirmLogoutModal
         isSigningOut={isSigningOut}
         onCancel={cancelSignOut}
@@ -294,10 +340,11 @@ export function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   scroll: {
     flex: 1,
@@ -322,7 +369,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   topBarSpacer: {
     width: 44,
@@ -339,7 +386,7 @@ const styles = StyleSheet.create({
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   sections: {
     paddingHorizontal: 24,
@@ -354,7 +401,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -362,9 +409,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1fae5',
+    borderColor: c.rowBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -380,18 +427,18 @@ const styles = StyleSheet.create({
   strategyLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
   },
   strategyDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#86a894',
+    color: c.textSubtle,
   },
   logoutButton: {
     width: '100%',
     maxWidth: 420,
     marginTop: 32,
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
@@ -401,8 +448,9 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   logoutButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
 });
+}

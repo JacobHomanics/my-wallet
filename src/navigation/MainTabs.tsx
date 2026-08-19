@@ -6,6 +6,7 @@ import { Platform } from 'react-native';
 import { ZitiIcon } from '@/components/ZitiIcon';
 import { useBottomTabBarStyle } from '@/hooks/useBottomTabBarStyle';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ContactsStack } from '@/navigation/ContactsStack';
 import { EarnStack } from '@/navigation/EarnStack';
 import { HomeStack } from '@/navigation/HomeStack';
@@ -13,13 +14,13 @@ import { MainTabBar } from '@/navigation/MainTabBar';
 import { ProfileStack } from '@/navigation/ProfileStack';
 import { RewardsStack } from '@/navigation/RewardsStack';
 import type { MainTabParamList } from '@/navigation/types';
-import { colors } from '@/theme/colors';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export function MainTabs() {
   const isDesktopWeb = useIsDesktopWeb();
   const tabBarStyle = useBottomTabBarStyle();
+  const colors = useThemeColors();
 
   return (
     <Tab.Navigator
@@ -34,8 +35,8 @@ export function MainTabs() {
           },
         },
         tabBarPosition: isDesktopWeb ? 'top' : 'bottom',
-        tabBarActiveTintColor: '#166534',
-        tabBarInactiveTintColor: '#86a894',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSubtle,
         tabBarStyle,
         tabBarLabelStyle: {
           lineHeight: 13,

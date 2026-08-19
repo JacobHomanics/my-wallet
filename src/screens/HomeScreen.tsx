@@ -2,11 +2,10 @@ import { useCallback, useMemo } from 'react';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
+import {StyleSheet, 
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -26,8 +25,14 @@ import { usePrivyEarn } from '@/hooks/usePrivyEarn';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useWithdrawUnsupportedModal } from '@/hooks/useWithdrawUnsupportedModal';
 import type { HomeStackParamList } from '@/navigation/types';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export function HomeScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const {
@@ -134,7 +139,7 @@ export function HomeScreen() {
             pressed && styles.totalHelpButtonPressed,
           ]}
         >
-          <Ionicons name="help-circle-outline" size={22} color="#5a7d6a" />
+          <Ionicons name="help-circle-outline" size={22} color={colors.textMuted} />
         </Pressable>
       </View>
     );
@@ -185,7 +190,7 @@ export function HomeScreen() {
                 pressed && styles.actionButtonPressed,
               ]}
             >
-              <Ionicons name="business-outline" size={18} color="#f0fdf4" />
+              <Ionicons name="business-outline" size={18} color={colors.primaryText} />
               <Text style={styles.actionButtonText}>Withdraw</Text>
             </Pressable>
           </View>
@@ -198,7 +203,7 @@ export function HomeScreen() {
                 pressed && styles.actionButtonPressed,
               ]}
             >
-              <Ionicons name="arrow-up" size={18} color="#f0fdf4" />
+              <Ionicons name="arrow-up" size={18} color={colors.primaryText} />
               <Text style={styles.actionButtonText}>Pay</Text>
             </Pressable>
           </View>
@@ -213,7 +218,7 @@ export function HomeScreen() {
                 pressed && styles.actionButtonPressed,
               ]}
             >
-              <Ionicons name="arrow-down" size={18} color="#f0fdf4" />
+              <Ionicons name="arrow-down" size={18} color={colors.primaryText} />
               <Text style={styles.actionButtonText}>Receive</Text>
             </Pressable>
             <Pressable
@@ -226,7 +231,7 @@ export function HomeScreen() {
                 pressed && styles.actionButtonPressed,
               ]}
             >
-              <Ionicons name="cash-outline" size={18} color="#f0fdf4" />
+              <Ionicons name="cash-outline" size={18} color={colors.primaryText} />
               <Text style={styles.actionButtonText}>Request</Text>
             </Pressable>
           </View>
@@ -289,10 +294,11 @@ export function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: c.bg,
   },
   content: {
     flexGrow: 1,
@@ -318,7 +324,7 @@ const styles = StyleSheet.create({
   total: {
     fontSize: 48,
     fontWeight: '700',
-    color: '#166534',
+    color: c.primary,
     letterSpacing: -1,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
@@ -332,7 +338,7 @@ const styles = StyleSheet.create({
   },
   empty: {
     fontSize: 15,
-    color: '#86a894',
+    color: c.textSubtle,
     textAlign: 'center',
   },
   errorBlock: {
@@ -342,17 +348,17 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
   },
   errorBanner: {
     marginTop: 12,
     fontSize: 13,
-    color: '#b91c1c',
+    color: c.danger,
     textAlign: 'center',
   },
   retryButton: {
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
@@ -361,7 +367,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   retryButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -384,7 +390,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#166534',
+    backgroundColor: c.primary,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 10,
@@ -393,7 +399,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   actionButtonText: {
-    color: '#f0fdf4',
+    color: c.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -412,7 +418,8 @@ const styles = StyleSheet.create({
   detailsLinkText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#5a7d6a',
+    color: c.textMuted,
     textDecorationLine: 'underline',
   },
 });
+}

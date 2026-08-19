@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import {
+import {StyleSheet, 
   Pressable,
-  StyleSheet,
   Text,
   View,
   type StyleProp,
@@ -14,6 +13,9 @@ import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useShowTaxDetails } from '@/hooks/useShowTaxDetails';
 import { useTaxInfoModal } from '@/hooks/useTaxInfoModal';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { ThemeColors } from '@/theme/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export type TaxDetailsCollapsibleProps = {
   /** Formatted service fee amount, e.g. "$0.05". */
@@ -33,6 +35,9 @@ export function TaxDetailsCollapsible({
   showSolana = false,
   style,
 }: TaxDetailsCollapsibleProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+
   const { showTaxDetails, toggleTaxDetails } = useShowTaxDetails();
   const { taxInfoOpen, openTaxInfo, closeTaxInfo } = useTaxInfoModal();
   const { copy, isCopied } = useCopyToClipboard();
@@ -71,7 +76,7 @@ export function TaxDetailsCollapsible({
             <Ionicons
               name={showTaxDetails ? 'chevron-up' : 'chevron-down'}
               size={16}
-              color="#5a7d6a"
+              color={colors.textMuted}
             />
           </Pressable>
           <Pressable
@@ -84,7 +89,7 @@ export function TaxDetailsCollapsible({
               pressed && styles.helpButtonPressed,
             ]}
           >
-            <Ionicons name="help-circle-outline" size={18} color="#5a7d6a" />
+            <Ionicons name="help-circle-outline" size={18} color={colors.textMuted} />
           </Pressable>
         </View>
         <Pressable
@@ -172,7 +177,8 @@ export function TaxDetailsCollapsible({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   taxSection: {
     marginTop: 16,
     alignSelf: 'stretch',
@@ -199,7 +205,7 @@ const styles = StyleSheet.create({
   taxLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5a7d6a',
+    color: c.textMuted,
   },
   helpButton: {
     width: 28,
@@ -213,7 +219,7 @@ const styles = StyleSheet.create({
   taxValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
   },
   taxDetails: {
@@ -223,13 +229,13 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#b7e4c7',
-    backgroundColor: '#f0fdf4',
+    borderColor: c.border,
+    backgroundColor: c.bg,
   },
   taxDetailsLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#86a894',
+    color: c.textSubtle,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -244,7 +250,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     fontSize: 13,
     fontWeight: '600',
-    color: '#86a894',
+    color: c.textSubtle,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -253,7 +259,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
     fontSize: 16,
     fontWeight: '500',
-    color: '#166534',
+    color: c.primary,
     fontVariant: ['tabular-nums'],
   },
   copyButton: {
@@ -266,3 +272,4 @@ const styles = StyleSheet.create({
     opacity: 0.65,
   },
 });
+}
