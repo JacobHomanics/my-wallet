@@ -15,10 +15,10 @@ export type OnrampVaultDepositPhase =
   | { kind: 'idle' }
   | { kind: 'vault_depositing' }
   | {
-      kind: 'complete';
-      vaultDeposited: boolean;
-      warningMessage: string | null;
-    };
+    kind: 'complete';
+    vaultDeposited: boolean;
+    warningMessage: string | null;
+  };
 
 function readBaseUsdcBalanceRaw(
   tokens: ReturnType<typeof useTokenBalances>['tokens'],
@@ -159,7 +159,7 @@ export function useOnrampVaultDepositCompletion() {
       return phase.warningMessage;
     }
     if (phase.vaultDeposited) {
-      return 'Deposit complete. Funds are in your vault.';
+      return 'Deposit complete.';
     }
     return 'Deposit complete.';
   })();
