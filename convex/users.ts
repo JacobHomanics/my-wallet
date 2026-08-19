@@ -367,6 +367,31 @@ export const setAutoDepositReceivedUsdc = mutation({
   },
 });
 
+/** Record interest in the upcoming physical card program. */
+export const joinPhysicalCardWaitlist = mutation({
+  args: {
+    externalId: v.string(),
+  },
+  handler: async (ctx, { externalId }) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_externalId", (q) => q.eq("externalId", externalId))
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const joinedAt = user.physicalCardWaitlistJoinedAt ?? Date.now();
+
+    if (user.physicalCardWaitlistJoinedAt == null) {
+      await ctx.db.patch(user._id, { physicalCardWaitlistJoinedAt: joinedAt });
+    }
+
+    return { joinedAt };
+  },
+});
+
 /** Resolve whether a sender should withdraw vault USDC before sending. */
 export const getVaultSendSenderByEthereumAddress = internalQuery({
   args: {

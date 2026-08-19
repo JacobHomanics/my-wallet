@@ -15,6 +15,7 @@ import { BalanceSkeleton, balanceSkeletonLayout } from '@/components/BalanceSkel
 import { DepositBankTipsModal } from '@/components/DepositBankTipsModal';
 import { BalanceBreakdownModal } from '@/components/BalanceBreakdownModal';
 import { IconButton } from '@/components/IconButton';
+import { PhysicalCardWaitlistCallout } from '@/components/PhysicalCardWaitlistCallout';
 import { WithdrawUnsupportedModal } from '@/components/WithdrawUnsupportedModal';
 import { useBalanceBreakdownModal } from '@/hooks/useBalanceBreakdownModal';
 import { useDepositBankTipsModal } from '@/hooks/useDepositBankTipsModal';
@@ -251,6 +252,7 @@ export function HomeScreen() {
         }
         style={styles.container}
       >
+        <PhysicalCardWaitlistCallout />
         <View style={styles.hero}>
           {renderBalance()}
           {renderActions()}
@@ -301,7 +303,7 @@ function createStyles(c: ThemeColors) {
   content: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 48,
+    paddingTop: 24,
     paddingBottom: 32,
   },
   hero: {

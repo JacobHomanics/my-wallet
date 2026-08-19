@@ -24,6 +24,8 @@ export default defineSchema({
      * need Base USDC. Defaults to on; set explicitly to `false` to opt out.
      */
     useVaultUsdcWhenSending: v.optional(v.boolean()),
+    /** Unix ms when the user joined the physical card waitlist. */
+    physicalCardWaitlistJoinedAt: v.optional(v.number()),
   })
     .index("by_externalId", ["externalId"])
     .index("by_username", ["username"])
