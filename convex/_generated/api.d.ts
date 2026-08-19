@@ -27,6 +27,7 @@ import type * as lib_evmSendErrors from "../lib/evmSendErrors.js";
 import type * as lib_fetchErc20Balance from "../lib/fetchErc20Balance.js";
 import type * as lib_gasSponsorship from "../lib/gasSponsorship.js";
 import type * as lib_gasTokens from "../lib/gasTokens.js";
+import type * as lib_keystoreAddresses from "../lib/keystoreAddresses.js";
 import type * as lib_loadKeystores from "../lib/loadKeystores.js";
 import type * as lib_networks from "../lib/networks.js";
 import type * as lib_neynar from "../lib/neynar.js";
@@ -75,6 +76,7 @@ declare const fullApi: ApiFromModules<{
   "lib/fetchErc20Balance": typeof lib_fetchErc20Balance;
   "lib/gasSponsorship": typeof lib_gasSponsorship;
   "lib/gasTokens": typeof lib_gasTokens;
+  "lib/keystoreAddresses": typeof lib_keystoreAddresses;
   "lib/loadKeystores": typeof lib_loadKeystores;
   "lib/networks": typeof lib_networks;
   "lib/neynar": typeof lib_neynar;

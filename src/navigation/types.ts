@@ -144,6 +144,7 @@ export type RootStackParamList = {
   };
   exportWallet: ExportWalletParams;
   onboarding: undefined;
+  config: undefined;
   main: NavigatorScreenParams<MainTabParamList> | undefined;
 };
 

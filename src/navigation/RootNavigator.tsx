@@ -26,6 +26,7 @@ const ONBOARDING_BYPASS_ROUTES = new Set<string>([
   'splash',
   'onboarding',
   'exportWallet',
+  'config',
   'welcome',
   'login',
   'loginVerify',
