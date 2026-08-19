@@ -39,3 +39,34 @@ export async function waitForErc20Balance(params: {
     `Timed out waiting for ERC-20 balance on ${params.network} (need ${params.minRaw.toString()} raw).`,
   );
 }
+
+/**
+ * Polls until `holder` has at most `maxRaw` of `tokenAddress` on `network`.
+ * Covers RPC/indexer lag after a send receipt.
+ */
+export async function waitForErc20BalanceAtMost(params: {
+  network: string;
+  tokenAddress: string;
+  holder: string;
+  maxRaw: bigint;
+  timeoutMs?: number;
+}): Promise<bigint> {
+  const timeoutMs = params.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    const balance = await fetchErc20Balance({
+      network: params.network,
+      tokenAddress: params.tokenAddress,
+      holder: params.holder,
+    });
+    if (balance <= params.maxRaw) {
+      return balance;
+    }
+    await sleep(POLL_MS);
+  }
+
+  throw new Error(
+    `Timed out waiting for ERC-20 balance on ${params.network} to drop to ${params.maxRaw.toString()} raw.`,
+  );
+}

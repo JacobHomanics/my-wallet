@@ -9,6 +9,7 @@ import {
   parseWholePointsInput,
   pointsWholeToUsdcAmount,
 } from '@/lib/cashback';
+import { refreshBalancesAfterRedemption } from '@/lib/cashbackRefresh';
 
 export type CashbackRedemptionResult = {
   pointsAmount: string;
@@ -34,7 +35,7 @@ export function useCashbackRedemption(
   pointsPerUsdc: number | null,
 ): UseCashbackRedemptionResult {
   const { ready: walletsReady, wallets } = useUserWallets();
-  const { refresh: refreshTokenBalances } = useTokenBalances();
+  const { tokens, refresh: refreshTokenBalances, poll } = useTokenBalances();
   const redeemAction = useAction(api.cashback.redeem);
 
   const ethereumWallet = wallets.find((wallet) => wallet.chain === 'ethereum');
@@ -94,7 +95,13 @@ export function useCashbackRedemption(
           pointsAmount: pointsWhole.toString(),
         });
         setLastResult(result);
-        await refreshTokenBalances();
+        await refreshBalancesAfterRedemption({
+          tokens,
+          holder: ethereumAddress,
+          pointsWhole,
+          refresh: refreshTokenBalances,
+          poll,
+        });
         return result;
       } catch (error) {
         const message =
@@ -108,8 +115,10 @@ export function useCashbackRedemption(
     [
       ethereumAddress,
       ethereumWalletId,
+      poll,
       redeemAction,
       refreshTokenBalances,
+      tokens,
     ],
   );
 

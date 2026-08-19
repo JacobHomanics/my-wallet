@@ -47,6 +47,22 @@ type FetchSnapshot = {
 /** Shared across Home + Token Details so navigating does not refetch immediately. */
 let tokenBalancesCache: TokenBalancesCache | null = null;
 
+let sharedReloadGeneration = 0;
+const reloadSubscribers = new Set<() => void>();
+
+function bumpSharedReload(invalidateCache: boolean) {
+  if (invalidateCache && tokenBalancesCache) {
+    tokenBalancesCache = {
+      ...tokenBalancesCache,
+      fetchedAt: 0,
+    };
+  }
+  sharedReloadGeneration += 1;
+  for (const notify of reloadSubscribers) {
+    notify();
+  }
+}
+
 function cacheKey(
   ethereumAddress: string | null,
   solanaAddress: string | null,
@@ -84,7 +100,7 @@ export function useTokenBalances(): TokenBalancesResult {
   const apiKey = getAlchemyApiKey();
   const missingApiKey = hasAddress && !apiKey;
 
-  const [reloadKey, setReloadKey] = useState(0);
+  const [reloadKey, setReloadKey] = useState(sharedReloadGeneration);
   const [refreshFetchId, setRefreshFetchId] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<FetchSnapshot | null>(() => {
     if (!hasAddress) {
@@ -107,6 +123,16 @@ export function useTokenBalances(): TokenBalancesResult {
   const snapshotMatches = snapshot?.fetchId === fetchId;
   const snapshotForKey =
     snapshot && snapshot.fetchId.startsWith(`${key}:`) ? snapshot : null;
+
+  useEffect(() => {
+    const syncReload = () => {
+      setReloadKey(sharedReloadGeneration);
+    };
+    reloadSubscribers.add(syncReload);
+    return () => {
+      reloadSubscribers.delete(syncReload);
+    };
+  }, []);
 
   useEffect(() => {
     if (!walletsReady || !hasAddress || !apiKey) {
@@ -298,22 +324,16 @@ export function useTokenBalances(): TokenBalancesResult {
   }, null);
 
   const refresh = useCallback(() => {
-    const nextReloadKey = reloadKey + 1;
+    bumpSharedReload(true);
+    const nextReloadKey = sharedReloadGeneration;
     setRefreshFetchId(makeFetchId(key, nextReloadKey));
     setReloadKey(nextReloadKey);
-  }, [key, reloadKey]);
+  }, [key]);
 
   const poll = useCallback(() => {
-    // Expire the shared cache so the next fetch isn't skipped, without
-    // marking this as a user-driven refresh (no spinner).
-    if (tokenBalancesCache?.key === key) {
-      tokenBalancesCache = {
-        ...tokenBalancesCache,
-        fetchedAt: 0,
-      };
-    }
-    setReloadKey((current) => current + 1);
-  }, [key]);
+    bumpSharedReload(true);
+    setReloadKey(sharedReloadGeneration);
+  }, []);
 
   return {
     ready: walletsReady,
