@@ -49,7 +49,8 @@ export type SendDraft = {
    */
   broadcastMode: SendBroadcastMode;
   /**
-   * When set, overrides default gas sponsorship for this send only.
+   * When set, overrides the user's default gas sponsorship for this send only.
+   * Ignored when `appConfig.gasSponsorship` is false or broadcast is frontend.
    */
   gasSponsorship: boolean | null;
   /**

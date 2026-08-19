@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { useAction } from 'convex/react';
 
 import { api } from '../../convex/_generated/api';
+import { getSendGasSponsorship } from '@/hooks/useGasSponsorship';
 import type {
   SendTokenParams,
   SendTokenResult,
@@ -45,8 +46,6 @@ export type SendPaymentOutcome = {
 
 export type SendPaymentOptions = {
   broadcastMode?: SendBroadcastMode;
-  /** When true, sponsor gas on Privy-supported networks only. */
-  gasSponsorship?: boolean;
   useVaultUsdc?: boolean;
 };
 
@@ -186,7 +185,7 @@ export function useSendPayment(): SendPaymentResult {
 
       return runExclusiveSend(async () => {
         const broadcastMode = options?.broadcastMode ?? 'backend';
-        const gasSponsorship = options?.gasSponsorship ?? false;
+        const gasSponsorship = getSendGasSponsorship();
         const useVaultUsdc = options?.useVaultUsdc ?? true;
         const orderedLegs = orderPaymentLegs(legs);
         const sponsorForNetwork = (network: string) =>

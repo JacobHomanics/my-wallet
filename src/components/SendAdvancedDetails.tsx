@@ -24,6 +24,7 @@ import type { SendBroadcastMode } from '@/lib/send/broadcastMode';
 import type { TaxFundingPick } from '@/lib/send/buildPaymentLegsWithTax';
 import type { GasFundingPick } from '@/lib/send/gasReserves';
 import { REWARD_POINTS_LABEL } from '@/lib/rewardToken';
+import { isGasSponsorshipAvailable } from '@/hooks/useGasSponsorship';
 import {
   formatVaultUsdcFundingSplit,
   getVaultUsdcTaxFundingKey,
@@ -219,6 +220,7 @@ export function SendConfigurationFields({
   }, [onBroadcastModeChange, onGasSponsorshipChange]);
 
   const cashboxNetworkEnabled = broadcastMode === 'backend';
+  const showGasSponsorshipToggle = isGasSponsorshipAvailable() && cashboxNetworkEnabled;
 
   return (
     <>
@@ -250,7 +252,8 @@ export function SendConfigurationFields({
         <View style={styles.broadcastText}>
           <Text style={styles.broadcastLabel}>Send from this device</Text>
           <Text style={styles.broadcastHint}>
-            Skips backend broadcast, {REWARD_POINTS_LABEL}, and gas sponsorship
+            Skips backend broadcast, {REWARD_POINTS_LABEL}
+            {isGasSponsorshipAvailable() ? ', and gas sponsorship' : ''}
           </Text>
         </View>
         <Switch
@@ -263,7 +266,7 @@ export function SendConfigurationFields({
         />
       </View>
 
-      {cashboxNetworkEnabled ? (
+      {showGasSponsorshipToggle ? (
         <>
           <View style={styles.advancedDivider} />
 

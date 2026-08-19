@@ -19,6 +19,7 @@ import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
 import { useColorThemePicker } from '@/hooks/useColorThemePicker';
 import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
+import { appConfig } from '@/configs/app.config';
 import { useDefaultCashboxNetwork } from '@/hooks/useDefaultCashboxNetwork';
 import { useDefaultGasSponsorship } from '@/hooks/useDefaultGasSponsorship';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
@@ -91,7 +92,7 @@ export function SettingsScreen() {
     selectedStrategy.label,
     selectedChainPriority.label,
     defaultCashboxNetwork ? 'Cashbox Network' : 'Device send',
-    defaultCashboxNetwork
+    defaultCashboxNetwork && appConfig.gasSponsorship
       ? defaultGasSponsorship
         ? 'Gas sponsored where available'
         : 'You pay gas'

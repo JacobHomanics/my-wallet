@@ -31,7 +31,8 @@ function setDefaultGasSponsorshipValue(enabled: boolean): void {
 }
 
 /**
- * App default for Privy gas sponsorship (settings). Send flow may override.
+ * User default for gas sponsorship (Send settings). Only applies when the
+ * developer enabled gas sponsorship in `appConfig`.
  */
 export function useDefaultGasSponsorship(): {
   defaultGasSponsorship: boolean;

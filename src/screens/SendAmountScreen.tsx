@@ -351,13 +351,13 @@ export function SendAmountScreen() {
                   broadcastMode={broadcastMode}
                   canAddToken={canAddToken}
                   gasFunding={gasFunding}
-                  gasSponsorship={gasSponsorship}
                   onAddToken={() => {
                     setTokenPickerOpen(true);
                   }}
                   onAllocationAmountChange={setAllocationAmount}
                   onAllocationInputUnitChange={setAllocationInputUnit}
                   onBroadcastModeChange={setBroadcastMode}
+                  gasSponsorship={gasSponsorship}
                   onGasSponsorshipChange={setGasSponsorship}
                   onOpenStrategyPicker={openStrategyPicker}
                   onRemoveAllocation={removeAllocation}

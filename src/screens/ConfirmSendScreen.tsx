@@ -225,7 +225,7 @@ export function ConfirmSendScreen() {
             amountFormatted: leg.amountFormatted,
             isTax: leg.isTax,
           })),
-          { broadcastMode, gasSponsorship, useVaultUsdc: useVaultUsdcForSend },
+          { broadcastMode, useVaultUsdc: useVaultUsdcForSend },
         );
         addRecentSendRecipient({
           identityId: accountNumber.trim() || null,
@@ -454,13 +454,13 @@ export function ConfirmSendScreen() {
               broadcastMode={broadcastMode}
               canAddToken={canAddToken}
               gasFunding={gasFunding}
-              gasSponsorship={gasSponsorship}
               onAddToken={() => {
                 setTokenPickerOpen(true);
               }}
               onAllocationAmountChange={setAllocationAmount}
               onAllocationInputUnitChange={setAllocationInputUnit}
               onBroadcastModeChange={setBroadcastMode}
+              gasSponsorship={gasSponsorship}
               onGasSponsorshipChange={setGasSponsorship}
               onOpenStrategyPicker={openStrategyPicker}
               onRemoveAllocation={removeAllocation}

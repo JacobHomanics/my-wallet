@@ -7,6 +7,7 @@ import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal'
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { SupportedChainsCollapsible } from '@/components/SupportedChainsCollapsible';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
+import { appConfig } from '@/configs/app.config';
 import { useDefaultCashboxNetwork } from '@/hooks/useDefaultCashboxNetwork';
 import { useDefaultGasSponsorship } from '@/hooks/useDefaultGasSponsorship';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -15,7 +16,7 @@ import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import { REWARD_POINTS_LABEL } from '@/lib/rewardToken';
 
 /**
- * Default send behavior: payment strategy, chain priority, Cashbox Network, and gas sponsorship.
+ * Default send behavior: payment strategy, chain priority, and Cashbox Network.
  */
 export function SendSettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -43,6 +44,7 @@ export function SendSettingsScreen() {
     useDefaultCashboxNetwork();
   const { defaultGasSponsorship, setDefaultGasSponsorship } =
     useDefaultGasSponsorship();
+  const gasSponsorshipAvailable = appConfig.gasSponsorship;
 
   return (
     <View style={styles.container}>
@@ -131,8 +133,12 @@ export function SendSettingsScreen() {
               <Text style={styles.optionLabel}>Default for new sends</Text>
               <Text style={styles.optionDescription}>
                 {defaultCashboxNetwork
-                  ? `Earn ${REWARD_POINTS_LABEL} and gas sponsorship on supported chains`
-                  : `Signs on this device; no ${REWARD_POINTS_LABEL} or gas sponsorship`}
+                  ? gasSponsorshipAvailable
+                    ? `Earn ${REWARD_POINTS_LABEL} and gas sponsorship on supported chains`
+                    : `Earn ${REWARD_POINTS_LABEL} on supported chains`
+                  : `Signs on this device; no ${REWARD_POINTS_LABEL}${
+                      gasSponsorshipAvailable ? ' or gas sponsorship' : ''
+                    }`}
               </Text>
             </View>
             <Switch
@@ -146,7 +152,7 @@ export function SendSettingsScreen() {
           </View>
         </View>
 
-        {defaultCashboxNetwork ? (
+        {defaultCashboxNetwork && gasSponsorshipAvailable ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Gas sponsorship where available</Text>
             <View style={styles.toggleRow}>
