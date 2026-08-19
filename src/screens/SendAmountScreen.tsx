@@ -108,8 +108,6 @@ export function SendAmountScreen() {
     taxFunding,
     allocations,
     allocationInputs,
-    needsEthereumRecipient,
-    needsSolanaRecipient,
     ethereumRecipient,
     solanaRecipient,
     resolvedEthereumRecipient,
@@ -153,13 +151,9 @@ export function SendAmountScreen() {
     ? getNetworkChain(taxFunding.token.network)
     : null;
   const showTaxEvm =
-    taxFundingChain != null
-      ? taxFundingChain === 'ethereum'
-      : needsEthereumRecipient || Boolean(ethereumAddress);
+    taxFundingChain == null || taxFundingChain === 'ethereum';
   const showTaxSolana =
-    taxFundingChain != null
-      ? taxFundingChain === 'solana'
-      : needsSolanaRecipient || Boolean(solanaAddress);
+    taxFundingChain == null || taxFundingChain === 'solana';
 
   const isZeroAmount = (parseDisplayInputToUsd(amount) ?? 0) === 0;
   const amountError = insufficientFunds
@@ -334,7 +328,6 @@ export function SendAmountScreen() {
                   gasSponsorship={gasSponsorship}
                   showEvm={showTaxEvm}
                   showSolana={showTaxSolana}
-                  style={styles.taxSection}
                   taxLabel={taxLabel}
                 />
                 <View style={styles.payerTotalRow}>
@@ -557,16 +550,6 @@ function createStyles(c: ThemeColors) {
     marginTop: 8,
     fontSize: 13,
     color: c.danger,
-  },
-  taxSection: {
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: c.inputBorder,
-    borderRadius: 12,
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingVertical: 14,
-    backgroundColor: c.surfaceMuted,
   },
   payerTotalRow: {
     marginTop: 10,
