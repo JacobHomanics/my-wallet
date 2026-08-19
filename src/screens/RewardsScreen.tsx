@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TokenIcon } from '@/components/TokenIcon';
 import { BalanceLoadErrorFooter } from '@/components/BalanceLoadErrorFooter';
+import { IconButton } from '@/components/IconButton';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useRewardTokenBalance } from '@/hooks/useRewardTokenBalance';
@@ -162,28 +163,20 @@ export function RewardsScreen() {
                   <View style={styles.field}>
                     <View style={styles.fieldHeader}>
                       <Text style={styles.fieldLabel}>Contract</Text>
-                      <Pressable
+                      <IconButton
                         accessibilityLabel={
                           contractCopied
                             ? 'Contract address copied'
                             : 'Copy contract address'
                         }
-                        accessibilityRole="button"
-                        hitSlop={8}
+                        color={colors.textMuted}
+                        icon={contractCopied ? 'checkmark' : 'copy-outline'}
+                        iconSize={14}
                         onPress={() => {
                           void copy(REWARD_TOKEN_ADDRESS, 'reward-contract');
                         }}
-                        style={({ pressed }) => [
-                          styles.copyButton,
-                          pressed && styles.copyButtonPressed,
-                        ]}
-                      >
-                        <Ionicons
-                          name={contractCopied ? 'checkmark' : 'copy-outline'}
-                          size={14}
-                          color={colors.textMuted}
-                        />
-                      </Pressable>
+                        size={28}
+                      />
                     </View>
                     <Text style={styles.fieldValue} selectable>
                       {formatWalletAddress(REWARD_TOKEN_ADDRESS, 10, 8)}
@@ -347,15 +340,6 @@ function createStyles(c: ThemeColors) {
     color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
-  },
-  copyButton: {
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  copyButtonPressed: {
-    opacity: 0.7,
   },
   fieldValue: {
     marginTop: 4,

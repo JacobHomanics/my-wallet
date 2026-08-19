@@ -14,6 +14,7 @@ import { AccountNumber } from '@/components/AccountNumber';
 import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
 import { ConfirmDeleteContactModal } from '@/components/ConfirmDeleteContactModal';
+import { IconButton } from '@/components/IconButton';
 import { useConfirmDeleteContact } from '@/hooks/useConfirmDeleteContact';
 import { useContactDetails } from '@/hooks/useContactDetails';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
@@ -42,26 +43,18 @@ function DetailField({
     <View style={styles.field}>
       <View style={styles.fieldHeader}>
         <Text style={styles.fieldLabel}>{label}</Text>
-        <Pressable
+        <IconButton
           accessibilityLabel={
             isCopied(copyKey) ? `${label} copied` : `Copy ${label}`
           }
-          accessibilityRole="button"
-          hitSlop={8}
+          color={colors.textMuted}
+          icon={isCopied(copyKey) ? 'checkmark' : 'copy-outline'}
+          iconSize={18}
           onPress={() => {
             void copy(value, copyKey);
           }}
-          style={({ pressed }) => [
-            styles.copyButton,
-            pressed && styles.copyButtonPressed,
-          ]}
-        >
-          <Ionicons
-            name={isCopied(copyKey) ? 'checkmark' : 'copy-outline'}
-            size={18}
-            color={colors.textMuted}
-          />
-        </Pressable>
+          size={32}
+        />
       </View>
       <Text style={styles.fieldValue} selectable>
         {value}
@@ -135,20 +128,17 @@ export function ContactDetailsScreen() {
             {contact?.title ?? 'Contact'}
           </Text>
           {canDelete ? (
-            <Pressable
+            <IconButton
               accessibilityLabel="Delete contact"
-              accessibilityRole="button"
+              backgroundColor={colors.danger}
+              color={colors.primaryText}
               disabled={isDeleting}
-              hitSlop={8}
+              icon="trash-outline"
+              iconSize={20}
               onPress={handleDelete}
-              style={({ pressed }) => [
-                styles.deleteButton,
-                pressed && styles.deleteButtonPressed,
-                isDeleting && styles.deleteButtonDisabled,
-              ]}
-            >
-              <Ionicons name="trash-outline" size={20} color={colors.primaryText} />
-            </Pressable>
+              size={36}
+              style={styles.deleteButton}
+            />
           ) : (
             <View style={styles.topBarSpacer} />
           )}
@@ -310,19 +300,7 @@ function createStyles(c: ThemeColors) {
     width: 44,
   },
   deleteButton: {
-    width: 36,
-    height: 36,
     marginHorizontal: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: c.danger,
-    borderRadius: 10,
-  },
-  deleteButtonPressed: {
-    opacity: 0.85,
-  },
-  deleteButtonDisabled: {
-    opacity: 0.6,
   },
   webBack: {
     minWidth: 44,
@@ -387,15 +365,6 @@ function createStyles(c: ThemeColors) {
     color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
-  },
-  copyButton: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  copyButtonPressed: {
-    opacity: 0.7,
   },
   fieldValue: {
     marginTop: 6,

@@ -1,5 +1,4 @@
 import { useCallback, useMemo } from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import {
   FlatList,
   Modal,
@@ -11,6 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TokenChainSection } from '@/components/TokenChainSection';
+import { IconButton } from '@/components/IconButton';
 import { useExpandedNetworks } from '@/hooks/useExpandedNetworks';
 import { useTokensByChain } from '@/hooks/useTokensByChain';
 import type {
@@ -18,7 +18,6 @@ import type {
   TokenChainGroup,
 } from '@/lib/alchemy/fetchTokensByAddress';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
-import { useThemeColors } from '@/hooks/useThemeColors';
 import type { ThemeColors } from '@/theme/types';
 
 type TokenPickerModalProps = {
@@ -40,7 +39,6 @@ export function TokenPickerModal({
   onClose,
   onSelect,
 }: TokenPickerModalProps) {
-  const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
 
   const insets = useSafeAreaInsets();
@@ -88,18 +86,13 @@ export function TokenPickerModal({
       >
         <View style={styles.modalTopBar}>
           <Text style={styles.modalTitle}>Add token</Text>
-          <Pressable
+          <IconButton
             accessibilityLabel="Close"
-            accessibilityRole="button"
-            hitSlop={8}
+            icon="close"
+            iconSize={22}
             onPress={onClose}
-            style={({ pressed }) => [
-              styles.modalClose,
-              pressed && styles.modalClosePressed,
-            ]}
-          >
-            <Ionicons name="close" size={22} color={colors.primary} />
-          </Pressable>
+            size={40}
+          />
         </View>
 
         <FlatList
@@ -140,15 +133,6 @@ function createStyles(c: ThemeColors) {
     fontWeight: '600',
     color: c.primary,
     paddingLeft: 40,
-  },
-  modalClose: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalClosePressed: {
-    opacity: 0.6,
   },
   list: {
     paddingHorizontal: 16,

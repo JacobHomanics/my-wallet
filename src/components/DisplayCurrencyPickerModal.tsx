@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useDisplayCurrencyFilter } from '@/hooks/useDisplayCurrencyFilter';
+import { IconButton } from '@/components/IconButton';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type {
@@ -99,18 +100,13 @@ export function DisplayCurrencyPickerModal({
       >
         <View style={styles.modalTopBar}>
           <Text style={styles.modalTitle}>Display currency</Text>
-          <Pressable
+          <IconButton
             accessibilityLabel="Close"
-            accessibilityRole="button"
-            hitSlop={8}
+            icon="close"
+            iconSize={22}
             onPress={onClose}
-            style={({ pressed }) => [
-              styles.modalClose,
-              pressed && styles.modalClosePressed,
-            ]}
-          >
-            <Ionicons name="close" size={22} color={colors.primary} />
-          </Pressable>
+            size={40}
+          />
         </View>
 
         <View style={styles.searchRow}>
@@ -181,15 +177,6 @@ function createStyles(c: ThemeColors) {
     fontWeight: '600',
     color: c.primary,
     paddingLeft: 40,
-  },
-  modalClose: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalClosePressed: {
-    opacity: 0.6,
   },
   searchRow: {
     flexDirection: 'row',

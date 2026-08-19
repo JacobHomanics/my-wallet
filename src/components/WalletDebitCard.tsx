@@ -1,7 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { HoloTapGentlyButton } from '@/components/HoloTapGentlyButton';
+import { IconButton } from '@/components/IconButton';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import type { UserWallet } from '@/hooks/useUserWallets.shared';
 
@@ -47,24 +47,17 @@ export function WalletDebitCard({
           <Text style={styles.cardNumber} selectable>
             {formatWalletAddress(wallet.address, 6, 4)}
           </Text>
-          <Pressable
+          <IconButton
             accessibilityLabel={
               copied ? 'Address copied' : `Copy ${wallet.label} address`
             }
-            accessibilityRole="button"
-            hitSlop={8}
+            backgroundColor="rgba(255, 255, 255, 0.14)"
+            color={copied ? '#86efac' : '#d1fae5'}
+            icon={copied ? 'checkmark' : 'copy-outline'}
+            iconSize={18}
             onPress={onCopy}
-            style={({ pressed }) => [
-              styles.copyButton,
-              pressed && styles.copyButtonPressed,
-            ]}
-          >
-            <Ionicons
-              name={copied ? 'checkmark' : 'copy-outline'}
-              size={18}
-              color={copied ? '#86efac' : '#d1fae5'}
-            />
-          </Pressable>
+            size={32}
+          />
         </View>
         <View style={styles.chipRow}>
           <View style={[styles.chip, { backgroundColor: theme.chip }]} />
@@ -115,12 +108,6 @@ const styles = StyleSheet.create({
     color: '#f0fdf4',
     letterSpacing: 1.4,
     fontVariant: ['tabular-nums'],
-  },
-  copyButton: {
-    padding: 4,
-  },
-  copyButtonPressed: {
-    opacity: 0.7,
   },
   chipRow: {
     flexDirection: 'row',

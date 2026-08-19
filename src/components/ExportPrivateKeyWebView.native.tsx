@@ -1,10 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
+import { IconButton } from '@/components/IconButton';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
-import { useThemeColors } from '@/hooks/useThemeColors';
 
 type ExportPrivateKeyWebViewProps = {
   uri: string | null;
@@ -20,7 +19,6 @@ export function ExportPrivateKeyWebView({
   uri,
   onClose,
 }: ExportPrivateKeyWebViewProps) {
-  const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
 
   const insets = useSafeAreaInsets();
@@ -35,18 +33,13 @@ export function ExportPrivateKeyWebView({
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <Text style={styles.title}>Export private key</Text>
-          <Pressable
+          <IconButton
             accessibilityLabel="Close"
-            accessibilityRole="button"
-            hitSlop={8}
+            icon="close"
+            iconSize={22}
             onPress={onClose}
-            style={({ pressed }) => [
-              styles.closeButton,
-              pressed && styles.closeButtonPressed,
-            ]}
-          >
-            <Ionicons name="close" size={22} color={colors.primary} />
-          </Pressable>
+            size={40}
+          />
         </View>
 
         {uri ? (
@@ -94,12 +87,6 @@ function createStyles(c: ThemeColors) {
     fontSize: 17,
     fontWeight: '600',
     color: c.primary,
-  },
-  closeButton: {
-    padding: 4,
-  },
-  closeButtonPressed: {
-    opacity: 0.65,
   },
   webview: {
     flex: 1,

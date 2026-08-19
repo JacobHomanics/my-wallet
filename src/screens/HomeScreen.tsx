@@ -14,6 +14,7 @@ import { BalanceSkeleton, balanceSkeletonLayout } from '@/components/BalanceSkel
 
 import { DepositBankTipsModal } from '@/components/DepositBankTipsModal';
 import { BalanceBreakdownModal } from '@/components/BalanceBreakdownModal';
+import { IconButton } from '@/components/IconButton';
 import { WithdrawUnsupportedModal } from '@/components/WithdrawUnsupportedModal';
 import { useBalanceBreakdownModal } from '@/hooks/useBalanceBreakdownModal';
 import { useDepositBankTipsModal } from '@/hooks/useDepositBankTipsModal';
@@ -129,18 +130,15 @@ export function HomeScreen() {
         <Text style={styles.total} accessibilityRole="header">
           {totalLabel}
         </Text>
-        <Pressable
+        <IconButton
           accessibilityLabel="Balance breakdown"
-          accessibilityRole="button"
-          hitSlop={8}
+          color={colors.textMuted}
+          icon="help-circle-outline"
+          iconSize={22}
           onPress={openBreakdown}
-          style={({ pressed }) => [
-            styles.totalHelpButton,
-            pressed && styles.totalHelpButtonPressed,
-          ]}
-        >
-          <Ionicons name="help-circle-outline" size={22} color={colors.textMuted} />
-        </Pressable>
+          size={36}
+          style={styles.totalHelpButton}
+        />
       </View>
     );
   };
@@ -331,10 +329,6 @@ function createStyles(c: ThemeColors) {
   },
   totalHelpButton: {
     marginTop: 4,
-    padding: 2,
-  },
-  totalHelpButtonPressed: {
-    opacity: 0.6,
   },
   empty: {
     fontSize: 15,

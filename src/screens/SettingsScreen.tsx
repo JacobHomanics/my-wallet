@@ -14,6 +14,7 @@ import { BackButton } from '@/components/BackButton';
 import { ColorThemePickerModal } from '@/components/ColorThemePickerModal';
 import { ConfirmLogoutModal } from '@/components/ConfirmLogoutModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
+import { IconButton } from '@/components/IconButton';
 import { useColorThemePicker } from '@/hooks/useColorThemePicker';
 import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
@@ -95,18 +96,13 @@ export function SettingsScreen() {
               />
             )}
             <Text style={styles.topBarTitle}>Settings</Text>
-            <Pressable
+            <IconButton
               accessibilityLabel="Log out"
-              accessibilityRole="button"
-              hitSlop={8}
+              color={colors.textMuted}
+              icon="log-out-outline"
+              iconSize={22}
               onPress={requestSignOut}
-              style={({ pressed }) => [
-                styles.logoutHeaderButton,
-                pressed && styles.logoutHeaderButtonPressed,
-              ]}
-            >
-              <Ionicons name="log-out-outline" size={22} color={colors.textMuted} />
-            </Pressable>
+            />
           </View>
 
           <View style={styles.sections}>
@@ -261,15 +257,6 @@ function createStyles(c: ThemeColors) {
     fontSize: 17,
     fontWeight: '600',
     color: c.primary,
-  },
-  logoutHeaderButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoutHeaderButtonPressed: {
-    opacity: 0.7,
   },
   webBack: {
     minWidth: 44,

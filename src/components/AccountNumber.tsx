@@ -1,6 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
 import {
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -9,6 +7,7 @@ import {
 } from 'react-native';
 
 import { AccountNumberInfoModal } from '@/components/AccountNumberInfoModal';
+import { IconButton } from '@/components/IconButton';
 import { useAccountNumberInfoModal } from '@/hooks/useAccountNumberInfoModal';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
@@ -66,25 +65,16 @@ export function AccountNumber({
             </Text>
           </View>
           {!showUsername ? (
-            <Pressable
+            <IconButton
               accessibilityLabel="About account number"
-              accessibilityRole="button"
-              hitSlop={8}
+              color={colors.textMuted}
+              icon="help-circle-outline"
+              iconSize={16}
               onPress={openInfo}
-              style={({ pressed }) => [
-                styles.helpButton,
-                styles.actionCompact,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Ionicons
-                name="help-circle-outline"
-                size={16}
-                color={colors.textMuted}
-              />
-            </Pressable>
+              size={compact ? 28 : 32}
+            />
           ) : null}
-          <Pressable
+          <IconButton
             accessibilityLabel={
               isCopied(copyKey)
                 ? showUsername
@@ -94,23 +84,14 @@ export function AccountNumber({
                   ? 'Copy username'
                   : 'Copy account number'
             }
-            accessibilityRole="button"
-            hitSlop={8}
+            color={isCopied(copyKey) ? colors.success : colors.primary}
+            icon={isCopied(copyKey) ? 'checkmark' : 'copy-outline'}
+            iconSize={compact ? 15 : 18}
             onPress={() => {
               void copy(value, copyKey);
             }}
-            style={({ pressed }) => [
-              styles.copyButton,
-              compact && styles.actionCompact,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Ionicons
-              name={isCopied(copyKey) ? 'checkmark' : 'copy-outline'}
-              size={compact ? 15 : 18}
-              color={isCopied(copyKey) ? colors.success : colors.primary}
-            />
-          </Pressable>
+            size={compact ? 28 : 32}
+          />
         </View>
       </View>
 
@@ -160,9 +141,6 @@ function createStyles(c: ThemeColors) {
   headerTextCompact: {
     gap: 2,
   },
-  pressed: {
-    opacity: 0.75,
-  },
   label: {
     fontSize: 12,
     fontWeight: '600',
@@ -174,12 +152,6 @@ function createStyles(c: ThemeColors) {
     fontSize: 10,
     letterSpacing: 0.5,
   },
-  helpButton: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   value: {
     fontSize: 15,
     fontWeight: '600',
@@ -190,16 +162,6 @@ function createStyles(c: ThemeColors) {
     fontSize: 12,
     fontWeight: '500',
     color: c.textSecondary,
-  },
-  copyButton: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionCompact: {
-    width: 28,
-    height: 28,
   },
 });
 }

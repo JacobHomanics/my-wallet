@@ -14,6 +14,7 @@ import { AccountNumber } from '@/components/AccountNumber';
 import { Avatar } from '@/components/Avatar';
 import { ConfirmExportPrivateKeyModal } from '@/components/ConfirmExportPrivateKeyModal';
 import { ExportPrivateKeyWebView } from '@/components/ExportPrivateKeyWebView';
+import { IconButton } from '@/components/IconButton';
 import { WalletDebitCard } from '@/components/WalletDebitCard';
 import { useConfirmExportPrivateKey } from '@/hooks/useConfirmExportPrivateKey';
 import { useConvexUsername } from '@/hooks/useConvexUsername';
@@ -54,24 +55,22 @@ export function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <Pressable
+      <IconButton
         accessibilityLabel="Settings"
-        accessibilityRole="button"
         hitSlop={12}
+        icon="settings-outline"
+        iconSize={24}
         onPress={() => {
           navigation.navigate('settings');
         }}
-        style={({ pressed }) => [
+        style={[
           styles.settingsButton,
           {
             top: Math.max(insets.top, 12),
             left: Math.max(insets.left, 12),
           },
-          pressed && styles.settingsButtonPressed,
         ]}
-      >
-        <Ionicons name="settings-outline" size={24} color={colors.primary} />
-      </Pressable>
+      />
 
       <ScrollView
         contentContainerStyle={[
@@ -188,13 +187,6 @@ function createStyles(c: ThemeColors) {
   settingsButton: {
     position: 'absolute',
     zIndex: 2,
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  settingsButtonPressed: {
-    opacity: 0.76,
   },
   scroll: {
     flex: 1,

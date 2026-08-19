@@ -8,6 +8,7 @@ import {StyleSheet,
 } from 'react-native';
 
 import { TaxInfoModal } from '@/components/TaxInfoModal';
+import { IconButton } from '@/components/IconButton';
 import { useAppTax } from '@/hooks/useAppTax';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useShowTaxDetails } from '@/hooks/useShowTaxDetails';
@@ -87,18 +88,14 @@ export function TaxDetailsCollapsible({
               color={colors.textMuted}
             />
           </Pressable>
-          <Pressable
+          <IconButton
             accessibilityLabel="About service fee"
-            accessibilityRole="button"
-            hitSlop={8}
+            color={colors.textMuted}
+            icon="help-circle-outline"
+            iconSize={18}
             onPress={openTaxInfo}
-            style={({ pressed }) => [
-              styles.helpButton,
-              pressed && styles.helpButtonPressed,
-            ]}
-          >
-            <Ionicons name="help-circle-outline" size={18} color={colors.textMuted} />
-          </Pressable>
+            size={28}
+          />
         </View>
         <Pressable
           accessibilityLabel={
@@ -123,28 +120,20 @@ export function TaxDetailsCollapsible({
               <Text style={styles.toAddress} selectable>
                 {formatWalletAddress(taxEvmAddress)}
               </Text>
-              <Pressable
+              <IconButton
                 accessibilityLabel={
                   isCopied('tax-evm')
                     ? 'Service fee EVM address copied'
                     : 'Copy service fee EVM address'
                 }
-                accessibilityRole="button"
-                hitSlop={8}
+                color={isCopied('tax-evm') ? colors.success : colors.textMuted}
+                icon={isCopied('tax-evm') ? 'checkmark' : 'copy-outline'}
+                iconSize={18}
                 onPress={() => {
                   void copy(taxEvmAddress, 'tax-evm');
                 }}
-                style={({ pressed }) => [
-                  styles.copyButton,
-                  pressed && styles.copyButtonPressed,
-                ]}
-              >
-                <Ionicons
-                  name={isCopied('tax-evm') ? 'checkmark' : 'copy-outline'}
-                  size={18}
-                  color={isCopied('tax-evm') ? '#15803d' : '#5a7d6a'}
-                />
-              </Pressable>
+                size={32}
+              />
             </View>
           ) : null}
           {showSolana ? (
@@ -153,28 +142,20 @@ export function TaxDetailsCollapsible({
               <Text style={styles.toAddress} selectable>
                 {formatWalletAddress(taxSolanaAddress)}
               </Text>
-              <Pressable
+              <IconButton
                 accessibilityLabel={
                   isCopied('tax-solana')
                     ? 'Service fee Solana address copied'
                     : 'Copy service fee Solana address'
                 }
-                accessibilityRole="button"
-                hitSlop={8}
+                color={isCopied('tax-solana') ? colors.success : colors.textMuted}
+                icon={isCopied('tax-solana') ? 'checkmark' : 'copy-outline'}
+                iconSize={18}
                 onPress={() => {
                   void copy(taxSolanaAddress, 'tax-solana');
                 }}
-                style={({ pressed }) => [
-                  styles.copyButton,
-                  pressed && styles.copyButtonPressed,
-                ]}
-              >
-                <Ionicons
-                  name={isCopied('tax-solana') ? 'checkmark' : 'copy-outline'}
-                  size={18}
-                  color={isCopied('tax-solana') ? '#15803d' : '#5a7d6a'}
-                />
-              </Pressable>
+                size={32}
+              />
             </View>
           ) : null}
         </View>
@@ -214,15 +195,6 @@ function createStyles(c: ThemeColors) {
     fontSize: 14,
     fontWeight: '600',
     color: c.textMuted,
-  },
-  helpButton: {
-    width: 28,
-    height: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  helpButtonPressed: {
-    opacity: 0.7,
   },
   taxValue: {
     fontSize: 14,
@@ -269,15 +241,6 @@ function createStyles(c: ThemeColors) {
     fontWeight: '500',
     color: c.primary,
     fontVariant: ['tabular-nums'],
-  },
-  copyButton: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  copyButtonPressed: {
-    opacity: 0.65,
   },
 });
 }

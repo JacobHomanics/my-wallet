@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import {
   Pressable,
   ScrollView,
@@ -11,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { EligiblePaymentInfoModal } from '@/components/EligiblePaymentInfoModal';
+import { IconButton } from '@/components/IconButton';
 import { useAutoDepositSettings } from '@/hooks/useAutoDepositSettings';
 import { useEligiblePaymentInfoModal } from '@/hooks/useEligiblePaymentInfoModal';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -82,18 +82,15 @@ export function EarnSettingsScreen() {
 
         <View style={styles.titleRow}>
           <Text style={styles.title}>Earn settings</Text>
-          <Pressable
+          <IconButton
             accessibilityLabel="What is an eligible payment?"
-            accessibilityRole="button"
-            hitSlop={8}
+            color={colors.textMuted}
+            icon="help-circle-outline"
+            iconSize={22}
             onPress={openInfo}
-            style={({ pressed }) => [
-              styles.helpButton,
-              pressed && styles.helpButtonPressed,
-            ]}
-          >
-            <Ionicons name="help-circle-outline" size={22} color={colors.textMuted} />
-          </Pressable>
+            size={40}
+            style={styles.titleHelpButton}
+          />
         </View>
 
         <View style={styles.section}>
@@ -195,12 +192,8 @@ function createStyles(c: ThemeColors) {
     letterSpacing: -0.5,
     textAlign: 'center',
   },
-  helpButton: {
+  titleHelpButton: {
     marginTop: 2,
-    padding: 2,
-  },
-  helpButtonPressed: {
-    opacity: 0.7,
   },
   section: {
     width: '100%',

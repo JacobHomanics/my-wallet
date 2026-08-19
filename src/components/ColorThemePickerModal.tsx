@@ -10,6 +10,7 @@ import {StyleSheet,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { IconButton } from '@/components/IconButton';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { COLOR_THEMES } from '@/theme/themes';
 import type { ColorThemeId, ColorThemeOption } from '@/theme/types';
@@ -49,9 +50,6 @@ function createStyles(c: ThemeColors) {
       fontSize: 17,
       fontWeight: '600' as const,
       color: c.primary,
-    },
-    closeButton: {
-      padding: 4,
     },
     list: {
       paddingHorizontal: 16,
@@ -174,15 +172,13 @@ export function ColorThemePickerModal({
         >
           <View style={styles.header}>
             <Text style={styles.title}>Color theme</Text>
-            <Pressable
+            <IconButton
               accessibilityLabel="Close"
-              accessibilityRole="button"
-              hitSlop={8}
+              icon="close"
+              iconSize={22}
               onPress={onClose}
-              style={styles.closeButton}
-            >
-              <Ionicons name="close" size={22} color={colors.primary} />
-            </Pressable>
+              size={40}
+            />
           </View>
           <FlatList
             contentContainerStyle={styles.list}

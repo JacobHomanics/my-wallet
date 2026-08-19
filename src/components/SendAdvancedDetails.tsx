@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import { FrontendSendRewardsWarningModal } from '@/components/FrontendSendRewardsWarningModal';
+import { IconButton } from '@/components/IconButton';
 import { TokenIcon } from '@/components/TokenIcon';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
@@ -514,20 +515,16 @@ export function SendTokenAllocations({
                 ) : (
                   <View style={styles.allocationSecondary} />
                 )}
-                <Pressable
+                <IconButton
                   accessibilityLabel={`Remove ${leg.token.symbol}`}
-                  accessibilityRole="button"
-                  hitSlop={8}
+                  color={colors.danger}
+                  icon="trash-outline"
+                  iconSize={18}
                   onPress={() => {
                     onRemoveAllocation(leg.token.id);
                   }}
-                  style={({ pressed }) => [
-                    styles.allocationRemove,
-                    pressed && styles.allocationRemovePressed,
-                  ]}
-                >
-                  <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                </Pressable>
+                  size={32}
+                />
               </View>
             </View>
           );
@@ -843,11 +840,6 @@ function createStyles(c: ThemeColors) {
   allocationRemove: {
     width: 32,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  allocationRemovePressed: {
-    opacity: 0.6,
   },
   addTokenButton: {
     flexDirection: 'row',

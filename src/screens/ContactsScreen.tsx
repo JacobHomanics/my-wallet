@@ -15,6 +15,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ConfirmDeleteContactModal } from '@/components/ConfirmDeleteContactModal';
+import { IconButton } from '@/components/IconButton';
 import { SwipeableContactRow } from '@/components/SwipeableContactRow';
 import {
   groupWalletContactsByChain,
@@ -371,20 +372,18 @@ export function ContactsScreen() {
         <View style={styles.topBar}>
           <View style={styles.topBarSpacer} />
           <Text style={styles.topBarTitle}>Contacts</Text>
-          <Pressable
+          <IconButton
             accessibilityLabel="New contact"
-            accessibilityRole="button"
-            hitSlop={8}
+            backgroundColor={colors.primary}
+            color={colors.primaryText}
+            icon="add"
+            iconSize={24}
             onPress={() => {
               navigation.navigate('newContact');
             }}
-            style={({ pressed }) => [
-              styles.addButton,
-              pressed && styles.addButtonPressed,
-            ]}
-          >
-            <Ionicons name="add" size={24} color={colors.primaryText} />
-          </Pressable>
+            size={36}
+            style={styles.addButton}
+          />
         </View>
 
         <View style={styles.tabs}>
@@ -652,16 +651,7 @@ function createStyles(c: ThemeColors) {
     marginHorizontal: 4,
   },
   addButton: {
-    width: 36,
-    height: 36,
     marginHorizontal: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: c.primary,
-    borderRadius: 10,
-  },
-  addButtonPressed: {
-    opacity: 0.85,
   },
   tabs: {
     flexDirection: 'row',
