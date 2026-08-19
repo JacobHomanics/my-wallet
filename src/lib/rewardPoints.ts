@@ -10,7 +10,7 @@ export function calculateRewardPoints(
   paymentUsd: number,
   config: RewardCurveConfig,
 ): number {
-  const { referenceUsd, referencePoints, exponent, minUsd } = config;
+  const { referenceUsd, referencePoints, exponent } = config;
 
   if (
     !Number.isFinite(paymentUsd) ||

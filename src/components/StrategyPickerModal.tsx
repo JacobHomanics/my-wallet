@@ -69,7 +69,18 @@ export function StrategyPickerModal({
         </Pressable>
       );
     },
-    [onSelect, selectedStrategyId],
+    [
+      colors.primary,
+      onSelect,
+      selectedStrategyId,
+      styles.strategyOption,
+      styles.strategyOptionDescription,
+      styles.strategyOptionLabel,
+      styles.strategyOptionPressed,
+      styles.strategyOptionSelected,
+      styles.strategyOptionSpacer,
+      styles.strategyOptionText,
+    ],
   );
 
   return (

@@ -67,7 +67,18 @@ export function ChainPriorityPickerModal({
         </Pressable>
       );
     },
-    [onSelect, selectedChainPriorityId],
+    [
+      colors.primary,
+      onSelect,
+      selectedChainPriorityId,
+      styles.option,
+      styles.optionDescription,
+      styles.optionLabel,
+      styles.optionPressed,
+      styles.optionSelected,
+      styles.optionSpacer,
+      styles.optionText,
+    ],
   );
 
   return (

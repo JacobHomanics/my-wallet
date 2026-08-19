@@ -13,8 +13,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { IconButton } from '@/components/IconButton';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { COLOR_THEMES } from '@/theme/themes';
-import type { ColorThemeId, ColorThemeOption } from '@/theme/types';
-import type { ThemeColors } from '@/theme/types';
+import type { ColorThemeId, ColorThemeOption, ThemeColors } from '@/theme/types';
 
 type ColorThemePickerModalProps = {
   visible: boolean;

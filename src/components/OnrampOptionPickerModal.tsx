@@ -77,7 +77,19 @@ export function OnrampOptionPickerModal<TOption extends OnrampPickerOption>({
         </Pressable>
       );
     },
-    [onSelect, selectedId],
+    [
+      colors.primary,
+      onSelect,
+      selectedId,
+      styles.option,
+      styles.optionDescription,
+      styles.optionIcon,
+      styles.optionLabel,
+      styles.optionPressed,
+      styles.optionSelected,
+      styles.optionSpacer,
+      styles.optionText,
+    ],
   );
 
   return (

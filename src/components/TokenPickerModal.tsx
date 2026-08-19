@@ -2,7 +2,6 @@ import { useCallback, useMemo } from 'react';
 import {
   FlatList,
   Modal,
-  Pressable,
   StyleSheet,
   Text,
   View,

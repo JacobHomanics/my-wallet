@@ -43,8 +43,6 @@ export function useAppConfig(): UseAppConfigResult {
 
   useEffect(() => {
     if (cachedConfig != null) {
-      setConfig(cachedConfig);
-      setLoading(false);
       return;
     }
 
