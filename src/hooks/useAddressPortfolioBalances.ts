@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   fetchTokensByAddressAllNetworks,
@@ -71,32 +71,31 @@ export function useAddressPortfolioBalances(
   chain: 'ethereum' | 'solana',
 ) {
   const [result, setResult] = useState<AddressPortfolioBalances | null>(null);
-  const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [resolvedAddress, setResolvedAddress] = useState('');
+  const [resolvedChain, setResolvedChain] = useState<
+    'ethereum' | 'solana' | null
+  >(null);
   const [refreshToken, setRefreshToken] = useState(0);
   const requestIdRef = useRef(0);
   const apiKey = getAlchemyApiKey();
+  const trimmed = address?.trim() ?? '';
+  const canFetch = Boolean(trimmed && apiKey);
 
   const refresh = useCallback(() => {
+    setResolvedAddress('');
+    setResolvedChain(null);
     setRefreshToken((value) => value + 1);
   }, []);
 
   useEffect(() => {
-    if (!address?.trim() || !apiKey) {
-      setResult(null);
-      setLoading(false);
-      setErrorMessage(
-        apiKey ? null : 'Missing EXPO_PUBLIC_ALCHEMY_API_KEY',
-      );
+    if (!canFetch) {
+      requestIdRef.current += 1;
       return;
     }
 
     const requestId = ++requestIdRef.current;
     const controller = new AbortController();
-    const trimmed = address.trim();
-
-    setLoading(true);
-    setErrorMessage(null);
 
     void (async () => {
       try {
@@ -114,6 +113,8 @@ export function useAddressPortfolioBalances(
         }
 
         setResult(summarizeTokens(trimmed, chain, tokens));
+        setResolvedAddress(trimmed);
+        setResolvedChain(chain);
         setErrorMessage(null);
       } catch (error) {
         if (requestId !== requestIdRef.current || controller.signal.aborted) {
@@ -124,23 +125,45 @@ export function useAddressPortfolioBalances(
             ? error.message
             : 'Failed to load wallet balances';
         setResult(null);
+        setResolvedAddress(trimmed);
+        setResolvedChain(chain);
         setErrorMessage(message);
-      } finally {
-        if (requestId === requestIdRef.current && !controller.signal.aborted) {
-          setLoading(false);
-        }
       }
     })();
 
     return () => {
       controller.abort();
     };
-  }, [address, apiKey, chain, refreshToken]);
+  }, [canFetch, trimmed, chain, apiKey, refreshToken]);
+
+  const visibleResult = useMemo(() => {
+    if (!canFetch || resolvedAddress !== trimmed || resolvedChain !== chain) {
+      return null;
+    }
+    return result;
+  }, [canFetch, resolvedAddress, trimmed, resolvedChain, chain, result]);
+
+  const visibleError = useMemo(() => {
+    if (!apiKey) {
+      return 'Missing EXPO_PUBLIC_ALCHEMY_API_KEY';
+    }
+    if (!trimmed) {
+      return null;
+    }
+    if (resolvedAddress === trimmed && resolvedChain === chain) {
+      return errorMessage;
+    }
+    return null;
+  }, [apiKey, trimmed, resolvedAddress, resolvedChain, chain, errorMessage]);
+
+  const loading =
+    canFetch &&
+    (resolvedAddress !== trimmed || resolvedChain !== chain);
 
   return {
-    result,
+    result: visibleResult,
     loading,
-    errorMessage,
+    errorMessage: visibleError,
     refresh,
   };
 }
