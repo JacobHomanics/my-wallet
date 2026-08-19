@@ -24,6 +24,7 @@ import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { usePopToSend } from '@/hooks/usePopToSend';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useGasFunding } from '@/hooks/useGasFunding';
+import { useGasSponsorship } from '@/hooks/useGasSponsorship';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { resetSendDraft, useSendDraft, useSendDraftUi } from '@/hooks/useSendDraft';
 import { useSendAmountRecipientDisplay } from '@/hooks/useSendAmountRecipientDisplay';
@@ -77,11 +78,12 @@ export function ConfirmSendScreen() {
   } = useSendDraft();
   const recipientUsername = useSendRecipientUsername();
   const { tip, tipUsd, setTip, setTipPercent } = useSendTip();
+  const { gasSponsorship, setGasSponsorship } = useGasSponsorship();
   const {
     evmAddress: taxEvmAddress,
     solanaAddress: taxSolanaAddress,
     rate: taxRate,
-  } = useAppTax();
+  } = useAppTax(gasSponsorship);
   const { allocationInputUnit, setAllocationInputUnit, broadcastMode, setBroadcastMode } =
     useSendDraftUi();
   const { enabled: useVaultUsdcForSend } = useSendVaultUsdc();
@@ -436,6 +438,7 @@ export function ConfirmSendScreen() {
 
             {taxLabel ? (
               <TaxDetailsCollapsible
+                gasSponsorship={gasSponsorship}
                 showEvm={taxFundingChain === 'ethereum'}
                 showSolana={taxFundingChain === 'solana'}
                 taxLabel={taxLabel}
@@ -457,6 +460,8 @@ export function ConfirmSendScreen() {
               onAllocationAmountChange={setAllocationAmount}
               onAllocationInputUnitChange={setAllocationInputUnit}
               onBroadcastModeChange={setBroadcastMode}
+              gasSponsorship={gasSponsorship}
+              onGasSponsorshipChange={setGasSponsorship}
               onOpenStrategyPicker={openStrategyPicker}
               onRemoveAllocation={removeAllocation}
               selectedStrategy={selectedStrategy}

@@ -1,62 +1,52 @@
-export const ALCHEMY_EVM_NETWORKS = [
-  'eth-mainnet',
-  'base-mainnet',
-  'arb-mainnet',
-  'opt-mainnet',
-  'polygon-mainnet',
-  'avax-mainnet',
-] as const;
+import {
+  ALCHEMY_EVM_NETWORKS,
+  ALCHEMY_SOLANA_NETWORKS,
+  APP_NETWORK_DEFINITIONS,
+  getNetworkDefinition,
+  type AlchemyEvmNetwork,
+  type AlchemyNetwork,
+  type AlchemySolanaNetwork,
+} from '@/lib/alchemy/networkDefinitions';
 
-/** Data API network enum is `solana-mainnet` (not `sol-mainnet`). */
-export const ALCHEMY_SOLANA_NETWORKS = ['solana-mainnet'] as const;
-
-export type AlchemyEvmNetwork = (typeof ALCHEMY_EVM_NETWORKS)[number];
-export type AlchemySolanaNetwork = (typeof ALCHEMY_SOLANA_NETWORKS)[number];
-export type AlchemyNetwork = AlchemyEvmNetwork | AlchemySolanaNetwork;
-
-const NETWORK_LABELS: Record<AlchemyNetwork, string> = {
-  'eth-mainnet': 'Ethereum',
-  'base-mainnet': 'Base',
-  'arb-mainnet': 'Arbitrum',
-  'opt-mainnet': 'Optimism',
-  'polygon-mainnet': 'Polygon',
-  'avax-mainnet': 'Avalanche',
-  'solana-mainnet': 'Solana',
+export {
+  ALCHEMY_EVM_NETWORKS,
+  ALCHEMY_SOLANA_NETWORKS,
+  type AlchemyEvmNetwork,
+  type AlchemyNetwork,
+  type AlchemySolanaNetwork,
 };
+
+const NETWORK_LABELS: Record<string, string> = Object.fromEntries(
+  APP_NETWORK_DEFINITIONS.map((def) => [def.id, def.label]),
+);
 
 const NATIVE_TOKEN_FALLBACK: Record<
-  AlchemyNetwork,
+  string,
   { symbol: string; name: string; decimals: number }
-> = {
-  'eth-mainnet': { symbol: 'ETH', name: 'Ether', decimals: 18 },
-  'base-mainnet': { symbol: 'ETH', name: 'Ether', decimals: 18 },
-  'arb-mainnet': { symbol: 'ETH', name: 'Ether', decimals: 18 },
-  'opt-mainnet': { symbol: 'ETH', name: 'Ether', decimals: 18 },
-  'polygon-mainnet': { symbol: 'POL', name: 'POL', decimals: 18 },
-  'avax-mainnet': { symbol: 'AVAX', name: 'Avalanche', decimals: 18 },
-  'solana-mainnet': { symbol: 'SOL', name: 'Solana', decimals: 9 },
-};
+> = Object.fromEntries(
+  APP_NETWORK_DEFINITIONS.map((def) => [def.id, def.native]),
+);
 
 export function getNetworkLabel(network: string): string {
-  if (network in NETWORK_LABELS) {
-    return NETWORK_LABELS[network as AlchemyNetwork];
-  }
-  return network;
+  return NETWORK_LABELS[network] ?? network;
 }
 
 export function getNativeTokenFallback(network: string) {
-  if (network in NATIVE_TOKEN_FALLBACK) {
-    return NATIVE_TOKEN_FALLBACK[network as AlchemyNetwork];
-  }
-  return { symbol: 'TOKEN', name: 'Token', decimals: 18 };
+  return (
+    NATIVE_TOKEN_FALLBACK[network] ?? {
+      symbol: 'TOKEN',
+      name: 'Token',
+      decimals: getNetworkDefinition(network)?.chain === 'solana' ? 9 : 18,
+    }
+  );
 }
 
 export function getDefaultTokenDecimals(network: string): number {
-  return network === 'solana-mainnet' ? 9 : 18;
+  return getNetworkDefinition(network)?.native.decimals ?? 18;
 }
 
 export function isSolanaNetwork(network: string): boolean {
-  return (ALCHEMY_SOLANA_NETWORKS as readonly string[]).includes(network);
+  return getNetworkDefinition(network)?.chain === 'solana';
 }
 
 export function getNetworkChain(

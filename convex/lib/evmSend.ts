@@ -24,6 +24,7 @@ export type SendEvmLegParams = {
   recipient: string;
   amountRaw: bigint;
   decimals?: number;
+  sponsor?: boolean;
 };
 
 export type SendEvmBatchLeg = {
@@ -40,6 +41,7 @@ export type SendEvmBatchParams = {
   fromAddress: string;
   network: string;
   legs: SendEvmBatchLeg[];
+  sponsor?: boolean;
 };
 
 function buildEvmCall(
@@ -102,6 +104,7 @@ export async function sendEvmLeg(params: SendEvmLegParams): Promise<string> {
     recipient,
     amountRaw,
     decimals = 6,
+    sponsor = false,
   } = params;
 
   if (
@@ -137,6 +140,7 @@ export async function sendEvmLeg(params: SendEvmLegParams): Promise<string> {
       caip2,
       params: { transaction },
       authorization_context: authorizationContext,
+      ...(sponsor ? { sponsor: true } : {}),
     });
 
     if (!result.hash) {
@@ -159,6 +163,7 @@ export async function sendEvmBatch(params: SendEvmBatchParams): Promise<string> 
     fromAddress,
     network,
     legs,
+    sponsor = false,
   } = params;
 
   if (legs.length === 0) {
@@ -176,6 +181,7 @@ export async function sendEvmBatch(params: SendEvmBatchParams): Promise<string> 
       recipient: leg.recipient,
       amountRaw: leg.amountRaw,
       decimals: leg.decimals,
+      sponsor,
     });
   }
 
@@ -196,6 +202,7 @@ export async function sendEvmBatch(params: SendEvmBatchParams): Promise<string> 
         recipient: leg.recipient,
         amountRaw: leg.amountRaw,
         decimals: leg.decimals,
+        sponsor,
       });
     }
     return lastHash;
@@ -213,6 +220,7 @@ export async function sendEvmBatch(params: SendEvmBatchParams): Promise<string> 
       caip2,
       params: { calls },
       authorization_context: authorizationContext,
+      ...(sponsor ? { sponsor: true } : {}),
     });
 
     if (!result.transaction_id) {

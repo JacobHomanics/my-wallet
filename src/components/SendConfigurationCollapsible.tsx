@@ -31,6 +31,8 @@ export function SendConfigurationCollapsible({
   style,
   broadcastMode,
   onBroadcastModeChange,
+  gasSponsorship,
+  onGasSponsorshipChange,
   selectedStrategy,
   onOpenStrategyPicker,
   ...tokenAllocationProps
@@ -69,6 +71,8 @@ export function SendConfigurationCollapsible({
           <SendConfigurationFields
             broadcastMode={broadcastMode}
             onBroadcastModeChange={onBroadcastModeChange}
+            gasSponsorship={gasSponsorship}
+            onGasSponsorshipChange={onGasSponsorshipChange}
           />
 
           <View style={styles.advancedDivider} />

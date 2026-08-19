@@ -76,6 +76,7 @@ export async function simulatePaymentLegs(
           tokenAddress: leg.token.tokenAddress,
           amountRaw: leg.amountRaw,
           nativeBalanceWei: balance,
+          gasSponsored: leg.sponsor === true,
           tokenBalanceRaw: tokenBalance,
           token: leg.token,
         });
@@ -115,6 +116,7 @@ export async function simulatePaymentLegs(
           tokenAddress: leg.token.tokenAddress,
           decimals: leg.token.decimals,
           balanceLamports: balance,
+          gasSponsored: leg.sponsor === true,
         });
 
         nativeRemaining.set(

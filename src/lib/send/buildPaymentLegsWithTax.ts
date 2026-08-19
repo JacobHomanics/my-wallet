@@ -152,7 +152,7 @@ export function buildPaymentLegsWithTax(
   params: BuildPaymentLegsWithTaxParams,
 ): PaymentSendLeg[] {
   const tax = getTaxConfig();
-  const rate = params.taxRate ?? tax.rate;
+  const rate = params.taxRate ?? tax.sponsoredRate;
   const taxEvm = (params.taxEvmAddress ?? tax.evmAddress).trim();
   const taxSolana = (params.taxSolanaAddress ?? tax.solanaAddress).trim();
 

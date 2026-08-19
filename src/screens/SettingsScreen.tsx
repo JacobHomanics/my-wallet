@@ -19,6 +19,9 @@ import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
 import { useColorThemePicker } from '@/hooks/useColorThemePicker';
 import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
+import { appConfig } from '@/configs/app.config';
+import { useDefaultCashboxNetwork } from '@/hooks/useDefaultCashboxNetwork';
+import { useDefaultGasSponsorship } from '@/hooks/useDefaultGasSponsorship';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useOnrampSettings } from '@/hooks/useOnrampSettings';
@@ -82,6 +85,21 @@ export function SettingsScreen() {
     onSelectOption: onSelectColorTheme,
   } = useColorThemePicker();
   const { selectedDestinationLabel } = useOnrampSettings();
+  const { defaultCashboxNetwork } = useDefaultCashboxNetwork();
+  const { defaultGasSponsorship } = useDefaultGasSponsorship();
+
+  const sendSettingsSummary = [
+    selectedStrategy.label,
+    selectedChainPriority.label,
+    defaultCashboxNetwork ? 'Cashbox Network' : 'Device send',
+    defaultCashboxNetwork && appConfig.gasSponsorship
+      ? defaultGasSponsorship
+        ? 'Gas sponsored where available'
+        : 'You pay gas'
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <View style={styles.container}>
@@ -163,6 +181,29 @@ export function SettingsScreen() {
                   <Text style={styles.strategyLabel}>Onramp settings</Text>
                   <Text style={styles.strategyDescription}>
                     Default destination: {selectedDestinationLabel}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />
+              </Pressable>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Send</Text>
+              <Pressable
+                accessibilityLabel="Send settings"
+                accessibilityRole="button"
+                onPress={() => {
+                  navigation.navigate('sendSettings');
+                }}
+                style={({ pressed }) => [
+                  styles.strategyRow,
+                  pressed && styles.strategyRowPressed,
+                ]}
+              >
+                <View style={styles.strategyRowText}>
+                  <Text style={styles.strategyLabel}>Send settings</Text>
+                  <Text style={styles.strategyDescription} numberOfLines={2}>
+                    {sendSettingsSummary}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />

@@ -9,6 +9,8 @@ export type SendTokenParams = {
    * Privy/viem don't reuse a pending nonce ("replacement transaction underpriced").
    */
   nonce?: `0x${string}`;
+  /** Privy gas sponsorship — app pays network fees when true. */
+  sponsor?: boolean;
 };
 
 export type SendTokenResult = {
@@ -22,7 +24,7 @@ export type SendTransactionResult = {
   send: (params: SendTokenParams) => Promise<SendTokenResult>;
   /**
    * Simulates every leg (non-gas first) and throws if any would fail.
-   * Does not broadcast.
+   * Does not broadcast. Per-leg `sponsor` controls gas balance checks.
    */
   simulatePayment: (legs: SendTokenParams[]) => Promise<void>;
 };

@@ -11,7 +11,7 @@ type FrontendSendRewardsWarningModalProps = {
 };
 
 /**
- * Warns that device-signed (frontend) sends do not earn CashBox Points.
+ * Warns that device-signed sends skip Cashbox Network benefits (points + gas sponsorship).
  */
 export function FrontendSendRewardsWarningModal({
   visible,
@@ -28,7 +28,7 @@ export function FrontendSendRewardsWarningModal({
       onRequestClose={onCancel}
     >
       <Pressable
-        accessibilityLabel="Dismiss rewards warning"
+        accessibilityLabel="Dismiss Cashbox Network warning"
         accessibilityRole="button"
         onPress={onCancel}
         style={styles.backdrop}
@@ -40,10 +40,11 @@ export function FrontendSendRewardsWarningModal({
           }}
           style={styles.card}
         >
-          <Text style={styles.title}>No {REWARD_POINTS_LABEL}</Text>
+          <Text style={styles.title}>Leave Cashbox Network?</Text>
           <Text style={styles.paragraph}>
             Sending from this device skips the Ziti backend, so you will not
-            receive any {REWARD_POINTS_LABEL} for this payment.
+            receive any {REWARD_POINTS_LABEL} or gas sponsorship for this
+            payment.
           </Text>
           <View style={styles.actions}>
             <Pressable
@@ -58,7 +59,7 @@ export function FrontendSendRewardsWarningModal({
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </Pressable>
             <Pressable
-              accessibilityLabel={`Continue without ${REWARD_POINTS_LABEL}`}
+              accessibilityLabel={`Continue without ${REWARD_POINTS_LABEL} or gas sponsorship`}
               accessibilityRole="button"
               onPress={onConfirm}
               style={({ pressed }) => [

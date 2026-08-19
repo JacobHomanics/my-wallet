@@ -32,6 +32,10 @@ export function ProfileStack() {
         component={profileStackScreens.onrampSettings}
       />
       <NativeStack.Screen
+        name="sendSettings"
+        component={profileStackScreens.sendSettings}
+      />
+      <NativeStack.Screen
         name="earnSettings"
         component={profileStackScreens.earnSettings}
       />

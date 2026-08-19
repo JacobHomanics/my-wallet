@@ -145,6 +145,7 @@ export function MainTabs() {
             (focusedRoute === 'settings' ||
               focusedRoute === 'profileSettings' ||
               focusedRoute === 'onrampSettings' ||
+              focusedRoute === 'sendSettings' ||
               focusedRoute === 'earnSettings');
 
           return {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
+import { useGasSponsorship } from '@/hooks/useGasSponsorship';
 import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import { floorUsdToSendableCap, formatFiatValue } from '@/lib/fiat';
 import { fetchGasFeeEstimates } from '@/lib/send/fetchGasFeeEstimates';
@@ -9,6 +10,7 @@ import {
   totalSpendableUsd,
   type NetworkGasFeeEstimate,
 } from '@/lib/send/gasReserves';
+import { sponsoredNetworksForPreference } from '@/lib/privy/gasSponsorshipNetworks';
 import { isGasToken } from '@/lib/strategies/gasTokens';
 
 const EMPTY_ESTIMATES = new Map<string, NetworkGasFeeEstimate>();
@@ -33,6 +35,7 @@ export function useSpendableTokens(tokens: OwnedToken[]): {
   gasEstimatesReady: boolean;
 } {
   const { rate, currencyCode, defaultFormattedZero } = useFiatDisplay();
+  const { gasSponsorship } = useGasSponsorship();
 
   const networksKey = useMemo(() => {
     const networks = [
@@ -95,9 +98,14 @@ export function useSpendableTokens(tokens: OwnedToken[]): {
   const gasEstimatesReady =
     !networksKey || fetched?.networksKey === networksKey;
 
+  const sponsoredNetworks = useMemo(
+    () => sponsoredNetworksForPreference(gasSponsorship),
+    [gasSponsorship],
+  );
+
   const spendableTokens = useMemo(
-    () => applyGasReserves(tokens, feeEstimates),
-    [feeEstimates, tokens],
+    () => applyGasReserves(tokens, feeEstimates, sponsoredNetworks),
+    [feeEstimates, sponsoredNetworks, tokens],
   );
 
   const rawAvailableUsd = useMemo(

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { formatRawTokenBalance, formatUsdValue, type OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import { getAlchemyApiKey } from '@/lib/alchemy/alchemyCredentials';
-import { fetchTokensByAddress } from '@/lib/alchemy/fetchTokensByAddress';
+import { fetchTokensByAddressAllNetworks } from '@/lib/alchemy/fetchTokensByAddress';
 import {
   ALCHEMY_EVM_NETWORKS,
   ALCHEMY_SOLANA_NETWORKS,
@@ -73,17 +73,13 @@ export function useWalletBalanceSearch(query: string) {
 
       void (async () => {
         try {
-          const tokens = await fetchTokensByAddress({
+          const tokens = await fetchTokensByAddressAllNetworks({
             apiKey,
-            queries: [
-              {
-                address: trimmed,
-                networks:
-                  chain === 'ethereum'
-                    ? ALCHEMY_EVM_NETWORKS
-                    : ALCHEMY_SOLANA_NETWORKS,
-              },
-            ],
+            address: trimmed,
+            networks:
+              chain === 'ethereum'
+                ? ALCHEMY_EVM_NETWORKS
+                : ALCHEMY_SOLANA_NETWORKS,
             signal: controller.signal,
           });
           if (requestId !== requestIdRef.current || controller.signal.aborted) {

@@ -12,13 +12,14 @@ export type RewardTokenBalanceResult = {
   symbol: typeof REWARD_TOKEN_SYMBOL;
   loading: boolean;
   ready: boolean;
+  error: string | null;
 };
 
 /**
  * User's CashBox Points balance from the Base reward token via Alchemy.
  */
 export function useRewardTokenBalance(): RewardTokenBalanceResult {
-  const { tokens, loading, ready } = useTokenBalances();
+  const { tokens, loading, ready, error } = useTokenBalances();
 
   const balanceFormatted = useMemo(() => {
     const match = tokens.find((token) =>
@@ -32,5 +33,6 @@ export function useRewardTokenBalance(): RewardTokenBalanceResult {
     symbol: REWARD_TOKEN_SYMBOL,
     loading,
     ready,
+    error,
   };
 }

@@ -35,6 +35,7 @@ export type SendSolanaLegParams = {
   recipient: string;
   amountRaw: bigint;
   decimals: number;
+  sponsor?: boolean;
 };
 
 function getSolanaRpc() {
@@ -142,6 +143,7 @@ export async function sendSolanaLeg(
     recipient,
     amountRaw,
     decimals,
+    sponsor = false,
   } = params;
 
   const serialized = await buildSolanaTransferTransaction({
@@ -160,6 +162,7 @@ export async function sendSolanaLeg(
       transaction: serialized,
       authorization_context: authorizationContext,
       optimistic_broadcast: true,
+      ...(sponsor ? { sponsor: true } : {}),
     });
 
   if (!result.hash) {

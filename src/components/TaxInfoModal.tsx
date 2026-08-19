@@ -2,6 +2,8 @@ import { useThemedStyles } from '@/hooks/useThemedStyles';
 import {StyleSheet,  Modal, Pressable, Text, View } from 'react-native';
 import type { ThemeColors } from '@/theme/types';
 
+import { useAppTax } from '@/hooks/useAppTax';
+
 type TaxInfoModalProps = {
   visible: boolean;
   onClose: () => void;
@@ -11,6 +13,7 @@ type TaxInfoModalProps = {
  * Explains the app service fee.
  */
 export function TaxInfoModal({ visible, onClose }: TaxInfoModalProps) {
+  const { sponsoredRatePercentLabel, unsponsoredRatePercentLabel } = useAppTax();
   const styles = useThemedStyles(createStyles);
 
   return (
@@ -39,6 +42,9 @@ export function TaxInfoModal({ visible, onClose }: TaxInfoModalProps) {
             <Text style={styles.paragraph}>
               Every transfer includes a small service fee that helps us operate
               and improve the platform.
+            </Text>
+            <Text style={styles.paragraph}>
+              {`The rate depends on gas sponsorship: ${sponsoredRatePercentLabel}% when Cashbox pays network fees on supported chains, and ${unsponsoredRatePercentLabel}% when you pay network fees yourself.`}
             </Text>
             <Text style={styles.paragraph}>
               {

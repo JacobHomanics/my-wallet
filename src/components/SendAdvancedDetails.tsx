@@ -24,6 +24,7 @@ import type { SendBroadcastMode } from '@/lib/send/broadcastMode';
 import type { TaxFundingPick } from '@/lib/send/buildPaymentLegsWithTax';
 import type { GasFundingPick } from '@/lib/send/gasReserves';
 import { REWARD_POINTS_LABEL } from '@/lib/rewardToken';
+import { isGasSponsorshipAvailable } from '@/hooks/useGasSponsorship';
 import {
   formatVaultUsdcFundingSplit,
   getVaultUsdcTaxFundingKey,
@@ -38,6 +39,8 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 export type SendConfigurationFieldsProps = {
   broadcastMode: SendBroadcastMode;
   onBroadcastModeChange: (mode: SendBroadcastMode) => void;
+  gasSponsorship: boolean;
+  onGasSponsorshipChange: (enabled: boolean) => void;
 };
 
 export type SendTokenAllocationsProps = {
@@ -177,6 +180,8 @@ function ReservedAllocationRow({
 export function SendConfigurationFields({
   broadcastMode,
   onBroadcastModeChange,
+  gasSponsorship,
+  onGasSponsorshipChange,
 }: SendConfigurationFieldsProps) {
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
@@ -210,8 +215,12 @@ export function SendConfigurationFields({
 
   const onConfirmFrontendWarning = useCallback(() => {
     setFrontendWarningOpen(false);
+    onGasSponsorshipChange(false);
     onBroadcastModeChange('frontend');
-  }, [onBroadcastModeChange]);
+  }, [onBroadcastModeChange, onGasSponsorshipChange]);
+
+  const cashboxNetworkEnabled = broadcastMode === 'backend';
+  const showGasSponsorshipToggle = isGasSponsorshipAvailable() && cashboxNetworkEnabled;
 
   return (
     <>
@@ -243,7 +252,8 @@ export function SendConfigurationFields({
         <View style={styles.broadcastText}>
           <Text style={styles.broadcastLabel}>Send from this device</Text>
           <Text style={styles.broadcastHint}>
-            Skips backend broadcast and {REWARD_POINTS_LABEL}
+            Skips backend broadcast, {REWARD_POINTS_LABEL}
+            {isGasSponsorshipAvailable() ? ', and gas sponsorship' : ''}
           </Text>
         </View>
         <Switch
@@ -255,6 +265,31 @@ export function SendConfigurationFields({
           onValueChange={onFrontendSendChange}
         />
       </View>
+
+      {showGasSponsorshipToggle ? (
+        <>
+          <View style={styles.advancedDivider} />
+
+          <View style={styles.broadcastRow}>
+            <View style={styles.broadcastText}>
+              <Text style={styles.broadcastLabel}>Gas sponsorship where available</Text>
+              <Text style={styles.broadcastHint}>
+                {gasSponsorship
+                  ? 'App pays fees on supported chains'
+                  : 'You pay network fees from your wallet'}
+              </Text>
+            </View>
+            <Switch
+              accessibilityLabel="Gas sponsorship where available"
+              trackColor={{ false: colors.border, true: colors.borderStrong }}
+              thumbColor={gasSponsorship ? colors.primary : colors.bg}
+              ios_backgroundColor={colors.border}
+              value={gasSponsorship}
+              onValueChange={onGasSponsorshipChange}
+            />
+          </View>
+        </>
+      ) : null}
 
       <FrontendSendRewardsWarningModal
         visible={frontendWarningOpen}
@@ -556,6 +591,8 @@ export function SendAdvancedDetails(props: SendAdvancedDetailsProps) {
       <SendConfigurationFields
         broadcastMode={props.broadcastMode}
         onBroadcastModeChange={props.onBroadcastModeChange}
+        gasSponsorship={props.gasSponsorship}
+        onGasSponsorshipChange={props.onGasSponsorshipChange}
       />
       <View style={styles.advancedDivider} />
       <SendTokenAllocations

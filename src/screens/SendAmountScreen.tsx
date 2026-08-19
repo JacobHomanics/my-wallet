@@ -23,6 +23,7 @@ import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useGasFunding } from '@/hooks/useGasFunding';
+import { useGasSponsorship } from '@/hooks/useGasSponsorship';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useSendAmountRecipientDisplay } from '@/hooks/useSendAmountRecipientDisplay';
 import { useClearSendRecipientOnBack } from '@/hooks/useClearSendRecipientOnBack';
@@ -68,6 +69,7 @@ export function SendAmountScreen() {
   } = useSendSpendableTokens();
   const { allocationInputUnit, setAllocationInputUnit, broadcastMode, setBroadcastMode } =
     useSendDraftUi();
+  const { gasSponsorship, setGasSponsorship } = useGasSponsorship();
   const { accountNumber, recipientName, recipientProfilePhotoUrl, recipientIsFarcaster, recipientIsEns } =
     useSendDraft();
   const recipientUsername = useSendRecipientUsername();
@@ -329,6 +331,7 @@ export function SendAmountScreen() {
                 ) : null}
 
                 <TaxDetailsCollapsible
+                  gasSponsorship={gasSponsorship}
                   showEvm={showTaxEvm}
                   showSolana={showTaxSolana}
                   style={styles.taxSection}
@@ -354,6 +357,8 @@ export function SendAmountScreen() {
                   onAllocationAmountChange={setAllocationAmount}
                   onAllocationInputUnitChange={setAllocationInputUnit}
                   onBroadcastModeChange={setBroadcastMode}
+                  gasSponsorship={gasSponsorship}
+                  onGasSponsorshipChange={setGasSponsorship}
                   onOpenStrategyPicker={openStrategyPicker}
                   onRemoveAllocation={removeAllocation}
                   selectedStrategy={selectedStrategy}

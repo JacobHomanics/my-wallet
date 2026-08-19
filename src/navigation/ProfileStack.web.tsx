@@ -42,6 +42,10 @@ export function ProfileStack() {
         component={profileStackScreens.onrampSettings}
       />
       <WebStack.Screen
+        name="sendSettings"
+        component={profileStackScreens.sendSettings}
+      />
+      <WebStack.Screen
         name="earnSettings"
         component={profileStackScreens.earnSettings}
       />

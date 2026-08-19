@@ -7,9 +7,12 @@ import {
   convertUsdToFiat,
   formatFiatAmountInput,
   formatFiatValue,
+  formatFiatValueWithDigits,
+  formatServiceFeeAmountInput,
   formatSignedFiatValue,
   getCurrencySymbol,
   parseFiatInput,
+  serviceFeeFractionDigits,
 } from '@/lib/fiat';
 
 /**
@@ -55,6 +58,32 @@ export function useFiatDisplay() {
     [convertFromUsd, currencyCode],
   );
 
+  const formatServiceFeeFromUsd = useCallback(
+    (usd: number | null): string | null => {
+      const display = convertFromUsd(usd);
+      if (display == null) {
+        return null;
+      }
+      return formatFiatValueWithDigits(
+        display,
+        currencyCode,
+        serviceFeeFractionDigits(currencyCode),
+      );
+    },
+    [convertFromUsd, currencyCode],
+  );
+
+  const formatServiceFeeAmountInputFromUsd = useCallback(
+    (usd: number): string => {
+      const display = convertFromUsd(usd);
+      if (display == null) {
+        return '0';
+      }
+      return formatServiceFeeAmountInput(display, currencyCode);
+    },
+    [convertFromUsd, currencyCode],
+  );
+
   const formatAmountInputFromUsd = useCallback(
     (usd: number): string => {
       const display = convertFromUsd(usd);
@@ -80,6 +109,9 @@ export function useFiatDisplay() {
   const defaultFormattedZero =
     formatFiatValue(0, currencyCode) ?? `${currencySymbol}0.00`;
 
+  const defaultServiceFeeFormattedZero =
+    formatServiceFeeFromUsd(0) ?? `${currencySymbol}0.0000`;
+
   const formatSignedFromUsd = useCallback(
     (usd: number): string | null => {
       const display = convertFromUsd(usd);
@@ -102,10 +134,13 @@ export function useFiatDisplay() {
     convertFromUsd,
     convertToUsd,
     formatFromUsd,
+    formatServiceFeeFromUsd,
+    formatServiceFeeAmountInputFromUsd,
     formatSignedFromUsd,
     formatAmountInputFromUsd,
     formatAmountInput: formatFiatAmountInput,
     parseDisplayInputToUsd,
     defaultFormattedZero,
+    defaultServiceFeeFormattedZero,
   };
 }

@@ -1,30 +1,25 @@
 import { getAlchemyApiKey } from '@/lib/alchemy/alchemyCredentials';
 import {
+  APP_NETWORK_DEFINITIONS,
+  EVM_CHAIN_IDS,
+  getNetworkDefinition,
+} from '@/lib/alchemy/networkDefinitions';
+import {
   ALCHEMY_EVM_NETWORKS,
   getNetworkLabel,
   type AlchemyEvmNetwork,
 } from '@/lib/alchemy/networks';
 
-export const EVM_CHAIN_IDS: Record<AlchemyEvmNetwork, number> = {
-  'eth-mainnet': 1,
-  'base-mainnet': 8453,
-  'arb-mainnet': 42161,
-  'opt-mainnet': 10,
-  'polygon-mainnet': 137,
-  'avax-mainnet': 43114,
-};
+export { EVM_CHAIN_IDS };
 
 const NATIVE_CURRENCY: Record<
-  AlchemyEvmNetwork,
+  string,
   { name: string; symbol: string; decimals: number }
-> = {
-  'eth-mainnet': { name: 'Ether', symbol: 'ETH', decimals: 18 },
-  'base-mainnet': { name: 'Ether', symbol: 'ETH', decimals: 18 },
-  'arb-mainnet': { name: 'Ether', symbol: 'ETH', decimals: 18 },
-  'opt-mainnet': { name: 'Ether', symbol: 'ETH', decimals: 18 },
-  'polygon-mainnet': { name: 'POL', symbol: 'POL', decimals: 18 },
-  'avax-mainnet': { name: 'Avalanche', symbol: 'AVAX', decimals: 18 },
-};
+> = Object.fromEntries(
+  APP_NETWORK_DEFINITIONS.filter((def) => def.chain === 'ethereum').map(
+    (def) => [def.id, def.native],
+  ),
+);
 
 export function isAlchemyEvmNetwork(
   network: string,
@@ -33,13 +28,19 @@ export function isAlchemyEvmNetwork(
 }
 
 export function getEvmChainId(network: string): number {
-  if (!isAlchemyEvmNetwork(network)) {
+  const chainId = EVM_CHAIN_IDS[network];
+  if (chainId == null) {
     throw new Error(`Unsupported EVM network: ${network}`);
   }
-  return EVM_CHAIN_IDS[network];
+  return chainId;
 }
 
 export function getAlchemyRpcUrl(network: string): string {
+  const customRpc = getNetworkDefinition(network)?.rpcUrl;
+  if (customRpc) {
+    return customRpc;
+  }
+
   const apiKey = getAlchemyApiKey();
   if (!apiKey) {
     throw new Error('Missing EXPO_PUBLIC_ALCHEMY_API_KEY');
@@ -59,22 +60,23 @@ export function getSolanaRpcSubscriptionsUrl(): string {
 }
 
 export function getEvmNativeCurrency(network: string) {
-  if (!isAlchemyEvmNetwork(network)) {
-    return { name: 'Ether', symbol: 'ETH', decimals: 18 };
+  if (network in NATIVE_CURRENCY) {
+    return NATIVE_CURRENCY[network];
   }
-  return NATIVE_CURRENCY[network];
+  return getNetworkDefinition(network)?.native ?? {
+    name: 'Ether',
+    symbol: 'ETH',
+    decimals: 18,
+  };
 }
 
 export function getEvmAddChainParams(network: string) {
-  if (!isAlchemyEvmNetwork(network)) {
-    throw new Error(`Unsupported EVM network: ${network}`);
-  }
+  const chainId = getEvmChainId(network);
 
-  const chainId = EVM_CHAIN_IDS[network];
   return {
     chainId: `0x${chainId.toString(16)}`,
     chainName: getNetworkLabel(network),
-    nativeCurrency: NATIVE_CURRENCY[network],
+    nativeCurrency: getEvmNativeCurrency(network),
     rpcUrls: [getAlchemyRpcUrl(network)],
   };
 }

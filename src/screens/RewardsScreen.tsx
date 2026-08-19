@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TokenIcon } from '@/components/TokenIcon';
+import { BalanceLoadErrorFooter } from '@/components/BalanceLoadErrorFooter';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useRewardTokenBalance } from '@/hooks/useRewardTokenBalance';
@@ -48,6 +49,7 @@ export function RewardsScreen() {
   const {
     balanceFormatted: rewardBalance,
     loading: rewardLoading,
+    error,
   } = useRewardTokenBalance();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const { copy, isCopied } = useCopyToClipboard();
@@ -92,9 +94,26 @@ export function RewardsScreen() {
           ) : (
             <View style={styles.main}>
               <Text style={styles.balanceLabel}>{REWARD_POINTS_LABEL}</Text>
-              <Text style={styles.balance} accessibilityRole="header">
-                {rewardBalance}
-              </Text>
+              {error ? (
+                <View style={styles.balanceUnavailable}>
+                  <Text
+                    accessibilityLabel="Balance unavailable"
+                    accessibilityRole="header"
+                    style={[styles.balance, styles.balanceUnavailableValue]}
+                  >
+                    —
+                  </Text>
+                  <BalanceLoadErrorFooter
+                    onRetry={onRefresh}
+                    retrying={refreshing}
+                    style={styles.balanceUnavailableFooter}
+                  />
+                </View>
+              ) : (
+                <Text style={styles.balance} accessibilityRole="header">
+                  {rewardBalance}
+                </Text>
+              )}
               <Text style={styles.hint}>
                 Earn {REWARD_POINTS_LABEL} when you send or complete a payment
                 with someone else!
@@ -239,6 +258,16 @@ function createStyles(c: ThemeColors) {
     letterSpacing: -1,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
+  },
+  balanceUnavailable: {
+    alignItems: 'center',
+    paddingBottom: 20,
+  },
+  balanceUnavailableValue: {
+    color: '#86a894',
+  },
+  balanceUnavailableFooter: {
+    marginTop: 10,
   },
   hint: {
     marginTop: 20,

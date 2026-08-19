@@ -1,7 +1,9 @@
 import { useCallback, useState } from 'react';
+import { Platform } from 'react-native';
 import { useAction } from 'convex/react';
 
 import { api } from '../../convex/_generated/api';
+import { getSendGasSponsorship } from '@/hooks/useGasSponsorship';
 import type {
   SendTokenParams,
   SendTokenResult,
@@ -10,6 +12,7 @@ import type {
 import { useSendTransaction } from '@/hooks/useSendTransaction';
 import { useUserWallets } from '@/hooks/useUserWallets';
 import { getNetworkChain } from '@/lib/alchemy/networks';
+import { shouldSponsorGasForNetwork } from '@/lib/privy/gasSponsorshipNetworks';
 import type { SendBroadcastMode } from '@/lib/send/broadcastMode';
 import { createEvmNonceAllocator } from '@/lib/send/evmNonce';
 import { retrySendOperation } from '@/lib/send/retrySendOperation';
@@ -88,14 +91,44 @@ function orderPaymentLegs(legs: PaymentLeg[]): PaymentLeg[] {
   });
 }
 
+function mapConvexLegResults(
+  legs: {
+    hash: string;
+    chain: 'ethereum' | 'solana';
+    tokenId: string;
+    symbol: string;
+    amount: string;
+    network: string;
+    networkLabel: string;
+    tokenName: string;
+    logoUrl: string | null;
+    isTax?: boolean;
+  }[],
+): SendPaymentLegResult[] {
+  return legs.map((leg) => ({
+    hash: leg.hash,
+    chain: leg.chain,
+    tokenId: leg.tokenId,
+    symbol: leg.symbol,
+    amount: leg.amount,
+    network: leg.network,
+    networkLabel: leg.networkLabel,
+    tokenName: leg.tokenName,
+    logoUrl: leg.logoUrl,
+    isTax: leg.isTax === true,
+  }));
+}
+
 async function sendFrontendEvmLeg(params: {
   send: SendTransactionResult['send'];
   leg: PaymentLeg;
   fromAddress: string;
   nonceAllocator: ReturnType<typeof createEvmNonceAllocator> | null;
   previousHash: string | undefined;
+  sponsor: boolean;
 }): Promise<SendTokenResult> {
-  const { send, leg, fromAddress, nonceAllocator, previousHash } = params;
+  const { send, leg, fromAddress, nonceAllocator, previousHash, sponsor } =
+    params;
 
   return retrySendOperation(async () => {
     if (previousHash) {
@@ -114,6 +147,7 @@ async function sendFrontendEvmLeg(params: {
       recipient: leg.recipient,
       amountRaw: leg.amountRaw,
       nonce,
+      sponsor,
     });
   });
 }
@@ -151,8 +185,11 @@ export function useSendPayment(): SendPaymentResult {
 
       return runExclusiveSend(async () => {
         const broadcastMode = options?.broadcastMode ?? 'backend';
+        const gasSponsorship = getSendGasSponsorship();
         const useVaultUsdc = options?.useVaultUsdc ?? true;
         const orderedLegs = orderPaymentLegs(legs);
+        const sponsorForNetwork = (network: string) =>
+          shouldSponsorGasForNetwork(network, gasSponsorship);
 
         setSending(true);
         let vaultWithdrawal: Awaited<
@@ -187,10 +224,68 @@ export function useSendPayment(): SendPaymentResult {
               token: leg.token,
               recipient: leg.recipient,
               amountRaw: leg.amountRaw,
+              sponsor: sponsorForNetwork(leg.token.network),
             })),
           );
 
+          const relayLegViaBackend = async (leg: PaymentLeg) => {
+            if (!ethereumWallet?.address) {
+              throw new Error('No Ethereum wallet available');
+            }
+            const needsSolana = leg.token.network === 'solana-mainnet';
+            if (needsSolana && !solanaWallet?.address) {
+              throw new Error('No Solana wallet available');
+            }
+
+            const result = await sendPaymentAction({
+              ethereumWalletId: ethereumWallet.id ?? '',
+              solanaWalletId: solanaWallet?.id ?? null,
+              ethereumAddress: ethereumWallet.address,
+              solanaAddress: solanaWallet?.address ?? null,
+              gasSponsorship: true,
+              skipReward: true,
+              legs: [toConvexSendLegs([leg])[0]!],
+              useVaultUsdc: false,
+            });
+
+            return mapConvexLegResults(result.legs);
+          };
+
           if (broadcastMode === 'frontend') {
+            const allSponsoredNative =
+              Platform.OS !== 'web' &&
+              orderedLegs.every((leg) => sponsorForNetwork(leg.token.network));
+
+            if (allSponsoredNative) {
+              if (!ethereumWallet?.address) {
+                throw new Error('No Ethereum wallet available');
+              }
+              const needsSolana = orderedLegs.some(
+                (leg) => leg.token.network === 'solana-mainnet',
+              );
+              if (needsSolana && !solanaWallet?.address) {
+                throw new Error('No Solana wallet available');
+              }
+
+              const result = await sendPaymentAction({
+                ethereumWalletId: ethereumWallet.id ?? '',
+                solanaWalletId: solanaWallet?.id ?? null,
+                ethereumAddress: ethereumWallet.address,
+                solanaAddress: solanaWallet?.address ?? null,
+                gasSponsorship: true,
+                skipReward: true,
+                legs: convexLegs,
+                useVaultUsdc: false,
+              });
+
+              return {
+                legs: mapConvexLegResults(result.legs),
+                rewardAmount: null,
+                rewardHash: null,
+                rewardFailed: false,
+              };
+            }
+
             const ethereumFrom = ethereumWallet?.address ?? null;
             if (!ethereumFrom) {
               throw new Error('No Ethereum wallet available');
@@ -198,27 +293,35 @@ export function useSendPayment(): SendPaymentResult {
 
             const results: SendPaymentLegResult[] = [];
             const lastEvmHashByNetwork = new Map<string, string>();
-            const nonceAllocator = ethereumFrom
-              ? createEvmNonceAllocator(ethereumFrom)
-              : null;
+            const nonceAllocator = createEvmNonceAllocator(ethereumFrom);
 
             let legIndex = 0;
             while (legIndex < orderedLegs.length) {
               const leg = orderedLegs[legIndex]!;
               const chain = getNetworkChain(leg.token.network);
 
-              if (chain === 'ethereum') {
-                if (!ethereumFrom) {
-                  throw new Error('No Ethereum wallet available');
-                }
+              if (
+                Platform.OS !== 'web' &&
+                sponsorForNetwork(leg.token.network)
+              ) {
+                const relayed = await relayLegViaBackend(leg);
+                results.push(...relayed);
+                legIndex += 1;
+                continue;
+              }
 
+              if (chain === 'ethereum') {
                 const network = leg.token.network;
                 const evmGroup: PaymentLeg[] = [];
                 while (
                   legIndex < orderedLegs.length &&
                   getNetworkChain(orderedLegs[legIndex]!.token.network) ===
                     'ethereum' &&
-                  orderedLegs[legIndex]!.token.network === network
+                  orderedLegs[legIndex]!.token.network === network &&
+                  !(
+                    Platform.OS !== 'web' &&
+                    sponsorForNetwork(orderedLegs[legIndex]!.token.network)
+                  )
                 ) {
                   evmGroup.push(orderedLegs[legIndex]!);
                   legIndex += 1;
@@ -232,6 +335,7 @@ export function useSendPayment(): SendPaymentResult {
                     fromAddress: ethereumFrom,
                     nonceAllocator,
                     previousHash,
+                    sponsor: sponsorForNetwork(item.token.network),
                   });
                   previousHash = result.hash;
                   lastEvmHashByNetwork.set(network, result.hash);
@@ -256,6 +360,7 @@ export function useSendPayment(): SendPaymentResult {
                 token: leg.token,
                 recipient: leg.recipient,
                 amountRaw: leg.amountRaw,
+                sponsor: sponsorForNetwork(leg.token.network),
               });
 
               results.push({
@@ -297,23 +402,13 @@ export function useSendPayment(): SendPaymentResult {
             solanaWalletId: solanaWallet?.id ?? null,
             ethereumAddress: ethereumWallet.address,
             solanaAddress: solanaWallet?.address ?? null,
+            gasSponsorship,
             legs: convexLegs,
             useVaultUsdc,
           });
 
           return {
-            legs: result.legs.map((leg) => ({
-              hash: leg.hash,
-              chain: leg.chain,
-              tokenId: leg.tokenId,
-              symbol: leg.symbol,
-              amount: leg.amount,
-              network: leg.network,
-              networkLabel: leg.networkLabel,
-              tokenName: leg.tokenName,
-              logoUrl: leg.logoUrl,
-              isTax: leg.isTax === true,
-            })),
+            legs: mapConvexLegResults(result.legs),
             rewardAmount: result.rewardAmount,
             rewardHash: result.rewardHash,
             rewardFailed: result.rewardFailed === true,

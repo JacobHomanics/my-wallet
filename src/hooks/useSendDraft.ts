@@ -1,5 +1,6 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
+import { getDefaultCashboxNetwork } from '@/hooks/useDefaultCashboxNetwork';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import type { PaymentStrategyId } from '@/lib/strategies';
 import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
@@ -48,6 +49,11 @@ export type SendDraft = {
    */
   broadcastMode: SendBroadcastMode;
   /**
+   * When set, overrides the user's default gas sponsorship for this send only.
+   * Ignored when `appConfig.gasSponsorship` is false or broadcast is frontend.
+   */
+  gasSponsorship: boolean | null;
+  /**
    * When true for this send, include vault USDC in available balance and
    * withdraw from the vault before broadcasting.
    */
@@ -73,10 +79,19 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   allocationInputUnit: 'token',
   strategyId: null,
   broadcastMode: 'backend',
+  gasSponsorship: null,
   useVaultUsdc: true,
 };
 
-let sendDraft: SendDraft = { ...DEFAULT_SEND_DRAFT };
+function freshSendDraft(): SendDraft {
+  const throughCashbox = getDefaultCashboxNetwork();
+  return {
+    ...DEFAULT_SEND_DRAFT,
+    broadcastMode: throughCashbox ? 'backend' : 'frontend',
+  };
+}
+
+let sendDraft: SendDraft = freshSendDraft();
 const listeners = new Set<DraftListener>();
 
 function subscribe(listener: DraftListener): () => void {
@@ -98,7 +113,7 @@ export function updateSendDraft(partial: Partial<SendDraft>): void {
 }
 
 export function resetSendDraft(): void {
-  sendDraft = { ...DEFAULT_SEND_DRAFT };
+  sendDraft = freshSendDraft();
   listeners.forEach((listener) => {
     listener();
   });
@@ -122,7 +137,7 @@ export function hydrateSendDraftFromConfirmParams(params: {
   const name = params.recipientName?.trim() || null;
   const profilePhotoUrl = params.recipientProfilePhotoUrl?.trim() || null;
   sendDraft = {
-    ...DEFAULT_SEND_DRAFT,
+    ...freshSendDraft(),
     accountNumber: params.identity?.trim() ?? '',
     ethereumRecipient:
       decoded?.evmAddress ?? params.ethereumRecipient?.trim() ?? '',
@@ -204,7 +219,10 @@ export function useSendDraftUi() {
   }, []);
 
   const setBroadcastMode = useCallback((broadcastMode: SendBroadcastMode) => {
-    updateSendDraft({ broadcastMode });
+    updateSendDraft({
+      broadcastMode,
+      ...(broadcastMode === 'frontend' ? { gasSponsorship: false } : {}),
+    });
   }, []);
 
   const setUseVaultUsdc = useCallback((useVaultUsdc: boolean) => {

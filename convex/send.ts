@@ -5,15 +5,16 @@ import type { PrivyClient } from "@privy-io/node";
 
 import { action } from "./_generated/server";
 import { isAutoDepositPaymentLeg, tryAutoDepositReceivedUsdc } from "./lib/autoDepositReceivedUsdc";
-import { tryWithdrawVaultUsdcForSend } from "./lib/withdrawVaultUsdcForSend";
 import {
   parseVaultSendWithdrawalRecord,
   serializeVaultSendWithdrawal,
   tryRedepositVaultUsdcAfterFailedSend,
+  tryWithdrawVaultUsdcForSend,
   type VaultSendWithdrawalRecord,
 } from "./lib/withdrawVaultUsdcForSend";
 import { sendEvmBatch, sendEvmLeg } from "./lib/evmSend";
 import { shouldDeferLegForGasPayment } from "./lib/gasTokens";
+import { shouldSponsorGasForNetwork } from "./lib/gasSponsorship";
 import { getNetworkChain } from "./lib/networks";
 import { getPrivyClient, getAuthorizationContext } from "./lib/privy";
 import { sendSolanaLeg } from "./lib/solanaSend";
@@ -99,6 +100,7 @@ async function sendEvmLegGroup(params: {
   network: string;
   legs: SendLeg[];
   previousHash: string | undefined;
+  sponsor: boolean;
 }): Promise<{ leg: SendLeg; hash: string }[]> {
   const {
     ctx,
@@ -109,6 +111,7 @@ async function sendEvmLegGroup(params: {
     network,
     legs,
     previousHash,
+    sponsor,
   } = params;
 
   const sentLegs: { leg: SendLeg; hash: string }[] = [];
@@ -159,6 +162,7 @@ async function sendEvmLegGroup(params: {
       recipient: leg.recipient,
       amountRaw: BigInt(leg.amountRaw),
       decimals: leg.decimals,
+      sponsor,
     });
 
     sentLegs.push({ leg, hash: lastHash });
@@ -187,6 +191,7 @@ async function sendEvmLegGroup(params: {
           amountRaw: BigInt(item.amountRaw),
           decimals: item.decimals,
         })),
+        sponsor,
       });
       for (const leg of batchableLegs) {
         sentLegs.push({ leg, hash });
@@ -204,6 +209,7 @@ async function sendEvmLegGroup(params: {
         recipient: leg.recipient,
         amountRaw: BigInt(leg.amountRaw),
         decimals: leg.decimals,
+        sponsor,
       });
       sentLegs.push({ leg, hash: lastHash });
     }
@@ -313,6 +319,8 @@ export const sendPayment = action({
     solanaWalletId: v.union(v.string(), v.null()),
     ethereumAddress: v.string(),
     solanaAddress: v.union(v.string(), v.null()),
+    gasSponsorship: v.optional(v.boolean()),
+    skipReward: v.optional(v.boolean()),
     legs: v.array(sendLegValidator),
     useVaultUsdc: v.boolean(),
   },
@@ -353,6 +361,8 @@ export const sendPayment = action({
       return aGas - bGas;
     });
 
+    const gasSponsorshipEnabled = args.gasSponsorship === true;
+
     let vaultWithdrawal: Awaited<ReturnType<typeof tryWithdrawVaultUsdcForSend>> =
       null;
 
@@ -374,6 +384,10 @@ export const sendPayment = action({
       while (legIndex < orderedLegs.length) {
         const leg = orderedLegs[legIndex]!;
         const chain = getNetworkChain(leg.network);
+        const sponsor = shouldSponsorGasForNetwork(
+          leg.network,
+          gasSponsorshipEnabled,
+        );
 
         if (chain === "ethereum") {
           const network = leg.network;
@@ -398,6 +412,7 @@ export const sendPayment = action({
             network,
             legs: evmGroup,
             previousHash,
+            sponsor,
           });
 
           const lastSent = sentLegs[sentLegs.length - 1];
@@ -438,6 +453,7 @@ export const sendPayment = action({
           recipient: leg.recipient,
           amountRaw,
           decimals: leg.decimals,
+          sponsor,
         });
 
         results.push({
@@ -458,13 +474,15 @@ export const sendPayment = action({
       let rewardAmount: string | null = null;
       let rewardFailed = false;
 
-      try {
-        const reward = await sendTreasuryReward(args.ethereumAddress);
-        rewardHash = reward.hash;
-        rewardAmount = reward.amount;
-      } catch (error) {
-        rewardFailed = true;
-        console.error("Treasury reward failed after successful payment", error);
+      if (args.skipReward !== true) {
+        try {
+          const reward = await sendTreasuryReward(args.ethereumAddress);
+          rewardHash = reward.hash;
+          rewardAmount = reward.amount;
+        } catch (error) {
+          rewardFailed = true;
+          console.error("Treasury reward failed after successful payment", error);
+        }
       }
 
       return {

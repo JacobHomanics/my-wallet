@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAppTax } from '@/hooks/useAppTax';
+import { useGasSponsorship } from '@/hooks/useGasSponsorship';
 import { useChainPriority } from '@/hooks/useChainPriority';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import { registerDisplayCurrencyChangeListener } from '@/hooks/useDisplayCurrency';
@@ -255,7 +256,9 @@ export function useSendForm(
   additionalUsd?: number | null,
 ): SendFormState {
   const { selectedChainPriorityId } = useChainPriority();
-  const { taxUsdFor, payerTotalUsdFor, maxMerchantUsdFor } = useAppTax();
+  const { gasSponsorship } = useGasSponsorship();
+  const { taxUsdFor, payerTotalUsdFor, maxMerchantUsdFor } =
+    useAppTax(gasSponsorship);
   const {
     formatAmountInputFromUsd,
     parseDisplayInputToUsd,
@@ -732,7 +735,7 @@ export function useSendForm(
       return null;
     }
     if (!hasPositiveLeg) {
-      return 'Enter an amount for at least one token in advanced details.';
+      return null;
     }
     if (!recipientsValid) {
       return 'Recipient address is invalid.';

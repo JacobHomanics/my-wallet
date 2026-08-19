@@ -28,6 +28,45 @@ export function formatFiatValue(
   return formatFiatWithFractionDigits(value, currencyCode, fractionDigits);
 }
 
+export const SERVICE_FEE_FRACTION_DIGITS = 2;
+
+export function serviceFeeFractionDigits(currencyCode: string): number {
+  return currencyCode === 'JPY' || currencyCode === 'KRW'
+    ? 0
+    : SERVICE_FEE_FRACTION_DIGITS;
+}
+
+/** Formats a fiat amount with an explicit fraction digit count. */
+export function formatFiatValueWithDigits(
+  value: number | null,
+  currencyCode: string,
+  fractionDigits: number,
+): string | null {
+  if (value == null || !Number.isFinite(value)) {
+    return null;
+  }
+
+  const digits =
+    currencyCode === 'JPY' || currencyCode === 'KRW' ? 0 : fractionDigits;
+
+  return formatFiatWithFractionDigits(value, currencyCode, digits);
+}
+
+/** Formats a service fee amount for amount inputs (no currency symbol). */
+export function formatServiceFeeAmountInput(
+  value: number,
+  currencyCode: string,
+): string {
+  if (!Number.isFinite(value) || value < 0) {
+    return '0';
+  }
+  const digits = serviceFeeFractionDigits(currencyCode);
+  if (digits === 0) {
+    return String(Math.round(value));
+  }
+  return value.toFixed(digits);
+}
+
 /**
  * Formats a non-negative fiat amount, using extra decimals when standard
  * precision would round a non-zero value to zero (e.g. $0.004 → $0.0040).
