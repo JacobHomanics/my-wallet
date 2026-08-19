@@ -170,8 +170,7 @@ export function RewardsScreen() {
                 </Text>
               )}
               <Text style={styles.hint}>
-                Earn {REWARD_POINTS_LABEL} when you send with Cashbox Network —
-                larger payments earn bonus points.
+                Earn {REWARD_POINTS_LABEL} when you send with the Cashbox Network.
               </Text>
 
               <View style={styles.card}>
@@ -311,246 +310,246 @@ export function RewardsScreen() {
 
 function createStyles(c: ThemeColors) {
   return StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: c.bg,
-  },
-  flex: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    width: '100%',
-    maxWidth: 640,
-    alignSelf: 'center',
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    marginBottom: 8,
-  },
-  topBarTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 17,
-    fontWeight: '600',
-    color: c.primary,
-  },
-  topBarSpacer: {
-    width: 44,
-  },
-  body: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  main: {
-    width: '100%',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  balanceLabel: {
-    marginBottom: 12,
-    fontSize: 13,
-    fontWeight: '600',
-    color: c.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  balance: {
-    fontSize: 56,
-    fontWeight: '700',
-    color: c.primary,
-    letterSpacing: -1,
-    fontVariant: ['tabular-nums'],
-    textAlign: 'center',
-  },
-  balanceUnavailable: {
-    alignItems: 'center',
-    paddingBottom: 20,
-  },
-  balanceUnavailableValue: {
-    color: '#86a894',
-  },
-  balanceUnavailableFooter: {
-    marginTop: 10,
-  },
-  hint: {
-    marginTop: 20,
-    maxWidth: 320,
-    fontSize: 15,
-    lineHeight: 22,
-    color: c.textMuted,
-    textAlign: 'center',
-  },
-  card: {
-    marginTop: 28,
-    width: '100%',
-    maxWidth: 320,
-    backgroundColor: c.surface,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.rowBorder,
-    padding: 20,
-    gap: 8,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: c.primary,
-  },
-  cardHint: {
-    fontSize: 13,
-    color: c.textMuted,
-    lineHeight: 18,
-  },
-  inputLabel: {
-    marginTop: 4,
-    fontSize: 14,
-    fontWeight: '600',
-    color: c.primary,
-  },
-  amountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.rowBorder,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    backgroundColor: c.bg,
-    minHeight: 48,
-  },
-  amountInput: {
-    flex: 1,
-    paddingVertical: 12,
-    fontSize: 18,
-    color: c.primary,
-    fontVariant: ['tabular-nums'],
-  },
-  preview: {
-    fontSize: 14,
-    color: c.primary,
-    fontVariant: ['tabular-nums'],
-  },
-  previewMuted: {
-    fontSize: 14,
-    color: c.textMuted,
-  },
-  primaryButton: {
-    marginTop: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
-    borderRadius: 12,
-    backgroundColor: c.primary,
-  },
-  primaryButtonText: {
-    color: c.primaryText,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonPressed: {
-    opacity: 0.85,
-  },
-  error: {
-    fontSize: 14,
-    color: c.danger,
-    lineHeight: 20,
-  },
-  success: {
-    fontSize: 14,
-    color: c.primary,
-    lineHeight: 20,
-  },
-  advancedToggle: {
-    marginTop: 28,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    alignSelf: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
-  advancedTogglePressed: {
-    opacity: 0.65,
-  },
-  advancedToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: c.textMuted,
-  },
-  advanced: {
-    position: 'absolute',
-    top: '100%',
-    marginTop: 8,
-    width: '100%',
-    maxWidth: 320,
-    alignSelf: 'center',
-    backgroundColor: c.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.rowBorder,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  tokenRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 8,
-  },
-  tokenText: {
-    flex: 1,
-    minWidth: 0,
-    gap: 1,
-  },
-  tokenSymbol: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: c.primary,
-  },
-  tokenMeta: {
-    fontSize: 12,
-    color: c.textSubtle,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#d1fae5',
-  },
-  field: {
-    paddingVertical: 8,
-  },
-  fieldHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  fieldLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: c.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  fieldValue: {
-    marginTop: 4,
-    fontSize: 13,
-    lineHeight: 18,
-    color: c.primary,
-    fontVariant: ['tabular-nums'],
-  },
-  empty: {
-    fontSize: 15,
-    color: c.textSubtle,
-    textAlign: 'center',
-  },
-});
+    container: {
+      flex: 1,
+      backgroundColor: c.bg,
+    },
+    flex: {
+      flex: 1,
+    },
+    content: {
+      flex: 1,
+      width: '100%',
+      maxWidth: 640,
+      alignSelf: 'center',
+    },
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 8,
+      marginBottom: 8,
+    },
+    topBarTitle: {
+      flex: 1,
+      textAlign: 'center',
+      fontSize: 17,
+      fontWeight: '600',
+      color: c.primary,
+    },
+    topBarSpacer: {
+      width: 44,
+    },
+    body: {
+      flexGrow: 1,
+      paddingHorizontal: 24,
+      paddingTop: 48,
+      paddingBottom: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    main: {
+      width: '100%',
+      alignItems: 'center',
+      position: 'relative',
+    },
+    balanceLabel: {
+      marginBottom: 12,
+      fontSize: 13,
+      fontWeight: '600',
+      color: c.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
+    },
+    balance: {
+      fontSize: 56,
+      fontWeight: '700',
+      color: c.primary,
+      letterSpacing: -1,
+      fontVariant: ['tabular-nums'],
+      textAlign: 'center',
+    },
+    balanceUnavailable: {
+      alignItems: 'center',
+      paddingBottom: 20,
+    },
+    balanceUnavailableValue: {
+      color: '#86a894',
+    },
+    balanceUnavailableFooter: {
+      marginTop: 10,
+    },
+    hint: {
+      marginTop: 20,
+      maxWidth: 320,
+      fontSize: 15,
+      lineHeight: 22,
+      color: c.textMuted,
+      textAlign: 'center',
+    },
+    card: {
+      marginTop: 28,
+      width: '100%',
+      maxWidth: 320,
+      backgroundColor: c.surface,
+      borderRadius: 16,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.rowBorder,
+      padding: 20,
+      gap: 8,
+    },
+    cardTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: c.primary,
+    },
+    cardHint: {
+      fontSize: 13,
+      color: c.textMuted,
+      lineHeight: 18,
+    },
+    inputLabel: {
+      marginTop: 4,
+      fontSize: 14,
+      fontWeight: '600',
+      color: c.primary,
+    },
+    amountRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.rowBorder,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      backgroundColor: c.bg,
+      minHeight: 48,
+    },
+    amountInput: {
+      flex: 1,
+      paddingVertical: 12,
+      fontSize: 18,
+      color: c.primary,
+      fontVariant: ['tabular-nums'],
+    },
+    preview: {
+      fontSize: 14,
+      color: c.primary,
+      fontVariant: ['tabular-nums'],
+    },
+    previewMuted: {
+      fontSize: 14,
+      color: c.textMuted,
+    },
+    primaryButton: {
+      marginTop: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 48,
+      borderRadius: 12,
+      backgroundColor: c.primary,
+    },
+    primaryButtonText: {
+      color: c.primaryText,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    buttonDisabled: {
+      opacity: 0.5,
+    },
+    buttonPressed: {
+      opacity: 0.85,
+    },
+    error: {
+      fontSize: 14,
+      color: c.danger,
+      lineHeight: 20,
+    },
+    success: {
+      fontSize: 14,
+      color: c.primary,
+      lineHeight: 20,
+    },
+    advancedToggle: {
+      marginTop: 28,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      alignSelf: 'center',
+      paddingVertical: 8,
+      paddingHorizontal: 4,
+    },
+    advancedTogglePressed: {
+      opacity: 0.65,
+    },
+    advancedToggleText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: c.textMuted,
+    },
+    advanced: {
+      position: 'absolute',
+      top: '100%',
+      marginTop: 8,
+      width: '100%',
+      maxWidth: 320,
+      alignSelf: 'center',
+      backgroundColor: c.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.rowBorder,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+    },
+    tokenRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingVertical: 8,
+    },
+    tokenText: {
+      flex: 1,
+      minWidth: 0,
+      gap: 1,
+    },
+    tokenSymbol: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: c.primary,
+    },
+    tokenMeta: {
+      fontSize: 12,
+      color: c.textSubtle,
+    },
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: '#d1fae5',
+    },
+    field: {
+      paddingVertical: 8,
+    },
+    fieldHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 8,
+    },
+    fieldLabel: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: c.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.6,
+    },
+    fieldValue: {
+      marginTop: 4,
+      fontSize: 13,
+      lineHeight: 18,
+      color: c.primary,
+      fontVariant: ['tabular-nums'],
+    },
+    empty: {
+      fontSize: 15,
+      color: c.textSubtle,
+      textAlign: 'center',
+    },
+  });
 }
