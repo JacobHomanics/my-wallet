@@ -16,7 +16,6 @@ import { getAlchemyRpcUrl } from "./networks";
 const DEFAULT_REWARD_TOKEN =
   "0x4ed932ac83f77a5d4f3d950ab9ba90882ed06e55" as const;
 /** Whole CashBox Points tokens sent after a successful backend payment. */
-const REWARD_TOKEN_AMOUNT = "10";
 const DEFAULT_REWARD_CHAIN_ID = 8453;
 
 function getRewardChain(chainId: number) {
@@ -51,7 +50,13 @@ export type TreasuryRewardResult = {
  */
 export async function sendTreasuryReward(
   recipientAddress: string,
+  amountWhole: string,
 ): Promise<TreasuryRewardResult> {
+  const trimmed = amountWhole.trim();
+  if (!/^\d+$/.test(trimmed) || BigInt(trimmed) <= 0n) {
+    throw new Error("Reward amount must be a positive whole number");
+  }
+
   const privateKey = await loadTreasuryPrivateKey();
 
   const chainId = Number(
@@ -60,7 +65,6 @@ export async function sendTreasuryReward(
   const chain = getRewardChain(chainId);
   const tokenAddress = (process.env.REWARD_TOKEN_ADDRESS ??
     DEFAULT_REWARD_TOKEN) as Address;
-  const amountWhole = REWARD_TOKEN_AMOUNT;
 
   const account = privateKeyToAccount(privateKey);
   const transport = http(getAlchemyRpcUrl(getRewardNetworkSlug(chainId)));

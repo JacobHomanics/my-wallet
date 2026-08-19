@@ -19,6 +19,7 @@ import { getNetworkChain } from "./lib/networks";
 import { getPrivyClient, getAuthorizationContext } from "./lib/privy";
 import { sendSolanaLeg } from "./lib/solanaSend";
 import { sendTreasuryReward } from "./lib/treasuryReward";
+import { calculateRewardPoints } from "./lib/rewardPoints";
 import { waitForEvmReceipt } from "./lib/waitForEvmReceipt";
 
 const sendLegValidator = v.object({
@@ -321,6 +322,8 @@ export const sendPayment = action({
     solanaAddress: v.union(v.string(), v.null()),
     gasSponsorship: v.optional(v.boolean()),
     skipReward: v.optional(v.boolean()),
+    /** Priced merchant payment USD used to calculate CashBox Points reward. */
+    paymentUsd: v.optional(v.number()),
     legs: v.array(sendLegValidator),
     useVaultUsdc: v.boolean(),
   },
@@ -475,13 +478,19 @@ export const sendPayment = action({
       let rewardFailed = false;
 
       if (args.skipReward !== true) {
-        try {
-          const reward = await sendTreasuryReward(args.ethereumAddress);
-          rewardHash = reward.hash;
-          rewardAmount = reward.amount;
-        } catch (error) {
-          rewardFailed = true;
-          console.error("Treasury reward failed after successful payment", error);
+        const rewardPoints = calculateRewardPoints(args.paymentUsd ?? 0);
+        if (rewardPoints > 0) {
+          try {
+            const reward = await sendTreasuryReward(
+              args.ethereumAddress,
+              String(rewardPoints),
+            );
+            rewardHash = reward.hash;
+            rewardAmount = reward.amount;
+          } catch (error) {
+            rewardFailed = true;
+            console.error("Treasury reward failed after successful payment", error);
+          }
         }
       }
 

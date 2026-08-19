@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as appConfig from "../appConfig.js";
 import type * as cashback from "../cashback.js";
 import type * as contacts from "../contacts.js";
 import type * as earn from "../earn.js";
@@ -33,6 +34,7 @@ import type * as lib_privy from "../lib/privy.js";
 import type * as lib_privyTransfer from "../lib/privyTransfer.js";
 import type * as lib_redeemPoints from "../lib/redeemPoints.js";
 import type * as lib_retrySendOperation from "../lib/retrySendOperation.js";
+import type * as lib_rewardPoints from "../lib/rewardPoints.js";
 import type * as lib_solanaSend from "../lib/solanaSend.js";
 import type * as lib_stripe from "../lib/stripe.js";
 import type * as lib_treasuryReward from "../lib/treasuryReward.js";
@@ -54,6 +56,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  appConfig: typeof appConfig;
   cashback: typeof cashback;
   contacts: typeof contacts;
   earn: typeof earn;
@@ -79,6 +82,7 @@ declare const fullApi: ApiFromModules<{
   "lib/privyTransfer": typeof lib_privyTransfer;
   "lib/redeemPoints": typeof lib_redeemPoints;
   "lib/retrySendOperation": typeof lib_retrySendOperation;
+  "lib/rewardPoints": typeof lib_rewardPoints;
   "lib/solanaSend": typeof lib_solanaSend;
   "lib/stripe": typeof lib_stripe;
   "lib/treasuryReward": typeof lib_treasuryReward;

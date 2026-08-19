@@ -1,22 +1,13 @@
+import { appConfig } from "../config/app.config";
+
 /** Base mainnet USDC — keep in sync with convex/lib/gasTokens.ts. */
 export const CASHBACK_USDC_ADDRESS =
   "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913" as const;
 
 export const CASHBACK_USDC_DECIMALS = 6;
 
-/** Default whole CashBox Points redeemed per 1 USDC (100 points → $1). */
-export const DEFAULT_CASHBACK_POINTS_PER_USDC = 200;
-
 export function getCashbackPointsPerUsdc(): number {
-  const raw = process.env.CASHBACK_POINTS_PER_USDC;
-  if (raw == null || raw.trim().length === 0) {
-    return DEFAULT_CASHBACK_POINTS_PER_USDC;
-  }
-  const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new Error("CASHBACK_POINTS_PER_USDC must be a positive number");
-  }
-  return parsed;
+  return appConfig.cashback.pointsPerUsdc;
 }
 
 /** Whole-token points → USDC raw (6 decimals). */

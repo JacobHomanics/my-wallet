@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useAction } from 'convex/react';
 
 import { api } from '../../convex/_generated/api';
+import { useAppConfig } from '@/hooks/useAppConfig';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useUserWallets } from '@/hooks/useUserWallets';
 import {
@@ -31,6 +32,7 @@ export type UseCashbackRedemptionResult = {
  * Redeem CashBox Points for USDC via Convex (points → treasury, USDC → wallet).
  */
 export function useCashbackRedemption(): UseCashbackRedemptionResult {
+  const { config, ready: configReady } = useAppConfig();
   const { ready: walletsReady, wallets } = useUserWallets();
   const { refresh: refreshTokenBalances } = useTokenBalances();
   const redeemAction = useAction(api.cashback.redeem);
@@ -45,15 +47,23 @@ export function useCashbackRedemption(): UseCashbackRedemptionResult {
     null,
   );
 
-  const ready = walletsReady && Boolean(ethereumWalletId && ethereumAddress);
+  const ready =
+    configReady && walletsReady && Boolean(ethereumWalletId && ethereumAddress);
+  const pointsPerUsdc = config?.cashback.pointsPerUsdc ?? null;
 
-  const previewUsdcAmount = useCallback((pointsAmount: string) => {
-    const pointsWhole = parseWholePointsInput(pointsAmount);
-    if (pointsWhole == null) {
-      return null;
-    }
-    return pointsWholeToUsdcAmount(pointsWhole);
-  }, []);
+  const previewUsdcAmount = useCallback(
+    (pointsAmount: string) => {
+      if (pointsPerUsdc == null) {
+        return null;
+      }
+      const pointsWhole = parseWholePointsInput(pointsAmount);
+      if (pointsWhole == null) {
+        return null;
+      }
+      return pointsWholeToUsdcAmount(pointsWhole, pointsPerUsdc);
+    },
+    [pointsPerUsdc],
+  );
 
   const clearLastResult = useCallback(() => {
     setLastResult(null);

@@ -15,7 +15,6 @@ Set these on your Convex deployment (`npx convex env set KEY value`):
 | `ALCHEMY_API_KEY` | yes | Used for EVM/Solana RPC + receipt polling |
 | `TREASURY_KEYSTORE_PASSWORD` | yes | Password for `convex/keystores/treasury.json` |
 | `CASHBACK_KEYSTORE_PASSWORD` | for cashback | Password for `convex/keystores/cashback.json` (USDC redemptions) |
-| `CASHBACK_POINTS_PER_USDC` | no | Whole CashBox Points per 1 USDC (default `100`) |
 | `REWARD_TOKEN_ADDRESS` | no | Defaults to Base reward token (CashBox Points) `0x4ed932ac83f77a5d4f3d950ab9ba90882ed06e55` |
 | `REWARD_CHAIN_ID` | no | Default `8453` (Base). Use `84532` for Base Sepolia |
 
@@ -42,10 +41,9 @@ CASHBACK_KEYSTORE_PASSWORD='your-password' pnpm keystore:cashback -- --private-k
 # Fund the printed address on Base with USDC and a small amount of ETH
 
 npx convex env set CASHBACK_KEYSTORE_PASSWORD 'your-password'
-# Optional: npx convex env set CASHBACK_POINTS_PER_USDC '100'
 ```
 
-Keep `app.config.ts` → `cashback.pointsPerUsdc` in sync with `CASHBACK_POINTS_PER_USDC` for accurate UI previews.
+Reward curve and cashback conversion rates live in [`convex/config/app.config.ts`](convex/config/app.config.ts) and are exposed to the client via the `appConfig.getPublic` Convex query.
 
 ### Privy authorization key (user payment sends)
 

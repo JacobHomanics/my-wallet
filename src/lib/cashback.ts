@@ -1,10 +1,3 @@
-import { appConfig } from '@/configs/app.config';
-
-/** Whole CashBox Points redeemed per 1 USDC. */
-export function getCashbackPointsPerUsdc(): number {
-  return appConfig.cashback.pointsPerUsdc;
-}
-
 export function parseWholePointsInput(raw: string): bigint | null {
   const trimmed = raw.trim();
   if (!/^\d+$/.test(trimmed)) {
@@ -15,12 +8,15 @@ export function parseWholePointsInput(raw: string): bigint | null {
 }
 
 /** Whole-token points → USDC display string (6 decimals max). */
-export function pointsWholeToUsdcAmount(pointsWhole: bigint): string | null {
-  const pointsPerUsdc = BigInt(getCashbackPointsPerUsdc());
-  if (pointsWhole <= 0n) {
+export function pointsWholeToUsdcAmount(
+  pointsWhole: bigint,
+  pointsPerUsdc: number,
+): string | null {
+  if (pointsWhole <= 0n || !(pointsPerUsdc > 0)) {
     return null;
   }
-  const usdcRaw = (pointsWhole * 1_000_000n) / pointsPerUsdc;
+  const rate = BigInt(pointsPerUsdc);
+  const usdcRaw = (pointsWhole * 1_000_000n) / rate;
   if (usdcRaw <= 0n) {
     return null;
   }
@@ -33,9 +29,8 @@ export function pointsWholeToUsdcAmount(pointsWhole: bigint): string | null {
   return `${whole}.${fractionText}`;
 }
 
-export function formatCashbackRateLabel(): string {
-  const rate = getCashbackPointsPerUsdc();
-  return `${rate} points = 1 USDC`;
+export function formatCashbackRateLabel(pointsPerUsdc: number): string {
+  return `${pointsPerUsdc} points = 1 USDC`;
 }
 
 export function formatCashbackActionError(message: string): string {

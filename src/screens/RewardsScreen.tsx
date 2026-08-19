@@ -16,6 +16,7 @@ import { TokenIcon } from '@/components/TokenIcon';
 import { BalanceLoadErrorFooter } from '@/components/BalanceLoadErrorFooter';
 import { IconButton } from '@/components/IconButton';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
+import { useAppConfig } from '@/hooks/useAppConfig';
 import { useCashbackRedemption } from '@/hooks/useCashbackRedemption';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useRewardTokenBalance } from '@/hooks/useRewardTokenBalance';
@@ -60,6 +61,7 @@ export function RewardsScreen() {
   } = useRewardTokenBalance();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const { copy, isCopied } = useCopyToClipboard();
+  const { config: appConfig, loading: appConfigLoading } = useAppConfig();
   const {
     ready: redemptionReady,
     acting: redeeming,
@@ -93,9 +95,14 @@ export function RewardsScreen() {
   const canRedeem =
     redemptionReady &&
     !redeeming &&
+    !appConfigLoading &&
     parsedPoints != null &&
     previewUsdc != null &&
     !exceedsBalance;
+  const cashbackRateLabel =
+    appConfig != null
+      ? formatCashbackRateLabel(appConfig.cashback.pointsPerUsdc)
+      : null;
 
   const handleRedeem = useCallback(async () => {
     const result = await redeem(pointsAmount);
@@ -162,13 +169,17 @@ export function RewardsScreen() {
                 </Text>
               )}
               <Text style={styles.hint}>
-                Earn {REWARD_POINTS_LABEL} when you send or complete a payment
-                with someone else!
+                Earn {REWARD_POINTS_LABEL} when you send with Cashbox Network —
+                larger payments earn bonus points.
               </Text>
 
               <View style={styles.card}>
                 <Text style={styles.cardTitle}>Redeem for USDC</Text>
-                <Text style={styles.cardHint}>{formatCashbackRateLabel()}</Text>
+                {cashbackRateLabel ? (
+                  <Text style={styles.cardHint}>{cashbackRateLabel}</Text>
+                ) : appConfigLoading ? (
+                  <Text style={styles.cardHint}>Loading rate…</Text>
+                ) : null}
                 <Text style={styles.inputLabel}>Points to redeem</Text>
                 <View style={styles.amountRow}>
                   <TextInput

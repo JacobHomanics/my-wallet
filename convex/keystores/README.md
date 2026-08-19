@@ -17,8 +17,8 @@
 #   npx convex env set TREASURY_KEYSTORE_PASSWORD '...'
 #   npx convex env set CASHBACK_KEYSTORE_PASSWORD '...'
 #
-# Optional conversion ratio (default 100 points = 1 USDC):
-#   npx convex env set CASHBACK_POINTS_PER_USDC '100'
+# Optional conversion ratio (default in convex/config/app.config.ts):
+#   cashback.pointsPerUsdc
 #
 # Privy authorization private key stays in Convex env:
 #   npx convex env set PRIVY_AUTHORIZATION_PRIVATE_KEY 'wallet-auth:...'

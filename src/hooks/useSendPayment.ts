@@ -47,6 +47,8 @@ export type SendPaymentOutcome = {
 export type SendPaymentOptions = {
   broadcastMode?: SendBroadcastMode;
   useVaultUsdc?: boolean;
+  /** Priced merchant payment USD for CashBox Points reward calculation. */
+  paymentUsd?: number;
 };
 
 export type SendPaymentResult = {
@@ -187,6 +189,7 @@ export function useSendPayment(): SendPaymentResult {
         const broadcastMode = options?.broadcastMode ?? 'backend';
         const gasSponsorship = getSendGasSponsorship();
         const useVaultUsdc = options?.useVaultUsdc ?? true;
+        const paymentUsd = options?.paymentUsd;
         const orderedLegs = orderPaymentLegs(legs);
         const sponsorForNetwork = (network: string) =>
           shouldSponsorGasForNetwork(network, gasSponsorship);
@@ -403,6 +406,7 @@ export function useSendPayment(): SendPaymentResult {
             ethereumAddress: ethereumWallet.address,
             solanaAddress: solanaWallet?.address ?? null,
             gasSponsorship,
+            paymentUsd,
             legs: convexLegs,
             useVaultUsdc,
           });
