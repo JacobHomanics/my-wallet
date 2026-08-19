@@ -11,12 +11,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
-import { ChainPriorityPickerModal } from '@/components/ChainPriorityPickerModal';
 import { ColorThemePickerModal } from '@/components/ColorThemePickerModal';
 import { ConfirmLogoutModal } from '@/components/ConfirmLogoutModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
-import { StrategyPickerModal } from '@/components/StrategyPickerModal';
-import { useChainPriorityPicker } from '@/hooks/useChainPriorityPicker';
+import { useChainPriority } from '@/hooks/useChainPriority';
 import { useColorThemePicker } from '@/hooks/useColorThemePicker';
 import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
 import { appConfig } from '@/configs/app.config';
@@ -25,8 +23,8 @@ import { useDefaultGasSponsorship } from '@/hooks/useDefaultGasSponsorship';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useOnrampSettings } from '@/hooks/useOnrampSettings';
+import { usePaymentStrategy } from '@/hooks/usePaymentStrategy';
 import { usePopToProfile } from '@/hooks/usePopToProfile';
-import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import type { ProfileStackParamList } from '@/navigation/types';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
@@ -48,24 +46,8 @@ export function SettingsScreen() {
     cancelSignOut,
     confirmSignOut,
   } = useConfirmSignOut();
-  const {
-    strategies,
-    selectedStrategy,
-    selectedStrategyId,
-    pickerOpen,
-    openPicker,
-    closePicker,
-    onSelectStrategy,
-  } = useStrategyPicker();
-  const {
-    options: chainPriorityOptions,
-    selectedOption: selectedChainPriority,
-    selectedChainPriorityId,
-    pickerOpen: chainPriorityPickerOpen,
-    openPicker: openChainPriorityPicker,
-    closePicker: closeChainPriorityPicker,
-    onSelectOption: onSelectChainPriority,
-  } = useChainPriorityPicker();
+  const { selectedStrategy } = usePaymentStrategy();
+  const { selectedOption: selectedChainPriority } = useChainPriority();
   const {
     options: displayCurrencyOptions,
     selectedCurrency,
@@ -277,52 +259,6 @@ export function SettingsScreen() {
               </Pressable>
             </View>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Default strategy</Text>
-              <Pressable
-                accessibilityLabel={`Default strategy ${selectedStrategy.label}`}
-                accessibilityRole="button"
-                onPress={openPicker}
-                style={({ pressed }) => [
-                  styles.strategyRow,
-                  pressed && styles.strategyRowPressed,
-                ]}
-              >
-                <View style={styles.strategyRowText}>
-                  <Text style={styles.strategyLabel}>
-                    {selectedStrategy.label}
-                  </Text>
-                  <Text style={styles.strategyDescription}>
-                    {selectedStrategy.description}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
-              </Pressable>
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Chain priority</Text>
-              <Pressable
-                accessibilityLabel={`Chain priority ${selectedChainPriority.label}`}
-                accessibilityRole="button"
-                onPress={openChainPriorityPicker}
-                style={({ pressed }) => [
-                  styles.strategyRow,
-                  pressed && styles.strategyRowPressed,
-                ]}
-              >
-                <View style={styles.strategyRowText}>
-                  <Text style={styles.strategyLabel}>
-                    {selectedChainPriority.label}
-                  </Text>
-                  <Text style={styles.strategyDescription}>
-                    {selectedChainPriority.description}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
-              </Pressable>
-            </View>
-
             <Pressable
               accessibilityRole="button"
               onPress={requestSignOut}
@@ -336,22 +272,6 @@ export function SettingsScreen() {
           </View>
         </View>
       </ScrollView>
-
-      <StrategyPickerModal
-        onClose={closePicker}
-        onSelect={onSelectStrategy}
-        selectedStrategyId={selectedStrategyId}
-        strategies={strategies}
-        visible={pickerOpen}
-      />
-
-      <ChainPriorityPickerModal
-        onClose={closeChainPriorityPicker}
-        onSelect={onSelectChainPriority}
-        options={chainPriorityOptions}
-        selectedChainPriorityId={selectedChainPriorityId}
-        visible={chainPriorityPickerOpen}
-      />
 
       <DisplayCurrencyPickerModal
         onClose={closeDisplayCurrencyPicker}
