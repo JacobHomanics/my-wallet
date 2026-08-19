@@ -41,7 +41,7 @@ import { useVaultUsdcFundingSplits } from '@/hooks/useVaultUsdcFundingSplits';
 import { getNetworkChain } from '@/lib/alchemy/networks';
 import { buildPaymentLegsWithTax } from '@/lib/send/buildPaymentLegsWithTax';
 import { formatSendError } from '@/lib/send/formatSendError';
-import { computeRewardPaymentUsd } from '@/lib/rewardPoints';
+import { resolveRewardPaymentUsd } from '@/lib/rewardPoints';
 import { isUnpricedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
@@ -229,7 +229,11 @@ export function ConfirmSendScreen() {
           {
             broadcastMode,
             useVaultUsdc: useVaultUsdcForSend,
-            paymentUsd: computeRewardPaymentUsd(allocations),
+            paymentUsd: resolveRewardPaymentUsd({
+              baseUsd,
+              filledUsd,
+              allocations,
+            }),
           },
         );
         addRecentSendRecipient({
@@ -273,9 +277,11 @@ export function ConfirmSendScreen() {
   }, [
     allocations,
     accountNumber,
+    baseUsd,
     broadcastMode,
     canSend,
     clearStatus,
+    filledUsd,
     navigation,
     primaryLabel,
     recipientIsFarcaster,

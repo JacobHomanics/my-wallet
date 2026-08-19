@@ -12,7 +12,10 @@ export function calculateRewardPoints(
 ): number {
   const { referenceUsd, referencePoints, exponent, minUsd } = config;
 
-  if (!Number.isFinite(paymentUsd) || paymentUsd < minUsd) {
+  if (
+    !Number.isFinite(paymentUsd) ||
+    paymentUsd + 0.005 < config.minUsd
+  ) {
     return 0;
   }
 
@@ -32,6 +35,26 @@ export function computeRewardPaymentUsd(
   return allocations
     .filter((allocation) => !isUnpricedToken(allocation.token))
     .reduce((sum, allocation) => sum + allocation.usd, 0);
+}
+
+/**
+ * Merchant USD amount used for rewards — prefers the entered payment over
+ * allocation sums, which can round slightly below the user's amount.
+ */
+export function resolveRewardPaymentUsd(params: {
+  baseUsd: number | null;
+  filledUsd: number;
+  allocations: readonly PaymentAllocation[];
+}): number {
+  const fromAllocations = computeRewardPaymentUsd(params.allocations);
+  const fromIntent =
+    params.baseUsd != null && params.baseUsd > 0
+      ? params.baseUsd
+      : params.filledUsd > 0
+        ? params.filledUsd
+        : 0;
+
+  return Math.max(fromIntent, fromAllocations);
 }
 
 export function formatRewardCurveExamples(config: RewardCurveConfig): string {
