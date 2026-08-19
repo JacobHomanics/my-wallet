@@ -34,6 +34,9 @@ export function formatCashbackRateLabel(pointsPerUsdc: number): string {
 }
 
 export function formatCashbackActionError(message: string): string {
+  if (message.includes('Gas sponsorship is not enabled')) {
+    return 'Redemption requires a small amount of ETH on Base for network fees.';
+  }
   if (message.includes('Insufficient CashBox Points')) {
     return 'Not enough CashBox Points for this redemption.';
   }

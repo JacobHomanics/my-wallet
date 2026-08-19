@@ -1,4 +1,6 @@
 export const appConfig = {
+  /** When true, Privy pays gas on backend-initiated wallet sends (e.g. points redemption). */
+  gasSponsorship: false,
   rewards: {
     /** USD payment that earns `referencePoints` at the base rate ($5 → 10 pts). */
     referenceUsd: 5,

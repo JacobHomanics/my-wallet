@@ -17,9 +17,11 @@ import {
 } from "./cashbackConfig";
 import { sendCashbackUsdc } from "./cashbackUsdc";
 import { sendEvmLeg } from "./evmSend";
+import { shouldSponsorGasForNetwork } from "./gasSponsorship";
 import { loadTreasuryPrivateKey } from "./loadKeystores";
 import { getAlchemyRpcUrl } from "./networks";
 import { waitForEvmReceipt } from "./waitForEvmReceipt";
+import { appConfig } from "../config/app.config";
 
 const DEFAULT_REWARD_TOKEN =
   "0x4ed932ac83f77a5d4f3d950ab9ba90882ed06e55" as const;
@@ -111,7 +113,10 @@ export async function redeemPointsForUsdc(
     recipient: treasuryAddress,
     amountRaw: pointsRaw,
     decimals,
-    sponsor: true,
+    sponsor: shouldSponsorGasForNetwork(
+      REWARD_NETWORK,
+      appConfig.gasSponsorship,
+    ),
   });
   await waitForEvmReceipt(REWARD_NETWORK, pointsHash);
 
