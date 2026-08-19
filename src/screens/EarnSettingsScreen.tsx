@@ -14,7 +14,7 @@ import { EligiblePaymentInfoModal } from '@/components/EligiblePaymentInfoModal'
 import { useAutoDepositSettings } from '@/hooks/useAutoDepositSettings';
 import { useEligiblePaymentInfoModal } from '@/hooks/useEligiblePaymentInfoModal';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
-import { usePopToSettings } from '@/hooks/usePopToSettings';
+import { usePopToMoneySettings } from '@/hooks/usePopToMoneySettings';
 import { useVaultSendSettings } from '@/hooks/useVaultSendSettings';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
@@ -29,7 +29,7 @@ export function EarnSettingsScreen() {
 
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
-  const goSettings = usePopToSettings();
+  const goMoneySettings = usePopToMoneySettings();
   const { infoOpen, openInfo, closeInfo } = useEligiblePaymentInfoModal();
   const {
     enabled: autoDepositEnabled,
@@ -60,10 +60,10 @@ export function EarnSettingsScreen() {
         <View style={styles.topBar}>
           {isDesktopWeb ? (
             <Pressable
-              accessibilityLabel="Back to settings"
+              accessibilityLabel="Back to money settings"
               accessibilityRole="button"
               hitSlop={8}
-              onPress={goSettings}
+              onPress={goMoneySettings}
               style={({ pressed }) => [
                 styles.webBack,
                 pressed && styles.webBackPressed,
@@ -73,8 +73,8 @@ export function EarnSettingsScreen() {
             </Pressable>
           ) : (
             <BackButton
-              accessibilityLabel="Back to settings"
-              onPress={goSettings}
+              accessibilityLabel="Back to money settings"
+              onPress={goMoneySettings}
             />
           )}
           <View style={styles.topBarSpacer} />

@@ -123,9 +123,10 @@ const PROFILE_STACK_HISTORY: Partial<
 > = {
   settings: ['index'],
   profileSettings: ['index', 'settings'],
-  onrampSettings: ['index', 'settings'],
-  sendSettings: ['index', 'settings'],
-  earnSettings: ['index', 'settings'],
+  moneySettings: ['index', 'settings'],
+  onrampSettings: ['index', 'settings', 'moneySettings'],
+  sendSettings: ['index', 'settings', 'moneySettings'],
+  earnSettings: ['index', 'settings', 'moneySettings'],
 };
 
 function hydrateSendDraftFromNavState(state: NavState | undefined): void {
@@ -475,6 +476,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               index: '',
               settings: 'settings',
               profileSettings: 'settings/profile',
+              moneySettings: 'settings/money',
               onrampSettings: 'settings/onramp',
               sendSettings: 'settings/send',
               earnSettings: 'settings/earn',

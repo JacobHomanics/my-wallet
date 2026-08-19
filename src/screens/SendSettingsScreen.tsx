@@ -11,7 +11,7 @@ import { appConfig } from '@/configs/app.config';
 import { useDefaultCashboxNetwork } from '@/hooks/useDefaultCashboxNetwork';
 import { useDefaultGasSponsorship } from '@/hooks/useDefaultGasSponsorship';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
-import { usePopToSettings } from '@/hooks/usePopToSettings';
+import { usePopToMoneySettings } from '@/hooks/usePopToMoneySettings';
 import { useStrategyPicker } from '@/hooks/useStrategyPicker';
 import { REWARD_POINTS_LABEL } from '@/lib/rewardToken';
 
@@ -21,7 +21,7 @@ import { REWARD_POINTS_LABEL } from '@/lib/rewardToken';
 export function SendSettingsScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
-  const goSettings = usePopToSettings();
+  const goMoneySettings = usePopToMoneySettings();
   const {
     strategies,
     selectedStrategy,
@@ -62,10 +62,10 @@ export function SendSettingsScreen() {
         <View style={styles.topBar}>
           {isDesktopWeb ? (
             <Pressable
-              accessibilityLabel="Back to settings"
+              accessibilityLabel="Back to money settings"
               accessibilityRole="button"
               hitSlop={8}
-              onPress={goSettings}
+              onPress={goMoneySettings}
               style={({ pressed }) => [
                 styles.webBack,
                 pressed && styles.webBackPressed,
@@ -75,8 +75,8 @@ export function SendSettingsScreen() {
             </Pressable>
           ) : (
             <BackButton
-              accessibilityLabel="Back to settings"
-              onPress={goSettings}
+              accessibilityLabel="Back to money settings"
+              onPress={goMoneySettings}
             />
           )}
           <View style={styles.topBarSpacer} />

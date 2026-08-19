@@ -38,6 +38,10 @@ export function ProfileStack() {
         component={profileStackScreens.profileSettings}
       />
       <WebStack.Screen
+        name="moneySettings"
+        component={profileStackScreens.moneySettings}
+      />
+      <WebStack.Screen
         name="onrampSettings"
         component={profileStackScreens.onrampSettings}
       />

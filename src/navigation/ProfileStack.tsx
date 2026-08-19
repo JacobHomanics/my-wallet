@@ -28,6 +28,10 @@ export function ProfileStack() {
         component={profileStackScreens.profileSettings}
       />
       <NativeStack.Screen
+        name="moneySettings"
+        component={profileStackScreens.moneySettings}
+      />
+      <NativeStack.Screen
         name="onrampSettings"
         component={profileStackScreens.onrampSettings}
       />

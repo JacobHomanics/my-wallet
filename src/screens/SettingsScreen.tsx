@@ -14,16 +14,10 @@ import { BackButton } from '@/components/BackButton';
 import { ColorThemePickerModal } from '@/components/ColorThemePickerModal';
 import { ConfirmLogoutModal } from '@/components/ConfirmLogoutModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
-import { useChainPriority } from '@/hooks/useChainPriority';
 import { useColorThemePicker } from '@/hooks/useColorThemePicker';
 import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
-import { appConfig } from '@/configs/app.config';
-import { useDefaultCashboxNetwork } from '@/hooks/useDefaultCashboxNetwork';
-import { useDefaultGasSponsorship } from '@/hooks/useDefaultGasSponsorship';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
-import { useOnrampSettings } from '@/hooks/useOnrampSettings';
-import { usePaymentStrategy } from '@/hooks/usePaymentStrategy';
 import { usePopToProfile } from '@/hooks/usePopToProfile';
 import type { ProfileStackParamList } from '@/navigation/types';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
@@ -46,8 +40,6 @@ export function SettingsScreen() {
     cancelSignOut,
     confirmSignOut,
   } = useConfirmSignOut();
-  const { selectedStrategy } = usePaymentStrategy();
-  const { selectedOption: selectedChainPriority } = useChainPriority();
   const {
     options: displayCurrencyOptions,
     selectedCurrency,
@@ -66,22 +58,6 @@ export function SettingsScreen() {
     closePicker: closeColorThemePicker,
     onSelectOption: onSelectColorTheme,
   } = useColorThemePicker();
-  const { selectedDestinationLabel } = useOnrampSettings();
-  const { defaultCashboxNetwork } = useDefaultCashboxNetwork();
-  const { defaultGasSponsorship } = useDefaultGasSponsorship();
-
-  const sendSettingsSummary = [
-    selectedStrategy.label,
-    selectedChainPriority.label,
-    defaultCashboxNetwork ? 'Cashbox Network' : 'Device send',
-    defaultCashboxNetwork && appConfig.gasSponsorship
-      ? defaultGasSponsorship
-        ? 'Gas sponsored where available'
-        : 'You pay gas'
-      : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
 
   return (
     <View style={styles.container}>
@@ -147,12 +123,12 @@ export function SettingsScreen() {
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Onramp</Text>
+              <Text style={styles.sectionTitle}>Money</Text>
               <Pressable
-                accessibilityLabel="Onramp settings"
+                accessibilityLabel="Money settings"
                 accessibilityRole="button"
                 onPress={() => {
-                  navigation.navigate('onrampSettings');
+                  navigation.navigate('moneySettings');
                 }}
                 style={({ pressed }) => [
                   styles.strategyRow,
@@ -160,79 +136,12 @@ export function SettingsScreen() {
                 ]}
               >
                 <View style={styles.strategyRowText}>
-                  <Text style={styles.strategyLabel}>Onramp settings</Text>
+                  <Text style={styles.strategyLabel}>Money settings</Text>
                   <Text style={styles.strategyDescription}>
-                    Default destination: {selectedDestinationLabel}
+                    Onramp, send, and earn
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />
-              </Pressable>
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Send</Text>
-              <Pressable
-                accessibilityLabel="Send settings"
-                accessibilityRole="button"
-                onPress={() => {
-                  navigation.navigate('sendSettings');
-                }}
-                style={({ pressed }) => [
-                  styles.strategyRow,
-                  pressed && styles.strategyRowPressed,
-                ]}
-              >
-                <View style={styles.strategyRowText}>
-                  <Text style={styles.strategyLabel}>Send settings</Text>
-                  <Text style={styles.strategyDescription} numberOfLines={2}>
-                    {sendSettingsSummary}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />
-              </Pressable>
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Earn</Text>
-              <Pressable
-                accessibilityLabel="Earn settings"
-                accessibilityRole="button"
-                onPress={() => {
-                  navigation.navigate('earnSettings');
-                }}
-                style={({ pressed }) => [
-                  styles.strategyRow,
-                  pressed && styles.strategyRowPressed,
-                ]}
-              >
-                <View style={styles.strategyRowText}>
-                  <Text style={styles.strategyLabel}>Earn settings</Text>
-                  <Text style={styles.strategyDescription}>
-                    Vault auto-deposit and use vault balance
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />
-              </Pressable>
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Appearance</Text>
-              <Pressable
-                accessibilityLabel={`Color theme ${selectedTheme.label}`}
-                accessibilityRole="button"
-                onPress={openColorThemePicker}
-                style={({ pressed }) => [
-                  styles.strategyRow,
-                  pressed && styles.strategyRowPressed,
-                ]}
-              >
-                <View style={styles.strategyRowText}>
-                  <Text style={styles.strategyLabel}>{selectedTheme.label}</Text>
-                  <Text style={styles.strategyDescription}>
-                    {selectedTheme.description}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
               </Pressable>
             </View>
 
@@ -253,6 +162,27 @@ export function SettingsScreen() {
                   </Text>
                   <Text style={styles.strategyDescription}>
                     {selectedCurrency.description}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
+              </Pressable>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Appearance</Text>
+              <Pressable
+                accessibilityLabel={`Color theme ${selectedTheme.label}`}
+                accessibilityRole="button"
+                onPress={openColorThemePicker}
+                style={({ pressed }) => [
+                  styles.strategyRow,
+                  pressed && styles.strategyRowPressed,
+                ]}
+              >
+                <View style={styles.strategyRowText}>
+                  <Text style={styles.strategyLabel}>{selectedTheme.label}</Text>
+                  <Text style={styles.strategyDescription}>
+                    {selectedTheme.description}
                   </Text>
                 </View>
                 <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />

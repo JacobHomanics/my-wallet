@@ -10,7 +10,7 @@ import { PrivyIcon } from '@/components/PrivyIcon';
 import { StripeIcon } from '@/components/StripeIcon';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useOnrampSettings } from '@/hooks/useOnrampSettings';
-import { usePopToSettings } from '@/hooks/usePopToSettings';
+import { usePopToMoneySettings } from '@/hooks/usePopToMoneySettings';
 import type { DepositMethodId } from '@/lib/stripe/depositMethods';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
@@ -32,7 +32,7 @@ export function OnrampSettingsScreen() {
 
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
-  const goSettings = usePopToSettings();
+  const goMoneySettings = usePopToMoneySettings();
   const [networkPickerOpen, setNetworkPickerOpen] = useState(false);
   const [currencyPickerOpen, setCurrencyPickerOpen] = useState(false);
   const {
@@ -65,10 +65,10 @@ export function OnrampSettingsScreen() {
         <View style={styles.topBar}>
           {isDesktopWeb ? (
             <Pressable
-              accessibilityLabel="Back to settings"
+              accessibilityLabel="Back to money settings"
               accessibilityRole="button"
               hitSlop={8}
-              onPress={goSettings}
+              onPress={goMoneySettings}
               style={({ pressed }) => [
                 styles.webBack,
                 pressed && styles.webBackPressed,
@@ -78,8 +78,8 @@ export function OnrampSettingsScreen() {
             </Pressable>
           ) : (
             <BackButton
-              accessibilityLabel="Back to settings"
-              onPress={goSettings}
+              accessibilityLabel="Back to money settings"
+              onPress={goMoneySettings}
             />
           )}
           <View style={styles.topBarSpacer} />
