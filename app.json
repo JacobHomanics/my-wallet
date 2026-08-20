@@ -1,18 +1,18 @@
 {
   "expo": {
     "name": "ZitiCashbox",
-    "slug": "ziti",
+    "slug": "zitiCashbox",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "ziti",
+    "scheme": "zitiCashbox",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jacobhomanics.ziti"
+      "bundleIdentifier": "com.jacobhomanics.zitiCashbox"
     },
     "android": {
-      "package": "com.jacobhomanics.ziti",
+      "package": "com.jacobhomanics.zitiCashbox",
       "adaptiveIcon": {
         "backgroundColor": "#dcfce7",
         "foregroundImage": "./assets/android-icon-foreground.png",
