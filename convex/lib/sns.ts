@@ -1,4 +1,4 @@
-import { Connection, PublicKey } from "@solana/web3.js";
+import { Connection } from "@solana/web3.js";
 import { resolve as resolveSnsDomain } from "@bonfida/spl-name-service";
 
 const SOLANA_MAINNET =

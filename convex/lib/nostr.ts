@@ -86,7 +86,7 @@ async function fetchNostrProfile(
 
   for (const url of urls) {
     const payload = await fetchJson<{
-      events?: Array<{ content?: string }>;
+      events?: { content?: string }[];
     }>(url, 4000);
     const raw = payload?.events?.[0]?.content;
     if (!raw) {

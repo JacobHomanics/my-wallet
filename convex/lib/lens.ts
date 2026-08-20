@@ -20,7 +20,7 @@ type LensAccountsResponse = {
       items?: LensAccountItem[];
     };
   };
-  errors?: Array<{ message?: string }>;
+  errors?: { message?: string }[];
 };
 
 async function lensGraphql<T>(

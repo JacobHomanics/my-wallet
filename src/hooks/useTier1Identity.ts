@@ -116,10 +116,6 @@ export function useTier1Identity(protocol: Tier1ProtocolId, query: string) {
   useEffect(() => {
     if (!shouldSearch) {
       requestIdRef.current += 1;
-      setResults([]);
-      setIsSearching(false);
-      setErrorMessage(null);
-      setResolvedQuery('');
       return;
     }
 

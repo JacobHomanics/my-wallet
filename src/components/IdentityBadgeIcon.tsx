@@ -25,7 +25,6 @@ function GenericBadge({
   color?: string;
   label: string;
 }) {
-  const fontSize = Math.max(8, Math.round(size * 0.42));
   return (
     <Svg
       width={size}
