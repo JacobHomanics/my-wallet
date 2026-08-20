@@ -921,6 +921,7 @@ export function useSendForm(
         token,
         tokensForMerchantAllocation,
         spendableTokens,
+        gasSponsorship,
       );
       const merchantCap = { ...token, rawBalance: maxRaw };
 
