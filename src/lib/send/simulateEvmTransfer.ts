@@ -182,7 +182,7 @@ export async function simulateEvmTransfer(
     if (token == null) {
       throw new Error('Missing token metadata for gas reserve check');
     }
-    const gasReserveRaw = transferGasReserveRaw(token);
+    const gasReserveRaw = gasSponsored ? 0n : transferGasReserveRaw(token);
     const minRaw = amountRaw + gasReserveRaw;
 
     let tokenBalance: bigint;

@@ -246,6 +246,7 @@ export const prepareVaultUsdcForSend = action({
     ethereumAddress: v.string(),
     legs: v.array(sendLegValidator),
     useVaultUsdc: v.boolean(),
+    gasSponsorship: v.optional(v.boolean()),
   },
   handler: async (ctx, args): Promise<VaultSendWithdrawalRecord | null> => {
     if (args.legs.length === 0) {
@@ -269,6 +270,7 @@ export const prepareVaultUsdcForSend = action({
       ethereumWalletId,
       legs: args.legs,
       useVaultUsdc: args.useVaultUsdc,
+      gasSponsorshipEnabled: args.gasSponsorship === true,
     });
 
     return withdrawal ? serializeVaultSendWithdrawal(withdrawal) : null;
@@ -378,6 +380,7 @@ export const sendPayment = action({
         ethereumWalletId,
         legs: orderedLegs,
         useVaultUsdc: args.useVaultUsdc,
+        gasSponsorshipEnabled,
       });
 
       const results: SendPaymentLegResult[] = [];

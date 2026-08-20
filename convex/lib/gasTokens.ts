@@ -1,3 +1,4 @@
+import { shouldSponsorGasForNetwork } from "./gasSponsorship";
 import { isNativeTokenAddress } from "./networks";
 
 /** Base mainnet tokens Privy can debit for gas when sending the same token. */
@@ -88,4 +89,21 @@ export function countPrivyTransferLegs(legs: readonly PrivyTransferLeg[]): numbe
     }
   }
   return count;
+}
+
+/** Privy Transfer API gas headroom — zero when app-pays sponsorship covers the network. */
+export function privyTransferGasReserveForLegs(
+  network: string,
+  decimals: number,
+  legCount: number,
+  gasSponsorshipEnabled: boolean,
+): bigint {
+  if (
+    legCount <= 0 ||
+    (gasSponsorshipEnabled &&
+      shouldSponsorGasForNetwork(network, gasSponsorshipEnabled))
+  ) {
+    return 0n;
+  }
+  return privyTransferGasReserveRaw(network, decimals, legCount);
 }

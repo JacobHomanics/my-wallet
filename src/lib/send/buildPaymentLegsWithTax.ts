@@ -39,6 +39,8 @@ export type BuildPaymentLegsWithTaxParams = {
   taxEvmAddress?: string;
   taxSolanaAddress?: string;
   taxRate?: number;
+  /** When true, Base USDC tax legs do not reserve self-gas headroom. */
+  skipSelfGasReserve?: boolean;
 };
 
 /**
@@ -190,14 +192,18 @@ export function buildPaymentLegsWithTax(
     .filter((leg) => leg.amountRaw > 0n)
     .map((leg) => leg.token);
   const spendable = params.spendableTokens ?? [];
+  const taxFundingOptions = params.skipSelfGasReserve
+    ? { skipSelfGasReserve: true as const }
+    : undefined;
   const funding =
-    pickTaxFundingToken(allocationTokens, taxUsd, reserved) ??
+    pickTaxFundingToken(allocationTokens, taxUsd, reserved, taxFundingOptions) ??
     pickTaxFundingToken(
       spendable.filter(
         (token) => !allocationTokens.some((item) => item.id === token.id),
       ),
       taxUsd,
       reserved,
+      taxFundingOptions,
     );
   if (!funding) {
     return legs;
@@ -228,6 +234,7 @@ export function resolveTaxFunding(
   allocations: readonly PaymentAllocation[],
   spendableTokens: readonly OwnedToken[],
   taxUsd: number,
+  options?: { skipSelfGasReserve?: boolean },
 ): TaxFundingPick | null {
   if (!(taxUsd > 0)) {
     return null;
@@ -242,8 +249,8 @@ export function resolveTaxFunding(
   );
 
   return (
-    pickTaxFundingToken(allocationTokens, taxUsd, reserved) ??
-    pickTaxFundingToken(extras, taxUsd, reserved)
+    pickTaxFundingToken(allocationTokens, taxUsd, reserved, options) ??
+    pickTaxFundingToken(extras, taxUsd, reserved, options)
   );
 }
 
@@ -251,13 +258,14 @@ export function resolveTaxFunding(
 export function reserveTaxHeadroomOnTokens(
   tokens: readonly OwnedToken[],
   taxUsd: number,
+  options?: { skipSelfGasReserve?: boolean },
 ): OwnedToken[] {
   if (!(taxUsd > 0) || tokens.length === 0) {
     return [...tokens];
   }
 
   const funding = pickTaxFundingToken(tokens, taxUsd, new Map(), {
-    skipSelfGasReserve: true,
+    skipSelfGasReserve: options?.skipSelfGasReserve ?? true,
   });
   if (!funding) {
     return [...tokens];

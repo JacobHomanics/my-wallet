@@ -217,6 +217,7 @@ export function ConfirmSendScreen() {
           taxEvmAddress,
           taxSolanaAddress,
           taxRate,
+          skipSelfGasReserve: gasSponsorship,
         });
         const outcome = await sendPayment(
           paymentLegs.map((leg) => ({

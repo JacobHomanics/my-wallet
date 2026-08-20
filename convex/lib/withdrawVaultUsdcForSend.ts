@@ -17,7 +17,7 @@ import {
 import { fetchErc20Balance } from "./fetchErc20Balance";
 import {
   countPrivyTransferLegs,
-  privyTransferGasReserveRaw,
+  privyTransferGasReserveForLegs,
 } from "./gasTokens";
 import { getNetworkFromCaip2 } from "./networks";
 import { formatPrivyTransferAmount } from "./privyTransfer";
@@ -83,6 +83,7 @@ export async function tryWithdrawVaultUsdcForSend(params: {
   ethereumWalletId: string;
   legs: readonly VaultUsdcLeg[];
   useVaultUsdc: boolean;
+  gasSponsorshipEnabled?: boolean;
 }): Promise<VaultSendWithdrawal | null> {
   if (!params.useVaultUsdc) {
     return null;
@@ -126,17 +127,29 @@ export async function tryWithdrawVaultUsdcForSend(params: {
   }
 
   const privyLegCount = countPrivyTransferLegs(params.legs);
-  const gasHeadroom =
-    privyLegCount > 0
-      ? privyTransferGasReserveRaw(vaultNetwork, vault.asset.decimals, privyLegCount)
-      : 0n;
+  const gasHeadroom = privyTransferGasReserveForLegs(
+    vaultNetwork,
+    vault.asset.decimals,
+    privyLegCount,
+    params.gasSponsorshipEnabled === true,
+  );
   const requiredRaw = paymentRaw + gasHeadroom;
 
-  const walletBalance = await fetchErc20Balance({
-    network: vaultNetwork,
-    tokenAddress: vault.asset.address,
-    holder: params.ethereumAddress,
-  });
+  let walletBalance: bigint;
+  try {
+    walletBalance = await fetchErc20Balance({
+      network: vaultNetwork,
+      tokenAddress: vault.asset.address,
+      holder: params.ethereumAddress,
+    });
+  } catch (error) {
+    console.error("[vault-send] wallet balance read failed", { error });
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "Could not read your wallet balance. Try again or turn off “Use vault balance”.",
+    );
+  }
   const walletBalanceBefore = walletBalance;
   if (walletBalance >= requiredRaw) {
     return null;

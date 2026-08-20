@@ -3,7 +3,7 @@ export const appConfig = {
     rewardPointsLabel: "Cashbox Points",
   },
   /** When true, Privy pays network fees on supported chains (backend sends only). When false, users cannot enable gas sponsorship. */
-  gasSponsorship: false,
+  gasSponsorship: true,
   tax: {
     /** Service fee when gas sponsorship is on (fraction of merchant payment). */
     sponsoredRate: 0.01,

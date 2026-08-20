@@ -108,6 +108,7 @@ export async function sendEvmLeg(params: SendEvmLegParams): Promise<string> {
   } = params;
 
   if (
+    !sponsor &&
     tokenAddress != null &&
     shouldUsePrivyTransfer(network, tokenAddress)
   ) {
@@ -143,10 +144,16 @@ export async function sendEvmLeg(params: SendEvmLegParams): Promise<string> {
       ...(sponsor ? { sponsor: true } : {}),
     });
 
-    if (!result.hash) {
-      throw new Error(`EVM send on ${network} returned no hash`);
+    if (result.hash) {
+      return result.hash;
     }
-    return result.hash;
+
+    // Sponsored EIP-7702 / user-op sends return an empty hash until confirmed.
+    if (result.transaction_id) {
+      return waitForPrivyTransactionHash(privy, result.transaction_id);
+    }
+
+    throw new Error(`EVM send on ${network} returned no hash`);
   });
 }
 
@@ -186,6 +193,7 @@ export async function sendEvmBatch(params: SendEvmBatchParams): Promise<string> 
   }
 
   if (
+    !sponsor &&
     legs.some((leg) =>
       shouldUsePrivyTransfer(network, leg.tokenAddress),
     )

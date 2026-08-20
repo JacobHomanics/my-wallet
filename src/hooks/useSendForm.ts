@@ -29,6 +29,7 @@ import {
   resolveTaxFunding,
   type TaxFundingPick,
 } from '@/lib/send/buildPaymentLegsWithTax';
+import { shouldSponsorGasForNetwork } from '@/lib/privy/gasSponsorshipNetworks';
 import {
   totalSelfGasReserveRaw,
   transferGasReserveRaw,
@@ -132,6 +133,7 @@ function refreshAllocationTokens(
   walletTokens: OwnedToken[],
   spendableTokens: OwnedToken[],
   tokensForMerchantAllocation: OwnedToken[],
+  gasSponsorship: boolean,
 ): PaymentAllocation[] {
   return allocations.flatMap((leg) => {
     const token = walletTokens.find((item) => item.id === leg.token.id);
@@ -143,6 +145,7 @@ function refreshAllocationTokens(
       token,
       tokensForMerchantAllocation,
       spendableTokens,
+      gasSponsorship,
     );
 
     // Clamp to spendable balance (gas reserves + tax headroom).
@@ -216,6 +219,7 @@ function maxManualAllocationRaw(
   walletToken: OwnedToken,
   tokensForMerchantAllocation: OwnedToken[],
   spendableTokens: OwnedToken[],
+  gasSponsorship: boolean,
 ): bigint {
   if (isUnpricedToken(walletToken)) {
     return walletToken.rawBalance > 0n ? walletToken.rawBalance : 0n;
@@ -230,7 +234,15 @@ function maxManualAllocationRaw(
     return merchantCap.rawBalance > 0n ? merchantCap.rawBalance : 0n;
   }
 
+  const networkSponsored = shouldSponsorGasForNetwork(
+    walletToken.network,
+    gasSponsorship,
+  );
+
   let cap = walletToken.rawBalance > 0n ? walletToken.rawBalance : 0n;
+  if (networkSponsored) {
+    return cap;
+  }
   if (isBaseGasPaymentToken(walletToken) && cap > 0n) {
     const expectedGas = totalSelfGasReserveRaw(
       walletToken,
@@ -376,8 +388,10 @@ export function useSendForm(
     if (!(taxUsdNeeded > 0)) {
       return spendableTokens;
     }
-    return reserveTaxHeadroomOnTokens(spendableTokens, taxUsdNeeded);
-  }, [bootstrapTargetUsd, spendableTokens, taxUsdFor]);
+    return reserveTaxHeadroomOnTokens(spendableTokens, taxUsdNeeded, {
+      skipSelfGasReserve: gasSponsorship,
+    });
+  }, [bootstrapTargetUsd, gasSponsorship, spendableTokens, taxUsdFor]);
 
   const strategyPreferredTokenId = useMemo(() => {
     if (!preferredTokenId) {
@@ -504,8 +518,10 @@ export function useSendForm(
       walletTokens,
       spendableTokens,
       tokensForMerchantAllocation,
+      gasSponsorship,
     );
   }, [
+    gasSponsorship,
     manualMerchantAllocations,
     spendableTokens,
     tokensForMerchantAllocation,
@@ -528,8 +544,10 @@ export function useSendForm(
       walletTokens,
       spendableTokens,
       tokensForMerchantAllocation,
+      gasSponsorship,
     );
   }, [
+    gasSponsorship,
     resolvedManualMerchant,
     spendableTokens,
     strategyPlan.allocations,
@@ -585,9 +603,11 @@ export function useSendForm(
       walletTokens,
       spendableTokens,
       tokensForMerchantAllocation,
+      gasSponsorship,
     );
   }, [
     additionalAllocations,
+    gasSponsorship,
     preferredAdditionalSeed,
     spendableTokens,
     tokensForMerchantAllocation,
@@ -668,8 +688,11 @@ export function useSendForm(
         : null;
 
   const taxFunding = useMemo(
-    () => resolveTaxFunding(allocations, walletTokens, taxUsd),
-    [allocations, taxUsd, walletTokens],
+    () =>
+      resolveTaxFunding(allocations, walletTokens, taxUsd, {
+        skipSelfGasReserve: gasSponsorship,
+      }),
+    [allocations, gasSponsorship, taxUsd, walletTokens],
   );
 
   // Merchant legs must fit; tax must fit on a single leftover token.
@@ -679,11 +702,19 @@ export function useSendForm(
         leg.token,
         tokensForMerchantAllocation,
         spendableTokens,
+        gasSponsorship,
       );
       return leg.amountRaw <= maxRaw;
     });
     return legsFit && (taxUsd <= 0 || taxFunding != null);
-  }, [allocations, spendableTokens, taxFunding, taxUsd, tokensForMerchantAllocation]);
+  }, [
+    allocations,
+    gasSponsorship,
+    spendableTokens,
+    taxFunding,
+    taxUsd,
+    tokensForMerchantAllocation,
+  ]);
   const hasPositiveLeg = allocations.some((leg) => leg.amountRaw > 0n);
   const hasPositiveMerchantLeg = merchantAllocations.some(
     (leg) => leg.amountRaw > 0n,
@@ -834,6 +865,7 @@ export function useSendForm(
           token,
           tokensForMerchantAllocation,
           spendableTokens,
+          gasSponsorship,
         );
 
         if (sanitized.trim() === '' || sanitized === '.') {
@@ -1028,6 +1060,7 @@ export function useSendForm(
             token,
             tokensForMerchantAllocation,
             spendableTokens,
+            gasSponsorship,
           )
         : 0n;
       const amountFormatted =

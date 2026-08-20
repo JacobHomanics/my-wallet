@@ -33,6 +33,11 @@ async function rpcCall(
     }),
   });
   if (!response.ok) {
+    if (response.status === 403) {
+      throw new Error(
+        `RPC ${method} failed (HTTP 403). Check Convex ALCHEMY_API_KEY: enable Base mainnet on your Alchemy app and ensure the key matches EXPO_PUBLIC_ALCHEMY_API_KEY.`,
+      );
+    }
     throw new Error(`RPC ${method} failed (HTTP ${response.status})`);
   }
   const json = (await response.json()) as JsonRpcResponse;

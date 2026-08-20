@@ -177,6 +177,8 @@ export function resolveGasFundingForPayment(
   allocations: readonly PaymentAllocation[],
   taxFunding: TaxFundingPick | null | undefined,
   feeEstimates?: ReadonlyMap<string, NetworkGasFeeEstimate>,
+  /** Networks where Privy sponsors fees — no gas rows for legs on these chains. */
+  sponsoredNetworks?: ReadonlySet<string>,
 ): GasFundingPick[] {
   const legs = [
     ...allocations.filter((leg) => leg.amountRaw > 0n),
@@ -195,6 +197,9 @@ export function resolveGasFundingForPayment(
 
   for (const leg of legs) {
     const token = leg.token;
+    if (sponsoredNetworks?.has(token.network)) {
+      continue;
+    }
     const wallet = walletById.get(token.id) ?? token;
     const estimate = feeEstimates?.get(token.network);
 

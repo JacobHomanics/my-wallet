@@ -208,6 +208,7 @@ export function useSendPayment(): SendPaymentResult {
               ethereumAddress: ethereumWallet.address,
               legs: convexLegs,
               useVaultUsdc,
+              gasSponsorship,
             });
 
             if (vaultWithdrawal) {
