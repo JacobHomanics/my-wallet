@@ -80,6 +80,7 @@ export function SendAdvancedSearchScreen() {
   const { sendToContact } = useSendToContact();
   const [farcasterQuery, setFarcasterQuery] = useState('');
   const [ensQuery, setEnsQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const { results, isSearching, showEmpty, errorMessage } =
     useFarcasterSearch(farcasterQuery);
   const [walletQuery, setWalletQuery] = useState('');
@@ -111,10 +112,17 @@ export function SendAdvancedSearchScreen() {
   const usdAmount = route.params?.usdAmount;
 
   const showFarcasterRecents =
-    isFarcasterTab && !farcasterQuery.trim() && farcasterRecents.length > 0;
-  const showEnsRecents = isEnsTab && !ensQuery.trim() && ensRecents.length > 0;
+    isFarcasterTab &&
+    isSearchFocused &&
+    !farcasterQuery.trim() &&
+    farcasterRecents.length > 0;
+  const showEnsRecents =
+    isEnsTab && isSearchFocused && !ensQuery.trim() && ensRecents.length > 0;
   const showWalletRecents =
-    isWalletsTab && !walletQuery.trim() && walletRecents.length > 0;
+    isWalletsTab &&
+    isSearchFocused &&
+    !walletQuery.trim() &&
+    walletRecents.length > 0;
 
   const goBack = useCallback(() => {
     if (navigation.canGoBack()) {
@@ -295,7 +303,13 @@ export function SendAdvancedSearchScreen() {
                     autoCapitalize="none"
                     autoCorrect={false}
                     autoComplete="off"
+                    onBlur={() => {
+                      setIsSearchFocused(false);
+                    }}
                     onChangeText={setFarcasterQuery}
+                    onFocus={() => {
+                      setIsSearchFocused(true);
+                    }}
                     placeholder="Farcaster username"
                     placeholderTextColor={colors.textSubtle}
                     style={styles.searchInput}
@@ -461,7 +475,13 @@ export function SendAdvancedSearchScreen() {
                     autoCapitalize="none"
                     autoCorrect={false}
                     autoComplete="off"
+                    onBlur={() => {
+                      setIsSearchFocused(false);
+                    }}
                     onChangeText={setEnsQuery}
+                    onFocus={() => {
+                      setIsSearchFocused(true);
+                    }}
                     placeholder="name.eth"
                     placeholderTextColor={colors.textSubtle}
                     style={styles.searchInput}
@@ -586,7 +606,13 @@ export function SendAdvancedSearchScreen() {
                     autoCapitalize="none"
                     autoCorrect={false}
                     autoComplete="off"
+                    onBlur={() => {
+                      setIsSearchFocused(false);
+                    }}
                     onChangeText={setWalletQuery}
+                    onFocus={() => {
+                      setIsSearchFocused(true);
+                    }}
                     placeholder="Wallet address"
                     placeholderTextColor={colors.textSubtle}
                     style={styles.searchInput}

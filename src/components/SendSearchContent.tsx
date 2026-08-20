@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -105,11 +106,12 @@ export function SendSearchContent({
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const { sendToContact } = useSendToContact();
   const { recents } = useRecentSendRecipients();
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const trimmed = query.trim();
   const hasResults = results.length > 0;
   const showResults = Boolean(trimmed);
-  const showRecents = !trimmed && recents.length > 0;
+  const showRecents = isSearchFocused && !trimmed && recents.length > 0;
 
   const selectRecent = (item: RecentSendRecipient) => {
     sendToContact(
@@ -136,10 +138,12 @@ export function SendSearchContent({
           autoCapitalize="none"
           autoCorrect={false}
           onBlur={() => {
+            setIsSearchFocused(false);
             onSearchFocusChange?.(false);
           }}
           onChangeText={setQuery}
           onFocus={() => {
+            setIsSearchFocused(true);
             onSearchFocusChange?.(true);
           }}
           placeholder="Username or account number"
