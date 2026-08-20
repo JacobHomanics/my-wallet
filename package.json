@@ -1,5 +1,5 @@
 {
-  "name": "ziti",
+  "name": "zitiCashbox",
   "version": "1.0.0",
   "main": "index.ts",
   "packageManager": "pnpm@10.33.2",
