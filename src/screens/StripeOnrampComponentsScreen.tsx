@@ -80,10 +80,6 @@ export function StripeOnrampComponentsScreen() {
 
   const showOnrampSuccess =
     onrampSucceeded || status === 'confirmed' || status === 'submitted';
-  const pendingVaultMessage =
-    status === 'confirmed'
-      ? 'Deposit confirmed. Waiting for funds to arrive…'
-      : 'Deposit submitted. Waiting for funds to arrive…';
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -154,8 +150,6 @@ export function StripeOnrampComponentsScreen() {
           {!isFunding && showOnrampSuccess && isVaultDepositing ? (
             <View accessibilityRole="progressbar" style={styles.loadingPanel}>
               <ActivityIndicator color={colors.primary} size="large" />
-              <Text style={styles.loadingText}>{pendingVaultMessage}</Text>
-              <Text style={styles.hintText}>Moving funds to your vault…</Text>
             </View>
           ) : null}
 

@@ -95,7 +95,7 @@ export function StripeOnrampScreen() {
     isAvailable && !error && (isCreating || !clientSecret);
   const showEmbedLoader = Boolean(clientSecret) && !uiReady;
   const loadingMessage = 'Loading...';
-  const showCompletionOverlay = onrampComplete && (isVaultDepositing || isComplete);
+  const showCompletionOverlay = onrampComplete && isComplete;
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -157,33 +157,29 @@ export function StripeOnrampScreen() {
               ) : null}
               {showCompletionOverlay ? (
                 <View style={styles.completionOverlay}>
-                  {isVaultDepositing ? (
-                    <DepositLoading message="Moving funds to your vault…" />
-                  ) : (
-                    <View style={styles.completionCard}>
-                      <Text
-                        style={
-                          completionMessage?.includes('could not') ||
-                          completionMessage?.includes('still arriving')
-                            ? styles.warningText
-                            : styles.successText
-                        }
-                      >
-                        {completionMessage}
-                      </Text>
-                      <Pressable
-                        accessibilityLabel="Done"
-                        accessibilityRole="button"
-                        onPress={goHome}
-                        style={({ pressed }) => [
-                          styles.doneButton,
-                          pressed && styles.doneButtonPressed,
-                        ]}
-                      >
-                        <Text style={styles.doneButtonText}>Done</Text>
-                      </Pressable>
-                    </View>
-                  )}
+                  <View style={styles.completionCard}>
+                    <Text
+                      style={
+                        completionMessage?.includes('could not') ||
+                        completionMessage?.includes('still arriving')
+                          ? styles.warningText
+                          : styles.successText
+                      }
+                    >
+                      {completionMessage}
+                    </Text>
+                    <Pressable
+                      accessibilityLabel="Done"
+                      accessibilityRole="button"
+                      onPress={goHome}
+                      style={({ pressed }) => [
+                        styles.doneButton,
+                        pressed && styles.doneButtonPressed,
+                      ]}
+                    >
+                      <Text style={styles.doneButtonText}>Done</Text>
+                    </Pressable>
+                  </View>
                 </View>
               ) : null}
               <View
