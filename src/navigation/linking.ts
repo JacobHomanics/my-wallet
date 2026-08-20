@@ -114,6 +114,10 @@ const CONTACTS_STACK_HISTORY: Partial<
   newContact: ['index'],
   newFarcasterContact: ['index', 'newContact'],
   newEnsContact: ['index', 'newContact'],
+  newBasenameContact: ['index', 'newContact'],
+  newLensContact: ['index', 'newContact'],
+  newSnsContact: ['index', 'newContact'],
+  newNostrContact: ['index', 'newContact'],
   newRawAddressContact: ['index', 'newContact'],
   contactDetails: ['index'],
 };
@@ -450,6 +454,10 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               newContact: 'new',
               newFarcasterContact: 'new/farcaster',
               newEnsContact: 'new/ens',
+              newBasenameContact: 'new/basename',
+              newLensContact: 'new/lens',
+              newSnsContact: 'new/sns',
+              newNostrContact: 'new/nostr',
               newRawAddressContact: 'new/addresses',
               contactDetails: {
                 path: ':contactId',

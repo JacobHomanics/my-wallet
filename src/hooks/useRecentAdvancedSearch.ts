@@ -191,7 +191,12 @@ export function useRecentAdvancedSearch(tab: SendAdvancedSearchTabId): {
 
   const store = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  const recentsForTab = useMemo(() => store[tab], [store, tab]);
+  const recentsForTab = useMemo(() => {
+    if (tab === 'names' || tab === 'social') {
+      return [];
+    }
+    return store[tab];
+  }, [store, tab]);
 
   return {
     recents: recentsForTab,

@@ -42,6 +42,22 @@ export function ContactsStack() {
         component={contactsStackScreens.newEnsContact}
       />
       <WebStack.Screen
+        name="newBasenameContact"
+        component={contactsStackScreens.newBasenameContact}
+      />
+      <WebStack.Screen
+        name="newLensContact"
+        component={contactsStackScreens.newLensContact}
+      />
+      <WebStack.Screen
+        name="newSnsContact"
+        component={contactsStackScreens.newSnsContact}
+      />
+      <WebStack.Screen
+        name="newNostrContact"
+        component={contactsStackScreens.newNostrContact}
+      />
+      <WebStack.Screen
         name="newRawAddressContact"
         component={contactsStackScreens.newRawAddressContact}
       />

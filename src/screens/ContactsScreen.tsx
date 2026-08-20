@@ -258,7 +258,7 @@ export function ContactsScreen() {
   const insets = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<ContactsStackParamList>>();
-  const { userContacts, farcasterContacts, ensContacts, externalContacts, isLoading } =
+  const { userContacts, farcasterContacts, ensContacts, nameIdentityContacts, socialIdentityContacts, externalContacts, isLoading } =
     useContacts();
   const {
     query,
@@ -266,12 +266,16 @@ export function ContactsScreen() {
     filteredUserContacts,
     filteredFarcasterContacts,
     filteredEnsContacts,
+    filteredNameIdentityContacts,
+    filteredSocialIdentityContacts,
     filteredExternalContacts,
     hasActiveQuery,
   } = useContactsFilter({
     userContacts,
     farcasterContacts,
     ensContacts,
+    nameIdentityContacts,
+    socialIdentityContacts,
     externalContacts,
   });
   const {
@@ -292,6 +296,8 @@ export function ContactsScreen() {
     walletsMultiChainExpanded,
     farcasterExpanded,
     ensExpanded,
+    nameIdentitiesExpanded,
+    socialIdentitiesExpanded,
     toggleContacts,
     toggleExternalGroup,
     toggleWallets,
@@ -300,6 +306,8 @@ export function ContactsScreen() {
     toggleWalletsMultiChain,
     toggleFarcaster,
     toggleEns,
+    toggleNameIdentities,
+    toggleSocialIdentities,
   } = useContactsAllSections();
   const {
     confirmVisible,
@@ -326,6 +334,8 @@ export function ContactsScreen() {
     userContacts.length > 0 ||
     farcasterContacts.length > 0 ||
     ensContacts.length > 0 ||
+    nameIdentityContacts.length > 0 ||
+    socialIdentityContacts.length > 0 ||
     externalContacts.length > 0;
 
   const hasSourceContacts = isAllTab
@@ -334,18 +344,24 @@ export function ContactsScreen() {
       ? userContacts.length > 0
       : externalContacts.length > 0 ||
         farcasterContacts.length > 0 ||
-        ensContacts.length > 0;
+        ensContacts.length > 0 ||
+        nameIdentityContacts.length > 0 ||
+        socialIdentityContacts.length > 0;
 
   const hasFilteredResults = isAllTab
     ? filteredUserContacts.length > 0 ||
       filteredFarcasterContacts.length > 0 ||
       filteredEnsContacts.length > 0 ||
+      filteredNameIdentityContacts.length > 0 ||
+      filteredSocialIdentityContacts.length > 0 ||
       filteredExternalContacts.length > 0
     : isContactsTab
       ? filteredUserContacts.length > 0
       : filteredExternalContacts.length > 0 ||
         filteredFarcasterContacts.length > 0 ||
-        filteredEnsContacts.length > 0;
+        filteredEnsContacts.length > 0 ||
+        filteredNameIdentityContacts.length > 0 ||
+        filteredSocialIdentityContacts.length > 0;
 
   const searchPlaceholder =
     selectedTab === 'all'
@@ -504,6 +520,30 @@ export function ContactsScreen() {
                     onRowClose={onRowClose}
                   />
                 ) : null}
+                {filteredNameIdentityContacts.length > 0 ? (
+                  <CollapsibleSection
+                    title="Names"
+                    expanded={nameIdentitiesExpanded}
+                    onToggle={toggleNameIdentities}
+                    contacts={filteredNameIdentityContacts}
+                    onPressContact={openContact}
+                    onDeleteContact={deleteContact}
+                    onRowOpen={onRowOpen}
+                    onRowClose={onRowClose}
+                  />
+                ) : null}
+                {filteredSocialIdentityContacts.length > 0 ? (
+                  <CollapsibleSection
+                    title="Social"
+                    expanded={socialIdentitiesExpanded}
+                    onToggle={toggleSocialIdentities}
+                    contacts={filteredSocialIdentityContacts}
+                    onPressContact={openContact}
+                    onDeleteContact={deleteContact}
+                    onRowOpen={onRowOpen}
+                    onRowClose={onRowClose}
+                  />
+                ) : null}
               </>
             ) : (
               <>
@@ -521,7 +561,9 @@ export function ContactsScreen() {
                 ) : null}
                 {filteredExternalContacts.length > 0 ||
                 filteredFarcasterContacts.length > 0 ||
-                filteredEnsContacts.length > 0 ? (
+                filteredEnsContacts.length > 0 ||
+                filteredNameIdentityContacts.length > 0 ||
+                filteredSocialIdentityContacts.length > 0 ? (
                   <CollapsibleGroup
                     title="External Contacts"
                     expanded={externalGroupExpanded}
@@ -589,6 +631,32 @@ export function ContactsScreen() {
                         expanded={ensExpanded}
                         onToggle={toggleEns}
                         contacts={filteredEnsContacts}
+                        onPressContact={openContact}
+                        onDeleteContact={deleteContact}
+                        onRowOpen={onRowOpen}
+                        onRowClose={onRowClose}
+                        nested
+                      />
+                    ) : null}
+                    {filteredNameIdentityContacts.length > 0 ? (
+                      <CollapsibleSection
+                        title="Names"
+                        expanded={nameIdentitiesExpanded}
+                        onToggle={toggleNameIdentities}
+                        contacts={filteredNameIdentityContacts}
+                        onPressContact={openContact}
+                        onDeleteContact={deleteContact}
+                        onRowOpen={onRowOpen}
+                        onRowClose={onRowClose}
+                        nested
+                      />
+                    ) : null}
+                    {filteredSocialIdentityContacts.length > 0 ? (
+                      <CollapsibleSection
+                        title="Social"
+                        expanded={socialIdentitiesExpanded}
+                        onToggle={toggleSocialIdentities}
+                        contacts={filteredSocialIdentityContacts}
                         onPressContact={openContact}
                         onDeleteContact={deleteContact}
                         onRowOpen={onRowOpen}

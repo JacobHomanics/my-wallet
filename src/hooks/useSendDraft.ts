@@ -2,6 +2,7 @@ import { useCallback, useSyncExternalStore } from 'react';
 
 import { getDefaultCashboxNetwork } from '@/hooks/useDefaultCashboxNetwork';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
+import type { IdentityBadgeKind } from '@/lib/identityProtocols';
 import type { PaymentStrategyId } from '@/lib/strategies';
 import type { OwnedToken } from '@/lib/alchemy/fetchTokensByAddress';
 import type { SendBroadcastMode } from '@/lib/send/broadcastMode';
@@ -29,6 +30,8 @@ export type SendDraft = {
   recipientIsFarcaster: boolean;
   /** True when the recipient is an ENS profile. */
   recipientIsEns: boolean;
+  /** Identity badge for the recipient avatar when known. */
+  recipientIdentityBadge: IdentityBadgeKind | null;
   amount: string;
   /**
    * When true (e.g. receive QR payment request), editing token legs must not
@@ -71,6 +74,7 @@ const DEFAULT_SEND_DRAFT: SendDraft = {
   recipientProfilePhotoUrl: null,
   recipientIsFarcaster: false,
   recipientIsEns: false,
+  recipientIdentityBadge: null,
   amount: '',
   amountLocked: false,
   manualLegs: null,
@@ -130,6 +134,7 @@ export function hydrateSendDraftFromConfirmParams(params: {
   recipientProfilePhotoUrl?: string | null;
   recipientIsFarcaster?: boolean;
   recipientIsEns?: boolean;
+  recipientIdentityBadge?: IdentityBadgeKind | null;
 }): void {
   const amount = params.usdAmount?.trim() ?? '';
   const decoded = tryDecodeWalletIdentity(params.identity);
@@ -148,6 +153,7 @@ export function hydrateSendDraftFromConfirmParams(params: {
     recipientProfilePhotoUrl: profilePhotoUrl,
     recipientIsFarcaster: Boolean(params.recipientIsFarcaster),
     recipientIsEns: Boolean(params.recipientIsEns),
+    recipientIdentityBadge: params.recipientIdentityBadge ?? null,
     amount,
     amountLocked: Boolean(params.usdAmount?.trim()),
   };

@@ -8,6 +8,7 @@ import {
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 import { Avatar } from '@/components/Avatar';
+import { getContactIdentityBadge } from '@/lib/contactPresentation';
 import type { ContactListItem } from '@/hooks/useContacts';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
@@ -97,8 +98,7 @@ export function SwipeableContactRow({
           photoUrl={contact.profilePhotoUrl}
           seed={contact.username ?? contact.ensName ?? contact.id}
           size={40}
-          showFarcasterBadge={contact.isFarcaster}
-          showEnsBadge={contact.isEns}
+          identityBadge={getContactIdentityBadge(contact)}
         />
         <View style={styles.contactRowText}>
           <Text style={styles.contactLabel}>{contact.label}</Text>

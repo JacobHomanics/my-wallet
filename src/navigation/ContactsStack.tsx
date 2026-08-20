@@ -32,6 +32,22 @@ export function ContactsStack() {
         component={contactsStackScreens.newEnsContact}
       />
       <NativeStack.Screen
+        name="newBasenameContact"
+        component={contactsStackScreens.newBasenameContact}
+      />
+      <NativeStack.Screen
+        name="newLensContact"
+        component={contactsStackScreens.newLensContact}
+      />
+      <NativeStack.Screen
+        name="newSnsContact"
+        component={contactsStackScreens.newSnsContact}
+      />
+      <NativeStack.Screen
+        name="newNostrContact"
+        component={contactsStackScreens.newNostrContact}
+      />
+      <NativeStack.Screen
         name="newRawAddressContact"
         component={contactsStackScreens.newRawAddressContact}
       />

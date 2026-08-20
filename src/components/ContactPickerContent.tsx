@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
+import { getContactIdentityBadge, isPlatformContact } from '@/lib/contactPresentation';
 import { useContactsAllSections } from '@/hooks/useContactsAllSections';
 import { useContactsFilter } from '@/hooks/useContactsFilter';
 import { useContactsTab } from '@/hooks/useContactsTab';
@@ -39,7 +40,10 @@ function contactDisplayLabel(contact: ContactListItem): string {
   if (contact.isEns && contact.ensName) {
     return contact.ensName;
   }
-  if (contact.isExternal && !contact.isFarcaster) {
+  if (isPlatformContact(contact)) {
+    return contact.label;
+  }
+  if (contact.isExternal) {
     const name = contact.name?.trim();
     return name || contact.label;
   }
@@ -47,7 +51,7 @@ function contactDisplayLabel(contact: ContactListItem): string {
 }
 
 function contactDescription(contact: ContactListItem): string | null {
-  if (contact.isFarcaster || contact.isEns || contact.isExternal) {
+  if (isPlatformContact(contact) || contact.isExternal) {
     return null;
   }
   return contact.subtitle;
@@ -111,8 +115,7 @@ function ContactPickerRow({
         photoUrl={contact.profilePhotoUrl}
         seed={contact.username ?? contact.ensName ?? contact.id}
         size={40}
-        showFarcasterBadge={contact.isFarcaster}
-        showEnsBadge={contact.isEns}
+        identityBadge={getContactIdentityBadge(contact)}
       />
       <View style={styles.optionText}>
         <Text style={styles.optionLabel}>{label}</Text>
@@ -290,7 +293,7 @@ export function ContactPickerContent({
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
 
-  const { userContacts, farcasterContacts, ensContacts, externalContacts, isLoading } =
+  const { userContacts, farcasterContacts, ensContacts, nameIdentityContacts, socialIdentityContacts, externalContacts, isLoading } =
     useContacts();
   const {
     query,
@@ -299,12 +302,16 @@ export function ContactPickerContent({
     filteredUserContacts,
     filteredFarcasterContacts,
     filteredEnsContacts,
+    filteredNameIdentityContacts,
+    filteredSocialIdentityContacts,
     filteredExternalContacts,
     hasActiveQuery,
   } = useContactsFilter({
     userContacts,
     farcasterContacts,
     ensContacts,
+    nameIdentityContacts,
+    socialIdentityContacts,
     externalContacts,
   });
   const {
@@ -325,6 +332,8 @@ export function ContactPickerContent({
     walletsMultiChainExpanded,
     farcasterExpanded,
     ensExpanded,
+    nameIdentitiesExpanded,
+    socialIdentitiesExpanded,
     toggleContacts,
     toggleExternalGroup,
     toggleWallets,
@@ -333,6 +342,8 @@ export function ContactPickerContent({
     toggleWalletsMultiChain,
     toggleFarcaster,
     toggleEns,
+    toggleNameIdentities,
+    toggleSocialIdentities,
   } = useContactsAllSections();
 
   useEffect(() => {
@@ -345,6 +356,8 @@ export function ContactPickerContent({
     userContacts.length > 0 ||
     farcasterContacts.length > 0 ||
     ensContacts.length > 0 ||
+    nameIdentityContacts.length > 0 ||
+    socialIdentityContacts.length > 0 ||
     externalContacts.length > 0;
 
   const hasSourceContacts = isAllTab
@@ -353,18 +366,24 @@ export function ContactPickerContent({
       ? userContacts.length > 0
       : externalContacts.length > 0 ||
         farcasterContacts.length > 0 ||
-        ensContacts.length > 0;
+        ensContacts.length > 0 ||
+        nameIdentityContacts.length > 0 ||
+        socialIdentityContacts.length > 0;
 
   const hasFilteredResults = isAllTab
     ? filteredUserContacts.length > 0 ||
       filteredFarcasterContacts.length > 0 ||
       filteredEnsContacts.length > 0 ||
+      filteredNameIdentityContacts.length > 0 ||
+      filteredSocialIdentityContacts.length > 0 ||
       filteredExternalContacts.length > 0
     : isContactsTab
       ? filteredUserContacts.length > 0
       : filteredExternalContacts.length > 0 ||
         filteredFarcasterContacts.length > 0 ||
-        filteredEnsContacts.length > 0;
+        filteredEnsContacts.length > 0 ||
+        filteredNameIdentityContacts.length > 0 ||
+        filteredSocialIdentityContacts.length > 0;
 
   const searchPlaceholder =
     selectedTab === 'all'
@@ -476,17 +495,35 @@ export function ContactPickerContent({
                 onSelect={onSelect}
               />
             ) : null}
-            {filteredEnsContacts.length > 0 ? (
-              <CollapsibleSection
-                title="ENS"
-                expanded={ensExpanded}
-                onToggle={toggleEns}
-                contacts={filteredEnsContacts}
-                onSelect={onSelect}
-              />
-            ) : null}
-          </>
-        ) : (
+                {filteredEnsContacts.length > 0 ? (
+                  <CollapsibleSection
+                    title="ENS"
+                    expanded={ensExpanded}
+                    onToggle={toggleEns}
+                    contacts={filteredEnsContacts}
+                    onSelect={onSelect}
+                  />
+                ) : null}
+                {filteredNameIdentityContacts.length > 0 ? (
+                  <CollapsibleSection
+                    title="Names"
+                    expanded={nameIdentitiesExpanded}
+                    onToggle={toggleNameIdentities}
+                    contacts={filteredNameIdentityContacts}
+                    onSelect={onSelect}
+                  />
+                ) : null}
+                {filteredSocialIdentityContacts.length > 0 ? (
+                  <CollapsibleSection
+                    title="Social"
+                    expanded={socialIdentitiesExpanded}
+                    onToggle={toggleSocialIdentities}
+                    contacts={filteredSocialIdentityContacts}
+                    onSelect={onSelect}
+                  />
+                ) : null}
+              </>
+            ) : (
           <>
             {filteredUserContacts.length > 0 ? (
               <CollapsibleSection
@@ -499,7 +536,9 @@ export function ContactPickerContent({
             ) : null}
             {filteredExternalContacts.length > 0 ||
             filteredFarcasterContacts.length > 0 ||
-            filteredEnsContacts.length > 0 ? (
+            filteredEnsContacts.length > 0 ||
+            filteredNameIdentityContacts.length > 0 ||
+            filteredSocialIdentityContacts.length > 0 ? (
               <CollapsibleGroup
                 title="External Contacts"
                 expanded={externalGroupExpanded}
@@ -555,17 +594,37 @@ export function ContactPickerContent({
                     nested
                   />
                 ) : null}
-                {filteredEnsContacts.length > 0 ? (
-                  <CollapsibleSection
-                    title="ENS"
-                    expanded={ensExpanded}
-                    onToggle={toggleEns}
-                    contacts={filteredEnsContacts}
-                    onSelect={onSelect}
-                    nested
-                  />
-                ) : null}
-              </CollapsibleGroup>
+                    {filteredEnsContacts.length > 0 ? (
+                      <CollapsibleSection
+                        title="ENS"
+                        expanded={ensExpanded}
+                        onToggle={toggleEns}
+                        contacts={filteredEnsContacts}
+                        onSelect={onSelect}
+                        nested
+                      />
+                    ) : null}
+                    {filteredNameIdentityContacts.length > 0 ? (
+                      <CollapsibleSection
+                        title="Names"
+                        expanded={nameIdentitiesExpanded}
+                        onToggle={toggleNameIdentities}
+                        contacts={filteredNameIdentityContacts}
+                        onSelect={onSelect}
+                        nested
+                      />
+                    ) : null}
+                    {filteredSocialIdentityContacts.length > 0 ? (
+                      <CollapsibleSection
+                        title="Social"
+                        expanded={socialIdentitiesExpanded}
+                        onToggle={toggleSocialIdentities}
+                        contacts={filteredSocialIdentityContacts}
+                        onSelect={onSelect}
+                        nested
+                      />
+                    ) : null}
+                  </CollapsibleGroup>
             ) : null}
           </>
         )}

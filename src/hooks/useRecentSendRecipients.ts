@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 
 import type { SendableContact } from '@/hooks/useSendToContact';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
+import type { IdentityBadgeKind } from '@/lib/identityProtocols';
 import {
   readPersistedJson,
   writePersistedJson,
@@ -14,6 +15,7 @@ export type RecentSendRecipient = SendableContact & {
   id: string;
   label: string;
   subtitle: string | null;
+  identityBadge: IdentityBadgeKind | null;
   lastUsedAt: number;
 };
 
@@ -81,6 +83,33 @@ function recentRecipientId(contact: SendableContact): string | null {
     return `sol:${sol}`;
   }
 
+  return null;
+}
+
+function resolveIdentityBadge(
+  contact: SendableContact,
+): IdentityBadgeKind | null {
+  if (contact.identityBadge) {
+    return contact.identityBadge;
+  }
+  if (contact.isFarcaster) {
+    return 'farcaster';
+  }
+  if (contact.isEns) {
+    return 'ens';
+  }
+  if (contact.isBasename) {
+    return 'basename';
+  }
+  if (contact.isLens) {
+    return 'lens';
+  }
+  if (contact.isSns) {
+    return 'sns';
+  }
+  if (contact.isNostr) {
+    return 'nostr';
+  }
   return null;
 }
 
@@ -157,6 +186,7 @@ function toRecentSendRecipient(contact: SendableContact): RecentSendRecipient | 
     profilePhotoUrl: contact.profilePhotoUrl?.trim() || null,
     isFarcaster: contact.isFarcaster === true,
     isEns: contact.isEns === true,
+    identityBadge: resolveIdentityBadge(contact),
     label,
     subtitle,
     lastUsedAt: Date.now(),

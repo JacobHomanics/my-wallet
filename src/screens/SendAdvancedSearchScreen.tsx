@@ -21,6 +21,7 @@ import { BackButton } from '@/components/BackButton';
 import { useEnsResolve } from '@/hooks/useEnsResolve';
 import { useFarcasterSearch } from '@/hooks/useFarcasterSearch';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useTier1Identity } from '@/hooks/useTier1Identity';
 import {
   addRecentEnsSearch,
   addRecentFarcasterSearch,
@@ -34,6 +35,8 @@ import { useSendAdvancedSearchTab } from '@/hooks/useSendAdvancedSearchTab';
 import { useWalletBalanceSearch } from '@/hooks/useWalletBalanceSearch';
 import { useSendToContact } from '@/hooks/useSendToContact';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
+import type { Tier1ProtocolId } from '@/lib/identityProtocols';
+import { TIER1_PROTOCOLS } from '@/lib/identityProtocols';
 import type { HomeStackParamList } from '@/navigation/types';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
@@ -65,6 +68,39 @@ function AdvancedSearchTabChip({
   );
 }
 
+function ProtocolChip({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const styles = useThemedStyles(createStyles);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={[styles.protocolChip, selected && styles.protocolChipSelected]}
+    >
+      <Text
+        style={[
+          styles.protocolChipText,
+          selected && styles.protocolChipTextSelected,
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+const NAME_PROTOCOLS: Tier1ProtocolId[] = ['basename', 'sns'];
+const SOCIAL_PROTOCOLS: Tier1ProtocolId[] = ['lens', 'nostr'];
+
 /**
  * Search Farcaster usernames, resolve ENS names, or enter wallet addresses during send.
  */
@@ -80,6 +116,10 @@ export function SendAdvancedSearchScreen() {
   const { sendToContact } = useSendToContact();
   const [farcasterQuery, setFarcasterQuery] = useState('');
   const [ensQuery, setEnsQuery] = useState('');
+  const [namesQuery, setNamesQuery] = useState('');
+  const [socialQuery, setSocialQuery] = useState('');
+  const [namesProtocol, setNamesProtocol] = useState<Tier1ProtocolId>('basename');
+  const [socialProtocol, setSocialProtocol] = useState<Tier1ProtocolId>('lens');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const { results, isSearching, showEmpty, errorMessage } =
     useFarcasterSearch(farcasterQuery);
@@ -99,11 +139,28 @@ export function SendAdvancedSearchScreen() {
   const {
     selectFarcaster,
     selectEns,
+    selectNames,
+    selectSocial,
     selectWallets,
     isFarcasterTab,
     isEnsTab,
+    isNamesTab,
+    isSocialTab,
     isWalletsTab,
   } = useSendAdvancedSearchTab();
+  const tier1Protocol = isNamesTab
+    ? namesProtocol
+    : isSocialTab
+      ? socialProtocol
+      : 'basename';
+  const tier1Query = isNamesTab ? namesQuery : isSocialTab ? socialQuery : '';
+  const {
+    results: tier1Results,
+    isSearching: isTier1Searching,
+    showEmpty: tier1Empty,
+    errorMessage: tier1ErrorMessage,
+    config: tier1Config,
+  } = useTier1Identity(tier1Protocol, tier1Query);
   const { recents: farcasterRecents } = useRecentAdvancedSearch('farcaster');
   const { recents: ensRecents } = useRecentAdvancedSearch('ens');
   const { recents: walletRecents } = useRecentAdvancedSearch('wallets');
@@ -185,7 +242,7 @@ export function SendAdvancedSearchScreen() {
           username: hit.username,
           name: hit.displayName,
           profilePhotoUrl: hit.pfpUrl,
-          isFarcaster: true,
+          identityBadge: 'farcaster',
         },
         { tokenId, usdAmount },
       );
@@ -209,7 +266,7 @@ export function SendAdvancedSearchScreen() {
           solanaAddress: null,
           name: hit.name,
           profilePhotoUrl: hit.avatarUrl,
-          isEns: true,
+          identityBadge: 'ens',
         },
         { tokenId, usdAmount },
       );
@@ -279,6 +336,16 @@ export function SendAdvancedSearchScreen() {
               label="ENS"
               selected={isEnsTab}
               onPress={selectEns}
+            />
+            <AdvancedSearchTabChip
+              label="Names"
+              selected={isNamesTab}
+              onPress={selectNames}
+            />
+            <AdvancedSearchTabChip
+              label="Social"
+              selected={isSocialTab}
+              onPress={selectSocial}
             />
             <AdvancedSearchTabChip
               label="Wallets"
@@ -365,7 +432,7 @@ export function SendAdvancedSearchScreen() {
                             photoUrl={hit.pfpUrl}
                             seed={hit.username}
                             size={40}
-                            showFarcasterBadge
+                            identityBadge="farcaster"
                           />
                           <View style={styles.resultText}>
                             <Text style={styles.resultLabel}>
@@ -420,7 +487,7 @@ export function SendAdvancedSearchScreen() {
                                 username: hit.username,
                                 name: hit.displayName,
                                 profilePhotoUrl: hit.pfpUrl,
-                                isFarcaster: true,
+                                identityBadge: 'farcaster',
                               },
                               { tokenId, usdAmount },
                             );
@@ -436,7 +503,7 @@ export function SendAdvancedSearchScreen() {
                             photoUrl={hit.pfpUrl}
                             seed={hit.username}
                             size={40}
-                            showFarcasterBadge
+                            identityBadge="farcaster"
                           />
                           <View style={styles.resultText}>
                             <Text style={styles.resultLabel}>{hit.label}</Text>
@@ -530,7 +597,7 @@ export function SendAdvancedSearchScreen() {
                           photoUrl={hit.avatarUrl}
                           seed={hit.name}
                           size={40}
-                          showEnsBadge
+                          identityBadge="ens"
                         />
                         <View style={styles.resultText}>
                           <Text style={styles.resultLabel}>{hit.name}</Text>
@@ -565,7 +632,7 @@ export function SendAdvancedSearchScreen() {
                           solanaAddress: null,
                           name: ensResult.name,
                           profilePhotoUrl: ensResult.avatarUrl,
-                          isEns: true,
+                          identityBadge: 'ens',
                         },
                         { tokenId, usdAmount },
                       );
@@ -580,7 +647,7 @@ export function SendAdvancedSearchScreen() {
                       photoUrl={ensResult.avatarUrl}
                       seed={ensResult.name}
                       size={40}
-                      showEnsBadge
+                      identityBadge="ens"
                     />
                     <View style={styles.resultText}>
                       <Text style={styles.resultLabel}>{ensResult.label}</Text>
@@ -594,6 +661,145 @@ export function SendAdvancedSearchScreen() {
 
                 {ensNotFound ? (
                   <Text style={styles.empty}>ENS name not found.</Text>
+                ) : null}
+              </>
+            ) : null}
+
+            {isNamesTab || isSocialTab ? (
+              <>
+                <View style={styles.protocolTabs}>
+                  {(isNamesTab ? NAME_PROTOCOLS : SOCIAL_PROTOCOLS).map(
+                    (protocol) => (
+                      <ProtocolChip
+                        key={protocol}
+                        label={TIER1_PROTOCOLS[protocol].title}
+                        selected={tier1Protocol === protocol}
+                        onPress={() => {
+                          if (isNamesTab) {
+                            setNamesProtocol(protocol);
+                          } else {
+                            setSocialProtocol(protocol);
+                          }
+                        }}
+                      />
+                    ),
+                  )}
+                </View>
+                <View style={styles.searchRow}>
+                  <TextInput
+                    accessibilityLabel={`Search ${tier1Config.title}`}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="off"
+                    onChangeText={isNamesTab ? setNamesQuery : setSocialQuery}
+                    placeholder={tier1Config.placeholder}
+                    placeholderTextColor={colors.textSubtle}
+                    style={styles.searchInput}
+                    value={tier1Query}
+                  />
+                  {tier1Query.trim() ? (
+                    <Pressable
+                      accessibilityLabel={`Clear ${tier1Config.title} search`}
+                      accessibilityRole="button"
+                      hitSlop={8}
+                      onPress={() => {
+                        if (isNamesTab) {
+                          setNamesQuery('');
+                        } else {
+                          setSocialQuery('');
+                        }
+                      }}
+                      style={({ pressed }) => [
+                        styles.clearSearchButton,
+                        pressed && styles.clearSearchButtonPressed,
+                      ]}
+                    >
+                      <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+                    </Pressable>
+                  ) : null}
+                </View>
+                <Text style={styles.hint}>{tier1Config.hint}</Text>
+                {tier1ErrorMessage ? (
+                  <Text style={styles.error}>{tier1ErrorMessage}</Text>
+                ) : null}
+
+                {isTier1Searching ? (
+                  <ActivityIndicator color={colors.primary} style={styles.loader} />
+                ) : null}
+
+                {tier1Results.length > 0 ? (
+                  <View style={styles.results}>
+                    {tier1Results.map((hit) => {
+                      const selectable = hit.hasAddress;
+                      return (
+                        <Pressable
+                          key={`${hit.protocol}:${hit.label}`}
+                          accessibilityLabel={`Select ${hit.label}`}
+                          accessibilityRole="button"
+                          accessibilityState={{ disabled: !selectable }}
+                          disabled={!selectable}
+                          onPress={() => {
+                            if (!selectable) {
+                              return;
+                            }
+                            sendToContact(
+                              {
+                                identityId: null,
+                                evmAddress: hit.evmAddress,
+                                solanaAddress: hit.solanaAddress,
+                                name: hit.label,
+                                profilePhotoUrl: hit.avatarUrl,
+                                identityBadge: hit.protocol,
+                              },
+                              { tokenId, usdAmount },
+                            );
+                          }}
+                          style={({ pressed }) => [
+                            styles.resultCard,
+                            pressed && selectable && styles.resultCardPressed,
+                            !selectable && styles.resultCardDisabled,
+                          ]}
+                        >
+                          <Avatar
+                            label={hit.label}
+                            photoUrl={hit.avatarUrl}
+                            seed={hit.label}
+                            size={40}
+                            identityBadge={hit.protocol}
+                          />
+                          <View style={styles.resultText}>
+                            <Text style={styles.resultLabel}>{hit.label}</Text>
+                            {!selectable ? (
+                              <Text style={styles.resultDescription}>
+                                No wallet address
+                              </Text>
+                            ) : hit.displayName ? (
+                              <Text style={styles.resultDescription}>
+                                {hit.displayName}
+                              </Text>
+                            ) : hit.evmAddress ? (
+                              <Text style={styles.resultDescription}>
+                                {formatWalletAddress(hit.evmAddress, 6, 4)}
+                              </Text>
+                            ) : hit.solanaAddress ? (
+                              <Text style={styles.resultDescription}>
+                                {formatWalletAddress(hit.solanaAddress, 6, 4)}
+                              </Text>
+                            ) : null}
+                          </View>
+                          <Ionicons
+                            name="chevron-forward"
+                            size={18}
+                            color={colors.textSubtle}
+                          />
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                ) : null}
+
+                {tier1Empty ? (
+                  <Text style={styles.empty}>{tier1Config.emptyMessage}</Text>
                 ) : null}
               </>
             ) : null}
@@ -816,6 +1022,30 @@ function createStyles(c: ThemeColors) {
     textAlign: 'center',
   },
   tabChipTextSelected: {
+    color: c.primary,
+  },
+  protocolTabs: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  protocolChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: c.surfaceMuted,
+  },
+  protocolChipSelected: {
+    backgroundColor: c.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.rowBorder,
+  },
+  protocolChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.textMuted,
+  },
+  protocolChipTextSelected: {
     color: c.primary,
   },
   body: {

@@ -1,9 +1,14 @@
 import { useCallback, useState } from 'react';
 
-export type SendAdvancedSearchTabId = 'farcaster' | 'ens' | 'wallets';
+export type SendAdvancedSearchTabId =
+  | 'farcaster'
+  | 'ens'
+  | 'names'
+  | 'social'
+  | 'wallets';
 
 /**
- * Segmented tab state for Send advanced search (Farcaster / ENS / Wallets).
+ * Segmented tab state for Send advanced search.
  */
 export function useSendAdvancedSearchTab(
   initial: SendAdvancedSearchTabId = 'farcaster',
@@ -19,6 +24,14 @@ export function useSendAdvancedSearchTab(
     setSelectedTab('ens');
   }, []);
 
+  const selectNames = useCallback(() => {
+    setSelectedTab('names');
+  }, []);
+
+  const selectSocial = useCallback(() => {
+    setSelectedTab('social');
+  }, []);
+
   const selectWallets = useCallback(() => {
     setSelectedTab('wallets');
   }, []);
@@ -28,9 +41,13 @@ export function useSendAdvancedSearchTab(
     setSelectedTab,
     selectFarcaster,
     selectEns,
+    selectNames,
+    selectSocial,
     selectWallets,
     isFarcasterTab: selectedTab === 'farcaster',
     isEnsTab: selectedTab === 'ens',
+    isNamesTab: selectedTab === 'names',
+    isSocialTab: selectedTab === 'social',
     isWalletsTab: selectedTab === 'wallets',
   };
 }

@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 
 /**
  * Collapse state for All-tab Contacts / External Contacts group /
- * Wallets / wallet chains / Farcaster / ENS sections.
+ * Wallets / wallet chains / Farcaster / ENS / Names / Social sections.
  */
 export function useContactsAllSections(initialExpanded = true) {
   const [contactsExpanded, setContactsExpanded] = useState(initialExpanded);
@@ -16,6 +16,10 @@ export function useContactsAllSections(initialExpanded = true) {
     useState(initialExpanded);
   const [farcasterExpanded, setFarcasterExpanded] = useState(initialExpanded);
   const [ensExpanded, setEnsExpanded] = useState(initialExpanded);
+  const [nameIdentitiesExpanded, setNameIdentitiesExpanded] =
+    useState(initialExpanded);
+  const [socialIdentitiesExpanded, setSocialIdentitiesExpanded] =
+    useState(initialExpanded);
 
   const toggleContacts = useCallback(() => {
     setContactsExpanded((open) => !open);
@@ -49,6 +53,14 @@ export function useContactsAllSections(initialExpanded = true) {
     setEnsExpanded((open) => !open);
   }, []);
 
+  const toggleNameIdentities = useCallback(() => {
+    setNameIdentitiesExpanded((open) => !open);
+  }, []);
+
+  const toggleSocialIdentities = useCallback(() => {
+    setSocialIdentitiesExpanded((open) => !open);
+  }, []);
+
   return {
     contactsExpanded,
     externalGroupExpanded,
@@ -58,6 +70,8 @@ export function useContactsAllSections(initialExpanded = true) {
     walletsMultiChainExpanded,
     farcasterExpanded,
     ensExpanded,
+    nameIdentitiesExpanded,
+    socialIdentitiesExpanded,
     toggleContacts,
     toggleExternalGroup,
     toggleWallets,
@@ -66,5 +80,7 @@ export function useContactsAllSections(initialExpanded = true) {
     toggleWalletsMultiChain,
     toggleFarcaster,
     toggleEns,
+    toggleNameIdentities,
+    toggleSocialIdentities,
   };
 }

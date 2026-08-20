@@ -8,6 +8,7 @@ import {
   resetSendDraft,
 } from '@/hooks/useSendDraft';
 import { addRecentSendRecipient } from '@/hooks/useRecentSendRecipients';
+import type { IdentityBadgeKind } from '@/lib/identityProtocols';
 import type { HomeStackParamList, MainTabParamList } from '@/navigation/types';
 
 export type SendableContact = {
@@ -16,9 +17,15 @@ export type SendableContact = {
   solanaAddress: string | null;
   username?: string | null;
   name?: string | null;
+  label?: string | null;
   profilePhotoUrl?: string | null;
   isFarcaster?: boolean;
   isEns?: boolean;
+  isBasename?: boolean;
+  isLens?: boolean;
+  isSns?: boolean;
+  isNostr?: boolean;
+  identityBadge?: IdentityBadgeKind | null;
 };
 
 type SendToContactOptions = {
@@ -30,6 +37,33 @@ type SendAmountParams = {
   tokenId?: string;
   usdAmount?: string;
 };
+
+function resolveIdentityBadge(
+  contact: SendableContact,
+): IdentityBadgeKind | null {
+  if (contact.identityBadge) {
+    return contact.identityBadge;
+  }
+  if (contact.isFarcaster) {
+    return 'farcaster';
+  }
+  if (contact.isEns) {
+    return 'ens';
+  }
+  if (contact.isBasename) {
+    return 'basename';
+  }
+  if (contact.isLens) {
+    return 'lens';
+  }
+  if (contact.isSns) {
+    return 'sns';
+  }
+  if (contact.isNostr) {
+    return 'nostr';
+  }
+  return null;
+}
 
 function isHomeStackNavigation(
   navigation: NavigationProp<Record<string, unknown>>,
@@ -104,26 +138,32 @@ export function useSendToContact() {
 
       resetSendDraft();
 
+      const identityBadge = resolveIdentityBadge(contact);
+      const displayName =
+        contact.name?.trim() ||
+        contact.label?.trim() ||
+        null;
+      const hydrateParams = {
+        recipientUsername:
+          identityBadge === 'farcaster' ? contact.username ?? null : null,
+        recipientName: displayName,
+        recipientProfilePhotoUrl: contact.profilePhotoUrl,
+        recipientIsFarcaster: contact.isFarcaster,
+        recipientIsEns: contact.isEns,
+        recipientIdentityBadge: identityBadge,
+        usdAmount: options?.usdAmount,
+      };
+
       if (contact.identityId) {
         hydrateSendDraftFromConfirmParams({
           identity: contact.identityId,
-          recipientUsername: contact.username,
-          recipientName: contact.name,
-          recipientProfilePhotoUrl: contact.profilePhotoUrl,
-          recipientIsFarcaster: contact.isFarcaster,
-          recipientIsEns: contact.isEns,
-          usdAmount: options?.usdAmount,
+          ...hydrateParams,
         });
       } else {
         hydrateSendDraftFromConfirmParams({
           ethereumRecipient: contact.evmAddress ?? undefined,
           solanaRecipient: contact.solanaAddress ?? undefined,
-          recipientUsername: contact.username,
-          recipientName: contact.name,
-          recipientProfilePhotoUrl: contact.profilePhotoUrl,
-          recipientIsFarcaster: contact.isFarcaster,
-          recipientIsEns: contact.isEns,
-          usdAmount: options?.usdAmount,
+          ...hydrateParams,
         });
       }
 

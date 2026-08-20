@@ -12,6 +12,10 @@ function contactMatchesQuery(
     contact.username,
     contact.farcasterUsername,
     contact.ensName,
+    contact.basename,
+    contact.lensHandle,
+    contact.snsDomain,
+    contact.nostrNip05,
     contact.name,
     contact.identityId,
     contact.evmAddress,
@@ -31,6 +35,8 @@ export function useContactsFilter(contacts: {
   userContacts: ContactListItem[];
   farcasterContacts: ContactListItem[];
   ensContacts: ContactListItem[];
+  nameIdentityContacts: ContactListItem[];
+  socialIdentityContacts: ContactListItem[];
   externalContacts: ContactListItem[];
 }) {
   const [query, setQuery] = useState('');
@@ -66,6 +72,26 @@ export function useContactsFilter(contacts: {
     );
   }, [contacts.ensContacts, normalizedQuery]);
 
+  const filteredNameIdentityContacts = useMemo(() => {
+    if (!normalizedQuery) {
+      return contacts.nameIdentityContacts;
+    }
+
+    return contacts.nameIdentityContacts.filter((contact) =>
+      contactMatchesQuery(contact, normalizedQuery),
+    );
+  }, [contacts.nameIdentityContacts, normalizedQuery]);
+
+  const filteredSocialIdentityContacts = useMemo(() => {
+    if (!normalizedQuery) {
+      return contacts.socialIdentityContacts;
+    }
+
+    return contacts.socialIdentityContacts.filter((contact) =>
+      contactMatchesQuery(contact, normalizedQuery),
+    );
+  }, [contacts.socialIdentityContacts, normalizedQuery]);
+
   const filteredExternalContacts = useMemo(() => {
     if (!normalizedQuery) {
       return contacts.externalContacts;
@@ -85,6 +111,8 @@ export function useContactsFilter(contacts: {
     filteredUserContacts.length > 0 ||
     filteredFarcasterContacts.length > 0 ||
     filteredEnsContacts.length > 0 ||
+    filteredNameIdentityContacts.length > 0 ||
+    filteredSocialIdentityContacts.length > 0 ||
     filteredExternalContacts.length > 0;
 
   return {
@@ -94,6 +122,8 @@ export function useContactsFilter(contacts: {
     filteredUserContacts,
     filteredFarcasterContacts,
     filteredEnsContacts,
+    filteredNameIdentityContacts,
+    filteredSocialIdentityContacts,
     filteredExternalContacts,
     hasActiveQuery,
     hasFilteredResults,

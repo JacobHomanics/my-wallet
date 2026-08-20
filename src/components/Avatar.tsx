@@ -1,8 +1,8 @@
 import { Image } from 'expo-image';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { EnsIcon, ENS_BLUE } from '@/components/EnsIcon';
-import { FarcasterIcon, FARCASTER_PURPLE } from '@/components/FarcasterIcon';
+import { IdentityBadgeIcon, identityBadgeColor } from '@/components/IdentityBadgeIcon';
+import type { IdentityBadgeKind } from '@/lib/identityProtocols';
 import { getAvatarColor } from '@/hooks/useProfileIdentity';
 
 type AvatarProps = {
@@ -10,6 +10,8 @@ type AvatarProps = {
   seed: string;
   photoUrl?: string | null;
   size?: number;
+  /** Preferred badge selector for any supported identity provider. */
+  identityBadge?: IdentityBadgeKind | null;
   /** Bottom-right Farcaster brand badge (e.g. Farcaster contacts). */
   showFarcasterBadge?: boolean;
   /** Bottom-right ENS brand badge (e.g. ENS contacts). */
@@ -25,6 +27,7 @@ export function Avatar({
   seed,
   photoUrl,
   size = 40,
+  identityBadge = null,
   showFarcasterBadge = false,
   showEnsBadge = false,
   style,
@@ -33,6 +36,9 @@ export function Avatar({
   const backgroundColor = getAvatarColor(seed);
   const fontSize = Math.max(12, Math.round(size * 0.4));
   const badgeSize = Math.max(14, Math.round(size * 0.4));
+  const resolvedBadge: IdentityBadgeKind | null =
+    identityBadge ??
+    (showFarcasterBadge ? 'farcaster' : showEnsBadge ? 'ens' : null);
 
   return (
     <View style={[{ width: size, height: size }, style]}>
@@ -62,7 +68,7 @@ export function Avatar({
           <Text style={[styles.letter, { fontSize }]}>{letter}</Text>
         )}
       </View>
-      {showFarcasterBadge ? (
+      {resolvedBadge ? (
         <View
           style={[
             styles.brandBadge,
@@ -70,26 +76,15 @@ export function Avatar({
               width: badgeSize,
               height: badgeSize,
               borderRadius: badgeSize / 2,
-              backgroundColor: FARCASTER_PURPLE,
+              backgroundColor: identityBadgeColor(resolvedBadge),
             },
           ]}
         >
-          <FarcasterIcon size={badgeSize} withBackground />
-        </View>
-      ) : null}
-      {showEnsBadge ? (
-        <View
-          style={[
-            styles.brandBadge,
-            {
-              width: badgeSize,
-              height: badgeSize,
-              borderRadius: badgeSize / 2,
-              backgroundColor: ENS_BLUE,
-            },
-          ]}
-        >
-          <EnsIcon size={badgeSize} withBackground />
+          <IdentityBadgeIcon
+            kind={resolvedBadge}
+            size={badgeSize}
+            withBackground
+          />
         </View>
       ) : null}
     </View>

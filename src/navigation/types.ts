@@ -1,6 +1,7 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 
 import type { LoginMethod } from '@/lib/privy/context/AuthFlowContext.shared';
+import type { IdentityBadgeKind } from '@/lib/identityProtocols';
 
 export type ConfirmSendLeg = {
   tokenId: string;
@@ -82,6 +83,7 @@ export type HomeStackParamList = {
     recipientUsername?: string | null;
     recipientIsFarcaster?: boolean;
     recipientIsEns?: boolean;
+    recipientIdentityBadge?: IdentityBadgeKind | null;
   };
 };
 
@@ -97,6 +99,10 @@ export type ContactsStackParamList = {
   index: undefined;
   newContact: undefined;
   newFarcasterContact: undefined;
+  newBasenameContact: undefined;
+  newLensContact: undefined;
+  newSnsContact: undefined;
+  newNostrContact: undefined;
   newEnsContact: undefined;
   newRawAddressContact: undefined;
   contactDetails: {

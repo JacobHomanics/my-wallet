@@ -51,11 +51,29 @@ export default defineSchema({
     ensName: v.optional(v.string()),
     /** Resolved ENS avatar URL from the avatar text record. */
     ensAvatarUrl: v.optional(v.string()),
+    /** Basename (e.g. alice.base.eth). */
+    basename: v.optional(v.string()),
+    basenameAvatarUrl: v.optional(v.string()),
+    /** Lens account address (0x). */
+    lensAccount: v.optional(v.string()),
+    lensHandle: v.optional(v.string()),
+    lensAvatarUrl: v.optional(v.string()),
+    /** SNS domain (e.g. alice.sol). */
+    snsDomain: v.optional(v.string()),
+    /** Nostr NIP-05 identifier (user@domain). */
+    nostrNip05: v.optional(v.string()),
+    /** Nostr hex pubkey. */
+    nostrPubkey: v.optional(v.string()),
+    nostrAvatarUrl: v.optional(v.string()),
   })
     .index("by_owner", ["ownerId"])
     .index("by_owner_and_contact", ["ownerId", "contactUserId"])
     .index("by_owner_and_evm", ["ownerId", "evmAddress"])
     .index("by_owner_and_solana", ["ownerId", "solanaAddress"])
     .index("by_owner_and_fid", ["ownerId", "farcasterFid"])
-    .index("by_owner_and_ens", ["ownerId", "ensName"]),
+    .index("by_owner_and_ens", ["ownerId", "ensName"])
+    .index("by_owner_and_basename", ["ownerId", "basename"])
+    .index("by_owner_and_lens_account", ["ownerId", "lensAccount"])
+    .index("by_owner_and_sns_domain", ["ownerId", "snsDomain"])
+    .index("by_owner_and_nostr_pubkey", ["ownerId", "nostrPubkey"]),
 });

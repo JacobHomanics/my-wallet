@@ -4,6 +4,18 @@ const { getDefaultConfig } = require("expo/metro-config");
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
 
+function resolvePrivyEntry(subpath) {
+  const moduleName = subpath
+    ? `@privy-io/react-auth/${subpath}`
+    : "@privy-io/react-auth";
+  return require.resolve(moduleName);
+}
+
+function resolvePrivyPackageRoot() {
+  // Package does not export ./package.json; derive root from the CJS entry.
+  return path.resolve(path.dirname(resolvePrivyEntry()), "../..");
+}
+
 // styled-components/native requires this optional peer; pnpm can leave it
 // invisible to Metro's nested resolution — force the app-root install.
 config.resolver.extraNodeModules = {
@@ -11,25 +23,23 @@ config.resolver.extraNodeModules = {
   "css-to-react-native": path.dirname(
     require.resolve("css-to-react-native/package.json"),
   ),
+  "@privy-io/react-auth": resolvePrivyPackageRoot(),
 };
-const PRIVY_CJS_ENTRY = require.resolve("@privy-io/react-auth");
-const PRIVY_CJS_UI_ENTRY = require.resolve("@privy-io/react-auth/ui");
-const PRIVY_CJS_SOLANA_ENTRY = require.resolve("@privy-io/react-auth/solana");
 
 const resolveRequestWithPackageExports = (context, moduleName, platform) => {
   // Note: do not shim `react-native` with Object.assign on RN 0.86+ —
   // public API uses getters and a copied object drops StyleSheet/etc.
 
   if (platform === "web" && moduleName === "@privy-io/react-auth") {
-    return context.resolveRequest(context, PRIVY_CJS_ENTRY, platform);
+    return context.resolveRequest(context, resolvePrivyEntry(), platform);
   }
 
   if (platform === "web" && moduleName === "@privy-io/react-auth/ui") {
-    return context.resolveRequest(context, PRIVY_CJS_UI_ENTRY, platform);
+    return context.resolveRequest(context, resolvePrivyEntry("ui"), platform);
   }
 
   if (platform === "web" && moduleName === "@privy-io/react-auth/solana") {
-    return context.resolveRequest(context, PRIVY_CJS_SOLANA_ENTRY, platform);
+    return context.resolveRequest(context, resolvePrivyEntry("solana"), platform);
   }
 
   if (moduleName === "isows") {

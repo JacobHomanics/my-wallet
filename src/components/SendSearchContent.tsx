@@ -122,8 +122,7 @@ export function SendSearchContent({
         username: item.username,
         name: item.name,
         profilePhotoUrl: item.profilePhotoUrl,
-        isFarcaster: item.isFarcaster,
-        isEns: item.isEns,
+        identityBadge: item.identityBadge,
       },
       { tokenId, usdAmount },
     );

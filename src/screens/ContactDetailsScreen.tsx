@@ -18,6 +18,7 @@ import { IconButton } from '@/components/IconButton';
 import { useConfirmDeleteContact } from '@/hooks/useConfirmDeleteContact';
 import { useContactDetails } from '@/hooks/useContactDetails';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
+import { isPlatformContact } from '@/lib/contactPresentation';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToContacts } from '@/hooks/usePopToContacts';
 import { useSendToContact } from '@/hooks/useSendToContact';
@@ -163,8 +164,7 @@ export function ContactDetailsScreen() {
                 photoUrl={contact.profilePhotoUrl}
                 seed={contact.username ?? contact.ensName ?? contact.id}
                 size={88}
-                showFarcasterBadge={contact.isFarcaster}
-                showEnsBadge={contact.isEns}
+                identityBadge={contact.identityBadge}
                 style={styles.avatar}
               />
               <Text style={styles.contactTitle}>{contact.title}</Text>
@@ -185,7 +185,7 @@ export function ContactDetailsScreen() {
                     />
                   ) : null}
                 </View>
-              ) : !contact.isFarcaster &&
+              ) : !isPlatformContact(contact) &&
                 (contact.username ||
                   contact.name ||
                   contact.evmAddress ||
@@ -221,16 +221,13 @@ export function ContactDetailsScreen() {
                   ) : null}
                 </View>
               ) : null}
-              {!contact.isFarcaster &&
-              !contact.isEns &&
-              contact.identityId ? (
+              {!isPlatformContact(contact) && contact.identityId ? (
                 <AccountNumber
                   identityId={contact.identityId}
                   style={styles.accountNumber}
                 />
               ) : null}
-              {!contact.isFarcaster &&
-              !contact.isEns &&
+              {!isPlatformContact(contact) &&
               !contact.username &&
               !contact.name &&
               !contact.evmAddress &&

@@ -196,6 +196,66 @@ export function NewContactScreen() {
               </Pressable>
               <View style={styles.advancedDivider} />
               <Pressable
+                accessibilityLabel="Add Basename contact"
+                accessibilityRole="button"
+                onPress={() => {
+                  navigation.navigate('newBasenameContact');
+                }}
+                style={({ pressed }) => [
+                  styles.advancedButton,
+                  pressed && styles.advancedButtonPressed,
+                ]}
+              >
+                <Text style={styles.advancedButtonText}>Basename</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />
+              </Pressable>
+              <View style={styles.advancedDivider} />
+              <Pressable
+                accessibilityLabel="Add Lens contact"
+                accessibilityRole="button"
+                onPress={() => {
+                  navigation.navigate('newLensContact');
+                }}
+                style={({ pressed }) => [
+                  styles.advancedButton,
+                  pressed && styles.advancedButtonPressed,
+                ]}
+              >
+                <Text style={styles.advancedButtonText}>Lens</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />
+              </Pressable>
+              <View style={styles.advancedDivider} />
+              <Pressable
+                accessibilityLabel="Add SNS contact"
+                accessibilityRole="button"
+                onPress={() => {
+                  navigation.navigate('newSnsContact');
+                }}
+                style={({ pressed }) => [
+                  styles.advancedButton,
+                  pressed && styles.advancedButtonPressed,
+                ]}
+              >
+                <Text style={styles.advancedButtonText}>SNS</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />
+              </Pressable>
+              <View style={styles.advancedDivider} />
+              <Pressable
+                accessibilityLabel="Add Nostr contact"
+                accessibilityRole="button"
+                onPress={() => {
+                  navigation.navigate('newNostrContact');
+                }}
+                style={({ pressed }) => [
+                  styles.advancedButton,
+                  pressed && styles.advancedButtonPressed,
+                ]}
+              >
+                <Text style={styles.advancedButtonText}>Nostr</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />
+              </Pressable>
+              <View style={styles.advancedDivider} />
+              <Pressable
                 accessibilityLabel="Add contact by raw addresses"
                 accessibilityRole="button"
                 onPress={() => {
