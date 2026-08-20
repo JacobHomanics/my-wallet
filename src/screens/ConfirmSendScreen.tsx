@@ -283,6 +283,7 @@ export function ConfirmSendScreen() {
     canSend,
     clearStatus,
     filledUsd,
+    gasSponsorship,
     navigation,
     primaryLabel,
     recipientIsFarcaster,
