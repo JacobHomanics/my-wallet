@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
+import { useCanSelectContact } from '@/hooks/useCanSelectContact';
 import { useContactsAllSections } from '@/hooks/useContactsAllSections';
 import { useContactsFilter } from '@/hooks/useContactsFilter';
 import { useContactsTab } from '@/hooks/useContactsTab';
@@ -28,12 +29,6 @@ type ContactPickerContentProps = {
   /** When false, clears the filter query (e.g. modal closed). Defaults to true. */
   active?: boolean;
 };
-
-function canSelectContact(contact: ContactListItem): boolean {
-  return Boolean(
-    contact.identityId || contact.evmAddress || contact.solanaAddress,
-  );
-}
 
 function contactDisplayLabel(contact: ContactListItem): string {
   if (contact.isEns && contact.ensName) {
@@ -87,6 +82,7 @@ function ContactPickerRow({
 }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
+  const canSelectContact = useCanSelectContact();
   const selectable = canSelectContact(contact);
   const label = contactDisplayLabel(contact);
   const description = contactDescription(contact);

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import { usePrivyEarn } from '@/hooks/usePrivyEarn';
+import { useSendAmountPreview } from '@/hooks/useSendAmountPreview';
 import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useSendVaultUsdc } from '@/hooks/useSendVaultUsdc';
@@ -11,6 +12,7 @@ import { mergeVaultUsdcIntoTokens } from '@/lib/privy/mergeVaultUsdcIntoTokens';
  * user has enabled “Use vault USDC when sending”.
  */
 export function useSendSpendableTokens() {
+  const preview = useSendAmountPreview();
   const { tokens, loading, ready, refresh, ethereumAddress, solanaAddress } =
     useTokenBalances();
   const { enabled: vaultSendEnabled } = useSendVaultUsdc();
@@ -39,6 +41,24 @@ export function useSendSpendableTokens() {
       !spendable.gasEstimatesReady ||
       (vaultSendEnabled && earnLoading));
 
+  if (preview.isPreview) {
+    return {
+      tokens: preview.tokens,
+      tokensForSend: preview.tokens,
+      loading: false,
+      ready: true,
+      refresh,
+      ethereumAddress,
+      solanaAddress,
+      availableBalanceLoading: false,
+      spendableTokens: preview.tokens,
+      availableUsd: preview.availableUsd,
+      availableLabel: preview.availableLabel,
+      gasEstimatesReady: true,
+      isPreview: true,
+    };
+  }
+
   return {
     tokens,
     tokensForSend,
@@ -48,6 +68,7 @@ export function useSendSpendableTokens() {
     ethereumAddress,
     solanaAddress,
     availableBalanceLoading,
+    isPreview: false,
     ...spendable,
   };
 }

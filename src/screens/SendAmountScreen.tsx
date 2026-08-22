@@ -17,7 +17,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/Avatar';
 import { BalanceSkeleton } from '@/components/BalanceSkeleton';
 import { BackButton } from '@/components/BackButton';
+import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
+import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
 import { SendConfigurationCollapsible } from '@/components/SendConfigurationCollapsible';
+import { useAuthGatedAction } from '@/hooks/useAuthGatedAction';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
@@ -66,6 +69,7 @@ export function SendAmountScreen() {
     availableUsd,
     availableLabel,
     availableBalanceLoading,
+    isPreview,
   } = useSendSpendableTokens();
   const { allocationInputUnit, setAllocationInputUnit, broadcastMode, setBroadcastMode } =
     useSendDraftUi();
@@ -142,6 +146,7 @@ export function SendAmountScreen() {
 
   const totalLabel = availableLabel;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
+  const showAmountForm = isPreview || hasWallet;
 
   const taxLabel = formatFromUsd(taxUsd) ?? defaultFormattedZero;
   const payerTotalLabel =
@@ -162,7 +167,7 @@ export function SendAmountScreen() {
       ? 'Enter a valid amount'
       : null;
 
-  const onContinue = useCallback(() => {
+  const goToConfirm = useCallback(() => {
     if (!canContinue || allocations.length === 0) {
       return;
     }
@@ -184,6 +189,12 @@ export function SendAmountScreen() {
     resolvedSolanaRecipient,
     navigation,
   ]);
+  const {
+    run: onContinue,
+    authPromptOpen,
+    closeAuthPrompt,
+    confirmAuthPrompt,
+  } = useAuthGatedAction(goToConfirm);
 
   const { onBack } = useClearSendRecipientOnBack();
 
@@ -238,7 +249,7 @@ export function SendAmountScreen() {
 
           {!ready || (loading && tokens.length === 0) ? (
             <ActivityIndicator color={colors.primary} style={styles.loader} />
-          ) : !hasWallet ? (
+          ) : !showAmountForm ? (
             <Text style={styles.empty}>Creating your wallets…</Text>
           ) : (
             <ScrollView
@@ -380,6 +391,7 @@ export function SendAmountScreen() {
           )}
         </View>
       </KeyboardAvoidingView>
+      <SignUpLoginBanner includeBottomInset />
 
       <StrategyPickerModal
         onClose={closeStrategyPicker}
@@ -397,6 +409,11 @@ export function SendAmountScreen() {
         onSelect={onAddToken}
         tokens={pickerTokens}
         visible={tokenPickerOpen}
+      />
+      <SignUpLoginPromptModal
+        visible={authPromptOpen}
+        onCancel={closeAuthPrompt}
+        onConfirm={confirmAuthPrompt}
       />
     </View>
   );

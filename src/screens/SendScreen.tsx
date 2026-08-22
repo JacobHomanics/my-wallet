@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { ContactPickerContent } from '@/components/ContactPickerContent';
+import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
 import { SendSearchContent } from '@/components/SendSearchContent';
 import type { ContactListItem } from '@/hooks/useContacts';
 import { useContactSearch } from '@/hooks/useContactSearch';
@@ -108,6 +109,7 @@ export function SendScreen() {
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+      <SignUpLoginBanner includeBottomInset />
     </View>
   );
 }

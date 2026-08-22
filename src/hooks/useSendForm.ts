@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppTax } from '@/hooks/useAppTax';
 import { useGasSponsorship } from '@/hooks/useGasSponsorship';
 import { useChainPriority } from '@/hooks/useChainPriority';
+import { useSendAmountPreview } from '@/hooks/useSendAmountPreview';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import { registerDisplayCurrencyChangeListener } from '@/hooks/useDisplayCurrency';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
@@ -267,6 +268,7 @@ export function useSendForm(
   /** Optional tip / additional USD added on top of the base amount. */
   additionalUsd?: number | null,
 ): SendFormState {
+  const { isPreview } = useSendAmountPreview();
   const { selectedChainPriorityId } = useChainPriority();
   const { gasSponsorship } = useGasSponsorship();
   const { taxUsdFor, payerTotalUsdFor, maxMerchantUsdFor } =
@@ -653,20 +655,26 @@ export function useSendForm(
   const needsSolanaRecipient = chains.includes('solana');
 
   const ethereumRecipientValid = useMemo(() => {
+    if (isPreview) {
+      return true;
+    }
     const trimmed = ethereumRecipient.trim();
     if (!trimmed) {
       return true;
     }
     return isValidRecipientAddress(trimmed, 'ethereum');
-  }, [ethereumRecipient]);
+  }, [ethereumRecipient, isPreview]);
 
   const solanaRecipientValid = useMemo(() => {
+    if (isPreview) {
+      return true;
+    }
     const trimmed = solanaRecipient.trim();
     if (!trimmed) {
       return true;
     }
     return isValidRecipientAddress(trimmed, 'solana');
-  }, [solanaRecipient]);
+  }, [isPreview, solanaRecipient]);
 
   const recipientsValid = ethereumRecipientValid && solanaRecipientValid;
 
@@ -756,10 +764,11 @@ export function useSendForm(
   const canContinue =
     hasPositiveLeg &&
     canFulfill &&
-    recipientsValid &&
-    (!amountValid || !payerExceedsAvailable) &&
-    (!needsEthereumRecipient || resolvedRecipients.ethereum.length > 0) &&
-    (!needsSolanaRecipient || resolvedRecipients.solana.length > 0);
+    (isPreview ||
+      (recipientsValid &&
+        (!needsEthereumRecipient || resolvedRecipients.ethereum.length > 0) &&
+        (!needsSolanaRecipient || resolvedRecipients.solana.length > 0))) &&
+    (!amountValid || !payerExceedsAvailable);
 
   const continueBlockedReason = (() => {
     if (canContinue) {
@@ -768,13 +777,21 @@ export function useSendForm(
     if (!hasPositiveLeg) {
       return null;
     }
-    if (!recipientsValid) {
+    if (!isPreview && !recipientsValid) {
       return 'Recipient address is invalid.';
     }
-    if (needsEthereumRecipient && !resolvedRecipients.ethereum) {
+    if (
+      !isPreview &&
+      needsEthereumRecipient &&
+      !resolvedRecipients.ethereum
+    ) {
       return 'This payment needs an EVM recipient address.';
     }
-    if (needsSolanaRecipient && !resolvedRecipients.solana) {
+    if (
+      !isPreview &&
+      needsSolanaRecipient &&
+      !resolvedRecipients.solana
+    ) {
       return 'This payment needs a Solana recipient address.';
     }
     if (insufficientFunds) {
