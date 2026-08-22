@@ -35,7 +35,8 @@ export function SendScreen() {
   const route = useRoute<RouteProp<HomeStackParamList, 'send'>>();
   const goHome = usePopToHome();
   const { sendToContact } = useSendToContact();
-  const search = useContactSearch();
+  const [isZitiCashboxTab, setIsZitiCashboxTab] = useState(true);
+  const search = useContactSearch({ enabled: isZitiCashboxTab });
   const [searchFocused, setSearchFocused] = useState(false);
 
   const tokenId = route.params?.tokenId;
@@ -97,6 +98,7 @@ export function SendScreen() {
               isSearching={search.isSearching}
               showEmpty={search.showEmpty}
               onSearchFocusChange={setSearchFocused}
+              onSearchTabChange={setIsZitiCashboxTab}
             />
 
             {showContacts ? (

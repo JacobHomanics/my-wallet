@@ -52,6 +52,7 @@ export type HomeStackParamList = {
   sendAdvancedSearch: {
     tokenId?: string;
     usdAmount?: string;
+    tab?: 'farcaster' | 'ens' | 'wallets';
   } | undefined;
   sendAmount: {
     tokenId?: string;

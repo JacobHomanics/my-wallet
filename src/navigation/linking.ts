@@ -398,6 +398,10 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
                 parse: {
                   tokenId: (tokenId: string) => tokenId || undefined,
                   usdAmount: (usdAmount: string) => usdAmount || undefined,
+                  tab: (tab: string) =>
+                    tab === 'farcaster' || tab === 'ens' || tab === 'wallets'
+                      ? tab
+                      : undefined,
                 },
               },
               sendAmount: {

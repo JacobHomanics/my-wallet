@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
+import { SendAdvancedSearchTabs } from '@/components/SendAdvancedSearchTabs';
 import { useEnsResolve } from '@/hooks/useEnsResolve';
 import { useFarcasterSearch } from '@/hooks/useFarcasterSearch';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -30,7 +31,11 @@ import {
   type RecentFarcasterSearch,
   type RecentWalletSearch,
 } from '@/hooks/useRecentAdvancedSearch';
-import { useSendAdvancedSearchTab } from '@/hooks/useSendAdvancedSearchTab';
+import {
+  parseSendAdvancedSearchTab,
+  useSendAdvancedSearchTab,
+  type SendSearchTabId,
+} from '@/hooks/useSendAdvancedSearchTab';
 import { useWalletBalanceSearch } from '@/hooks/useWalletBalanceSearch';
 import { useSendToContact } from '@/hooks/useSendToContact';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
@@ -39,31 +44,6 @@ import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { webPressableMouseDownProps } from '@/hooks/useWebPressableMouseDown';
-
-function AdvancedSearchTabChip({
-  label,
-  selected,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  const styles = useThemedStyles(createStyles);
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={[styles.tabChip, selected && styles.tabChipSelected]}
-    >
-      <Text style={[styles.tabChipText, selected && styles.tabChipTextSelected]}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
 
 /**
  * Search Farcaster usernames, resolve ENS names, or enter wallet addresses during send.
@@ -97,13 +77,14 @@ export function SendAdvancedSearchScreen() {
     errorMessage: walletErrorMessage,
   } = useWalletBalanceSearch(walletQuery);
   const {
-    selectFarcaster,
-    selectEns,
-    selectWallets,
+    selectedTab,
+    setSelectedTab,
     isFarcasterTab,
     isEnsTab,
     isWalletsTab,
-  } = useSendAdvancedSearchTab();
+  } = useSendAdvancedSearchTab(
+    parseSendAdvancedSearchTab(route.params?.tab) ?? 'farcaster',
+  );
   const { recents: farcasterRecents } = useRecentAdvancedSearch('farcaster');
   const { recents: ensRecents } = useRecentAdvancedSearch('ens');
   const { recents: walletRecents } = useRecentAdvancedSearch('wallets');
@@ -131,6 +112,17 @@ export function SendAdvancedSearchScreen() {
     }
     navigation.navigate('sendSearch', { tokenId, usdAmount });
   }, [navigation, tokenId, usdAmount]);
+
+  const onSelectSearchTab = useCallback(
+    (tab: SendSearchTabId) => {
+      if (tab === 'zitiCashbox') {
+        navigation.navigate('send', { tokenId, usdAmount });
+        return;
+      }
+      setSelectedTab(tab);
+    },
+    [navigation, setSelectedTab, tokenId, usdAmount],
+  );
 
   const onSelectWallet = useCallback(() => {
     if (!walletResult) {
@@ -269,23 +261,10 @@ export function SendAdvancedSearchScreen() {
             <View style={styles.topBarSpacer} />
           </View>
 
-          <View style={styles.tabs}>
-            <AdvancedSearchTabChip
-              label="Farcaster"
-              selected={isFarcasterTab}
-              onPress={selectFarcaster}
-            />
-            <AdvancedSearchTabChip
-              label="ENS"
-              selected={isEnsTab}
-              onPress={selectEns}
-            />
-            <AdvancedSearchTabChip
-              label="Wallets"
-              selected={isWalletsTab}
-              onPress={selectWallets}
-            />
-          </View>
+          <SendAdvancedSearchTabs
+            selectedTab={selectedTab}
+            onSelect={onSelectSearchTab}
+          />
 
           <ScrollView
             contentContainerStyle={[
@@ -787,35 +766,6 @@ function createStyles(c: ThemeColors) {
   webBackText: {
     fontSize: 16,
     fontWeight: '600',
-    color: c.primary,
-  },
-  tabs: {
-    flexDirection: 'row',
-    marginHorizontal: 24,
-    marginBottom: 8,
-    padding: 4,
-    gap: 4,
-    backgroundColor: c.surfaceMuted,
-    borderRadius: 12,
-  },
-  tabChip: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 6,
-    borderRadius: 10,
-  },
-  tabChipSelected: {
-    backgroundColor: c.surface,
-  },
-  tabChipText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: c.textMuted,
-    textAlign: 'center',
-  },
-  tabChipTextSelected: {
     color: c.primary,
   },
   body: {

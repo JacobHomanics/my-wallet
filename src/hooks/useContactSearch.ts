@@ -23,12 +23,12 @@ function identitySubtitle(identityId: string): string {
 /**
  * Prefix search users by username or account number (excludes the signed-in user).
  */
-export function useContactSearch() {
+export function useContactSearch(options?: { enabled?: boolean }) {
   const { user, isReady } = useAuth();
   const externalId = isReady ? getPrivyExternalId(user) : null;
   const [query, setQuery] = useState('');
   const trimmed = query.trim();
-  const shouldSearch = trimmed.length >= 1;
+  const shouldSearch = (options?.enabled ?? true) && trimmed.length >= 1;
 
   const convexUsers = useQuery(
     api.users.search,

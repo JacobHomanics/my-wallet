@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -31,7 +31,8 @@ export function SendSearchScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'sendSearch'>>();
-  const search = useContactSearch();
+  const [isZitiCashboxTab, setIsZitiCashboxTab] = useState(true);
+  const search = useContactSearch({ enabled: isZitiCashboxTab });
 
   const tokenId = route.params?.tokenId;
   const usdAmount = route.params?.usdAmount;
@@ -88,6 +89,7 @@ export function SendSearchScreen() {
               results={search.results}
               isSearching={search.isSearching}
               showEmpty={search.showEmpty}
+              onSearchTabChange={setIsZitiCashboxTab}
             />
           </ScrollView>
         </View>
