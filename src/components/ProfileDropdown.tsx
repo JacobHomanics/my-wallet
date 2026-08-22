@@ -9,7 +9,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { ConfirmLogoutModal } from '@/components/ConfirmLogoutModal';
+import { useAuth } from '@/hooks/useAuth';
 import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
+import { useOpenLogin } from '@/hooks/useOpenLogin';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useProfilePhoto } from '@/hooks/useProfilePhoto';
@@ -30,6 +32,8 @@ export function ProfileDropdown({
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
 
+  const { isAuthenticated } = useAuth();
+  const openLogin = useOpenLogin();
   const { displayName, avatarSeed } = useProfileIdentity();
   const { profilePhotoUrl } = useProfilePhoto();
   const {
@@ -50,6 +54,25 @@ export function ProfileDropdown({
     containerRef as unknown as RefObject<Element | null>,
     closeDropdown,
   );
+
+  if (!isAuthenticated) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        onPress={openLogin}
+        style={(pressState) => {
+          const hovered =
+            'hovered' in pressState && Boolean(pressState.hovered);
+          return [
+            styles.trigger,
+            (hovered || pressState.pressed) && styles.triggerActive,
+          ];
+        }}
+      >
+        <Text style={styles.triggerLabel}>Sign in</Text>
+      </Pressable>
+    );
+  }
 
   return (
     <View ref={containerRef} style={styles.container} collapsable={false}>

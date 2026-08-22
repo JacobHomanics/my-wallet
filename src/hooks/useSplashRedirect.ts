@@ -55,7 +55,7 @@ export function useSplashRedirect() {
     }
 
     if (!isAuthenticated) {
-      navigation.replace('welcome');
+      navigation.replace('main');
       return;
     }
 

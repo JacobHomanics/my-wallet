@@ -18,6 +18,8 @@ type AccountNumberProps = {
   identityId?: string | null;
   username?: string | null;
   style?: StyleProp<ViewStyle>;
+  onCopyPress?: () => void;
+  isPreview?: boolean;
 };
 
 /**
@@ -27,6 +29,8 @@ export function AccountNumber({
   identityId,
   username,
   style,
+  onCopyPress,
+  isPreview = false,
 }: AccountNumberProps) {
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
@@ -40,7 +44,13 @@ export function AccountNumber({
     ? `@${trimmedUsername}`
     : (identityId?.trim() || '');
   const copyKey = showUsername ? 'username' : 'account-number';
-  const label = showUsername ? 'Username' : 'Account Number';
+  const label = showUsername
+    ? isPreview
+      ? 'Sample username'
+      : 'Username'
+    : isPreview
+      ? 'Sample account number'
+      : 'Account Number';
   const compact = !showUsername;
 
   if (!value) {
@@ -49,14 +59,24 @@ export function AccountNumber({
 
   return (
     <View style={[styles.wrap, style]}>
-      <View style={[styles.card, compact && styles.cardCompact]}>
+      <View
+        style={[
+          styles.card,
+          compact && styles.cardCompact,
+          isPreview && styles.cardPreview,
+        ]}
+      >
         <View style={styles.header}>
           <View style={[styles.headerText, compact && styles.headerTextCompact]}>
             <Text style={[styles.label, compact && styles.labelCompact]}>
               {label}
             </Text>
             <Text
-              style={[styles.value, compact && styles.valueCompact]}
+              style={[
+                styles.value,
+                compact && styles.valueCompact,
+                isPreview && styles.valuePreview,
+              ]}
               selectable
               numberOfLines={1}
               ellipsizeMode="middle"
@@ -88,6 +108,10 @@ export function AccountNumber({
             icon={isCopied(copyKey) ? 'checkmark' : 'copy-outline'}
             iconSize={compact ? 15 : 18}
             onPress={() => {
+              if (onCopyPress) {
+                onCopyPress();
+                return;
+              }
               void copy(value, copyKey);
             }}
             size={compact ? 28 : 32}
@@ -128,6 +152,12 @@ function createStyles(c: ThemeColors) {
     paddingTop: 8,
     paddingBottom: 8,
   },
+  cardPreview: {
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: c.borderStrong,
+    backgroundColor: c.surfaceMuted,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -162,6 +192,10 @@ function createStyles(c: ThemeColors) {
     fontSize: 12,
     fontWeight: '500',
     color: c.textSecondary,
+  },
+  valuePreview: {
+    color: c.textMuted,
+    fontStyle: 'italic',
   },
 });
 }

@@ -16,7 +16,10 @@ import { DepositBankTipsModal } from '@/components/DepositBankTipsModal';
 import { BalanceBreakdownModal } from '@/components/BalanceBreakdownModal';
 import { IconButton } from '@/components/IconButton';
 import { PhysicalCardWaitlistCallout } from '@/components/PhysicalCardWaitlistCallout';
+import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
 import { WithdrawUnsupportedModal } from '@/components/WithdrawUnsupportedModal';
+import { useAuth } from '@/hooks/useAuth';
+import { useAuthGatedAction } from '@/hooks/useAuthGatedAction';
 import { useBalanceBreakdownModal } from '@/hooks/useBalanceBreakdownModal';
 import { useDepositBankTipsModal } from '@/hooks/useDepositBankTipsModal';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
@@ -37,6 +40,7 @@ export function HomeScreen() {
 
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+  const { isAuthenticated } = useAuth();
   const {
     ready,
     ethereumAddress,
@@ -66,6 +70,12 @@ export function HomeScreen() {
     closeDepositTips,
     continueDepositTips,
   } = useDepositBankTipsModal(openDeposit);
+  const {
+    run: onPressDeposit,
+    authPromptOpen,
+    closeAuthPrompt,
+    confirmAuthPrompt,
+  } = useAuthGatedAction(openDepositTips);
   const { withdrawOpen, openWithdraw, closeWithdraw } =
     useWithdrawUnsupportedModal();
   const { breakdownOpen, openBreakdown, closeBreakdown } =
@@ -90,10 +100,11 @@ export function HomeScreen() {
   const earnBalanceLabel =
     formatFromUsd(vaultBalanceUsd) ?? defaultFormattedZero;
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
+  const showHomeChrome = ready && (hasWallet || !isAuthenticated);
   const balanceLoading = ready && hasWallet && (loading || earnLoading);
   const showBalanceError =
     ready && hasWallet && !balanceLoading && Boolean(error) && tokens.length === 0;
-  const showActions = ready && hasWallet;
+  const showActions = showHomeChrome && !showBalanceError;
 
   const renderBalance = () => {
     if (balanceLoading) {
@@ -104,7 +115,7 @@ export function HomeScreen() {
       return <View style={styles.balancePlaceholder} />;
     }
 
-    if (!hasWallet) {
+    if (isAuthenticated && !hasWallet) {
       return <Text style={styles.empty}>Creating your wallets…</Text>;
     }
 
@@ -145,7 +156,7 @@ export function HomeScreen() {
   };
 
   const renderActions = () => {
-    if (!showActions || showBalanceError) {
+    if (!showActions) {
       return null;
     }
 
@@ -167,7 +178,7 @@ export function HomeScreen() {
             {canDeposit ? (
               <Pressable
                 accessibilityRole="button"
-                onPress={openDepositTips}
+                onPress={onPressDeposit}
                 style={({ pressed }) => [
                   styles.actionButton,
                   pressed && styles.actionButtonPressed,
@@ -257,7 +268,7 @@ export function HomeScreen() {
           {renderBalance()}
           {renderActions()}
         </View>
-        {showActions && !showBalanceError ? (
+        {showActions ? (
           <Pressable
             accessibilityRole="link"
             hitSlop={8}
@@ -273,6 +284,11 @@ export function HomeScreen() {
           </Pressable>
         ) : null}
       </ScrollView>
+      <SignUpLoginPromptModal
+        visible={authPromptOpen}
+        onCancel={closeAuthPrompt}
+        onConfirm={confirmAuthPrompt}
+      />
       <DepositBankTipsModal
         visible={depositTipsOpen}
         doNotShowAgain={doNotShowAgain}

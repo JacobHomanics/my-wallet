@@ -26,8 +26,12 @@ export function useUserWallets(): UserWalletsResult {
   const { wallets: ethereumWallets } = useEmbeddedEthereumWallet();
   const solanaWallet = useEmbeddedSolanaWallet();
 
-  if (!isReady || !user) {
+  if (!isReady) {
     return { ready: false, wallets: [] };
+  }
+
+  if (!user) {
+    return { ready: true, wallets: [] };
   }
 
   const wallets: UserWallet[] = [];

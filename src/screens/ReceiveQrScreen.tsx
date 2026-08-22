@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useCallback } from 'react';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -9,13 +10,15 @@ import {StyleSheet,
   Text,
   View,
 } from 'react-native';
-import QRCodeStyled from 'react-native-qrcode-styled';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
 import { AccountNumber } from '@/components/AccountNumber';
+import { ReceiveQrCode } from '@/components/ReceiveQrCode';
+import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
 import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { useAppTax } from '@/hooks/useAppTax';
+import { useAuthGatedAction } from '@/hooks/useAuthGatedAction';
 import { useConvexUsername } from '@/hooks/useConvexUsername';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
@@ -36,10 +39,31 @@ export function ReceiveQrScreen() {
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'receiveQr'>>();
   const usdAmount = route.params.usdAmount;
-  const { ready, url, identityId, ethereumAddress, solanaAddress } =
-    useReceivePaymentUrl(usdAmount);
-  const { username } = useConvexUsername();
+  const {
+    ready,
+    url,
+    identityId,
+    ethereumAddress,
+    solanaAddress,
+    isPreview,
+    username: previewUsername,
+  } = useReceivePaymentUrl(usdAmount);
+  const { username: convexUsername } = useConvexUsername();
+  const username = previewUsername ?? convexUsername;
   const { copy, isCopied } = useCopyToClipboard();
+  const copyReceiveLink = useCallback(() => {
+    if (!url) {
+      return;
+    }
+    void copy(url, 'url');
+  }, [copy, url]);
+  const {
+    run: onPressCopyLink,
+    openAuthPrompt,
+    authPromptOpen,
+    closeAuthPrompt,
+    confirmAuthPrompt,
+  } = useAuthGatedAction(copyReceiveLink);
   const { formatFromUsd, formatServiceFeeFromUsd, parseDisplayInputToUsd, currencySymbol } =
     useFiatDisplay();
   const { taxUsdFor, payerTotalUsdFor } = useAppTax();
@@ -97,27 +121,23 @@ export function ReceiveQrScreen() {
                 />
               ) : null}
 
-              <View style={styles.qrWrap}>
-                <QRCodeStyled
-                  data={url}
-                  padding={16}
-                  size={200}
-                  color={colors.primary}
-                  style={styles.qr}
-                />
-              </View>
+              <ReceiveQrCode data={url} isPreview={isPreview} size={200} />
 
               {username || identityId ? (
                 <View style={styles.identitySection}>
                   {username ? (
                     <AccountNumber
                       username={username}
+                      isPreview={isPreview}
+                      onCopyPress={isPreview ? openAuthPrompt : undefined}
                       style={styles.accountNumber}
                     />
                   ) : null}
                   {identityId ? (
                     <AccountNumber
                       identityId={identityId}
+                      isPreview={isPreview}
+                      onCopyPress={isPreview ? openAuthPrompt : undefined}
                       style={styles.accountNumber}
                     />
                   ) : null}
@@ -126,35 +146,52 @@ export function ReceiveQrScreen() {
 
               <Pressable
                 accessibilityLabel={
-                  isCopied('url') ? 'Link copied' : 'Copy receive link'
+                  isPreview
+                    ? 'Sign up / Login'
+                    : isCopied('url')
+                      ? 'Link copied'
+                      : 'Copy receive link'
                 }
                 accessibilityRole="button"
-                onPress={() => {
-                  void copy(url, 'url');
-                }}
+                onPress={isPreview ? openAuthPrompt : onPressCopyLink}
                 style={({ pressed }) => [
                   styles.copyLinkButton,
                   pressed && styles.copyLinkButtonPressed,
                 ]}
               >
                 <Ionicons
-                  name={isCopied('url') ? 'checkmark' : 'link-outline'}
+                  name={
+                    isPreview
+                      ? 'log-in-outline'
+                      : isCopied('url')
+                        ? 'checkmark'
+                        : 'link-outline'
+                  }
                   size={18}
-                  color={isCopied('url') ? '#15803d' : '#166534'}
+                  color={isCopied('url') && !isPreview ? '#15803d' : '#166534'}
                 />
                 <Text
                   style={[
                     styles.copyLinkText,
-                    isCopied('url') && styles.copyLinkTextCopied,
+                    isCopied('url') && !isPreview && styles.copyLinkTextCopied,
                   ]}
                 >
-                  {isCopied('url') ? 'Link copied' : 'Copy link'}
+                  {isPreview
+                    ? 'Sign up / Login'
+                    : isCopied('url')
+                      ? 'Link copied'
+                      : 'Copy link'}
                 </Text>
               </Pressable>
             </>
           )}
         </ScrollView>
       </View>
+      <SignUpLoginPromptModal
+        visible={authPromptOpen}
+        onCancel={closeAuthPrompt}
+        onConfirm={confirmAuthPrompt}
+      />
     </View>
   );
 }
@@ -225,14 +262,6 @@ function createStyles(c: ThemeColors) {
     marginBottom: 20,
     maxWidth: 360,
     width: '100%',
-  },
-  qrWrap: {
-    backgroundColor: c.surface,
-    borderRadius: 16,
-    padding: 8,
-  },
-  qr: {
-    backgroundColor: c.surface,
   },
   identitySection: {
     width: '100%',

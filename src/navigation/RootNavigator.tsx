@@ -19,6 +19,7 @@ const UNAUTHENTICATED_ROUTES = new Set<string>([
   'login',
   'loginVerify',
   'exportWallet',
+  'main',
 ]);
 
 /** Authenticated routes that should not force the onboarding screen. */

@@ -1,13 +1,16 @@
 import { useMemo } from 'react';
 
+import { useReceivePreview } from '@/hooks/useReceivePreview';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { encodeWalletIdentity } from '@/lib/walletIdentity';
 import { createShareableAppURL } from '@/navigation/linking';
 
 export type ReceivePaymentUrlResult = {
   ready: boolean;
+  isPreview: boolean;
   url: string | null;
   identityId: string | null;
+  username: string | null;
   ethereumAddress: string | null;
   solanaAddress: string | null;
 };
@@ -16,9 +19,14 @@ export type ReceivePaymentUrlResult = {
 export function useReceivePaymentUrl(
   usdAmount: string,
 ): ReceivePaymentUrlResult {
+  const { isPreview, qrData, identityId: previewIdentityId, username } =
+    useReceivePreview();
   const { ready, ethereumAddress, solanaAddress } = useTokenBalances();
 
   const identityId = useMemo(() => {
+    if (isPreview) {
+      return previewIdentityId;
+    }
     if (!ready || !ethereumAddress || !solanaAddress) {
       return null;
     }
@@ -28,9 +36,12 @@ export function useReceivePaymentUrl(
     } catch {
       return null;
     }
-  }, [ethereumAddress, ready, solanaAddress]);
+  }, [ethereumAddress, isPreview, previewIdentityId, ready, solanaAddress]);
 
   const url = useMemo(() => {
+    if (isPreview) {
+      return usdAmount.trim() ? `${qrData}:${usdAmount.trim()}` : qrData;
+    }
     if (!identityId || !usdAmount.trim()) {
       return null;
     }
@@ -40,12 +51,14 @@ export function useReceivePaymentUrl(
       identity: identityId,
       legs: '[]',
     });
-  }, [identityId, usdAmount]);
+  }, [identityId, isPreview, qrData, usdAmount]);
 
   return {
-    ready,
+    ready: isPreview || ready,
+    isPreview,
     url,
     identityId,
+    username: isPreview ? username : null,
     ethereumAddress,
     solanaAddress,
   };

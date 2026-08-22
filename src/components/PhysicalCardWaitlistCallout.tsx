@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
 import { usePhysicalCardWaitlist } from '@/hooks/usePhysicalCardWaitlist';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
@@ -12,54 +13,69 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 export function PhysicalCardWaitlistCallout() {
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
-  const { hasJoined, join, isLoading, isJoining, errorMessage } =
-    usePhysicalCardWaitlist();
+  const {
+    hasJoined,
+    join,
+    isLoading,
+    isJoining,
+    errorMessage,
+    authPromptOpen,
+    closeAuthPrompt,
+    confirmAuthPrompt,
+  } = usePhysicalCardWaitlist();
 
   if (isLoading) {
     return null;
   }
 
   return (
-    <View style={styles.callout}>
-      <View style={styles.iconWrap}>
-        <Ionicons name="card-outline" size={20} color={colors.primary} />
+    <>
+      <View style={styles.callout}>
+        <View style={styles.iconWrap}>
+          <Ionicons name="card-outline" size={20} color={colors.primary} />
+        </View>
+        <View style={styles.body}>
+          <Text style={styles.title}>Physical cards coming soon!</Text>
+          {hasJoined ? (
+            <View style={styles.joinedRow}>
+              <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+              <Text style={styles.joinedText}>You&apos;re on the waitlist</Text>
+            </View>
+          ) : (
+            <>
+              <Pressable
+                accessibilityLabel="Join waitlist"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: isJoining }}
+                disabled={isJoining}
+                onPress={() => {
+                  void join();
+                }}
+                style={({ pressed }) => [
+                  styles.button,
+                  pressed && !isJoining && styles.buttonPressed,
+                  isJoining && styles.buttonDisabled,
+                ]}
+              >
+                {isJoining ? (
+                  <ActivityIndicator color={colors.primaryText} size="small" />
+                ) : (
+                  <Text style={styles.buttonText}>Join waitlist</Text>
+                )}
+              </Pressable>
+              {errorMessage ? (
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              ) : null}
+            </>
+          )}
+        </View>
       </View>
-      <View style={styles.body}>
-        <Text style={styles.title}>Physical cards coming soon!</Text>
-        {hasJoined ? (
-          <View style={styles.joinedRow}>
-            <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-            <Text style={styles.joinedText}>You&apos;re on the waitlist</Text>
-          </View>
-        ) : (
-          <>
-            <Pressable
-              accessibilityLabel="Join waitlist"
-              accessibilityRole="button"
-              accessibilityState={{ disabled: isJoining }}
-              disabled={isJoining}
-              onPress={() => {
-                void join();
-              }}
-              style={({ pressed }) => [
-                styles.button,
-                pressed && !isJoining && styles.buttonPressed,
-                isJoining && styles.buttonDisabled,
-              ]}
-            >
-              {isJoining ? (
-                <ActivityIndicator color={colors.primaryText} size="small" />
-              ) : (
-                <Text style={styles.buttonText}>Join waitlist</Text>
-              )}
-            </Pressable>
-            {errorMessage ? (
-              <Text style={styles.errorText}>{errorMessage}</Text>
-            ) : null}
-          </>
-        )}
-      </View>
-    </View>
+      <SignUpLoginPromptModal
+        visible={authPromptOpen}
+        onCancel={closeAuthPrompt}
+        onConfirm={confirmAuthPrompt}
+      />
+    </>
   );
 }
 

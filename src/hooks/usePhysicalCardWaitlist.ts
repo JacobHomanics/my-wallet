@@ -2,6 +2,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { useCallback, useState } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useSignUpLoginPromptModal } from '@/hooks/useSignUpLoginPromptModal';
 import { getPrivyExternalId } from '@/lib/convex/getPrivyExternalId';
 import { api } from '../../convex/_generated/api';
 
@@ -10,6 +11,8 @@ import { api } from '../../convex/_generated/api';
  */
 export function usePhysicalCardWaitlist() {
   const { user, isReady } = useAuth();
+  const { promptOpen, openPrompt, closePrompt, confirmPrompt } =
+    useSignUpLoginPromptModal();
   const externalId = isReady ? getPrivyExternalId(user) : null;
   const convexUser = useQuery(
     api.users.getByExternalId,
@@ -23,7 +26,12 @@ export function usePhysicalCardWaitlist() {
   const isLoading = externalId != null && convexUser === undefined;
 
   const join = useCallback(async () => {
-    if (!externalId || isJoining || hasJoined) {
+    if (!externalId) {
+      openPrompt();
+      return false;
+    }
+
+    if (isJoining || hasJoined) {
       return hasJoined;
     }
 
@@ -43,7 +51,7 @@ export function usePhysicalCardWaitlist() {
     } finally {
       setIsJoining(false);
     }
-  }, [externalId, hasJoined, isJoining, joinPhysicalCardWaitlist]);
+  }, [externalId, hasJoined, isJoining, joinPhysicalCardWaitlist, openPrompt]);
 
   return {
     hasJoined,
@@ -51,5 +59,8 @@ export function usePhysicalCardWaitlist() {
     isLoading,
     isJoining,
     errorMessage,
+    authPromptOpen: promptOpen,
+    closeAuthPrompt: closePrompt,
+    confirmAuthPrompt: confirmPrompt,
   };
 }
