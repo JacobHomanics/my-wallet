@@ -15,6 +15,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
+import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
+import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
+import { useAuthGatedAction } from '@/hooks/useAuthGatedAction';
 import { SendConfigurationCollapsible } from '@/components/SendConfigurationCollapsible';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
@@ -67,6 +70,7 @@ export function ConfirmSendScreen() {
     spendableTokens,
     availableUsd,
     availableBalanceLoading,
+    isPreview,
   } = sendSpendable;
   const { sendPayment, sending } = useSendPayment();
   const { error, clearStatus, setError } = useSendStatus();
@@ -200,7 +204,7 @@ export function ConfirmSendScreen() {
             ? 'Complete payment details to continue.'
             : null;
 
-  const onConfirm = useCallback(() => {
+  const submitPayment = useCallback(() => {
     if (!canSend || sending) {
       return;
     }
@@ -304,6 +308,12 @@ export function ConfirmSendScreen() {
     trimmedSolana,
     useVaultUsdcForSend,
   ]);
+  const {
+    run: onConfirm,
+    authPromptOpen,
+    closeAuthPrompt,
+    confirmAuthPrompt,
+  } = useAuthGatedAction(submitPayment);
 
   const onCancelPress = useCallback(() => {
     if (sending) {
@@ -483,7 +493,7 @@ export function ConfirmSendScreen() {
               vaultUsdcFundingSplits={vaultUsdcFundingSplits}
             />
 
-            {invalidReason ? (
+            {!isPreview && invalidReason ? (
               <Text style={styles.error}>{invalidReason}</Text>
             ) : null}
             {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -503,14 +513,15 @@ export function ConfirmSendScreen() {
               </Pressable>
               <Pressable
                 accessibilityRole="button"
-                disabled={!canSend || sending}
+                disabled={(!isPreview && !canSend) || sending}
                 onPress={onConfirm}
                 style={({ pressed }) => [
                   styles.primaryButton,
                   styles.actionPrimary,
-                  (!canSend || sending) && styles.primaryButtonDisabled,
+                  ((!isPreview && !canSend) || sending) &&
+                    styles.primaryButtonDisabled,
                   pressed &&
-                  canSend &&
+                  (isPreview || canSend) &&
                   !sending &&
                   styles.primaryButtonPressed,
                 ]}
@@ -525,6 +536,7 @@ export function ConfirmSendScreen() {
           </ScrollView>
         )}
       </View>
+      <SignUpLoginBanner includeBottomInset />
 
       <StrategyPickerModal
         onClose={closeStrategyPicker}
@@ -582,6 +594,11 @@ export function ConfirmSendScreen() {
           </View>
         </View>
       </Modal>
+      <SignUpLoginPromptModal
+        visible={authPromptOpen}
+        onCancel={closeAuthPrompt}
+        onConfirm={confirmAuthPrompt}
+      />
     </View>
   );
 }

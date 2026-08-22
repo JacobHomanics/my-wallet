@@ -18,9 +18,7 @@ import { Avatar } from '@/components/Avatar';
 import { BalanceSkeleton } from '@/components/BalanceSkeleton';
 import { BackButton } from '@/components/BackButton';
 import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
-import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
 import { SendConfigurationCollapsible } from '@/components/SendConfigurationCollapsible';
-import { useAuthGatedAction } from '@/hooks/useAuthGatedAction';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
@@ -167,13 +165,13 @@ export function SendAmountScreen() {
       ? 'Enter a valid amount'
       : null;
 
-  const goToConfirm = useCallback(() => {
-    if (!canContinue || allocations.length === 0) {
+  const onContinue = useCallback(() => {
+    if (!isPreview && (!canContinue || allocations.length === 0)) {
       return;
     }
 
     navigation.navigate('confirmSend', {
-      usdAmount: amount,
+      usdAmount: amount || undefined,
       ethereumRecipient: resolvedEthereumRecipient || undefined,
       solanaRecipient: resolvedSolanaRecipient || undefined,
       legs: allocations.map((leg) => ({
@@ -185,16 +183,11 @@ export function SendAmountScreen() {
     amount,
     allocations,
     canContinue,
+    isPreview,
     resolvedEthereumRecipient,
     resolvedSolanaRecipient,
     navigation,
   ]);
-  const {
-    run: onContinue,
-    authPromptOpen,
-    closeAuthPrompt,
-    confirmAuthPrompt,
-  } = useAuthGatedAction(goToConfirm);
 
   const { onBack } = useClearSendRecipientOnBack();
 
@@ -373,17 +366,17 @@ export function SendAmountScreen() {
 
                 <Pressable
                   accessibilityRole="button"
-                  disabled={!canContinue}
+                  disabled={!isPreview && !canContinue}
                   onPress={onContinue}
                   style={({ pressed }) => [
                     styles.continueButton,
-                    !canContinue && styles.continueButtonDisabled,
-                    pressed && canContinue && styles.continueButtonPressed,
+                    !isPreview && !canContinue && styles.continueButtonDisabled,
+                    pressed && (isPreview || canContinue) && styles.continueButtonPressed,
                   ]}
                 >
                   <Text style={styles.continueButtonText}>Continue</Text>
                 </Pressable>
-                {!canContinue && continueBlockedReason ? (
+                {!isPreview && !canContinue && continueBlockedReason ? (
                   <Text style={styles.continueHint}>{continueBlockedReason}</Text>
                 ) : null}
               </View>
@@ -409,11 +402,6 @@ export function SendAmountScreen() {
         onSelect={onAddToken}
         tokens={pickerTokens}
         visible={tokenPickerOpen}
-      />
-      <SignUpLoginPromptModal
-        visible={authPromptOpen}
-        onCancel={closeAuthPrompt}
-        onConfirm={confirmAuthPrompt}
       />
     </View>
   );
