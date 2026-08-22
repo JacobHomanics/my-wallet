@@ -165,37 +165,39 @@ export function SendSearchContent({
             search.onSelectTab(tab);
             onSearchTabChange?.(tab === 'zitiCashbox');
           }}
+          style={styles.tabsAboveFootnote}
         />
       ) : null}
 
-      {search.showAdvancedSearchButton ? (
+      {search.showAdvancedToggle ? (
         <Pressable
-          accessibilityLabel="Advanced search"
+          accessibilityLabel={
+            search.showAdvanced ? 'Hide advanced search' : 'Advanced search'
+          }
           accessibilityRole="button"
-          onPress={search.showAdvancedSearch}
-          style={({ pressed }) => [
-            styles.advancedSearch,
-            pressed && styles.advancedSearchPressed,
-          ]}
-        >
-          <Text style={styles.advancedSearchText}>Advanced search</Text>
-        </Pressable>
-      ) : null}
-
-      {search.canHideAdvancedSearch ? (
-        <Pressable
-          accessibilityLabel="Hide advanced search"
-          accessibilityRole="button"
+          accessibilityState={{ expanded: search.showAdvanced }}
           onPress={() => {
-            search.hideAdvancedSearch();
-            onSearchTabChange?.(true);
+            search.toggleAdvancedSearch();
+            if (search.showAdvanced) {
+              onSearchTabChange?.(true);
+            }
           }}
           style={({ pressed }) => [
-            styles.advancedSearch,
-            pressed && styles.advancedSearchPressed,
+            styles.advancedToggle,
+            search.showAdvanced
+              ? styles.advancedToggleUnderTabs
+              : styles.advancedToggleUnderInput,
+            pressed && styles.advancedTogglePressed,
           ]}
         >
-          <Text style={styles.advancedSearchText}>Hide advanced search</Text>
+          <Text style={styles.advancedToggleText}>
+            {search.showAdvanced ? 'Hide advanced search' : 'Advanced search'}
+          </Text>
+          <Ionicons
+            name={search.showAdvanced ? 'chevron-up' : 'chevron-down'}
+            size={16}
+            color={colors.textMuted}
+          />
         </Pressable>
       ) : null}
 
@@ -338,16 +340,31 @@ function createStyles(c: ThemeColors) {
       lineHeight: 18,
       color: c.danger,
     },
-    advancedSearch: {
-      alignItems: 'center',
-      paddingTop: 8,
-      paddingBottom: 4,
-      paddingHorizontal: 24,
+    tabsAboveFootnote: {
+      marginBottom: 0,
     },
-    advancedSearchPressed: {
+    advancedToggle: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
+      alignSelf: 'center',
+      paddingHorizontal: 4,
+    },
+    advancedToggleUnderInput: {
+      marginTop: 0,
+      paddingTop: 2,
+      paddingBottom: 4,
+    },
+    advancedToggleUnderTabs: {
+      marginTop: 2,
+      paddingTop: 2,
+      paddingBottom: 4,
+    },
+    advancedTogglePressed: {
       opacity: 0.65,
     },
-    advancedSearchText: {
+    advancedToggleText: {
       fontSize: 14,
       fontWeight: '600',
       color: c.textMuted,

@@ -76,7 +76,7 @@ export function useRecipientSearch({
   isSearchFocused,
 }: RecipientSearchParams) {
   const { isAdvanced } = useAppLayout();
-  const { showAdvanced, setShowAdvanced } = useShowAdvanced();
+  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const { sendToContact } = useSendToContact();
   const { selectedTab, setSelectedTab, onSelectTab, isZitiCashboxTab } =
     useSendSearchTab();
@@ -95,14 +95,12 @@ export function useRecipientSearch({
     [tokenId, usdAmount],
   );
 
-  const showAdvancedSearch = useCallback(() => {
-    setShowAdvanced(true);
-  }, [setShowAdvanced]);
-
-  const hideAdvancedSearch = useCallback(() => {
-    setShowAdvanced(false);
-    setSelectedTab('zitiCashbox');
-  }, [setSelectedTab, setShowAdvanced]);
+  const toggleAdvancedSearch = useCallback(() => {
+    if (showAdvanced) {
+      setSelectedTab('zitiCashbox');
+    }
+    toggleAdvanced();
+  }, [setSelectedTab, showAdvanced, toggleAdvanced]);
 
   const resultRows = useMemo((): RecipientSearchRow[] => {
     if (tab === 'zitiCashbox') {
@@ -416,14 +414,14 @@ export function useRecipientSearch({
           : wallet.errorMessage;
 
   return {
+    isAdvanced,
     showTabs: showAdvanced,
-    showAdvancedSearchButton: !isAdvanced && !showAdvanced,
-    canHideAdvancedSearch: !isAdvanced && showAdvanced,
+    showAdvancedToggle: !isAdvanced,
+    showAdvanced,
     selectedTab: tab,
     onSelectTab,
     isZitiCashboxTab: !showAdvanced || isZitiCashboxTab,
-    showAdvancedSearch,
-    hideAdvancedSearch,
+    toggleAdvancedSearch,
     placeholder: PLACEHOLDERS[tab],
     accessibilityLabel: ACCESSIBILITY_LABELS[tab],
     emptyMessage: EMPTY_MESSAGES[tab],

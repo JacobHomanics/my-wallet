@@ -11,9 +11,9 @@ import {
 } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
+import { useContactsAdvancedSection } from '@/hooks/useContactsAdvancedSection';
 import { useContactsAllSections } from '@/hooks/useContactsAllSections';
 import { useContactsFilter } from '@/hooks/useContactsFilter';
-import { useContactsTab } from '@/hooks/useContactsTab';
 import {
   groupWalletContactsByChain,
   useContacts,
@@ -308,6 +308,10 @@ export function ContactPickerContent({
     externalContacts,
   });
   const {
+    showContactsTabs,
+    showContactsAdvancedToggle,
+    showContactsAdvanced,
+    toggleContactsAdvanced,
     selectedTab,
     isAllTab,
     isContactsTab,
@@ -315,7 +319,7 @@ export function ContactPickerContent({
     selectAll,
     selectContacts,
     selectExternal,
-  } = useContactsTab();
+  } = useContactsAdvancedSection();
   const {
     contactsExpanded,
     externalGroupExpanded,
@@ -387,23 +391,53 @@ export function ContactPickerContent({
 
   return (
     <View style={styles.root}>
-      <View style={styles.tabs}>
-        <ContactsTabChip
-          label="All"
-          selected={isAllTab}
-          onPress={selectAll}
-        />
-        <ContactsTabChip
-          label="Contacts"
-          selected={isContactsTab}
-          onPress={selectContacts}
-        />
-        <ContactsTabChip
-          label="External"
-          selected={isExternalTab}
-          onPress={selectExternal}
-        />
-      </View>
+      {showContactsAdvancedToggle ? (
+        <Pressable
+          accessibilityLabel={
+            showContactsAdvanced
+              ? 'Hide advanced details'
+              : 'Show advanced details'
+          }
+          accessibilityRole="button"
+          accessibilityState={{ expanded: showContactsAdvanced }}
+          onPress={toggleContactsAdvanced}
+          style={({ pressed }) => [
+            styles.advancedToggle,
+            pressed && styles.advancedTogglePressed,
+          ]}
+        >
+          <Text style={styles.advancedToggleText}>
+            {showContactsAdvanced
+              ? 'Hide advanced details'
+              : 'Show advanced details'}
+          </Text>
+          <Ionicons
+            name={showContactsAdvanced ? 'chevron-up' : 'chevron-down'}
+            size={16}
+            color={colors.textMuted}
+          />
+        </Pressable>
+      ) : null}
+
+      {showContactsTabs ? (
+        <View style={styles.tabs}>
+          <ContactsTabChip
+            label="All"
+            selected={isAllTab}
+            onPress={selectAll}
+          />
+          <ContactsTabChip
+            label="Contacts"
+            selected={isContactsTab}
+            onPress={selectContacts}
+          />
+          <ContactsTabChip
+            label="External"
+            selected={isExternalTab}
+            onPress={selectExternal}
+          />
+        </View>
+      ) : null}
 
       <View style={styles.list}>
         {hasAnyContacts ? (
@@ -578,6 +612,24 @@ function createStyles(c: ThemeColors) {
   return StyleSheet.create({
   root: {
     width: '100%',
+  },
+  advancedToggle: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  advancedTogglePressed: {
+    opacity: 0.65,
+  },
+  advancedToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: c.textMuted,
   },
   tabs: {
     flexDirection: 'row',

@@ -1,4 +1,11 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
 import { useAppBrand } from '@/hooks/useAppBrand';
 import type { SendSearchTabId } from '@/hooks/useSendAdvancedSearchTab';
@@ -8,6 +15,7 @@ import type { ThemeColors } from '@/theme/types';
 type SendAdvancedSearchTabsProps = {
   selectedTab?: SendSearchTabId;
   onSelect: (tab: SendSearchTabId) => void;
+  style?: StyleProp<ViewStyle>;
 };
 
 /**
@@ -16,6 +24,7 @@ type SendAdvancedSearchTabsProps = {
 export function SendAdvancedSearchTabs({
   selectedTab,
   onSelect,
+  style,
 }: SendAdvancedSearchTabsProps) {
   const { name } = useAppBrand();
   const styles = useThemedStyles(createStyles);
@@ -27,7 +36,7 @@ export function SendAdvancedSearchTabs({
   ];
 
   return (
-    <View style={styles.tabs}>
+    <View style={[styles.tabs, style]}>
       {tabs.map((tab) => {
         const selected = tab.id === selectedTab;
         return (
