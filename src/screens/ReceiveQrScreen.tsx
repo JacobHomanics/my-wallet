@@ -116,6 +116,7 @@ export function ReceiveQrScreen() {
                   />
                 ) : null}
                 <AccountNumberWalletDetails
+                  compact
                   identityId={identityId}
                   style={styles.accountNumber}
                 />

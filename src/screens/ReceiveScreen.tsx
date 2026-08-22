@@ -89,6 +89,7 @@ export function ReceiveScreen() {
                   />
                 ) : null}
                 <AccountNumberWalletDetails
+                  compact
                   identityId={identityId}
                   style={styles.accountNumber}
                 />

@@ -21,6 +21,7 @@ import type { ThemeColors } from '@/theme/types';
 type AccountNumberWalletDetailsProps = {
   identityId?: string | null;
   style?: StyleProp<ViewStyle>;
+  compact?: boolean;
 };
 
 /**
@@ -29,6 +30,7 @@ type AccountNumberWalletDetailsProps = {
 export function AccountNumberWalletDetails({
   identityId,
   style,
+  compact = false,
 }: AccountNumberWalletDetailsProps) {
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
@@ -91,46 +93,55 @@ export function AccountNumberWalletDetails({
         )}
 
         {showWallets ? (
-          <View style={styles.wallets}>
-          {!ready ? (
-            <ActivityIndicator color={colors.primary} style={styles.loader} />
-          ) : wallets.length === 0 ? (
-            <Text style={styles.empty}>Creating your wallet…</Text>
-          ) : (
-            wallets.map((wallet) => {
-              const walletKey = `${wallet.chain}-${wallet.address}`;
+          <View style={[styles.wallets, compact && styles.walletsCompact]}>
+            {!ready ? (
+              <ActivityIndicator color={colors.primary} style={styles.loader} />
+            ) : wallets.length === 0 ? (
+              <Text style={styles.empty}>Creating your wallet…</Text>
+            ) : (
+              wallets.map((wallet) => {
+                const walletKey = `${wallet.chain}-${wallet.address}`;
 
-              return (
-                <WalletDebitCard
-                  key={walletKey}
-                  wallet={wallet}
-                  accountLabel={displayName}
-                  copied={isCopied(walletKey)}
-                  onCopy={() => {
-                    void copy(wallet.address, walletKey);
-                  }}
-                  onExport={() => {
-                    requestExport(wallet);
-                  }}
-                />
-              );
-            })
-          )}
+                return (
+                  <WalletDebitCard
+                    key={walletKey}
+                    compact={compact}
+                    wallet={wallet}
+                    accountLabel={displayName}
+                    copied={isCopied(walletKey)}
+                    onCopy={() => {
+                      void copy(wallet.address, walletKey);
+                    }}
+                    onExport={
+                      compact
+                        ? undefined
+                        : () => {
+                          requestExport(wallet);
+                        }
+                    }
+                  />
+                );
+              })
+            )}
           </View>
         ) : null}
       </View>
 
-      <ConfirmExportPrivateKeyModal
-        visible={confirmVisible}
-        walletLabel={pendingWallet?.label ?? ''}
-        onCancel={cancelConfirm}
-        onConfirm={confirmExport}
-      />
+      {compact ? null : (
+        <>
+          <ConfirmExportPrivateKeyModal
+            visible={confirmVisible}
+            walletLabel={pendingWallet?.label ?? ''}
+            onCancel={cancelConfirm}
+            onConfirm={confirmExport}
+          />
 
-      <ExportPrivateKeyWebView
-        onClose={closeExportWebView}
-        uri={exportWebViewUri}
-      />
+          <ExportPrivateKeyWebView
+            onClose={closeExportWebView}
+            uri={exportWebViewUri}
+          />
+        </>
+      )}
     </>
   );
 }
@@ -161,6 +172,9 @@ function createStyles(c: ThemeColors) {
       width: '100%',
       marginTop: 8,
       gap: 12,
+    },
+    walletsCompact: {
+      gap: 8,
     },
     loader: {
       marginTop: 8,
