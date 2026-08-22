@@ -1,9 +1,12 @@
 import { useQuery } from 'convex/react';
 
+import { useContactsPreview } from '@/hooks/useContactsPreview';
 import { useConvexUserId } from '@/hooks/useConvexUserId';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
+import { CONTACTS_PREVIEW } from '@/lib/contactsPreview';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
+import type { ContactListItem } from '@/hooks/useContacts';
 
 export type ContactDetails = {
   id: string;
@@ -25,11 +28,31 @@ export type ContactDetails = {
 /**
  * Load a single owned contact for the details screen.
  */
+function detailsFromPreview(item: ContactListItem): ContactDetails {
+  return {
+    id: item.id,
+    username: item.username,
+    name: item.name,
+    evmAddress: item.evmAddress,
+    solanaAddress: item.solanaAddress,
+    identityId: item.identityId,
+    profilePhotoUrl: item.profilePhotoUrl,
+    farcasterFid: item.farcasterFid,
+    farcasterUsername: item.farcasterUsername,
+    ensName: item.ensName,
+    isExternal: item.isExternal,
+    isFarcaster: item.isFarcaster,
+    isEns: item.isEns,
+    title: item.label,
+  };
+}
+
 export function useContactDetails(contactId: string | undefined): {
   contact: ContactDetails | null;
   isLoading: boolean;
   notFound: boolean;
 } {
+  const { isPreview } = useContactsPreview();
   const { userId, isLoading: userIdLoading } = useConvexUserId();
 
   const row = useQuery(
@@ -41,6 +64,17 @@ export function useContactDetails(contactId: string | undefined): {
         }
       : 'skip',
   );
+
+  if (isPreview) {
+    const preview = contactId
+      ? CONTACTS_PREVIEW.find((item) => item.id === contactId)
+      : undefined;
+    return {
+      contact: preview ? detailsFromPreview(preview) : null,
+      isLoading: false,
+      notFound: !preview,
+    };
+  }
 
   if (!userId || !contactId) {
     return {

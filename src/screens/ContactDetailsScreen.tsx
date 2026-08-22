@@ -14,6 +14,10 @@ import { AccountNumber } from '@/components/AccountNumber';
 import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
 import { ConfirmDeleteContactModal } from '@/components/ConfirmDeleteContactModal';
+import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
+import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
+import { useContactsPreview } from '@/hooks/useContactsPreview';
+import { useSignUpLoginPromptModal } from '@/hooks/useSignUpLoginPromptModal';
 import { IconButton } from '@/components/IconButton';
 import { useConfirmDeleteContact } from '@/hooks/useConfirmDeleteContact';
 import { useContactDetails } from '@/hooks/useContactDetails';
@@ -73,6 +77,9 @@ export function ContactDetailsScreen() {
   const route = useRoute<RouteProp<ContactsStackParamList, 'contactDetails'>>();
   const contactId = route.params?.contactId;
   const { contact, isLoading, notFound } = useContactDetails(contactId);
+  const { isPreview } = useContactsPreview();
+  const { promptOpen, openPrompt, closePrompt, confirmPrompt } =
+    useSignUpLoginPromptModal();
   const {
     confirmVisible,
     contactLabel,
@@ -88,6 +95,10 @@ export function ContactDetailsScreen() {
   const canSend = canSendToContact(contact);
 
   const handleDelete = () => {
+    if (isPreview) {
+      openPrompt();
+      return;
+    }
     if (!contactId || !contact || isDeleting) {
       return;
     }
@@ -256,6 +267,12 @@ export function ContactDetailsScreen() {
           )}
         </ScrollView>
       </View>
+      <SignUpLoginBanner includeBottomInset />
+      <SignUpLoginPromptModal
+        visible={promptOpen}
+        onCancel={closePrompt}
+        onConfirm={confirmPrompt}
+      />
 
       <ConfirmDeleteContactModal
         visible={confirmVisible}

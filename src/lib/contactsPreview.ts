@@ -1,6 +1,9 @@
 import type { ContactListItem } from '@/hooks/useContacts';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
-import { RECEIVE_PREVIEW_USERNAME } from '@/lib/receivePreview';
+import {
+  RECEIVE_PREVIEW_IDENTITY_ID,
+  RECEIVE_PREVIEW_USERNAME,
+} from '@/lib/receivePreview';
 
 const PREVIEW_EVM_FIANCE = '0xf1a4ce000000000000000000000000000013e37';
 const PREVIEW_EVM_FRIEND = '0xbe57f0000000000000000000000000000013370';
@@ -27,6 +30,7 @@ function userContact(
   username: string,
   evmAddress: string | null = null,
   solanaAddress: string | null = null,
+  identityId: string | null = null,
 ): ContactListItem {
   return {
     id,
@@ -34,7 +38,7 @@ function userContact(
     name: null,
     evmAddress,
     solanaAddress,
-    identityId: null,
+    identityId,
     profilePhotoUrl: null,
     farcasterFid: null,
     farcasterUsername: null,
@@ -117,11 +121,41 @@ function walletContact(
 }
 
 export const CONTACTS_PREVIEW: ContactListItem[] = [
-  userContact('preview-best', RECEIVE_PREVIEW_USERNAME),
-  userContact('preview-fiance', 'YourFiance', PREVIEW_EVM_FIANCE),
-  userContact('preview-best-friend', 'YourBestFriend', PREVIEW_EVM_FRIEND),
-  userContact('preview-annoying', 'ThatAnnoyingFriend'),
-  userContact('preview-roommate', 'YourRoommate'),
+  userContact(
+    'preview-best',
+    RECEIVE_PREVIEW_USERNAME,
+    null,
+    null,
+    RECEIVE_PREVIEW_IDENTITY_ID,
+  ),
+  userContact(
+    'preview-fiance',
+    'YourFiance',
+    PREVIEW_EVM_FIANCE,
+    null,
+    'YourF1ance5amp1e',
+  ),
+  userContact(
+    'preview-best-friend',
+    'YourBestFriend',
+    PREVIEW_EVM_FRIEND,
+    null,
+    'YourBe5tFr1end',
+  ),
+  userContact(
+    'preview-annoying',
+    'ThatAnnoyingFriend',
+    null,
+    null,
+    '7h47Annoy1ng',
+  ),
+  userContact(
+    'preview-roommate',
+    'YourRoommate',
+    null,
+    null,
+    'YourR00mma7e',
+  ),
   farcasterContact('preview-fc-coworker', 'YourCoworker', 1337),
   farcasterContact('preview-fc-groupchat', 'ThatGroupChatAdmin', 420),
   ensContact('preview-ens-fiance', 'yourfiance.eth'),

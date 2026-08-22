@@ -326,10 +326,6 @@ export function ContactsScreen() {
 
   const openContact = (contactId: string) => {
     closeOpen();
-    if (isPreview) {
-      openPrompt();
-      return;
-    }
     navigation.navigate('contactDetails', { contactId });
   };
 
