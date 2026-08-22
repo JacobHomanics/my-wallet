@@ -17,6 +17,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ConfirmDeleteContactModal } from '@/components/ConfirmDeleteContactModal';
 import { IconButton } from '@/components/IconButton';
 import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
+import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
+import { useAuthGatedAction } from '@/hooks/useAuthGatedAction';
 import { SwipeableContactRow } from '@/components/SwipeableContactRow';
 import {
   groupWalletContactsByChain,
@@ -259,8 +261,14 @@ export function ContactsScreen() {
   const insets = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<ContactsStackParamList>>();
-  const { userContacts, farcasterContacts, ensContacts, externalContacts, isLoading } =
-    useContacts();
+  const {
+    userContacts,
+    farcasterContacts,
+    ensContacts,
+    externalContacts,
+    isLoading,
+    isPreview,
+  } = useContacts();
   const {
     query,
     setQuery,
@@ -313,13 +321,31 @@ export function ContactsScreen() {
   } = useConfirmDeleteContact();
   const { onRowOpen, onRowClose, closeOpen } = useContactsSwipe();
 
+  const {
+    run: onPressAdd,
+    openAuthPrompt,
+    authPromptOpen,
+    closeAuthPrompt,
+    confirmAuthPrompt,
+  } = useAuthGatedAction(() => {
+    navigation.navigate('newContact');
+  });
+
   const openContact = (contactId: string) => {
     closeOpen();
+    if (isPreview) {
+      openAuthPrompt();
+      return;
+    }
     navigation.navigate('contactDetails', { contactId });
   };
 
   const deleteContact = (contactId: string, label: string) => {
     closeOpen();
+    if (isPreview) {
+      openAuthPrompt();
+      return;
+    }
     requestDelete(contactId, label);
   };
 
@@ -379,9 +405,7 @@ export function ContactsScreen() {
             color={colors.primaryText}
             icon="add"
             iconSize={24}
-            onPress={() => {
-              navigation.navigate('newContact');
-            }}
+            onPress={onPressAdd}
             size={36}
             style={styles.addButton}
           />
@@ -605,6 +629,11 @@ export function ContactsScreen() {
         </GestureHandlerRootView>
       </View>
       <SignUpLoginBanner />
+      <SignUpLoginPromptModal
+        visible={authPromptOpen}
+        onCancel={closeAuthPrompt}
+        onConfirm={confirmAuthPrompt}
+      />
 
       <ConfirmDeleteContactModal
         visible={confirmVisible}

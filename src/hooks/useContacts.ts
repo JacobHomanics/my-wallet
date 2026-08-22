@@ -1,6 +1,7 @@
 import { useQuery } from 'convex/react';
 import { useMemo } from 'react';
 
+import { useContactsPreview } from '@/hooks/useContactsPreview';
 import { useConvexUserId } from '@/hooks/useConvexUserId';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import { encodeWalletIdentity } from '@/lib/walletIdentity';
@@ -101,7 +102,9 @@ export function useContacts(): {
   ensContacts: ContactListItem[];
   externalContacts: ContactListItem[];
   isLoading: boolean;
+  isPreview: boolean;
 } {
+  const preview = useContactsPreview();
   const { userId, isLoading: userIdLoading } = useConvexUserId();
 
   const rows = useQuery(
@@ -193,6 +196,18 @@ export function useContacts(): {
     [contacts],
   );
 
+  if (preview.isPreview) {
+    return {
+      contacts: preview.contacts,
+      userContacts: preview.userContacts,
+      farcasterContacts: preview.farcasterContacts,
+      ensContacts: preview.ensContacts,
+      externalContacts: preview.externalContacts,
+      isLoading: false,
+      isPreview: true,
+    };
+  }
+
   return {
     contacts,
     userContacts,
@@ -200,6 +215,7 @@ export function useContacts(): {
     ensContacts,
     externalContacts,
     isLoading: userIdLoading || (userId != null && rows === undefined),
+    isPreview: false,
   };
 }
 
