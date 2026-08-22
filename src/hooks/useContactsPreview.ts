@@ -4,6 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import type { ContactListItem } from '@/hooks/useContacts';
 import { CONTACTS_PREVIEW } from '@/lib/contactsPreview';
 
+const EMPTY_CONTACTS: ContactListItem[] = [];
+
 /**
  * Signed-out contacts preview: sample people across app, Farcaster, ENS, and wallets.
  */
@@ -18,7 +20,7 @@ export function useContactsPreview(): {
   const { isReady, isAuthenticated } = useAuth();
   const isPreview = isReady && !isAuthenticated;
 
-  const contacts = isPreview ? CONTACTS_PREVIEW : [];
+  const contacts = isPreview ? CONTACTS_PREVIEW : EMPTY_CONTACTS;
 
   const userContacts = useMemo(
     () =>
