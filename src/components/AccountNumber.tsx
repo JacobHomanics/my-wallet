@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   StyleSheet,
   Text,
@@ -19,6 +20,7 @@ type AccountNumberProps = {
   username?: string | null;
   email?: string | null;
   phone?: string | null;
+  footer?: ReactNode;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -96,6 +98,7 @@ export function AccountNumber({
   username,
   email,
   phone,
+  footer,
   style,
 }: AccountNumberProps) {
   const colors = useThemeColors();
@@ -155,6 +158,8 @@ export function AccountNumber({
         </View>
       </View>
 
+      {footer ? <View style={styles.footer}>{footer}</View> : null}
+
       {showHelp ? (
         <AccountNumberInfoModal onClose={closeInfo} visible={infoOpen} />
       ) : null}
@@ -168,6 +173,10 @@ function createStyles(c: ThemeColors) {
     width: '100%',
     maxWidth: 360,
     alignSelf: 'center',
+  },
+  footer: {
+    marginTop: 8,
+    alignItems: 'center',
   },
   card: {
     width: '100%',

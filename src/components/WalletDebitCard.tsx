@@ -54,9 +54,9 @@ export function WalletDebitCard({
             backgroundColor="rgba(255, 255, 255, 0.14)"
             color={copied ? '#86efac' : '#d1fae5'}
             icon={copied ? 'checkmark' : 'copy-outline'}
-            iconSize={18}
+            iconSize={15}
             onPress={onCopy}
-            size={32}
+            size={28}
           />
         </View>
         <View style={styles.chipRow}>
@@ -84,15 +84,15 @@ export function WalletDebitCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-    minHeight: 188,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+    minHeight: 158,
     justifyContent: 'space-between',
     overflow: 'hidden',
   },
   topBlock: {
-    gap: 12,
+    gap: 8,
   },
   addressHeader: {
     flexDirection: 'row',
@@ -103,21 +103,21 @@ const styles = StyleSheet.create({
   cardNumber: {
     flex: 1,
     minWidth: 0,
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '600',
     color: '#f0fdf4',
-    letterSpacing: 1.4,
+    letterSpacing: 1.1,
     fontVariant: ['tabular-nums'],
   },
   chipRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   chip: {
-    width: 36,
-    height: 26,
-    borderRadius: 6,
+    width: 30,
+    height: 22,
+    borderRadius: 5,
   },
   bottomRow: {
     flexDirection: 'row',
@@ -128,15 +128,15 @@ const styles = StyleSheet.create({
   accountLabel: {
     flex: 1,
     minWidth: 0,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     color: '#d1fae5',
   },
   chainLabel: {
     flexShrink: 0,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 1.2,
+    letterSpacing: 1,
     textTransform: 'uppercase',
   },
 });

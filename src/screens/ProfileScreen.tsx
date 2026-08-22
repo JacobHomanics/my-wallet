@@ -16,6 +16,7 @@ import { ConfirmExportPrivateKeyModal } from '@/components/ConfirmExportPrivateK
 import { ExportPrivateKeyWebView } from '@/components/ExportPrivateKeyWebView';
 import { IconButton } from '@/components/IconButton';
 import { WalletDebitCard } from '@/components/WalletDebitCard';
+import { useAppLayout } from '@/hooks/useAppLayout';
 import { useConfirmExportPrivateKey } from '@/hooks/useConfirmExportPrivateKey';
 import { useConvexUsername } from '@/hooks/useConvexUsername';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
@@ -40,7 +41,9 @@ export function ProfileScreen() {
   const { profilePhotoUrl } = useProfilePhoto();
   const { username } = useConvexUsername();
   const { identityId } = useWalletIdentityId();
+  const { isAdvanced } = useAppLayout();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const showWallets = isAdvanced || showAdvanced;
   const { ready, wallets } = useUserWallets();
   const { copy, isCopied } = useCopyToClipboard();
   const {
@@ -52,6 +55,28 @@ export function ProfileScreen() {
     exportWebViewUri,
     closeExportWebView,
   } = useConfirmExportPrivateKey();
+
+  const advancedDetailsFooter = isAdvanced ? null : (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityState={{ expanded: showAdvanced }}
+      hitSlop={8}
+      onPress={toggleAdvanced}
+      style={({ pressed }) => [
+        styles.detailsLink,
+        pressed && styles.detailsLinkPressed,
+      ]}
+    >
+      <Text style={styles.detailsLinkText}>
+        {showAdvanced ? 'Hide advanced details' : 'Show advanced details'}
+      </Text>
+      <Ionicons
+        name={showAdvanced ? 'chevron-up' : 'chevron-down'}
+        size={16}
+        color={colors.textMuted}
+      />
+    </Pressable>
+  );
 
   return (
     <View style={styles.container}>
@@ -101,7 +126,7 @@ export function ProfileScreen() {
           <Text style={styles.subtitle}>Signed in as {displayName}.</Text>
         )}
 
-        {phone || identityId ? (
+        {phone || identityId || advancedDetailsFooter ? (
           <View style={styles.section}>
             {phone ? (
               <AccountNumber phone={phone} style={styles.accountNumber} />
@@ -109,34 +134,22 @@ export function ProfileScreen() {
             {identityId ? (
               <AccountNumber
                 identityId={identityId}
+                footer={advancedDetailsFooter}
                 style={styles.accountNumber}
               />
-            ) : null}
+            ) : (
+              advancedDetailsFooter
+            )}
           </View>
         ) : null}
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ expanded: showAdvanced }}
-          onPress={toggleAdvanced}
-          style={({ pressed }) => [
-            styles.advancedToggle,
-            pressed && styles.advancedTogglePressed,
-          ]}
-        >
-          <Text style={styles.advancedToggleText}>
-            {showAdvanced ? 'Hide advanced details' : 'Show advanced details'}
-          </Text>
-          <Ionicons
-            name={showAdvanced ? 'chevron-up' : 'chevron-down'}
-            size={16}
-            color={colors.textMuted}
-          />
-        </Pressable>
-
-        {showAdvanced ? (
-          <View style={styles.advancedSection}>
-            <Text style={styles.sectionTitle}>Wallet</Text>
+        {showWallets ? (
+          <View
+            style={[
+              styles.advancedSection,
+              isAdvanced && styles.advancedSectionAuto,
+            ]}
+          >
             {!ready ? (
               <ActivityIndicator color={colors.primary} style={styles.loader} />
             ) : wallets.length === 0 ? (
@@ -223,36 +236,29 @@ function createStyles(c: ThemeColors) {
     maxWidth: '100%',
     alignSelf: 'stretch',
   },
-  advancedToggle: {
-    marginTop: 28,
+  detailsLink: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    alignSelf: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
   },
-  advancedTogglePressed: {
-    opacity: 0.65,
+  detailsLinkPressed: {
+    opacity: 0.6,
   },
-  advancedToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
+  detailsLinkText: {
+    fontSize: 15,
+    fontWeight: '500',
     color: c.textMuted,
+    textDecorationLine: 'underline',
   },
   advancedSection: {
     width: '100%',
     maxWidth: 420,
-    marginTop: 8,
+    marginTop: 20,
     gap: 12,
   },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: c.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
+  advancedSectionAuto: {
+    marginTop: 28,
   },
   loader: {
     marginTop: 8,
