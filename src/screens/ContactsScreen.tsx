@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ConfirmDeleteContactModal } from '@/components/ConfirmDeleteContactModal';
 import { IconButton } from '@/components/IconButton';
+import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
 import { SwipeableContactRow } from '@/components/SwipeableContactRow';
 import {
   groupWalletContactsByChain,
@@ -603,6 +604,7 @@ export function ContactsScreen() {
           </ScrollView>
         </GestureHandlerRootView>
       </View>
+      <SignUpLoginBanner />
 
       <ConfirmDeleteContactModal
         visible={confirmVisible}
