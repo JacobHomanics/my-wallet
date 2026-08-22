@@ -13,6 +13,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { SampleStamp } from '@/components/SampleStamp';
+import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
 import { TokenChainSection } from '@/components/TokenChainSection';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useExpandedNetworks } from '@/hooks/useExpandedNetworks';
@@ -20,6 +22,7 @@ import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { useSpendableTokens } from '@/hooks/useSpendableTokens';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
+import { useTokenDetailsPreview } from '@/hooks/useTokenDetailsPreview';
 import { useTokensByChain } from '@/hooks/useTokensByChain';
 import type { TokenChainGroup } from '@/lib/alchemy/fetchTokensByAddress';
 import type { HomeStackParamList } from '@/navigation/types';
@@ -39,20 +42,31 @@ export function TokenDetailsScreen() {
     ready,
     ethereumAddress,
     solanaAddress,
-    tokens,
-    totalUsd,
+    tokens: liveTokens,
+    totalUsd: liveTotalUsd,
     loading,
     refreshing,
     error,
     refresh,
     poll,
   } = useTokenBalances();
+  const {
+    isPreview,
+    tokens: previewTokens,
+    totalUsd: previewUsd,
+    availableLabel: previewAvailableLabel,
+  } = useTokenDetailsPreview();
+  const tokens = isPreview ? previewTokens : liveTokens;
+  const totalUsd = isPreview ? previewUsd : liveTotalUsd;
 
   usePollTokenBalances(poll, {
-    enabled: ready && Boolean(ethereumAddress || solanaAddress),
+    enabled: !isPreview && ready && Boolean(ethereumAddress || solanaAddress),
   });
 
-  const { availableLabel } = useSpendableTokens(tokens);
+  const { availableLabel: liveAvailableLabel } = useSpendableTokens(
+    isPreview ? [] : liveTokens,
+  );
+  const availableLabel = isPreview ? previewAvailableLabel : liveAvailableLabel;
   const chainGroups = useTokensByChain(tokens);
   const { expandedNetworks, isExpanded, toggleNetwork } = useExpandedNetworks();
   const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
@@ -85,7 +99,7 @@ export function TokenDetailsScreen() {
   );
 
   const ledgerLabel = formatFromUsd(totalUsd) ?? defaultFormattedZero;
-  const hasWallet = Boolean(ethereumAddress || solanaAddress);
+  const hasWallet = isPreview || Boolean(ethereumAddress || solanaAddress);
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -133,11 +147,16 @@ export function TokenDetailsScreen() {
             <Text style={styles.balanceLabel}>Total Balance:</Text>
             <Text style={styles.balanceValue}>{ledgerLabel}</Text>
           </View>
+          {isPreview ? (
+            <View style={styles.stampFaded}>
+              <SampleStamp />
+            </View>
+          ) : null}
         </View>
 
-        {!hasWallet || loading ? (
+        {!hasWallet || (!isPreview && loading) ? (
           <ActivityIndicator color={colors.primary} style={styles.loader} />
-        ) : error && tokens.length === 0 ? (
+        ) : !isPreview && error && tokens.length === 0 ? (
           <View style={styles.errorBlock}>
             <Text style={styles.errorText}>{error}</Text>
             <Pressable
@@ -164,20 +183,25 @@ export function TokenDetailsScreen() {
               </Text>
             }
             ListHeaderComponent={
-              error ? <Text style={styles.errorBanner}>{error}</Text> : null
+              !isPreview && error ? (
+                <Text style={styles.errorBanner}>{error}</Text>
+              ) : null
             }
             refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor="#166534"
-              />
+              isPreview ? undefined : (
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor="#166534"
+                />
+              )
             }
             renderItem={renderChainSection}
             style={styles.list}
           />
         )}
       </View>
+      <SignUpLoginBanner includeBottomInset />
     </View>
   );
 }
@@ -228,9 +252,15 @@ function createStyles(c: ThemeColors) {
     color: c.primary,
   },
   summary: {
+    position: 'relative',
     paddingHorizontal: 24,
     marginBottom: 12,
     gap: 8,
+  },
+  stampFaded: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.55,
+    pointerEvents: 'none',
   },
   balanceRow: {
     flexDirection: 'row',

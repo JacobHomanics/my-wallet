@@ -10,11 +10,14 @@ import {StyleSheet,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { SampleStamp } from '@/components/SampleStamp';
+import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
 import { TransactionRow } from '@/components/TransactionRow';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import { useTransactionFilter } from '@/hooks/useTransactionFilter';
+import { useTransactionsPreview } from '@/hooks/useTransactionsPreview';
 import { useWalletTransactions } from '@/hooks/useWalletTransactions';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
@@ -29,12 +32,15 @@ export function TransactionsScreen() {
   const goHome = usePopToHome();
   const { formatSignedFromUsd } = useFiatDisplay();
   const {
-    transactions,
+    transactions: liveTransactions,
     loading,
     refreshing,
     error,
     refresh,
   } = useWalletTransactions();
+  const { isPreview, transactions: previewTransactions } =
+    useTransactionsPreview();
+  const transactions = isPreview ? previewTransactions : liveTransactions;
   const { filterId, options, filteredTransactions, onSelectFilter } =
     useTransactionFilter(transactions);
 
@@ -104,9 +110,9 @@ export function TransactionsScreen() {
           })}
         </View>
 
-        {loading ? (
+        {!isPreview && loading ? (
           <ActivityIndicator color={colors.primary} style={styles.loader} />
-        ) : error && transactions.length === 0 ? (
+        ) : !isPreview && error && transactions.length === 0 ? (
           <View style={styles.errorBlock}>
             <Text style={styles.errorText}>{error}</Text>
             <Pressable
@@ -121,37 +127,49 @@ export function TransactionsScreen() {
             </Pressable>
           </View>
         ) : (
-          <FlatList
-            contentContainerStyle={
-              filteredTransactions.length === 0
-                ? styles.listEmpty
-                : styles.listContent
-            }
-            data={filteredTransactions}
-            keyExtractor={(item) => item.id}
-            ListEmptyComponent={
-              <Text style={styles.empty}>{emptyMessage}</Text>
-            }
-            ListHeaderComponent={
-              error ? <Text style={styles.errorBanner}>{error}</Text> : null
-            }
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor="#166534"
-              />
-            }
-            renderItem={({ item }) => (
-              <TransactionRow
-                formatSignedUsd={formatSignedFromUsd}
-                item={item}
-              />
-            )}
-            style={styles.list}
-          />
+          <View style={styles.listWrap}>
+            <FlatList
+              contentContainerStyle={
+                filteredTransactions.length === 0
+                  ? styles.listEmpty
+                  : styles.listContent
+              }
+              data={filteredTransactions}
+              keyExtractor={(item) => item.id}
+              ListEmptyComponent={
+                <Text style={styles.empty}>{emptyMessage}</Text>
+              }
+              ListHeaderComponent={
+                !isPreview && error ? (
+                  <Text style={styles.errorBanner}>{error}</Text>
+                ) : null
+              }
+              refreshControl={
+                isPreview ? undefined : (
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    tintColor="#166534"
+                  />
+                )
+              }
+              renderItem={({ item }) => (
+                <TransactionRow
+                  formatSignedUsd={formatSignedFromUsd}
+                  item={item}
+                />
+              )}
+              style={styles.list}
+            />
+            {isPreview ? (
+              <View style={styles.stampFaded}>
+                <SampleStamp />
+              </View>
+            ) : null}
+          </View>
         )}
       </View>
+      <SignUpLoginBanner includeBottomInset />
     </View>
   );
 }
@@ -269,6 +287,15 @@ function createStyles(c: ThemeColors) {
     color: c.primaryText,
     fontSize: 15,
     fontWeight: '600',
+  },
+  listWrap: {
+    flex: 1,
+    position: 'relative',
+  },
+  stampFaded: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.55,
+    pointerEvents: 'none',
   },
   list: {
     flex: 1,
