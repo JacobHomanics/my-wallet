@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
-import { Platform } from 'react-native';
+import { Platform, Text } from 'react-native';
 
 import { ZitiIcon } from '@/components/ZitiIcon';
 import { useBottomTabBarStyle } from '@/hooks/useBottomTabBarStyle';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useProfileTabAuth } from '@/hooks/useProfileTabAuth';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ContactsStack } from '@/navigation/ContactsStack';
 import { EarnStack } from '@/navigation/EarnStack';
@@ -21,6 +22,8 @@ export function MainTabs() {
   const isDesktopWeb = useIsDesktopWeb();
   const tabBarStyle = useBottomTabBarStyle();
   const colors = useThemeColors();
+  const { isAuthenticated, profileTabLabel, onProfileTabPress } =
+    useProfileTabAuth();
 
   return (
     <Tab.Navigator
@@ -137,6 +140,9 @@ export function MainTabs() {
       <Tab.Screen
         name="profile"
         component={ProfileStack}
+        listeners={{
+          tabPress: onProfileTabPress,
+        }}
         options={({ route }) => {
           const focusedRoute =
             getFocusedRouteNameFromRoute(route) ?? 'index';
@@ -150,11 +156,31 @@ export function MainTabs() {
               focusedRoute === 'earnSettings');
 
           return {
-            title: 'Profile',
+            title: profileTabLabel,
             tabBarStyle: hideTabBar ? { display: 'none' } : tabBarStyle,
+            tabBarLabel: ({ color }) => (
+              <Text
+                numberOfLines={1}
+                style={{
+                  color,
+                  fontSize: isAuthenticated ? 10 : 9,
+                  lineHeight: 13,
+                  textAlign: 'center',
+                  fontWeight: isAuthenticated ? '400' : '600',
+                }}
+              >
+                {profileTabLabel}
+              </Text>
+            ),
             tabBarIcon: ({ color, focused, size }) => (
               <Ionicons
-                name={focused ? 'person' : 'person-outline'}
+                name={
+                  isAuthenticated
+                    ? focused
+                      ? 'person'
+                      : 'person-outline'
+                    : 'log-in-outline'
+                }
                 color={color}
                 size={size}
               />
