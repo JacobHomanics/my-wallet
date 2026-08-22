@@ -258,7 +258,7 @@ function createStyles(c: ThemeColors) {
     gap: 8,
   },
   stampFaded: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     opacity: 0.55,
     pointerEvents: 'none',
   },

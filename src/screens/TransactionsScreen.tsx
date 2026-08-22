@@ -293,7 +293,7 @@ function createStyles(c: ThemeColors) {
     position: 'relative',
   },
   stampFaded: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     opacity: 0.55,
     pointerEvents: 'none',
   },

@@ -28,7 +28,7 @@ export function SampleStamp({ inline = false }: SampleStampProps) {
 function createStyles(c: ThemeColors) {
   return StyleSheet.create({
     stamp: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       alignItems: 'center',
       justifyContent: 'center',
     },
