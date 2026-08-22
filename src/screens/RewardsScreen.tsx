@@ -14,8 +14,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TokenIcon } from '@/components/TokenIcon';
 import { BalanceLoadErrorFooter } from '@/components/BalanceLoadErrorFooter';
+import { SampleStamp } from '@/components/SampleStamp';
 import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
+import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
 import { IconButton } from '@/components/IconButton';
+import { useAuthGatedAction } from '@/hooks/useAuthGatedAction';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useCashbackRedemption } from '@/hooks/useCashbackRedemption';
@@ -61,6 +64,7 @@ export function RewardsScreen() {
     balanceFormatted: rewardBalance,
     loading: rewardLoading,
     error,
+    isPreview,
   } = useRewardTokenBalance();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
   const { copy, isCopied } = useCopyToClipboard();
@@ -92,7 +96,8 @@ export function RewardsScreen() {
   }, [refresh]);
 
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
-  const loading = !ready || rewardLoading;
+  const loading = !isPreview && (!ready || rewardLoading);
+  const showRewards = isPreview || hasWallet;
   const chainLabel = getNetworkLabel(REWARD_TOKEN_NETWORK);
   const contractCopied = isCopied('reward-contract');
   const parsedPoints = parseWholePointsInput(pointsAmount);
@@ -114,9 +119,7 @@ export function RewardsScreen() {
   const exceedsBalance =
     parsedPoints != null && parsedPoints > availableWhole;
   const canRedeem =
-    redemptionReady &&
-    !redeeming &&
-    !appConfigLoading &&
+    (isPreview || (redemptionReady && !redeeming && !appConfigLoading)) &&
     parsedPoints != null &&
     previewUsdc != null &&
     !exceedsBalance;
@@ -135,6 +138,14 @@ export function RewardsScreen() {
       setPointsAmount('');
     }
   }, [pointsAmount, redeem]);
+  const {
+    run: onPressRedeem,
+    authPromptOpen,
+    closeAuthPrompt,
+    confirmAuthPrompt,
+  } = useAuthGatedAction(() => {
+    void handleRedeem();
+  });
 
   const handlePointsChange = useCallback(
     (value: string) => {
@@ -149,12 +160,6 @@ export function RewardsScreen() {
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
       <View style={styles.content}>
-        <View style={styles.topBar}>
-          <View style={styles.topBarSpacer} />
-          <Text style={styles.topBarTitle}>Rewards</Text>
-          <View style={styles.topBarSpacer} />
-        </View>
-
         <ScrollView
           contentContainerStyle={styles.body}
           refreshControl={
@@ -168,7 +173,7 @@ export function RewardsScreen() {
         >
           {loading ? (
             <ActivityIndicator color={colors.primary} />
-          ) : !hasWallet ? (
+          ) : !showRewards ? (
             <Text style={styles.empty}>Creating your wallets…</Text>
           ) : (
             <View style={styles.main}>
@@ -189,9 +194,16 @@ export function RewardsScreen() {
                   />
                 </View>
               ) : (
-                <Text style={styles.balance} accessibilityRole="header">
-                  {rewardBalance}
-                </Text>
+                <View style={styles.balanceWrap}>
+                  <Text style={styles.balance} accessibilityRole="header">
+                    {rewardBalance}
+                  </Text>
+                  {isPreview ? (
+                    <View style={styles.stampFaded} pointerEvents="none">
+                      <SampleStamp />
+                    </View>
+                  ) : null}
+                </View>
               )}
               <Text style={styles.hint}>
                 Earn {REWARD_POINTS_LABEL} when you send with through the {NETWORK_NAME}.
@@ -210,7 +222,7 @@ export function RewardsScreen() {
                 <View style={styles.amountRow}>
                   <TextInput
                     accessibilityLabel={`${REWARD_POINTS_LABEL} to redeem`}
-                    editable={!redeeming && redemptionReady}
+                    editable={!redeeming && (redemptionReady || isPreview)}
                     keyboardType="number-pad"
                     onChangeText={handlePointsChange}
                     placeholder="0"
@@ -247,9 +259,7 @@ export function RewardsScreen() {
                 <Pressable
                   accessibilityRole="button"
                   disabled={!canRedeem}
-                  onPress={() => {
-                    void handleRedeem();
-                  }}
+                  onPress={onPressRedeem}
                   style={({ pressed }) => [
                     styles.primaryButton,
                     !canRedeem && styles.buttonDisabled,
@@ -333,6 +343,11 @@ export function RewardsScreen() {
         </ScrollView>
       </View>
       <SignUpLoginBanner />
+      <SignUpLoginPromptModal
+        visible={authPromptOpen}
+        onCancel={closeAuthPrompt}
+        onConfirm={confirmAuthPrompt}
+      />
     </View>
   );
 }
@@ -351,22 +366,6 @@ function createStyles(c: ThemeColors) {
       width: '100%',
       maxWidth: 640,
       alignSelf: 'center',
-    },
-    topBar: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 8,
-      marginBottom: 8,
-    },
-    topBarTitle: {
-      flex: 1,
-      textAlign: 'center',
-      fontSize: 17,
-      fontWeight: '600',
-      color: c.primary,
-    },
-    topBarSpacer: {
-      width: 44,
     },
     body: {
       flexGrow: 1,
@@ -388,6 +387,14 @@ function createStyles(c: ThemeColors) {
       color: c.textMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.4,
+    },
+    balanceWrap: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    stampFaded: {
+      ...StyleSheet.absoluteFill,
+      opacity: 0.75,
     },
     balance: {
       fontSize: 56,
