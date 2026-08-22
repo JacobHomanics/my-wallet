@@ -36,7 +36,7 @@ export function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
-  const { displayName, avatarSeed } = useProfileIdentity();
+  const { displayName, avatarSeed, email, phone } = useProfileIdentity();
   const { profilePhotoUrl } = useProfilePhoto();
   const { username } = useConvexUsername();
   const { identityId } = useWalletIdentityId();
@@ -93,16 +93,18 @@ export function ProfileScreen() {
           size={88}
           style={styles.avatar}
         />
-        <Text style={styles.title}>Profile</Text>
-        <Text style={styles.subtitle}>Signed in as {displayName}.</Text>
+        {username ? (
+          <Text style={styles.username} selectable>
+            @{username}
+          </Text>
+        ) : email ? null : (
+          <Text style={styles.subtitle}>Signed in as {displayName}.</Text>
+        )}
 
-        {username || identityId ? (
+        {phone || identityId ? (
           <View style={styles.section}>
-            {username ? (
-              <AccountNumber
-                username={username}
-                style={styles.accountNumber}
-              />
+            {phone ? (
+              <AccountNumber phone={phone} style={styles.accountNumber} />
             ) : null}
             {identityId ? (
               <AccountNumber
@@ -195,13 +197,14 @@ function createStyles(c: ThemeColors) {
     alignItems: 'center',
   },
   avatar: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  title: {
-    fontSize: 28,
+  username: {
+    fontSize: 22,
     fontWeight: '700',
     color: c.primary,
-    letterSpacing: -0.5,
+    letterSpacing: -0.4,
+    textAlign: 'center',
   },
   subtitle: {
     marginTop: 12,

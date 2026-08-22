@@ -24,7 +24,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 
 /**
  * Edit profile photo and username (opened from Settings).
- * Layout mirrors the first-time onboarding screen.
+ * Email is shown read-only. Layout mirrors the first-time onboarding screen.
  */
 export function ProfileSettingsScreen() {
   const colors = useThemeColors();
@@ -33,7 +33,7 @@ export function ProfileSettingsScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goSettings = usePopToSettings();
-  const { displayName, avatarSeed } = useProfileIdentity();
+  const { displayName, avatarSeed, email } = useProfileIdentity();
   const {
     profilePhotoUrl,
     isUploading: isUploadingPhoto,
@@ -154,6 +154,19 @@ export function ProfileSettingsScreen() {
             )}
           </Pressable>
         </View>
+
+        {email ? (
+          <View style={styles.field}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              accessibilityLabel="Email"
+              editable={false}
+              selectTextOnFocus
+              style={[styles.input, styles.inputReadOnly]}
+              value={email}
+            />
+          </View>
+        ) : null}
 
         <View style={styles.field}>
           <Text style={styles.label}>Username</Text>
@@ -305,6 +318,9 @@ function createStyles(c: ThemeColors) {
     paddingVertical: 14,
     fontSize: 16,
     color: c.primary,
+  },
+  inputReadOnly: {
+    color: c.textSecondary,
   },
   hint: {
     fontSize: 13,

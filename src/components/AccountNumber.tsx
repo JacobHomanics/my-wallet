@@ -17,15 +17,85 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 type AccountNumberProps = {
   identityId?: string | null;
   username?: string | null;
+  email?: string | null;
+  phone?: string | null;
   style?: StyleProp<ViewStyle>;
 };
 
+type Field = {
+  label: string;
+  value: string;
+  copyKey: string;
+  copyNoun: string;
+  compact: boolean;
+  showHelp: boolean;
+};
+
+function resolveField({
+  identityId,
+  username,
+  email,
+  phone,
+}: AccountNumberProps): Field | null {
+  const trimmedUsername = username?.trim() || null;
+  if (trimmedUsername) {
+    return {
+      label: 'Username',
+      value: `@${trimmedUsername}`,
+      copyKey: 'username',
+      copyNoun: 'username',
+      compact: false,
+      showHelp: false,
+    };
+  }
+
+  const trimmedEmail = email?.trim() || null;
+  if (trimmedEmail) {
+    return {
+      label: 'Email',
+      value: trimmedEmail,
+      copyKey: 'email',
+      copyNoun: 'email',
+      compact: false,
+      showHelp: false,
+    };
+  }
+
+  const trimmedPhone = phone?.trim() || null;
+  if (trimmedPhone) {
+    return {
+      label: 'Phone',
+      value: trimmedPhone,
+      copyKey: 'phone',
+      copyNoun: 'phone number',
+      compact: false,
+      showHelp: false,
+    };
+  }
+
+  const trimmedIdentityId = identityId?.trim() || null;
+  if (trimmedIdentityId) {
+    return {
+      label: 'Account Number',
+      value: trimmedIdentityId,
+      copyKey: 'account-number',
+      copyNoun: 'account number',
+      compact: true,
+      showHelp: true,
+    };
+  }
+
+  return null;
+}
+
 /**
- * Account number or username with copy (and help for account numbers).
+ * Account number, username, email, or phone with copy (and help for account numbers).
  */
 export function AccountNumber({
   identityId,
   username,
+  email,
+  phone,
   style,
 }: AccountNumberProps) {
   const colors = useThemeColors();
@@ -33,19 +103,13 @@ export function AccountNumber({
 
   const { copy, isCopied } = useCopyToClipboard();
   const { infoOpen, openInfo, closeInfo } = useAccountNumberInfoModal();
+  const field = resolveField({ identityId, username, email, phone });
 
-  const trimmedUsername = username?.trim() || null;
-  const showUsername = Boolean(trimmedUsername);
-  const value = showUsername
-    ? `@${trimmedUsername}`
-    : (identityId?.trim() || '');
-  const copyKey = showUsername ? 'username' : 'account-number';
-  const label = showUsername ? 'Username' : 'Account Number';
-  const compact = !showUsername;
-
-  if (!value) {
+  if (!field) {
     return null;
   }
+
+  const { label, value, copyKey, copyNoun, compact, showHelp } = field;
 
   return (
     <View style={[styles.wrap, style]}>
@@ -64,7 +128,7 @@ export function AccountNumber({
               {value}
             </Text>
           </View>
-          {!showUsername ? (
+          {showHelp ? (
             <IconButton
               accessibilityLabel="About account number"
               color={colors.textMuted}
@@ -77,12 +141,8 @@ export function AccountNumber({
           <IconButton
             accessibilityLabel={
               isCopied(copyKey)
-                ? showUsername
-                  ? 'Username copied'
-                  : 'Account number copied'
-                : showUsername
-                  ? 'Copy username'
-                  : 'Copy account number'
+                ? `${copyNoun.charAt(0).toUpperCase()}${copyNoun.slice(1)} copied`
+                : `Copy ${copyNoun}`
             }
             color={isCopied(copyKey) ? colors.success : colors.primary}
             icon={isCopied(copyKey) ? 'checkmark' : 'copy-outline'}
@@ -95,7 +155,7 @@ export function AccountNumber({
         </View>
       </View>
 
-      {!showUsername ? (
+      {showHelp ? (
         <AccountNumberInfoModal onClose={closeInfo} visible={infoOpen} />
       ) : null}
     </View>

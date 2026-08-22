@@ -12,7 +12,7 @@ import type {
 } from '@/navigation/types';
 
 /** Custom URL scheme registered in app.json / Info.plist (Privy OAuth redirects). */
-export const APP_SCHEME = 'ziti';
+export const APP_SCHEME = 'zitiCashbox';
 
 /**
  * Public https origin for QR / share links (and native deep-link prefixes).
@@ -93,20 +93,20 @@ export function parseAppURL(url: string) {
 type NavState = PartialState<NavigationState>;
 
 const HOME_STACK_HISTORY: Partial<Record<keyof HomeStackParamList, string[]>> =
-  {
-    tokenDetails: ['index'],
-    transactions: ['index'],
-    receive: ['index'],
-    request: ['index'],
-    stripeOnramp: ['index'],
-    stripeOnrampComponents: ['index'],
-    receiveQr: ['index', 'request'],
-    send: ['index'],
-    sendSearch: ['index', 'send'],
-    sendAdvancedSearch: ['index', 'send', 'sendSearch'],
-    sendAmount: ['index', 'send'],
-    confirmSend: ['index', 'send', 'sendAmount'],
-  };
+{
+  tokenDetails: ['index'],
+  transactions: ['index'],
+  receive: ['index'],
+  request: ['index'],
+  stripeOnramp: ['index'],
+  stripeOnrampComponents: ['index'],
+  receiveQr: ['index', 'request'],
+  send: ['index'],
+  sendSearch: ['index', 'send'],
+  sendAdvancedSearch: ['index', 'send', 'sendSearch'],
+  sendAmount: ['index', 'send'],
+  confirmSend: ['index', 'send', 'sendAmount'],
+};
 
 const CONTACTS_STACK_HISTORY: Partial<
   Record<keyof ContactsStackParamList, string[]>
@@ -211,7 +211,7 @@ function ensureContactsStackHistory(state: NavState): NavState {
 
   const requiredPrefix =
     CONTACTS_STACK_HISTORY[
-      currentRoute.name as keyof ContactsStackParamList
+    currentRoute.name as keyof ContactsStackParamList
     ];
   if (!requiredPrefix?.length) {
     return state;
