@@ -100,7 +100,7 @@ export function SettingsScreen() {
                 <View style={styles.strategyRowText}>
                   <Text style={styles.strategyLabel}>Profile settings</Text>
                   <Text style={styles.strategyDescription}>
-                    Username, email, and profile photo
+                    Username, email, phone, and profile photo
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />

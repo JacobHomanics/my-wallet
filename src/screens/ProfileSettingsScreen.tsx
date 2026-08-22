@@ -24,7 +24,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 
 /**
  * Edit profile photo and username (opened from Settings).
- * Email is shown read-only. Layout mirrors the first-time onboarding screen.
+ * Email and phone are shown read-only. Layout mirrors the first-time onboarding screen.
  */
 export function ProfileSettingsScreen() {
   const colors = useThemeColors();
@@ -33,7 +33,7 @@ export function ProfileSettingsScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goSettings = usePopToSettings();
-  const { displayName, avatarSeed, email } = useProfileIdentity();
+  const { displayName, avatarSeed, email, phone } = useProfileIdentity();
   const {
     profilePhotoUrl,
     isUploading: isUploadingPhoto,
@@ -156,16 +156,11 @@ export function ProfileSettingsScreen() {
         </View>
 
         {email ? (
-          <View style={styles.field}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              accessibilityLabel="Email"
-              editable={false}
-              selectTextOnFocus
-              style={[styles.input, styles.inputReadOnly]}
-              value={email}
-            />
-          </View>
+          <ReadOnlyProfileField label="Email" value={email} />
+        ) : null}
+
+        {phone ? (
+          <ReadOnlyProfileField label="Phone number" value={phone} />
         ) : null}
 
         <View style={styles.field}>
@@ -220,6 +215,29 @@ export function ProfileSettingsScreen() {
           )}
         </Pressable>
       </ScrollView>
+    </View>
+  );
+}
+
+function ReadOnlyProfileField({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  const styles = useThemedStyles(createStyles);
+
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>{label}</Text>
+      <TextInput
+        accessibilityLabel={label}
+        editable={false}
+        selectTextOnFocus
+        style={[styles.input, styles.inputReadOnly]}
+        value={value}
+      />
     </View>
   );
 }

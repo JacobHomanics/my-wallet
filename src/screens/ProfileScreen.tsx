@@ -8,7 +8,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AccountNumber } from '@/components/AccountNumber';
 import { AccountNumberWalletDetails } from '@/components/AccountNumberWalletDetails';
 import { Avatar } from '@/components/Avatar';
 import { IconButton } from '@/components/IconButton';
@@ -75,14 +74,11 @@ export function ProfileScreen() {
           <Text style={styles.username} selectable>
             @{username}
           </Text>
-        ) : email ? null : (
+        ) : email || phone ? null : (
           <Text style={styles.subtitle}>Signed in as {displayName}.</Text>
         )}
 
         <View style={styles.section}>
-          {phone ? (
-            <AccountNumber phone={phone} style={styles.accountNumber} />
-          ) : null}
           <AccountNumberWalletDetails
             identityId={identityId}
             style={styles.accountNumber}
