@@ -13,6 +13,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Avatar } from '@/components/Avatar';
+import { useAppLayout } from '@/hooks/useAppLayout';
 import { useNeedsOnboarding } from '@/hooks/useNeedsOnboarding';
 import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
@@ -33,6 +34,7 @@ export function OnboardingScreen() {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { status: onboardingStatus, isLoading: isOnboardingLoading } =
     useNeedsOnboarding();
+  const { hasAppLayoutBeenSet } = useAppLayout();
   const { displayName, avatarSeed } = useProfileIdentity();
   const {
     username,
@@ -54,7 +56,9 @@ export function OnboardingScreen() {
     }
     navigation.reset({
       index: 0,
-      routes: [{ name: 'main' }],
+      routes: [
+        { name: hasAppLayoutBeenSet ? 'main' : 'chooseAppLayout' },
+      ],
     });
   };
 

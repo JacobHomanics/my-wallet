@@ -356,6 +356,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
         },
       },
       onboarding: 'onboarding',
+      chooseAppLayout: 'choose-layout',
       config: 'config',
       main: {
         screens: {

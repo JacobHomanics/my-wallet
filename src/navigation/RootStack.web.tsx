@@ -38,6 +38,11 @@ export function RootStack() {
         name="onboarding"
         component={rootStackScreens.onboarding}
       />
+      <WebStack.Screen
+        name="chooseAppLayout"
+        component={rootStackScreens.chooseAppLayout}
+        options={{ gestureEnabled: false }}
+      />
       <WebStack.Screen name="config" component={rootStackScreens.config} />
       <WebStack.Screen name="main" component={rootStackScreens.main} />
     </WebStack.Navigator>

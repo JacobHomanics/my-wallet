@@ -5,6 +5,7 @@ import {
   ROOT_STACK_INITIAL_ROUTE,
   type RootStackParamList,
 } from '@/navigation/types';
+import { ChooseAppLayoutScreen } from '@/screens/ChooseAppLayoutScreen';
 import { ConfigScreen } from '@/screens/ConfigScreen';
 import { ExportWalletScreen } from '@/screens/ExportWalletScreen';
 import { LoginScreen } from '@/screens/LoginScreen';
@@ -22,6 +23,7 @@ export const rootStackScreens = {
   loginVerify: LoginVerifyScreen,
   exportWallet: ExportWalletScreen,
   onboarding: OnboardingScreen,
+  chooseAppLayout: ChooseAppLayoutScreen,
   config: ConfigScreen,
   main: MainTabs,
 } as const satisfies Record<keyof RootStackParamList, ComponentType<object>>;

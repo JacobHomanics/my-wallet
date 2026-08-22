@@ -5,7 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
-import { useNeedsOnboarding } from '@/hooks/useNeedsOnboarding';
+import { useAuthenticatedDestination } from '@/hooks/useAuthenticatedDestination';
 import type { RootStackParamList } from '@/navigation/types';
 
 const SPLASH_MIN_DURATION_MS = 3000;
@@ -19,7 +19,8 @@ export function useSplashRedirect() {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'splash'>>();
   const { isReady, isAuthenticated } = useAuth();
-  const { status: onboardingStatus } = useNeedsOnboarding();
+  const { destination, isReady: destinationReady } =
+    useAuthenticatedDestination();
   const [hasMinDurationElapsed, setHasMinDurationElapsed] = useState(false);
 
   useEffect(() => {
@@ -33,11 +34,8 @@ export function useSplashRedirect() {
   }, []);
 
   const authGateReady = isReady && hasMinDurationElapsed;
-  const onboardingGateReady =
-    !isAuthenticated ||
-    onboardingStatus === 'needed' ||
-    onboardingStatus === 'done';
-  const canLeaveSplash = authGateReady && onboardingGateReady;
+  const destinationGateReady = !isAuthenticated || destinationReady;
+  const canLeaveSplash = authGateReady && destinationGateReady;
 
   useEffect(() => {
     if (!canLeaveSplash) {
@@ -59,14 +57,12 @@ export function useSplashRedirect() {
       return;
     }
 
-    navigation.replace(
-      onboardingStatus === 'needed' ? 'onboarding' : 'main',
-    );
+    navigation.replace(destination ?? 'main');
   }, [
     canLeaveSplash,
+    destination,
     isAuthenticated,
     navigation,
-    onboardingStatus,
     route.name,
   ]);
 }

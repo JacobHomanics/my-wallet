@@ -7,7 +7,7 @@ import { useCallback, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 
 import { useAuth } from '@/hooks/useAuth';
-import { useNeedsOnboarding } from '@/hooks/useNeedsOnboarding';
+import { useAuthenticatedDestination } from '@/hooks/useAuthenticatedDestination';
 import { useWebNavigationA11yFix } from '@/hooks/useWebNavigationA11yFix';
 import { rootLinking } from '@/navigation/linking';
 import { RootStack } from '@/navigation/RootStack';
@@ -21,10 +21,9 @@ const UNAUTHENTICATED_ROUTES = new Set<string>([
   'exportWallet',
 ]);
 
-/** Authenticated routes that should not force the onboarding screen. */
-const ONBOARDING_BYPASS_ROUTES = new Set<string>([
+/** Authenticated routes that should not force onboarding or layout choice. */
+const AUTH_GATE_BYPASS_ROUTES = new Set<string>([
   'splash',
-  'onboarding',
   'exportWallet',
   'config',
   'welcome',
@@ -32,10 +31,13 @@ const ONBOARDING_BYPASS_ROUTES = new Set<string>([
   'loginVerify',
 ]);
 
+const AUTH_GATE_ROUTES = new Set<string>(['onboarding', 'chooseAppLayout']);
+
 export function RootNavigator() {
   const navigationRef = useNavigationContainerRef<RootStackParamList>();
   const { isReady, isAuthenticated } = useAuth();
-  const { status: onboardingStatus } = useNeedsOnboarding();
+  const { destination, isReady: destinationReady } =
+    useAuthenticatedDestination();
   useWebNavigationA11yFix(navigationRef);
 
   const enforceAuthRoutes = useCallback(() => {
@@ -65,32 +67,27 @@ export function RootNavigator() {
       return;
     }
 
-    if (onboardingStatus === 'needed') {
-      if (ONBOARDING_BYPASS_ROUTES.has(activeRootRoute.name)) {
-        return;
-      }
-
-      navigationRef.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'onboarding' }],
-        }),
-      );
+    if (!destinationReady || !destination) {
       return;
     }
 
-    if (
-      onboardingStatus === 'done' &&
-      activeRootRoute.name === 'onboarding'
-    ) {
+    if (AUTH_GATE_BYPASS_ROUTES.has(activeRootRoute.name)) {
+      return;
+    }
+
+    if (activeRootRoute.name === destination) {
+      return;
+    }
+
+    if (destination !== 'main' || AUTH_GATE_ROUTES.has(activeRootRoute.name)) {
       navigationRef.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: 'main' }],
+          routes: [{ name: destination }],
         }),
       );
     }
-  }, [isAuthenticated, isReady, navigationRef, onboardingStatus]);
+  }, [destination, destinationReady, isAuthenticated, isReady, navigationRef]);
 
   useEffect(() => {
     enforceAuthRoutes();

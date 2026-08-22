@@ -71,7 +71,7 @@ export function LoginVerifyScreen() {
             ],
           });
         } else {
-          // RootNavigator redirects to onboarding when still needed.
+          // RootNavigator redirects to onboarding or layout choice when needed.
           navigation.reset({
             index: 0,
             routes: [{ name: 'main' }],

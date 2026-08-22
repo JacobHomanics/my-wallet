@@ -10,6 +10,11 @@ import {
 
 type AppLayoutListener = () => void;
 
+type AppLayoutSnapshot = {
+  selectedAppLayoutId: AppLayoutId;
+  hasBeenSet: boolean;
+};
+
 const APP_LAYOUT_STORAGE_KEY = 'appLayoutId';
 
 function normalizeStoredAppLayoutId(stored: string): AppLayoutId | null {
@@ -48,8 +53,11 @@ function persistAppLayoutId(id: AppLayoutId): void {
   }
 }
 
-let selectedAppLayoutId: AppLayoutId =
-  readStoredAppLayoutId() ?? DEFAULT_APP_LAYOUT_ID;
+const storedAppLayoutId = readStoredAppLayoutId();
+let snapshot: AppLayoutSnapshot = {
+  selectedAppLayoutId: storedAppLayoutId ?? DEFAULT_APP_LAYOUT_ID,
+  hasBeenSet: storedAppLayoutId != null,
+};
 const listeners = new Set<AppLayoutListener>();
 
 function subscribe(listener: AppLayoutListener): () => void {
@@ -59,19 +67,22 @@ function subscribe(listener: AppLayoutListener): () => void {
   };
 }
 
-function getSnapshot(): AppLayoutId {
-  return selectedAppLayoutId;
+function getSnapshot(): AppLayoutSnapshot {
+  return snapshot;
 }
 
 export function getAppLayoutId(): AppLayoutId {
-  return getSnapshot();
+  return getSnapshot().selectedAppLayoutId;
 }
 
 function setSelectedAppLayoutId(id: AppLayoutId): void {
-  if (id === selectedAppLayoutId) {
+  if (id === snapshot.selectedAppLayoutId && snapshot.hasBeenSet) {
     return;
   }
-  selectedAppLayoutId = id;
+  snapshot = {
+    selectedAppLayoutId: id,
+    hasBeenSet: true,
+  };
   persistAppLayoutId(id);
   listeners.forEach((listener) => {
     listener();
@@ -80,15 +91,17 @@ function setSelectedAppLayoutId(id: AppLayoutId): void {
 
 /**
  * User preference for Default vs Advanced (Money on Steroids) app layout.
+ * `hasAppLayoutBeenSet` is false until the user explicitly chooses one.
  */
 export function useAppLayout(): {
   options: readonly AppLayoutOption[];
   selectedAppLayoutId: AppLayoutId;
   selectedLayout: AppLayoutOption;
   isAdvanced: boolean;
+  hasAppLayoutBeenSet: boolean;
   setAppLayout: (id: AppLayoutId) => void;
 } {
-  const selectedId = useSyncExternalStore(
+  const current = useSyncExternalStore(
     subscribe,
     getSnapshot,
     getSnapshot,
@@ -99,7 +112,7 @@ export function useAppLayout(): {
   }, []);
 
   const selectedLayout =
-    getAppLayoutOption(selectedId) ??
+    getAppLayoutOption(current.selectedAppLayoutId) ??
     getAppLayoutOption(DEFAULT_APP_LAYOUT_ID)!;
 
   return {
@@ -107,6 +120,7 @@ export function useAppLayout(): {
     selectedAppLayoutId: selectedLayout.id,
     selectedLayout,
     isAdvanced: selectedLayout.id === 'advanced',
+    hasAppLayoutBeenSet: current.hasBeenSet,
     setAppLayout,
   };
 }

@@ -33,6 +33,11 @@ export function RootStack() {
         name="onboarding"
         component={rootStackScreens.onboarding}
       />
+      <NativeStack.Screen
+        name="chooseAppLayout"
+        component={rootStackScreens.chooseAppLayout}
+        options={{ gestureEnabled: false }}
+      />
       <NativeStack.Screen name="config" component={rootStackScreens.config} />
       <NativeStack.Screen name="main" component={rootStackScreens.main} />
     </NativeStack.Navigator>
