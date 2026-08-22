@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import {StyleSheet, 
   ActivityIndicator,
   Pressable,
@@ -12,11 +11,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AccountNumber } from '@/components/AccountNumber';
 import { AccountNumberWalletDetails } from '@/components/AccountNumberWalletDetails';
 import { BackButton } from '@/components/BackButton';
+import { IconButton } from '@/components/IconButton';
 import { useConvexUsername } from '@/hooks/useConvexUsername';
-import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToHome } from '@/hooks/usePopToHome';
 import { useReceiveAddressUrl } from '@/hooks/useReceiveAddressUrl';
+import { useShareReceiveLink } from '@/hooks/useShareReceiveLink';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -31,7 +31,13 @@ export function ReceiveScreen() {
   const goHome = usePopToHome();
   const { ready, url, identityId } = useReceiveAddressUrl();
   const { username } = useConvexUsername();
-  const { copy, isCopied } = useCopyToClipboard();
+  const {
+    onShare,
+    disabled: shareDisabled,
+    icon: shareIcon,
+    accessibilityLabel: shareLabel,
+    color: shareColor,
+  } = useShareReceiveLink(url);
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -57,7 +63,14 @@ export function ReceiveScreen() {
             />
           )}
           <Text style={styles.topBarTitle}>Receive</Text>
-          <View style={styles.topBarSpacer} />
+          <IconButton
+            accessibilityLabel={shareLabel}
+            color={shareColor}
+            disabled={shareDisabled}
+            icon={shareIcon}
+            iconSize={22}
+            onPress={onShare}
+          />
         </View>
 
         <ScrollView
@@ -94,34 +107,6 @@ export function ReceiveScreen() {
                   style={styles.accountNumber}
                 />
               </View>
-
-              <Pressable
-                accessibilityLabel={
-                  isCopied('url') ? 'Link copied' : 'Copy receive link'
-                }
-                accessibilityRole="button"
-                onPress={() => {
-                  void copy(url, 'url');
-                }}
-                style={({ pressed }) => [
-                  styles.copyLinkButton,
-                  pressed && styles.copyLinkButtonPressed,
-                ]}
-              >
-                <Ionicons
-                  name={isCopied('url') ? 'checkmark' : 'link-outline'}
-                  size={18}
-                  color={isCopied('url') ? '#15803d' : '#166534'}
-                />
-                <Text
-                  style={[
-                    styles.copyLinkText,
-                    isCopied('url') && styles.copyLinkTextCopied,
-                  ]}
-                >
-                  {isCopied('url') ? 'Link copied' : 'Copy link'}
-                </Text>
-              </Pressable>
             </>
           )}
         </ScrollView>
@@ -157,9 +142,6 @@ function createStyles(c: ThemeColors) {
     fontSize: 17,
     fontWeight: '600',
     color: c.primary,
-  },
-  topBarSpacer: {
-    width: 44,
   },
   webBack: {
     paddingHorizontal: 12,
@@ -197,27 +179,6 @@ function createStyles(c: ThemeColors) {
   },
   accountNumber: {
     marginTop: 0,
-  },
-  copyLinkButton: {
-    marginTop: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: '#d1fae5',
-  },
-  copyLinkButtonPressed: {
-    opacity: 0.85,
-  },
-  copyLinkText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: c.primary,
-  },
-  copyLinkTextCopied: {
-    color: c.success,
   },
 });
 }

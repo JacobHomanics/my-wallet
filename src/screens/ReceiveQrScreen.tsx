@@ -1,11 +1,11 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {StyleSheet, 
+import {
   ActivityIndicator,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -15,13 +15,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AccountNumber } from '@/components/AccountNumber';
 import { AccountNumberWalletDetails } from '@/components/AccountNumberWalletDetails';
 import { BackButton } from '@/components/BackButton';
+import { IconButton } from '@/components/IconButton';
 import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { useAppTax } from '@/hooks/useAppTax';
 import { useConvexUsername } from '@/hooks/useConvexUsername';
-import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useReceivePaymentUrl } from '@/hooks/useReceivePaymentUrl';
+import { useShareReceiveLink } from '@/hooks/useShareReceiveLink';
 import type { HomeStackParamList } from '@/navigation/types';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
@@ -40,7 +41,13 @@ export function ReceiveQrScreen() {
   const { ready, url, identityId, ethereumAddress, solanaAddress } =
     useReceivePaymentUrl(usdAmount);
   const { username } = useConvexUsername();
-  const { copy, isCopied } = useCopyToClipboard();
+  const {
+    onShare,
+    disabled: shareDisabled,
+    icon: shareIcon,
+    accessibilityLabel: shareLabel,
+    color: shareColor,
+  } = useShareReceiveLink(url);
   const { formatFromUsd, formatServiceFeeFromUsd, parseDisplayInputToUsd, currencySymbol } =
     useFiatDisplay();
   const { taxUsdFor, payerTotalUsdFor } = useAppTax();
@@ -77,7 +84,14 @@ export function ReceiveQrScreen() {
             <BackButton accessibilityLabel="Back" />
           )}
           <Text style={styles.topBarTitle}>Request</Text>
-          <View style={styles.topBarSpacer} />
+          <IconButton
+            accessibilityLabel={shareLabel}
+            color={shareColor}
+            disabled={shareDisabled}
+            icon={shareIcon}
+            iconSize={22}
+            onPress={onShare}
+          />
         </View>
 
         <ScrollView contentContainerStyle={styles.body} style={styles.flex}>
@@ -121,34 +135,6 @@ export function ReceiveQrScreen() {
                   style={styles.accountNumber}
                 />
               </View>
-
-              <Pressable
-                accessibilityLabel={
-                  isCopied('url') ? 'Link copied' : 'Copy receive link'
-                }
-                accessibilityRole="button"
-                onPress={() => {
-                  void copy(url, 'url');
-                }}
-                style={({ pressed }) => [
-                  styles.copyLinkButton,
-                  pressed && styles.copyLinkButtonPressed,
-                ]}
-              >
-                <Ionicons
-                  name={isCopied('url') ? 'checkmark' : 'link-outline'}
-                  size={18}
-                  color={isCopied('url') ? '#15803d' : '#166534'}
-                />
-                <Text
-                  style={[
-                    styles.copyLinkText,
-                    isCopied('url') && styles.copyLinkTextCopied,
-                  ]}
-                >
-                  {isCopied('url') ? 'Link copied' : 'Copy link'}
-                </Text>
-              </Pressable>
             </>
           )}
         </ScrollView>
@@ -184,9 +170,6 @@ function createStyles(c: ThemeColors) {
     fontSize: 17,
     fontWeight: '600',
     color: c.primary,
-  },
-  topBarSpacer: {
-    width: 44,
   },
   webBack: {
     paddingHorizontal: 12,
@@ -240,27 +223,6 @@ function createStyles(c: ThemeColors) {
   },
   accountNumber: {
     marginTop: 0,
-  },
-  copyLinkButton: {
-    marginTop: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: '#d1fae5',
-  },
-  copyLinkButtonPressed: {
-    opacity: 0.85,
-  },
-  copyLinkText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: c.primary,
-  },
-  copyLinkTextCopied: {
-    color: c.success,
   },
 });
 }
