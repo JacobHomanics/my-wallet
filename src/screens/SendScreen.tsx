@@ -170,7 +170,8 @@ function createStyles(c: ThemeColors) {
     fontSize: 17,
     fontWeight: '600',
     color: c.primary,
-    paddingVertical: 8,
+    paddingTop: 8,
+    paddingBottom: 2,
   },
 });
 }

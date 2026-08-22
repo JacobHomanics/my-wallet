@@ -19,14 +19,14 @@ export function useContactsAdvancedSection() {
     selectAll,
     selectContacts,
     selectExternal,
-  } = useContactsTab(isAdvanced ? 'all' : 'contacts');
+  } = useContactsTab('all');
 
   const toggleContactsAdvanced = useCallback(() => {
-    if (showAdvanced) {
-      selectContacts();
+    if (!showAdvanced) {
+      selectAll();
     }
     toggleAdvanced();
-  }, [selectContacts, showAdvanced, toggleAdvanced]);
+  }, [selectAll, showAdvanced, toggleAdvanced]);
 
   const showContactsTabs = showAdvanced;
   const viewingContactsOnly = !showAdvanced || isContactsTab;

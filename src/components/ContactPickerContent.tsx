@@ -391,36 +391,8 @@ export function ContactPickerContent({
 
   return (
     <View style={styles.root}>
-      {showContactsAdvancedToggle ? (
-        <Pressable
-          accessibilityLabel={
-            showContactsAdvanced
-              ? 'Hide advanced details'
-              : 'Show advanced details'
-          }
-          accessibilityRole="button"
-          accessibilityState={{ expanded: showContactsAdvanced }}
-          onPress={toggleContactsAdvanced}
-          style={({ pressed }) => [
-            styles.advancedToggle,
-            pressed && styles.advancedTogglePressed,
-          ]}
-        >
-          <Text style={styles.advancedToggleText}>
-            {showContactsAdvanced
-              ? 'Hide advanced details'
-              : 'Show advanced details'}
-          </Text>
-          <Ionicons
-            name={showContactsAdvanced ? 'chevron-up' : 'chevron-down'}
-            size={16}
-            color={colors.textMuted}
-          />
-        </Pressable>
-      ) : null}
-
       {showContactsTabs ? (
-        <View style={styles.tabs}>
+        <View style={[styles.tabs, styles.tabsAboveFootnote]}>
           <ContactsTabChip
             label="All"
             selected={isAllTab}
@@ -437,6 +409,37 @@ export function ContactPickerContent({
             onPress={selectExternal}
           />
         </View>
+      ) : null}
+
+      {showContactsAdvancedToggle ? (
+        <Pressable
+          accessibilityLabel={
+            showContactsAdvanced
+              ? 'Hide advanced details'
+              : 'Show advanced details'
+          }
+          accessibilityRole="button"
+          accessibilityState={{ expanded: showContactsAdvanced }}
+          onPress={toggleContactsAdvanced}
+          style={({ pressed }) => [
+            styles.advancedToggle,
+            showContactsAdvanced
+              ? styles.advancedToggleUnderTabs
+              : styles.advancedToggleUnderTitle,
+            pressed && styles.advancedTogglePressed,
+          ]}
+        >
+          <Text style={styles.advancedToggleText}>
+            {showContactsAdvanced
+              ? 'Hide advanced details'
+              : 'Show advanced details'}
+          </Text>
+          <Ionicons
+            name={showContactsAdvanced ? 'chevron-up' : 'chevron-down'}
+            size={16}
+            color={colors.textMuted}
+          />
+        </Pressable>
       ) : null}
 
       <View style={styles.list}>
@@ -614,14 +617,22 @@ function createStyles(c: ThemeColors) {
     width: '100%',
   },
   advancedToggle: {
-    marginTop: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
     alignSelf: 'center',
-    paddingVertical: 8,
     paddingHorizontal: 4,
+  },
+  advancedToggleUnderTitle: {
+    marginTop: 0,
+    paddingTop: 2,
+    paddingBottom: 4,
+  },
+  advancedToggleUnderTabs: {
+    marginTop: 2,
+    paddingTop: 2,
+    paddingBottom: 4,
   },
   advancedTogglePressed: {
     opacity: 0.65,
@@ -636,12 +647,15 @@ function createStyles(c: ThemeColors) {
     alignSelf: 'center',
     width: '100%',
     maxWidth: 420,
-    marginTop: 12,
+    marginTop: 8,
     marginHorizontal: 24,
     padding: 4,
     gap: 4,
     backgroundColor: c.surfaceMuted,
     borderRadius: 12,
+  },
+  tabsAboveFootnote: {
+    marginBottom: 0,
   },
   tabChip: {
     flex: 1,
