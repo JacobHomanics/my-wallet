@@ -15,7 +15,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
+import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
+import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
 import { useAddContact } from '@/hooks/useAddContact';
+import { useContactsPreview } from '@/hooks/useContactsPreview';
+import { useSignUpLoginPromptModal } from '@/hooks/useSignUpLoginPromptModal';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToContacts } from '@/hooks/usePopToContacts';
 import { useWalletBalanceSearch } from '@/hooks/useWalletBalanceSearch';
@@ -38,6 +42,9 @@ export function NewRawAddressContactScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<ContactsStackParamList>>();
   const { addAddresses, isAdding, errorMessage } = useAddContact();
+  const { isPreview } = useContactsPreview();
+  const { promptOpen, openPrompt, closePrompt, confirmPrompt } =
+    useSignUpLoginPromptModal();
   const [name, setName] = useState('');
   const [walletQuery, setWalletQuery] = useState('');
   const trimmedName = name.trim();
@@ -193,6 +200,10 @@ export function NewRawAddressContactScreen() {
               accessibilityRole="button"
               disabled={!canSubmit || isAdding}
               onPress={() => {
+                if (isPreview) {
+                  openPrompt();
+                  return;
+                }
                 if (!walletResult) {
                   return;
                 }
@@ -228,6 +239,12 @@ export function NewRawAddressContactScreen() {
           </View>
         </ScrollView>
       </View>
+      <SignUpLoginBanner includeBottomInset />
+      <SignUpLoginPromptModal
+        visible={promptOpen}
+        onCancel={closePrompt}
+        onConfirm={confirmPrompt}
+      />
     </View>
   );
 }

@@ -18,7 +18,7 @@ import { ConfirmDeleteContactModal } from '@/components/ConfirmDeleteContactModa
 import { IconButton } from '@/components/IconButton';
 import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
 import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
-import { useAuthGatedAction } from '@/hooks/useAuthGatedAction';
+import { useSignUpLoginPromptModal } from '@/hooks/useSignUpLoginPromptModal';
 import { SwipeableContactRow } from '@/components/SwipeableContactRow';
 import {
   groupWalletContactsByChain,
@@ -321,20 +321,13 @@ export function ContactsScreen() {
   } = useConfirmDeleteContact();
   const { onRowOpen, onRowClose, closeOpen } = useContactsSwipe();
 
-  const {
-    run: onPressAdd,
-    openAuthPrompt,
-    authPromptOpen,
-    closeAuthPrompt,
-    confirmAuthPrompt,
-  } = useAuthGatedAction(() => {
-    navigation.navigate('newContact');
-  });
+  const { promptOpen, openPrompt, closePrompt, confirmPrompt } =
+    useSignUpLoginPromptModal();
 
   const openContact = (contactId: string) => {
     closeOpen();
     if (isPreview) {
-      openAuthPrompt();
+      openPrompt();
       return;
     }
     navigation.navigate('contactDetails', { contactId });
@@ -343,7 +336,7 @@ export function ContactsScreen() {
   const deleteContact = (contactId: string, label: string) => {
     closeOpen();
     if (isPreview) {
-      openAuthPrompt();
+      openPrompt();
       return;
     }
     requestDelete(contactId, label);
@@ -405,7 +398,9 @@ export function ContactsScreen() {
             color={colors.primaryText}
             icon="add"
             iconSize={24}
-            onPress={onPressAdd}
+            onPress={() => {
+              navigation.navigate('newContact');
+            }}
             size={36}
             style={styles.addButton}
           />
@@ -630,9 +625,9 @@ export function ContactsScreen() {
       </View>
       <SignUpLoginBanner />
       <SignUpLoginPromptModal
-        visible={authPromptOpen}
-        onCancel={closeAuthPrompt}
-        onConfirm={confirmAuthPrompt}
+        visible={promptOpen}
+        onCancel={closePrompt}
+        onConfirm={confirmPrompt}
       />
 
       <ConfirmDeleteContactModal

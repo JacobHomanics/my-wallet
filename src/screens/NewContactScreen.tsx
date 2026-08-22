@@ -14,7 +14,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
+import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
+import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
 import { useAddContact } from '@/hooks/useAddContact';
+import { useContactsPreview } from '@/hooks/useContactsPreview';
+import { useSignUpLoginPromptModal } from '@/hooks/useSignUpLoginPromptModal';
 import { useContactSearch } from '@/hooks/useContactSearch';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToContacts } from '@/hooks/usePopToContacts';
@@ -37,6 +41,9 @@ export function NewContactScreen() {
     useContactSearch();
   const { add, isAdding, errorMessage } = useAddContact();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const { isPreview } = useContactsPreview();
+  const { promptOpen, openPrompt, closePrompt, confirmPrompt } =
+    useSignUpLoginPromptModal();
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -107,6 +114,10 @@ export function NewContactScreen() {
                   accessibilityRole="button"
                   disabled={isAdding || (!hit.username && !hit.identityId)}
                   onPress={() => {
+                    if (isPreview) {
+                      openPrompt();
+                      return;
+                    }
                     void (async () => {
                       if (!hit.username && !hit.identityId) {
                         return;
@@ -213,6 +224,12 @@ export function NewContactScreen() {
           ) : null}
         </ScrollView>
       </View>
+      <SignUpLoginBanner includeBottomInset />
+      <SignUpLoginPromptModal
+        visible={promptOpen}
+        onCancel={closePrompt}
+        onConfirm={confirmPrompt}
+      />
     </View>
   );
 }

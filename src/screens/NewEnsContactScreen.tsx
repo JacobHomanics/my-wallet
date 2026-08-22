@@ -14,7 +14,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
+import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
+import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
 import { useAddContact } from '@/hooks/useAddContact';
+import { useContactsPreview } from '@/hooks/useContactsPreview';
+import { useSignUpLoginPromptModal } from '@/hooks/useSignUpLoginPromptModal';
 import { useEnsResolve } from '@/hooks/useEnsResolve';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToContacts } from '@/hooks/usePopToContacts';
@@ -43,6 +47,9 @@ export function NewEnsContactScreen() {
     errorMessage: resolveError,
   } = useEnsResolve(query);
   const { addEns, isAdding, errorMessage } = useAddContact();
+  const { isPreview } = useContactsPreview();
+  const { promptOpen, openPrompt, closePrompt, confirmPrompt } =
+    useSignUpLoginPromptModal();
 
   const goBack = () => {
     if (navigation.canGoBack()) {
@@ -117,6 +124,10 @@ export function NewEnsContactScreen() {
                 accessibilityRole="button"
                 disabled={isAdding}
                 onPress={() => {
+                  if (isPreview) {
+                    openPrompt();
+                    return;
+                  }
                   void (async () => {
                     const ok = await addEns({
                       ensName: result.name,
@@ -154,6 +165,12 @@ export function NewEnsContactScreen() {
           ) : null}
         </ScrollView>
       </View>
+      <SignUpLoginBanner includeBottomInset />
+      <SignUpLoginPromptModal
+        visible={promptOpen}
+        onCancel={closePrompt}
+        onConfirm={confirmPrompt}
+      />
     </View>
   );
 }

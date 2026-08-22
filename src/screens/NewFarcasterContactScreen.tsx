@@ -14,7 +14,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
+import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
+import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
 import { useAddContact } from '@/hooks/useAddContact';
+import { useContactsPreview } from '@/hooks/useContactsPreview';
+import { useSignUpLoginPromptModal } from '@/hooks/useSignUpLoginPromptModal';
 import { useFarcasterSearch } from '@/hooks/useFarcasterSearch';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToContacts } from '@/hooks/usePopToContacts';
@@ -39,6 +43,9 @@ export function NewFarcasterContactScreen() {
   const { results, isSearching, showEmpty, errorMessage: searchError } =
     useFarcasterSearch(query);
   const { addFarcaster, isAdding, errorMessage } = useAddContact();
+  const { isPreview } = useContactsPreview();
+  const { promptOpen, openPrompt, closePrompt, confirmPrompt } =
+    useSignUpLoginPromptModal();
 
   const goBack = () => {
     if (navigation.canGoBack()) {
@@ -115,6 +122,10 @@ export function NewFarcasterContactScreen() {
                   accessibilityRole="button"
                   disabled={isAdding || !hit.hasAddress}
                   onPress={() => {
+                    if (isPreview) {
+                      openPrompt();
+                      return;
+                    }
                     void (async () => {
                       if (!hit.hasAddress) {
                         return;
@@ -158,6 +169,12 @@ export function NewFarcasterContactScreen() {
           ) : null}
         </ScrollView>
       </View>
+      <SignUpLoginBanner includeBottomInset />
+      <SignUpLoginPromptModal
+        visible={promptOpen}
+        onCancel={closePrompt}
+        onConfirm={confirmPrompt}
+      />
     </View>
   );
 }

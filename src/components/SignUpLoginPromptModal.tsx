@@ -26,10 +26,12 @@ export function SignUpLoginPromptModal({
     <>
       Sign up or login to{' '}
       <Text style={styles.emphasis}>send and receive money</Text>,{' '}
-      <Text style={styles.emphasis}>earn cashback rewards</Text>, and{' '}
+      <Text style={styles.emphasis}>earn cashback rewards</Text>,{' '}
       <Text style={styles.emphasis}>
         earn automatic interest on your account balance
       </Text>
+      , and{' '}
+      <Text style={styles.emphasis}>save contacts for easy reference</Text>
       .
     </>
   );
