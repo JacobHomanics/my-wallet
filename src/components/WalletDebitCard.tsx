@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { HoloTapGentlyButton } from '@/components/HoloTapGentlyButton';
 import { IconButton } from '@/components/IconButton';
+import { SampleStamp } from '@/components/SampleStamp';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import type { UserWallet } from '@/hooks/useUserWallets.shared';
 
@@ -13,6 +14,7 @@ type WalletDebitCardProps = {
   onCopy: () => void;
   /** When set, shows a holographic “tap gently” export control on the card. */
   onExport?: () => void;
+  isPreview?: boolean;
 };
 
 const CARD_THEME = {
@@ -37,6 +39,7 @@ export function WalletDebitCard({
   copied,
   onCopy,
   onExport,
+  isPreview = false,
 }: WalletDebitCardProps) {
   const theme = CARD_THEME[wallet.chain];
 
@@ -78,6 +81,11 @@ export function WalletDebitCard({
           {wallet.label}
         </Text>
       </View>
+      {isPreview ? (
+        <View style={styles.stampFaded} pointerEvents="none">
+          <SampleStamp />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -90,6 +98,11 @@ const styles = StyleSheet.create({
     minHeight: 188,
     justifyContent: 'space-between',
     overflow: 'hidden',
+  },
+  stampFaded: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 2,
+    opacity: 0.75,
   },
   topBlock: {
     gap: 12,

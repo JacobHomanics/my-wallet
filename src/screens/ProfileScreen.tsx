@@ -16,9 +16,12 @@ import { ConfirmExportPrivateKeyModal } from '@/components/ConfirmExportPrivateK
 import { ExportPrivateKeyWebView } from '@/components/ExportPrivateKeyWebView';
 import { IconButton } from '@/components/IconButton';
 import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
+import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
 import { WalletDebitCard } from '@/components/WalletDebitCard';
 import { useConfirmExportPrivateKey } from '@/hooks/useConfirmExportPrivateKey';
 import { useConvexUsername } from '@/hooks/useConvexUsername';
+import { useProfilePreview } from '@/hooks/useProfilePreview';
+import { useSignUpLoginPromptModal } from '@/hooks/useSignUpLoginPromptModal';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useProfilePhoto } from '@/hooks/useProfilePhoto';
@@ -39,10 +42,23 @@ export function ProfileScreen() {
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
   const { displayName, avatarSeed } = useProfileIdentity();
   const { profilePhotoUrl } = useProfilePhoto();
-  const { username } = useConvexUsername();
-  const { identityId } = useWalletIdentityId();
+  const { username: convexUsername } = useConvexUsername();
+  const { identityId: walletIdentityId } = useWalletIdentityId();
+  const {
+    isPreview,
+    username: previewUsername,
+    identityId: previewIdentityId,
+    wallets: previewWallets,
+  } = useProfilePreview();
+  const username = isPreview ? previewUsername : convexUsername;
+  const identityId = isPreview ? previewIdentityId : walletIdentityId;
+  const profileLabel = isPreview ? previewUsername : displayName;
+  const { promptOpen, openPrompt, closePrompt, confirmPrompt } =
+    useSignUpLoginPromptModal();
   const { showAdvanced, toggleAdvanced } = useShowAdvanced();
-  const { ready, wallets } = useUserWallets();
+  const { ready, wallets: userWallets } = useUserWallets();
+  const wallets = isPreview ? previewWallets : userWallets;
+  const walletsReady = isPreview || ready;
   const { copy, isCopied } = useCopyToClipboard();
   const {
     pendingWallet,
@@ -88,26 +104,32 @@ export function ProfileScreen() {
         style={styles.scroll}
       >
         <Avatar
-          label={displayName}
-          photoUrl={profilePhotoUrl}
-          seed={avatarSeed}
+          label={profileLabel}
+          photoUrl={isPreview ? null : profilePhotoUrl}
+          seed={isPreview ? previewUsername : avatarSeed}
           size={88}
           style={styles.avatar}
         />
         <Text style={styles.title}>Profile</Text>
-        <Text style={styles.subtitle}>Signed in as {displayName}.</Text>
+        {isPreview ? null : (
+          <Text style={styles.subtitle}>Signed in as {displayName}.</Text>
+        )}
 
         {username || identityId ? (
           <View style={styles.section}>
             {username ? (
               <AccountNumber
                 username={username}
+                isPreview={isPreview}
+                onCopyPress={isPreview ? openPrompt : undefined}
                 style={styles.accountNumber}
               />
             ) : null}
             {identityId ? (
               <AccountNumber
                 identityId={identityId}
+                isPreview={isPreview}
+                onCopyPress={isPreview ? openPrompt : undefined}
                 style={styles.accountNumber}
               />
             ) : null}
@@ -136,7 +158,7 @@ export function ProfileScreen() {
         {showAdvanced ? (
           <View style={styles.advancedSection}>
             <Text style={styles.sectionTitle}>Wallet</Text>
-            {!ready ? (
+            {!walletsReady ? (
               <ActivityIndicator color={colors.primary} style={styles.loader} />
             ) : wallets.length === 0 ? (
               <Text style={styles.empty}>Creating your wallet…</Text>
@@ -148,12 +170,21 @@ export function ProfileScreen() {
                   <WalletDebitCard
                     key={walletKey}
                     wallet={wallet}
-                    accountLabel={displayName}
+                    isPreview={isPreview}
+                    accountLabel={profileLabel}
                     copied={isCopied(walletKey)}
                     onCopy={() => {
+                      if (isPreview) {
+                        openPrompt();
+                        return;
+                      }
                       void copy(wallet.address, walletKey);
                     }}
                     onExport={() => {
+                      if (isPreview) {
+                        openPrompt();
+                        return;
+                      }
                       requestExport(wallet);
                     }}
                   />
@@ -164,6 +195,11 @@ export function ProfileScreen() {
         ) : null}
       </ScrollView>
       <SignUpLoginBanner />
+      <SignUpLoginPromptModal
+        visible={promptOpen}
+        onCancel={closePrompt}
+        onConfirm={confirmPrompt}
+      />
 
       <ConfirmExportPrivateKeyModal
         visible={confirmVisible}
