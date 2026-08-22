@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { useAdvancedSection } from '@/hooks/useAdvancedSection';
 import type { AdvancedLayoutSectionId } from '@/lib/advancedLayoutSections';
@@ -16,10 +16,6 @@ export function useShowAdvanced(sectionId: AdvancedLayoutSectionId): {
 } {
   const { isAdvanced } = useAdvancedSection(sectionId);
   const [expanded, setExpanded] = useState(false);
-
-  useEffect(() => {
-    setExpanded(false);
-  }, [isAdvanced]);
 
   const toggleAdvanced = useCallback(() => {
     setExpanded((open) => !open);
