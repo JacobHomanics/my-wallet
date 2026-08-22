@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton } from '@/components/BackButton';
 import { AccountNumber } from '@/components/AccountNumber';
 import { ReceiveQrCode } from '@/components/ReceiveQrCode';
+import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
 import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
 import { useAuthGatedAction } from '@/hooks/useAuthGatedAction';
 import { useConvexUsername } from '@/hooks/useConvexUsername';
@@ -111,49 +112,38 @@ export function ReceiveScreen() {
                 </View>
               ) : null}
 
-              <Pressable
-                accessibilityLabel={
-                  isPreview
-                    ? 'Sign up / Login'
-                    : isCopied('url')
-                      ? 'Link copied'
-                      : 'Copy receive link'
-                }
-                accessibilityRole="button"
-                onPress={isPreview ? openAuthPrompt : onPressCopyLink}
-                style={({ pressed }) => [
-                  styles.copyLinkButton,
-                  pressed && styles.copyLinkButtonPressed,
-                ]}
-              >
-                <Ionicons
-                  name={
-                    isPreview
-                      ? 'log-in-outline'
-                      : isCopied('url')
-                        ? 'checkmark'
-                        : 'link-outline'
+              {!isPreview ? (
+                <Pressable
+                  accessibilityLabel={
+                    isCopied('url') ? 'Link copied' : 'Copy receive link'
                   }
-                  size={18}
-                  color={isCopied('url') && !isPreview ? '#15803d' : '#166534'}
-                />
-                <Text
-                  style={[
-                    styles.copyLinkText,
-                    isCopied('url') && !isPreview && styles.copyLinkTextCopied,
+                  accessibilityRole="button"
+                  onPress={onPressCopyLink}
+                  style={({ pressed }) => [
+                    styles.copyLinkButton,
+                    pressed && styles.copyLinkButtonPressed,
                   ]}
                 >
-                  {isPreview
-                    ? 'Sign up / Login'
-                    : isCopied('url')
-                      ? 'Link copied'
-                      : 'Copy link'}
-                </Text>
-              </Pressable>
+                  <Ionicons
+                    name={isCopied('url') ? 'checkmark' : 'link-outline'}
+                    size={18}
+                    color={isCopied('url') ? '#15803d' : '#166534'}
+                  />
+                  <Text
+                    style={[
+                      styles.copyLinkText,
+                      isCopied('url') && styles.copyLinkTextCopied,
+                    ]}
+                  >
+                    {isCopied('url') ? 'Link copied' : 'Copy link'}
+                  </Text>
+                </Pressable>
+              ) : null}
             </>
           )}
         </ScrollView>
       </View>
+      <SignUpLoginBanner includeBottomInset />
       <SignUpLoginPromptModal
         visible={authPromptOpen}
         onCancel={closeAuthPrompt}

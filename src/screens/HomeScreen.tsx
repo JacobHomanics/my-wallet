@@ -17,6 +17,7 @@ import { DepositBankTipsModal } from '@/components/DepositBankTipsModal';
 import { BalanceBreakdownModal } from '@/components/BalanceBreakdownModal';
 import { IconButton } from '@/components/IconButton';
 import { PhysicalCardWaitlistCallout } from '@/components/PhysicalCardWaitlistCallout';
+import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
 import { SampleStamp } from '@/components/SampleStamp';
 import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
 import { WithdrawUnsupportedModal } from '@/components/WithdrawUnsupportedModal';
@@ -146,6 +147,19 @@ export function HomeScreen() {
       );
     }
 
+    const advancedDetailsLink = (
+      <Pressable
+        accessibilityRole="link"
+        hitSlop={8}
+        onPress={() => {
+          navigation.navigate('tokenDetails');
+        }}
+        style={({ pressed }) => [pressed && styles.detailsLinkPressed]}
+      >
+        <Text style={styles.detailsLinkText}>Show advanced details</Text>
+      </Pressable>
+    );
+
     const totalRow = (
       <View style={styles.totalRow}>
         <Text style={styles.total} accessibilityRole="header">
@@ -167,10 +181,13 @@ export function HomeScreen() {
       return (
         <View style={styles.totalPreview}>
           <View style={styles.totalPreviewFrame}>
-            {totalRow}
-            <View style={styles.stampFaded}>
-              <SampleStamp inline />
+            <View style={styles.totalOverlay}>
+              {totalRow}
+              <View style={styles.stampFaded}>
+                <SampleStamp />
+              </View>
             </View>
+            {advancedDetailsLink}
           </View>
         </View>
       );
@@ -187,16 +204,18 @@ export function HomeScreen() {
     return (
       <>
         {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
-        <Pressable
-          accessibilityRole="link"
-          hitSlop={8}
-          onPress={() => {
-            navigation.navigate('tokenDetails');
-          }}
-          style={({ pressed }) => [pressed && styles.detailsLinkPressed]}
-        >
-          <Text style={styles.detailsLinkText}>Show advanced details</Text>
-        </Pressable>
+        {isAuthenticated ? (
+          <Pressable
+            accessibilityRole="link"
+            hitSlop={8}
+            onPress={() => {
+              navigation.navigate('tokenDetails');
+            }}
+            style={({ pressed }) => [pressed && styles.detailsLinkPressed]}
+          >
+            <Text style={styles.detailsLinkText}>Show advanced details</Text>
+          </Pressable>
+        ) : null}
         <View style={styles.actionsGroup}>
           <View style={styles.actionsRow}>
             {canDeposit ? (
@@ -276,38 +295,41 @@ export function HomeScreen() {
 
   return (
     <>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#166534"
-          />
-        }
-        style={styles.container}
-      >
-        <PhysicalCardWaitlistCallout />
-        <View style={styles.hero}>
-          {renderBalance()}
-          {renderActions()}
-        </View>
-        {showActions ? (
-          <Pressable
-            accessibilityRole="link"
-            hitSlop={8}
-            onPress={() => {
-              navigation.navigate('transactions');
-            }}
-            style={({ pressed }) => [
-              styles.transactionsLink,
-              pressed && styles.detailsLinkPressed,
-            ]}
-          >
-            <Text style={styles.detailsLinkText}>Transactions</Text>
-          </Pressable>
-        ) : null}
-      </ScrollView>
+      <View style={styles.container}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#166534"
+            />
+          }
+          style={styles.flex}
+        >
+          <PhysicalCardWaitlistCallout />
+          <View style={styles.hero}>
+            {renderBalance()}
+            {renderActions()}
+          </View>
+          {showActions ? (
+            <Pressable
+              accessibilityRole="link"
+              hitSlop={8}
+              onPress={() => {
+                navigation.navigate('transactions');
+              }}
+              style={({ pressed }) => [
+                styles.transactionsLink,
+                pressed && styles.detailsLinkPressed,
+              ]}
+            >
+              <Text style={styles.detailsLinkText}>Transactions</Text>
+            </Pressable>
+          ) : null}
+        </ScrollView>
+        <SignUpLoginBanner />
+      </View>
       <SignUpLoginPromptModal
         visible={authPromptOpen}
         onCancel={closeAuthPrompt}
@@ -340,6 +362,9 @@ function createStyles(c: ThemeColors) {
       flex: 1,
       backgroundColor: c.bg,
     },
+    flex: {
+      flex: 1,
+    },
     content: {
       flexGrow: 1,
       paddingHorizontal: 24,
@@ -364,20 +389,17 @@ function createStyles(c: ThemeColors) {
     totalPreviewFrame: {
       alignItems: 'center',
       justifyContent: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderStyle: 'dashed',
-      borderColor: c.borderStrong,
-    backgroundColor: c.surface,
-    overflow: 'visible',
-    gap: 8,
-  },
-  stampFaded: {
-    opacity: 0.75,
-  },
-  balancePlaceholder: {
+      gap: 8,
+    },
+    totalOverlay: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    stampFaded: {
+      ...StyleSheet.absoluteFill,
+      opacity: 0.75,
+    },
+    balancePlaceholder: {
       width: balanceSkeletonLayout.width,
       height: balanceSkeletonLayout.height,
     },
