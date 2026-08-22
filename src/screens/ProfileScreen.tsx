@@ -36,7 +36,7 @@ export function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
-  const { displayName, avatarSeed } = useProfileIdentity();
+  const { displayName, avatarSeed, email, phone } = useProfileIdentity();
   const { profilePhotoUrl } = useProfilePhoto();
   const { username } = useConvexUsername();
   const { identityId } = useWalletIdentityId();
@@ -93,11 +93,17 @@ export function ProfileScreen() {
           size={88}
           style={styles.avatar}
         />
-        <Text style={styles.title}>Profile</Text>
-        <Text style={styles.subtitle}>Signed in as {displayName}.</Text>
+        {email || phone ? null : (
+          <Text style={styles.subtitle}>Signed in as {displayName}.</Text>
+        )}
 
-        {username || identityId ? (
+        {email || phone || username || identityId ? (
           <View style={styles.section}>
+            {email ? (
+              <AccountNumber email={email} style={styles.accountNumber} />
+            ) : phone ? (
+              <AccountNumber phone={phone} style={styles.accountNumber} />
+            ) : null}
             {username ? (
               <AccountNumber
                 username={username}
@@ -196,12 +202,6 @@ function createStyles(c: ThemeColors) {
   },
   avatar: {
     marginBottom: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: c.primary,
-    letterSpacing: -0.5,
   },
   subtitle: {
     marginTop: 12,

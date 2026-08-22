@@ -40,26 +40,36 @@ export function useProfileIdentity() {
     return {
       displayName: 'Account',
       avatarSeed: 'guest',
+      email: null as string | null,
+      phone: null as string | null,
     };
   }
 
   const email =
-    typedUser.email?.address ?? findLinkedAccount(typedUser, 'email')?.email;
+    typedUser.email?.address ??
+    findLinkedAccount(typedUser, 'email')?.email ??
+    null;
+  const phone =
+    typedUser.phone?.number ??
+    findLinkedAccount(typedUser, 'phone')?.phoneNumber ??
+    findLinkedAccount(typedUser, 'phone')?.number ??
+    null;
+
   if (email) {
     return {
       displayName: email,
       avatarSeed: email,
+      email,
+      phone,
     };
   }
 
-  const phone =
-    typedUser.phone?.number ??
-    findLinkedAccount(typedUser, 'phone')?.phoneNumber ??
-    findLinkedAccount(typedUser, 'phone')?.number;
   if (phone) {
     return {
       displayName: phone,
       avatarSeed: phone,
+      email,
+      phone,
     };
   }
 
@@ -70,12 +80,16 @@ export function useProfileIdentity() {
     return {
       displayName: truncateMiddle(walletAddress),
       avatarSeed: walletAddress,
+      email,
+      phone,
     };
   }
 
   return {
     displayName: truncateMiddle(typedUser.id, 8, 4),
     avatarSeed: typedUser.id,
+    email,
+    phone,
   };
 }
 
