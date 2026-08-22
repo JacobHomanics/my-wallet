@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TokenIcon } from '@/components/TokenIcon';
 import { BalanceLoadErrorFooter } from '@/components/BalanceLoadErrorFooter';
+import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
 import { IconButton } from '@/components/IconButton';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useAppConfig } from '@/hooks/useAppConfig';
@@ -331,6 +332,7 @@ export function RewardsScreen() {
           )}
         </ScrollView>
       </View>
+      <SignUpLoginBanner />
     </View>
   );
 }

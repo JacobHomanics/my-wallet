@@ -15,6 +15,7 @@ import { Avatar } from '@/components/Avatar';
 import { ConfirmExportPrivateKeyModal } from '@/components/ConfirmExportPrivateKeyModal';
 import { ExportPrivateKeyWebView } from '@/components/ExportPrivateKeyWebView';
 import { IconButton } from '@/components/IconButton';
+import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
 import { WalletDebitCard } from '@/components/WalletDebitCard';
 import { useConfirmExportPrivateKey } from '@/hooks/useConfirmExportPrivateKey';
 import { useConvexUsername } from '@/hooks/useConvexUsername';
@@ -162,6 +163,7 @@ export function ProfileScreen() {
           </View>
         ) : null}
       </ScrollView>
+      <SignUpLoginBanner />
 
       <ConfirmExportPrivateKeyModal
         visible={confirmVisible}

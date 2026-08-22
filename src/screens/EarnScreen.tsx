@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
 import { usePrivyEarn } from '@/hooks/usePrivyEarn';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import {
@@ -246,6 +247,7 @@ export function EarnScreen() {
           )}
         </ScrollView>
       </View>
+      <SignUpLoginBanner />
     </View>
   );
 }
