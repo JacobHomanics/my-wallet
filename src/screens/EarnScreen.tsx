@@ -132,12 +132,6 @@ export function EarnScreen() {
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
       <View style={styles.content}>
-        <View style={styles.topBar}>
-          <View style={styles.topBarSpacer} />
-          <Text style={styles.topBarTitle}>Earn</Text>
-          <View style={styles.topBarSpacer} />
-        </View>
-
         <ScrollView
           contentContainerStyle={styles.body}
           refreshControl={
@@ -295,22 +289,6 @@ function createStyles(c: ThemeColors) {
     width: '100%',
     maxWidth: 640,
     alignSelf: 'center',
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    marginBottom: 8,
-  },
-  topBarTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 17,
-    fontWeight: '600',
-    color: c.primary,
-  },
-  topBarSpacer: {
-    width: 44,
   },
   body: {
     flexGrow: 1,
