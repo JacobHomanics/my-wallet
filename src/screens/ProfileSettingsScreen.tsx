@@ -12,7 +12,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
+import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
+import { useProfilePreview } from '@/hooks/useProfilePreview';
+import { useSignUpLoginPromptModal } from '@/hooks/useSignUpLoginPromptModal';
 import { usePopToSettings } from '@/hooks/usePopToSettings';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
 import { useProfilePhotoSettings } from '@/hooks/useProfilePhotoSettings';
@@ -34,6 +37,9 @@ export function ProfileSettingsScreen() {
   const isDesktopWeb = useIsDesktopWeb();
   const goSettings = usePopToSettings();
   const { displayName, avatarSeed } = useProfileIdentity();
+  const { isPreview } = useProfilePreview();
+  const { promptOpen, openPrompt, closePrompt, confirmPrompt } =
+    useSignUpLoginPromptModal();
   const {
     profilePhotoUrl,
     isUploading: isUploadingPhoto,
@@ -61,10 +67,11 @@ export function ProfileSettingsScreen() {
     (usernameValid &&
       (!usernameDirty || availability.isAvailable));
   const canSave =
-    canSaveUsername &&
-    usernameOk &&
-    !availability.isChecking &&
-    !isBusy;
+    isPreview ||
+    (canSaveUsername &&
+      usernameOk &&
+      !availability.isChecking &&
+      !isBusy);
 
   const errorMessage = usernameError || photoError;
 
@@ -135,14 +142,18 @@ export function ProfileSettingsScreen() {
           </View>
           <Pressable
             accessibilityRole="button"
-            disabled={isBusy}
+            disabled={!isPreview && isBusy}
             onPress={() => {
+              if (isPreview) {
+                openPrompt();
+                return;
+              }
               void pickAndUpload();
             }}
             style={({ pressed }) => [
               styles.secondaryButton,
-              isBusy && styles.buttonDisabled,
-              pressed && !isBusy && styles.secondaryButtonPressed,
+              !isPreview && isBusy && styles.buttonDisabled,
+              pressed && (isPreview || !isBusy) && styles.secondaryButtonPressed,
             ]}
           >
             {isUploadingPhoto ? (
@@ -192,6 +203,10 @@ export function ProfileSettingsScreen() {
           accessibilityRole="button"
           disabled={!canSave}
           onPress={() => {
+            if (isPreview) {
+              openPrompt();
+              return;
+            }
             void saveUsername();
           }}
           style={({ pressed }) => [
@@ -207,6 +222,11 @@ export function ProfileSettingsScreen() {
           )}
         </Pressable>
       </ScrollView>
+      <SignUpLoginPromptModal
+        visible={promptOpen}
+        onCancel={closePrompt}
+        onConfirm={confirmPrompt}
+      />
     </View>
   );
 }
