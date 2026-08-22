@@ -1,6 +1,4 @@
 import { useCallback, useMemo } from 'react';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { useAppLayout } from '@/hooks/useAppLayout';
 import type { ContactSearchHit } from '@/hooks/useContactSearch';
@@ -16,9 +14,9 @@ import { useRecentSendRecipients } from '@/hooks/useRecentSendRecipients';
 import type { SendSearchTabId } from '@/hooks/useSendAdvancedSearchTab';
 import { useSendSearchTab } from '@/hooks/useSendSearchTab';
 import { useSendToContact } from '@/hooks/useSendToContact';
+import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 import { useWalletBalanceSearch } from '@/hooks/useWalletBalanceSearch';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
-import type { HomeStackParamList } from '@/navigation/types';
 
 export type RecipientSearchRow = {
   key: string;
@@ -78,11 +76,11 @@ export function useRecipientSearch({
   isSearchFocused,
 }: RecipientSearchParams) {
   const { isAdvanced } = useAppLayout();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+  const { showAdvanced, setShowAdvanced } = useShowAdvanced();
   const { sendToContact } = useSendToContact();
-  const { selectedTab, onSelectTab, isZitiCashboxTab } = useSendSearchTab();
-  const tab = isAdvanced ? selectedTab : 'zitiCashbox';
+  const { selectedTab, setSelectedTab, onSelectTab, isZitiCashboxTab } =
+    useSendSearchTab();
+  const tab = showAdvanced ? selectedTab : 'zitiCashbox';
 
   const farcaster = useFarcasterSearch(tab === 'farcaster' ? query : '');
   const ens = useEnsResolve(tab === 'ens' ? query : '');
@@ -97,9 +95,14 @@ export function useRecipientSearch({
     [tokenId, usdAmount],
   );
 
-  const openAdvancedSearch = useCallback(() => {
-    navigation.navigate('sendAdvancedSearch', { tokenId, usdAmount });
-  }, [navigation, tokenId, usdAmount]);
+  const showAdvancedSearch = useCallback(() => {
+    setShowAdvanced(true);
+  }, [setShowAdvanced]);
+
+  const hideAdvancedSearch = useCallback(() => {
+    setShowAdvanced(false);
+    setSelectedTab('zitiCashbox');
+  }, [setSelectedTab, setShowAdvanced]);
 
   const resultRows = useMemo((): RecipientSearchRow[] => {
     if (tab === 'zitiCashbox') {
@@ -413,11 +416,14 @@ export function useRecipientSearch({
           : wallet.errorMessage;
 
   return {
-    showTabs: isAdvanced,
+    showTabs: showAdvanced,
+    showAdvancedSearchButton: !isAdvanced && !showAdvanced,
+    canHideAdvancedSearch: !isAdvanced && showAdvanced,
     selectedTab: tab,
     onSelectTab,
-    isZitiCashboxTab: !isAdvanced || isZitiCashboxTab,
-    openAdvancedSearch,
+    isZitiCashboxTab: !showAdvanced || isZitiCashboxTab,
+    showAdvancedSearch,
+    hideAdvancedSearch,
     placeholder: PLACEHOLDERS[tab],
     accessibilityLabel: ACCESSIBILITY_LABELS[tab],
     emptyMessage: EMPTY_MESSAGES[tab],

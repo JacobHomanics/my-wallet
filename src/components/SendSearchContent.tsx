@@ -166,11 +166,13 @@ export function SendSearchContent({
             onSearchTabChange?.(tab === 'zitiCashbox');
           }}
         />
-      ) : (
+      ) : null}
+
+      {search.showAdvancedSearchButton ? (
         <Pressable
           accessibilityLabel="Advanced search"
           accessibilityRole="button"
-          onPress={search.openAdvancedSearch}
+          onPress={search.showAdvancedSearch}
           style={({ pressed }) => [
             styles.advancedSearch,
             pressed && styles.advancedSearchPressed,
@@ -178,7 +180,24 @@ export function SendSearchContent({
         >
           <Text style={styles.advancedSearchText}>Advanced search</Text>
         </Pressable>
-      )}
+      ) : null}
+
+      {search.canHideAdvancedSearch ? (
+        <Pressable
+          accessibilityLabel="Hide advanced search"
+          accessibilityRole="button"
+          onPress={() => {
+            search.hideAdvancedSearch();
+            onSearchTabChange?.(true);
+          }}
+          style={({ pressed }) => [
+            styles.advancedSearch,
+            pressed && styles.advancedSearchPressed,
+          ]}
+        >
+          <Text style={styles.advancedSearchText}>Hide advanced search</Text>
+        </Pressable>
+      ) : null}
 
       {search.errorMessage ? (
         <Text style={styles.error}>{search.errorMessage}</Text>
