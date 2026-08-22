@@ -1,18 +1,21 @@
-import { useAppLayout } from '@/hooks/useAppLayout';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 
 /**
- * Token-leg receipt details: always visible in Advanced layout, toggled in Default.
+ * Token-leg receipt details: always visible when Send is Advanced, toggled otherwise.
  */
 export function useSentAdvancedDetails() {
-  const { isAdvanced } = useAppLayout();
-  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const {
+    isAdvanced,
+    showAdvanced,
+    toggleAdvanced,
+    showAdvancedToggle,
+  } = useShowAdvanced('send');
 
   return {
     isAdvanced,
     showAdvanced,
     toggleAdvanced,
-    showTokenDetails: isAdvanced || showAdvanced,
-    showAdvancedToggle: !isAdvanced,
+    showTokenDetails: showAdvanced,
+    showAdvancedToggle,
   };
 }

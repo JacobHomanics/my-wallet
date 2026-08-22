@@ -28,7 +28,7 @@ export function SendAdvancedDetailsCollapsible({
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
 
-  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const { showAdvanced, toggleAdvanced } = useShowAdvanced('send');
 
   return (
     <View style={[styles.section, style]}>

@@ -61,7 +61,8 @@ export function RewardsScreen() {
     loading: rewardLoading,
     error,
   } = useRewardTokenBalance();
-  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const { showAdvanced, toggleAdvanced, showAdvancedToggle } =
+    useShowAdvanced('rewards');
   const { copy, isCopied } = useCopyToClipboard();
   const { config: appConfig, loading: appConfigLoading } = useAppConfig();
   const {
@@ -263,26 +264,28 @@ export function RewardsScreen() {
                 </Pressable>
               </View>
 
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ expanded: showAdvanced }}
-                onPress={toggleAdvanced}
-                style={({ pressed }) => [
-                  styles.advancedToggle,
-                  pressed && styles.advancedTogglePressed,
-                ]}
-              >
-                <Text style={styles.advancedToggleText}>
-                  {showAdvanced
-                    ? 'Hide advanced details'
-                    : 'Show advanced details'}
-                </Text>
-                <Ionicons
-                  name={showAdvanced ? 'chevron-up' : 'chevron-down'}
-                  size={16}
-                  color={colors.textMuted}
-                />
-              </Pressable>
+              {showAdvancedToggle ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: showAdvanced }}
+                  onPress={toggleAdvanced}
+                  style={({ pressed }) => [
+                    styles.advancedToggle,
+                    pressed && styles.advancedTogglePressed,
+                  ]}
+                >
+                  <Text style={styles.advancedToggleText}>
+                    {showAdvanced
+                      ? 'Hide advanced details'
+                      : 'Show advanced details'}
+                  </Text>
+                  <Ionicons
+                    name={showAdvanced ? 'chevron-up' : 'chevron-down'}
+                    size={16}
+                    color={colors.textMuted}
+                  />
+                </Pressable>
+              ) : null}
 
               {showAdvanced ? (
                 <View style={styles.advanced}>

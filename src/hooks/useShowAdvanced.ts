@@ -1,18 +1,35 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-import { useAppLayout } from '@/hooks/useAppLayout';
+import { useAdvancedSection } from '@/hooks/useAdvancedSection';
+import type { AdvancedLayoutSectionId } from '@/lib/advancedLayoutSections';
 
 /**
- * Toggle for “Show / Hide advanced details” sections.
- * Advanced (Money on Steroids) layout starts these sections open.
+ * In-page “Show / Hide advanced details” state for one layout section.
+ * When the section is Advanced, details stay visible and the toggle is hidden.
  */
-export function useShowAdvanced(initial?: boolean) {
-  const { isAdvanced } = useAppLayout();
-  const [showAdvanced, setShowAdvanced] = useState(initial ?? isAdvanced);
+export function useShowAdvanced(sectionId: AdvancedLayoutSectionId): {
+  isAdvanced: boolean;
+  showAdvanced: boolean;
+  setShowAdvanced: (open: boolean | ((current: boolean) => boolean)) => void;
+  toggleAdvanced: () => void;
+  showAdvancedToggle: boolean;
+} {
+  const { isAdvanced } = useAdvancedSection(sectionId);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    setExpanded(false);
+  }, [isAdvanced]);
 
   const toggleAdvanced = useCallback(() => {
-    setShowAdvanced((open) => !open);
+    setExpanded((open) => !open);
   }, []);
 
-  return { showAdvanced, setShowAdvanced, toggleAdvanced };
+  return {
+    isAdvanced,
+    showAdvanced: isAdvanced || expanded,
+    setShowAdvanced: setExpanded,
+    toggleAdvanced,
+    showAdvancedToggle: !isAdvanced,
+  };
 }

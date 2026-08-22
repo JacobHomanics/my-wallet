@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from 'react';
 
 import { useAddContact } from '@/hooks/useAddContact';
-import { useAppLayout } from '@/hooks/useAppLayout';
 import { useContactSearch } from '@/hooks/useContactSearch';
 import { useEnsResolve } from '@/hooks/useEnsResolve';
 import { useFarcasterSearch } from '@/hooks/useFarcasterSearch';
@@ -50,8 +49,8 @@ const EMPTY_MESSAGES: Record<SendSearchTabId, string> = {
  * New-contact search: ZitiCashbox by default; Farcaster / ENS / Wallets when advanced.
  */
 export function useNewContactSearch(onAdded: () => void) {
-  const { isAdvanced } = useAppLayout();
-  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const { showAdvanced, toggleAdvanced, showAdvancedToggle } =
+    useShowAdvanced('search');
   const { selectedTab, setSelectedTab, onSelectTab } = useSendSearchTab();
   const tab = showAdvanced ? selectedTab : 'zitiCashbox';
   const { add, addFarcaster, addEns, addAddresses, isAdding, errorMessage } =
@@ -228,7 +227,7 @@ export function useNewContactSearch(onAdded: () => void) {
     setQuery: contacts.setQuery,
     clearQuery: contacts.clearQuery,
     showTabs: showAdvanced,
-    showAdvancedToggle: !isAdvanced,
+    showAdvancedToggle,
     showAdvanced,
     selectedTab: tab,
     onSelectTab,

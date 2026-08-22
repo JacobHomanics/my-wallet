@@ -35,9 +35,9 @@ export function AccountNumberWalletDetails({
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
   const {
-    isAdvanced,
     showAdvanced,
     toggleAdvanced,
+    showAdvancedToggle,
     showWallets,
     ready,
     wallets,
@@ -53,7 +53,7 @@ export function AccountNumberWalletDetails({
     closeExportWebView,
   } = useWalletAdvancedDetails();
 
-  const footer = isAdvanced ? null : (
+  const footer = showAdvancedToggle ? (
     <Pressable
       accessibilityRole="link"
       accessibilityState={{ expanded: showAdvanced }}
@@ -73,7 +73,7 @@ export function AccountNumberWalletDetails({
         color={colors.textMuted}
       />
     </Pressable>
-  );
+  ) : null;
 
   if (!identityId && !footer && !showWallets) {
     return null;

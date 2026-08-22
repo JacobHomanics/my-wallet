@@ -1,14 +1,14 @@
-import { useShowAdvanced } from '@/hooks/useShowAdvanced';
+import { useCallback, useState } from 'react';
 
 /**
- * Collapsible send configuration section (strategy, tokens, broadcast mode).
+ * Collapsible send configuration section (broadcast mode and sponsorship).
  */
-export function useSendConfiguration(initial = false) {
-  const {
-    showAdvanced: showConfiguration,
-    setShowAdvanced: setShowConfiguration,
-    toggleAdvanced: toggleConfiguration,
-  } = useShowAdvanced(initial);
+export function useSendConfiguration() {
+  const [showConfiguration, setShowConfiguration] = useState(false);
+
+  const toggleConfiguration = useCallback(() => {
+    setShowConfiguration((open) => !open);
+  }, []);
 
   return { showConfiguration, setShowConfiguration, toggleConfiguration };
 }

@@ -12,6 +12,7 @@ import {
 import { FrontendSendRewardsWarningModal } from '@/components/FrontendSendRewardsWarningModal';
 import { IconButton } from '@/components/IconButton';
 import { TokenIcon } from '@/components/TokenIcon';
+import { useAllocationAmountInput } from '@/hooks/useAllocationAmountInput';
 import type { AllocationInputUnit } from '@/hooks/useAllocationInputUnit';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useSendVaultUsdc } from '@/hooks/useSendVaultUsdc';
@@ -301,6 +302,41 @@ export function SendConfigurationFields({
   );
 }
 
+function AllocationAmountField({
+  tokenId,
+  value,
+  accessibilityLabel,
+  error,
+  onChange,
+}: {
+  tokenId: string;
+  value: string;
+  accessibilityLabel: string;
+  error: boolean;
+  onChange: (tokenId: string, value: string) => void;
+}) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
+  const { onBlur, onChangeText, onFocus } = useAllocationAmountInput(
+    tokenId,
+    onChange,
+  );
+
+  return (
+    <TextInput
+      accessibilityLabel={accessibilityLabel}
+      keyboardType="decimal-pad"
+      onBlur={onBlur}
+      onChangeText={onChangeText}
+      onFocus={onFocus}
+      placeholder="0"
+      placeholderTextColor={colors.textSubtle}
+      style={[styles.allocationInput, error && styles.allocationInputError]}
+      value={value}
+    />
+  );
+}
+
 export function SendTokenAllocations({
   selectedStrategy,
   onOpenStrategyPicker,
@@ -490,22 +526,15 @@ export function SendTokenAllocations({
                     {currencySymbol}
                   </Text>
                 ) : null}
-                <TextInput
+                <AllocationAmountField
                   accessibilityLabel={
                     allocationInputUnit === 'usd' && !unpriced
                       ? `${leg.token.symbol} ${currencyCode} amount`
                       : `${leg.token.symbol} amount`
                   }
-                  keyboardType="decimal-pad"
-                  onChangeText={(value) => {
-                    onAllocationAmountChange(leg.token.id, value);
-                  }}
-                  placeholder="0"
-                  placeholderTextColor={colors.textSubtle}
-                  style={[
-                    styles.allocationInput,
-                    exceeds ? styles.allocationInputError : null,
-                  ]}
+                  error={exceeds}
+                  onChange={onAllocationAmountChange}
+                  tokenId={leg.token.id}
                   value={inputValue}
                 />
                 {secondaryValue != null ? (

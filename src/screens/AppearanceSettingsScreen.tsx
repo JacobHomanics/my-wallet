@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppLayoutPickerModal } from '@/components/AppLayoutPickerModal';
 import { BackButton } from '@/components/BackButton';
 import { ColorThemePickerModal } from '@/components/ColorThemePickerModal';
 import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
+import { useAdvancedLayoutSectionToggles } from '@/hooks/useAdvancedLayoutSectionToggles';
 import { useAppLayoutPicker } from '@/hooks/useAppLayoutPicker';
 import { useColorThemePicker } from '@/hooks/useColorThemePicker';
 import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
@@ -43,6 +44,8 @@ export function AppearanceSettingsScreen() {
     closePicker: closeAppLayoutPicker,
     onSelectOption: onSelectAppLayout,
   } = useAppLayoutPicker();
+  const { visible: showAdvancedSections, rows: advancedSectionRows } =
+    useAdvancedLayoutSectionToggles();
   const {
     options: colorThemeOptions,
     selectedTheme,
@@ -115,27 +118,6 @@ export function AppearanceSettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App layout</Text>
-          <Pressable
-            accessibilityLabel={`App layout ${selectedLayout.label}`}
-            accessibilityRole="button"
-            onPress={openAppLayoutPicker}
-            style={({ pressed }) => [
-              styles.optionRow,
-              pressed && styles.optionRowPressed,
-            ]}
-          >
-            <View style={styles.optionText}>
-              <Text style={styles.optionLabel}>{selectedLayout.label}</Text>
-              <Text style={styles.optionDescription}>
-                {selectedLayout.description}
-              </Text>
-            </View>
-            <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
-          </Pressable>
-        </View>
-
-        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Color theme</Text>
           <Pressable
             accessibilityLabel={`Color theme ${selectedTheme.label}`}
@@ -155,6 +137,60 @@ export function AppearanceSettingsScreen() {
             <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
           </Pressable>
         </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>App layout</Text>
+          <Pressable
+            accessibilityLabel={`App layout ${selectedLayout.label}`}
+            accessibilityRole="button"
+            onPress={openAppLayoutPicker}
+            style={({ pressed }) => [
+              styles.optionRow,
+              pressed && styles.optionRowPressed,
+            ]}
+          >
+            <View style={styles.optionText}>
+              <Text style={styles.optionLabel}>{selectedLayout.label}</Text>
+              <Text style={styles.optionDescription}>
+                {selectedLayout.description}
+              </Text>
+            </View>
+            <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
+          </Pressable>
+          {showAdvancedSections ? (
+            <View style={styles.advancedSections}>
+              <Text style={styles.advancedSectionsTitle}>
+                Advanced sections
+              </Text>
+              <Text style={styles.advancedSectionsHint}>
+                Turn off any area you want to keep in the default layout.
+              </Text>
+              {advancedSectionRows.map((row) => (
+                <View key={row.id} style={styles.toggleRow}>
+                  <View style={styles.toggleText}>
+                    <Text style={styles.toggleLabel}>{row.label}</Text>
+                    <Text style={styles.toggleDescription}>
+                      {row.description}
+                    </Text>
+                  </View>
+                  <Switch
+                    accessibilityLabel={`${row.label} advanced layout`}
+                    trackColor={{
+                      false: colors.border,
+                      true: colors.borderStrong,
+                    }}
+                    thumbColor={row.enabled ? colors.primary : colors.bg}
+                    ios_backgroundColor={colors.border}
+                    value={row.enabled}
+                    onValueChange={row.onToggle}
+                  />
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </View>
+
+
       </ScrollView>
 
       <DisplayCurrencyPickerModal
@@ -264,6 +300,47 @@ function createStyles(c: ThemeColors) {
       color: c.primary,
     },
     optionDescription: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: c.textSubtle,
+    },
+    advancedSections: {
+      gap: 12,
+    },
+    advancedSectionsTitle: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: c.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
+    },
+    advancedSectionsHint: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: c.textSubtle,
+    },
+    toggleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: c.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.rowBorder,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+    },
+    toggleText: {
+      flex: 1,
+      minWidth: 0,
+      gap: 4,
+    },
+    toggleLabel: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: c.primary,
+    },
+    toggleDescription: {
       fontSize: 13,
       lineHeight: 18,
       color: c.textSubtle,

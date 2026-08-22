@@ -136,10 +136,8 @@ function refreshAllocationTokens(
   gasSponsorship: boolean,
 ): PaymentAllocation[] {
   return allocations.flatMap((leg) => {
-    const token = walletTokens.find((item) => item.id === leg.token.id);
-    if (!token) {
-      return [];
-    }
+    const token =
+      walletTokens.find((item) => item.id === leg.token.id) ?? leg.token;
 
     const maxRaw = maxManualAllocationRaw(
       token,
@@ -257,6 +255,7 @@ function maxManualAllocationRaw(
 }
 
 export function useSendForm(
+  /** Token universe for this send (wallet balances plus vault USDC when enabled). */
   walletTokens: OwnedToken[],
   spendableTokens: OwnedToken[],
   strategyId: PaymentStrategyId,
@@ -467,15 +466,28 @@ export function useSendForm(
     setAllocationInputs({});
   }, [allocationInputUnit]);
 
-  const draftStoredLegs = useMemo(
-    () =>
-      splitStoredLegs(
-        getSendDraftSnapshot().manualLegs,
-        getSendDraftSnapshot().additionalLegs,
-        walletTokens,
-      ),
-    [walletTokens],
-  );
+  const didHydrateManualLegsRef = useRef(walletTokens.length > 0);
+
+  useEffect(() => {
+    if (didHydrateManualLegsRef.current || walletTokens.length === 0) {
+      return;
+    }
+    didHydrateManualLegsRef.current = true;
+    const stored = splitStoredLegs(
+      getSendDraftSnapshot().manualLegs,
+      getSendDraftSnapshot().additionalLegs,
+      walletTokens,
+    );
+    if (manualMerchantAllocationsRef.current == null && stored.merchant != null) {
+      setManualMerchantAllocations(stored.merchant);
+    }
+    if (
+      additionalAllocationsRef.current.length === 0 &&
+      stored.additional.length > 0
+    ) {
+      setAdditionalAllocations(stored.additional);
+    }
+  }, [walletTokens]);
 
   const preferredAdditionalSeed = useMemo((): PaymentAllocation[] => {
     if (
@@ -529,9 +541,9 @@ export function useSendForm(
   ]);
 
   const resolvedManualMerchant = useMemo(() => {
-    const manual = clampedManualMerchantAllocations ?? draftStoredLegs.merchant;
+    const manual = clampedManualMerchantAllocations;
     return manual != null && manual.length > 0 ? manual : null;
-  }, [clampedManualMerchantAllocations, draftStoredLegs.merchant]);
+  }, [clampedManualMerchantAllocations]);
   const isManualPayment = resolvedManualMerchant != null;
 
   const merchantAllocations = useMemo(() => {
@@ -816,22 +828,18 @@ export function useSendForm(
     } else if (!sanitized.trim() || sanitized === '.') {
       setAmountUsd(null);
     }
-    if (
-      manualMerchantAllocationsRef.current == null ||
-      manualMerchantAllocationsRef.current.length === 0
-    ) {
-      setManualMerchantAllocations(null);
-      setAllocationInputs((current) => {
-        const additionalIds = new Set(
-          additionalAllocationsRef.current.map((leg) => leg.token.id),
-        );
-        return Object.fromEntries(
-          Object.entries(current).filter(([tokenId]) =>
-            additionalIds.has(tokenId),
-          ),
-        );
-      });
-    }
+    setManualMerchantAllocations(null);
+    setAllocationInputs((current) => {
+      const additionalIds = new Set(
+        additionalAllocationsRef.current.map((leg) => leg.token.id),
+      );
+      return Object.fromEntries(
+        Object.entries(current).filter(([tokenId]) =>
+          additionalIds.has(tokenId),
+        ),
+      );
+    });
+    updateSendDraft({ manualLegs: null });
   };
 
   const applyMerchantLegEdits = (
@@ -849,14 +857,23 @@ export function useSendForm(
 
   const setAllocationAmount = (tokenId: string, value: string) => {
       const sanitized = sanitizeAmountInput(value);
-      setAllocationInputs((current) => ({
-        ...current,
-        [tokenId]: sanitized,
-      }));
+      const isBlank = sanitized.trim() === '' || sanitized === '.';
 
       const additionalIndex = additionalAllocations.findIndex(
         (leg) => leg.token.id === tokenId,
       );
+      if (
+        isBlank &&
+        additionalIndex < 0 &&
+        manualMerchantAllocationsRef.current == null
+      ) {
+        return;
+      }
+
+      setAllocationInputs((current) => ({
+        ...current,
+        [tokenId]: sanitized,
+      }));
       if (additionalIndex >= 0) {
         const token =
           walletTokens.find((item) => item.id === tokenId) ??
@@ -1097,7 +1114,7 @@ export function useSendForm(
           : leg.amountFormatted;
 
       const existing = resolved[leg.token.id];
-      if (existing == null) {
+      if (existing == null || existing.trim() === '') {
         resolved[leg.token.id] = fromLeg;
         continue;
       }

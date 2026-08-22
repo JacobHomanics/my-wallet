@@ -1,16 +1,20 @@
 import { useCallback } from 'react';
 
-import { useAppLayout } from '@/hooks/useAppLayout';
 import { useContactsTab } from '@/hooks/useContactsTab';
 import { useShowAdvanced } from '@/hooks/useShowAdvanced';
 
 /**
  * Contacts All / Contacts / External tabs, independent of recipient search.
- * Default layout starts on ZitiCashbox contacts until advanced details are shown.
+ * Default (and Advanced with Contacts off) starts on ZitiCashbox contacts
+ * until advanced details are shown.
  */
 export function useContactsAdvancedSection() {
-  const { isAdvanced } = useAppLayout();
-  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const {
+    isAdvanced,
+    showAdvanced,
+    toggleAdvanced,
+    showAdvancedToggle,
+  } = useShowAdvanced('contacts');
   const {
     selectedTab,
     isAllTab,
@@ -33,7 +37,7 @@ export function useContactsAdvancedSection() {
 
   return {
     showContactsTabs,
-    showContactsAdvancedToggle: !isAdvanced,
+    showContactsAdvancedToggle: showAdvancedToggle,
     showContactsAdvanced: showAdvanced,
     toggleContactsAdvanced,
     selectedTab: viewingContactsOnly ? 'contacts' : selectedTab,
@@ -43,5 +47,6 @@ export function useContactsAdvancedSection() {
     selectAll,
     selectContacts,
     selectExternal,
+    isAdvanced,
   };
 }

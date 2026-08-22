@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from 'react';
 
-import { useAppLayout } from '@/hooks/useAppLayout';
 import type { ContactSearchHit } from '@/hooks/useContactSearch';
 import { useEnsResolve } from '@/hooks/useEnsResolve';
 import { useFarcasterSearch } from '@/hooks/useFarcasterSearch';
@@ -75,8 +74,8 @@ export function useRecipientSearch({
   contactShowEmpty,
   isSearchFocused,
 }: RecipientSearchParams) {
-  const { isAdvanced } = useAppLayout();
-  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
+  const { isAdvanced, showAdvanced, toggleAdvanced, showAdvancedToggle } =
+    useShowAdvanced('search');
   const { sendToContact } = useSendToContact();
   const { selectedTab, setSelectedTab, onSelectTab, isZitiCashboxTab } =
     useSendSearchTab();
@@ -416,7 +415,7 @@ export function useRecipientSearch({
   return {
     isAdvanced,
     showTabs: showAdvanced,
-    showAdvancedToggle: !isAdvanced,
+    showAdvancedToggle,
     showAdvanced,
     selectedTab: tab,
     onSelectTab,

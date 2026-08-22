@@ -20,7 +20,7 @@ import { SendConfigurationCollapsible } from '@/components/SendConfigurationColl
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
-import { useAppLayout } from '@/hooks/useAppLayout';
+import { useAdvancedSection } from '@/hooks/useAdvancedSection';
 import { useAppTax } from '@/hooks/useAppTax';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { usePopToSend } from '@/hooks/usePopToSend';
@@ -56,7 +56,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 export function ConfirmSendScreen() {
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
-  const { isAdvanced } = useAppLayout();
+  const { isAdvanced } = useAdvancedSection('send');
 
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
@@ -65,6 +65,7 @@ export function ConfirmSendScreen() {
   const { refresh, ...sendSpendable } = useSendSpendableTokens();
   const {
     tokens,
+    tokensForSend,
     loading,
     ready,
     spendableTokens,
@@ -110,7 +111,7 @@ export function ConfirmSendScreen() {
   } = useFiatDisplay();
 
   const form = useSendForm(
-    tokens,
+    tokensForSend,
     spendableTokens,
     selectedStrategyId,
     undefined,
@@ -139,7 +140,7 @@ export function ConfirmSendScreen() {
     addAllocation,
   } = form;
 
-  const gasFunding = useGasFunding(tokens, allocations, taxFunding);
+  const gasFunding = useGasFunding(tokensForSend, allocations, taxFunding);
   const vaultUsdcFundingSplits = useVaultUsdcFundingSplits(
     allocations,
     taxFunding,
@@ -335,7 +336,7 @@ export function ConfirmSendScreen() {
   );
 
   const allocatedTokenIds = allocations.map((leg) => leg.token.id);
-  const pickerTokens = tokens.filter((token) => {
+  const pickerTokens = tokensForSend.filter((token) => {
     if (token.rawBalance <= 0n || allocatedTokenIds.includes(token.id)) {
       return false;
     }

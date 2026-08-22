@@ -22,7 +22,7 @@ import { SendConfigurationCollapsible } from '@/components/SendConfigurationColl
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
-import { useAppLayout } from '@/hooks/useAppLayout';
+import { useAdvancedSection } from '@/hooks/useAdvancedSection';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useGasFunding } from '@/hooks/useGasFunding';
 import { useGasSponsorship } from '@/hooks/useGasSponsorship';
@@ -52,7 +52,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 export function SendAmountScreen() {
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
-  const { isAdvanced } = useAppLayout();
+  const { isAdvanced } = useAdvancedSection('send');
 
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
@@ -61,6 +61,7 @@ export function SendAmountScreen() {
   const route = useRoute<RouteProp<HomeStackParamList, 'sendAmount'>>();
   const {
     tokens,
+    tokensForSend,
     loading,
     ready,
     ethereumAddress,
@@ -97,7 +98,7 @@ export function SendAmountScreen() {
   }, [route.params?.usdAmount]);
 
   const form = useSendForm(
-    tokens,
+    tokensForSend,
     spendableTokens,
     selectedStrategyId,
     route.params?.tokenId,
@@ -125,7 +126,7 @@ export function SendAmountScreen() {
     addAllocation,
   } = form;
 
-  const gasFunding = useGasFunding(tokens, allocations, taxFunding);
+  const gasFunding = useGasFunding(tokensForSend, allocations, taxFunding);
   const vaultUsdcFundingSplits = useVaultUsdcFundingSplits(
     allocations,
     taxFunding,
@@ -199,7 +200,7 @@ export function SendAmountScreen() {
   );
 
   const allocatedTokenIds = allocations.map((leg) => leg.token.id);
-  const pickerTokens = tokens.filter((token) => {
+  const pickerTokens = tokensForSend.filter((token) => {
     if (token.rawBalance <= 0n || allocatedTokenIds.includes(token.id)) {
       return false;
     }

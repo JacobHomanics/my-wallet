@@ -1,4 +1,3 @@
-import { useAppLayout } from '@/hooks/useAppLayout';
 import { useConfirmExportPrivateKey } from '@/hooks/useConfirmExportPrivateKey';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useProfileIdentity } from '@/hooks/useProfileIdentity';
@@ -9,9 +8,8 @@ import { useUserWallets } from '@/hooks/useUserWallets';
  * Wallet cards + show/hide state for the account number advanced-details footer.
  */
 export function useWalletAdvancedDetails() {
-  const { isAdvanced } = useAppLayout();
-  const { showAdvanced, toggleAdvanced } = useShowAdvanced();
-  const showWallets = isAdvanced || showAdvanced;
+  const { isAdvanced, showAdvanced, toggleAdvanced, showAdvancedToggle } =
+    useShowAdvanced('wallets');
   const { ready, wallets } = useUserWallets();
   const { displayName } = useProfileIdentity();
   const { copy, isCopied } = useCopyToClipboard();
@@ -29,7 +27,8 @@ export function useWalletAdvancedDetails() {
     isAdvanced,
     showAdvanced,
     toggleAdvanced,
-    showWallets,
+    showAdvancedToggle,
+    showWallets: showAdvanced,
     ready,
     wallets,
     displayName,
