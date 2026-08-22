@@ -15,10 +15,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
+import { SendTokenAllocations } from '@/components/SendAdvancedDetails';
 import { SendConfigurationCollapsible } from '@/components/SendConfigurationCollapsible';
 import { StrategyPickerModal } from '@/components/StrategyPickerModal';
 import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
 import { TokenPickerModal } from '@/components/TokenPickerModal';
+import { useAppLayout } from '@/hooks/useAppLayout';
 import { useAppTax } from '@/hooks/useAppTax';
 import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
 import { usePopToSend } from '@/hooks/usePopToSend';
@@ -54,6 +56,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 export function ConfirmSendScreen() {
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
+  const { isAdvanced } = useAppLayout();
 
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
@@ -343,6 +346,24 @@ export function ConfirmSendScreen() {
     return spendable != null && spendable.rawBalance > 0n;
   });
   const canAddToken = pickerTokens.length > 0;
+  const tokenAllocationProps = {
+    allocationInputUnit,
+    allocationInputs,
+    allocations,
+    canAddToken,
+    gasFunding,
+    onAddToken: () => {
+      setTokenPickerOpen(true);
+    },
+    onAllocationAmountChange: setAllocationAmount,
+    onAllocationInputUnitChange: setAllocationInputUnit,
+    onOpenStrategyPicker: openStrategyPicker,
+    onRemoveAllocation: removeAllocation,
+    selectedStrategy,
+    spendableTokens,
+    taxFunding,
+    vaultUsdcFundingSplits,
+  };
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -449,6 +470,12 @@ export function ConfirmSendScreen() {
               </View>
             </View>
 
+            {isAdvanced ? (
+              <View style={styles.tokensPanel}>
+                <SendTokenAllocations {...tokenAllocationProps} />
+              </View>
+            ) : null}
+
             {taxLabel ? (
               <TaxDetailsCollapsible
                 gasSponsorship={gasSponsorship}
@@ -461,26 +488,12 @@ export function ConfirmSendScreen() {
             <Text style={styles.heroUsd}>{totalLabel}</Text>
 
             <SendConfigurationCollapsible
-              allocationInputUnit={allocationInputUnit}
-              allocationInputs={allocationInputs}
-              allocations={allocations}
               broadcastMode={broadcastMode}
-              canAddToken={canAddToken}
-              gasFunding={gasFunding}
-              onAddToken={() => {
-                setTokenPickerOpen(true);
-              }}
-              onAllocationAmountChange={setAllocationAmount}
-              onAllocationInputUnitChange={setAllocationInputUnit}
-              onBroadcastModeChange={setBroadcastMode}
               gasSponsorship={gasSponsorship}
+              includeTokenAllocations={!isAdvanced}
+              onBroadcastModeChange={setBroadcastMode}
               onGasSponsorshipChange={setGasSponsorship}
-              onOpenStrategyPicker={openStrategyPicker}
-              onRemoveAllocation={removeAllocation}
-              selectedStrategy={selectedStrategy}
-              spendableTokens={spendableTokens}
-              taxFunding={taxFunding}
-              vaultUsdcFundingSplits={vaultUsdcFundingSplits}
+              {...tokenAllocationProps}
             />
 
             {invalidReason ? (
@@ -656,6 +669,17 @@ function createStyles(c: ThemeColors) {
     color: c.danger,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
+  },
+  tokensPanel: {
+    marginTop: 16,
+    alignSelf: 'stretch',
+    borderWidth: 1,
+    borderColor: c.rowBorder,
+    borderRadius: 12,
+    backgroundColor: c.surface,
+    paddingHorizontal: 14,
+    paddingTop: 4,
+    paddingBottom: 12,
   },
   tipSection: {
     marginTop: 28,
