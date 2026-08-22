@@ -44,7 +44,7 @@ function RecipientOptionRow({
   showFarcasterBadge,
   showEnsBadge,
   onPress,
-}: RecipientSearchRow) {
+}: Omit<RecipientSearchRow, 'key'>) {
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
 
@@ -208,8 +208,8 @@ export function SendSearchContent({
       {search.showRecents ? (
         <View style={styles.list}>
           <Text style={styles.sectionTitle}>Recents</Text>
-          {search.recentRows.map((item) => (
-            <RecipientOptionRow key={item.key} {...item} />
+          {search.recentRows.map(({ key, ...item }) => (
+            <RecipientOptionRow key={key} {...item} />
           ))}
         </View>
       ) : null}
@@ -226,8 +226,8 @@ export function SendSearchContent({
               <Text style={styles.empty}>{search.emptyMessage}</Text>
             ) : (
               <>
-                {search.resultRows.map((item) => (
-                  <RecipientOptionRow key={item.key} {...item} />
+                {search.resultRows.map(({ key, ...item }) => (
+                  <RecipientOptionRow key={key} {...item} />
                 ))}
 
                 {search.isSearching ? (
