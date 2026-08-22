@@ -9,8 +9,9 @@ import {StyleSheet,
 import QRCodeStyled from 'react-native-qrcode-styled';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BackButton } from '@/components/BackButton';
 import { AccountNumber } from '@/components/AccountNumber';
+import { AccountNumberWalletDetails } from '@/components/AccountNumberWalletDetails';
+import { BackButton } from '@/components/BackButton';
 import { useConvexUsername } from '@/hooks/useConvexUsername';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
@@ -80,22 +81,18 @@ export function ReceiveScreen() {
                 />
               </View>
 
-              {username || identityId ? (
-                <View style={styles.identitySection}>
-                  {username ? (
-                    <AccountNumber
-                      username={username}
-                      style={styles.accountNumber}
-                    />
-                  ) : null}
-                  {identityId ? (
-                    <AccountNumber
-                      identityId={identityId}
-                      style={styles.accountNumber}
-                    />
-                  ) : null}
-                </View>
-              ) : null}
+              <View style={styles.identitySection}>
+                {username ? (
+                  <AccountNumber
+                    username={username}
+                    style={styles.accountNumber}
+                  />
+                ) : null}
+                <AccountNumberWalletDetails
+                  identityId={identityId}
+                  style={styles.accountNumber}
+                />
+              </View>
 
               <Pressable
                 accessibilityLabel={
