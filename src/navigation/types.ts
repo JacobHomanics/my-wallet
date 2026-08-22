@@ -108,6 +108,7 @@ export type ProfileStackParamList = {
   index: undefined;
   settings: undefined;
   profileSettings: undefined;
+  appearanceSettings: undefined;
   moneySettings: undefined;
   onrampSettings: undefined;
   sendSettings: undefined;

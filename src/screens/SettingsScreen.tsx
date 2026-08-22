@@ -11,13 +11,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
-import { ColorThemePickerModal } from '@/components/ColorThemePickerModal';
 import { ConfirmLogoutModal } from '@/components/ConfirmLogoutModal';
-import { DisplayCurrencyPickerModal } from '@/components/DisplayCurrencyPickerModal';
 import { IconButton } from '@/components/IconButton';
-import { useColorThemePicker } from '@/hooks/useColorThemePicker';
 import { useConfirmSignOut } from '@/hooks/useConfirmSignOut';
-import { useDisplayCurrencyPicker } from '@/hooks/useDisplayCurrencyPicker';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToProfile } from '@/hooks/usePopToProfile';
 import type { ProfileStackParamList } from '@/navigation/types';
@@ -41,24 +37,6 @@ export function SettingsScreen() {
     cancelSignOut,
     confirmSignOut,
   } = useConfirmSignOut();
-  const {
-    options: displayCurrencyOptions,
-    selectedCurrency,
-    selectedDisplayCurrencyId,
-    pickerOpen: displayCurrencyPickerOpen,
-    openPicker: openDisplayCurrencyPicker,
-    closePicker: closeDisplayCurrencyPicker,
-    onSelectOption: onSelectDisplayCurrency,
-  } = useDisplayCurrencyPicker();
-  const {
-    options: colorThemeOptions,
-    selectedTheme,
-    selectedColorThemeId,
-    pickerOpen: colorThemePickerOpen,
-    openPicker: openColorThemePicker,
-    closePicker: closeColorThemePicker,
-    onSelectOption: onSelectColorTheme,
-  } = useColorThemePicker();
 
   return (
     <View style={styles.container}>
@@ -153,67 +131,30 @@ export function SettingsScreen() {
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Display currency</Text>
-              <Pressable
-                accessibilityLabel={`Display currency ${selectedCurrency.label}`}
-                accessibilityRole="button"
-                onPress={openDisplayCurrencyPicker}
-                style={({ pressed }) => [
-                  styles.strategyRow,
-                  pressed && styles.strategyRowPressed,
-                ]}
-              >
-                <View style={styles.strategyRowText}>
-                  <Text style={styles.strategyLabel}>
-                    {selectedCurrency.label} ({selectedCurrency.code})
-                  </Text>
-                  <Text style={styles.strategyDescription}>
-                    {selectedCurrency.description}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
-              </Pressable>
-            </View>
-
-            <View style={styles.section}>
               <Text style={styles.sectionTitle}>Appearance</Text>
               <Pressable
-                accessibilityLabel={`Color theme ${selectedTheme.label}`}
+                accessibilityLabel="Appearance settings"
                 accessibilityRole="button"
-                onPress={openColorThemePicker}
+                onPress={() => {
+                  navigation.navigate('appearanceSettings');
+                }}
                 style={({ pressed }) => [
                   styles.strategyRow,
                   pressed && styles.strategyRowPressed,
                 ]}
               >
                 <View style={styles.strategyRowText}>
-                  <Text style={styles.strategyLabel}>{selectedTheme.label}</Text>
+                  <Text style={styles.strategyLabel}>Appearance settings</Text>
                   <Text style={styles.strategyDescription}>
-                    {selectedTheme.description}
+                    Display currency, app layout, and color theme
                   </Text>
                 </View>
-                <Ionicons name="chevron-down" size={18} color={colors.textSubtle} />
+                <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />
               </Pressable>
             </View>
           </View>
         </View>
       </ScrollView>
-
-      <DisplayCurrencyPickerModal
-        onClose={closeDisplayCurrencyPicker}
-        onSelect={onSelectDisplayCurrency}
-        options={displayCurrencyOptions}
-        selectedDisplayCurrencyId={selectedDisplayCurrencyId}
-        visible={displayCurrencyPickerOpen}
-      />
-
-      <ColorThemePickerModal
-        onClose={closeColorThemePicker}
-        onSelect={onSelectColorTheme}
-        options={colorThemeOptions}
-        selectedColorThemeId={selectedColorThemeId}
-        visible={colorThemePickerOpen}
-      />
 
       <ConfirmLogoutModal
         isSigningOut={isSigningOut}

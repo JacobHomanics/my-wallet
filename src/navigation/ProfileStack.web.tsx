@@ -38,6 +38,10 @@ export function ProfileStack() {
         component={profileStackScreens.profileSettings}
       />
       <WebStack.Screen
+        name="appearanceSettings"
+        component={profileStackScreens.appearanceSettings}
+      />
+      <WebStack.Screen
         name="moneySettings"
         component={profileStackScreens.moneySettings}
       />

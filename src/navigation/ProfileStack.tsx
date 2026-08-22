@@ -28,6 +28,10 @@ export function ProfileStack() {
         component={profileStackScreens.profileSettings}
       />
       <NativeStack.Screen
+        name="appearanceSettings"
+        component={profileStackScreens.appearanceSettings}
+      />
+      <NativeStack.Screen
         name="moneySettings"
         component={profileStackScreens.moneySettings}
       />

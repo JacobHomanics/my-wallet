@@ -144,6 +144,7 @@ export function MainTabs() {
             !isDesktopWeb &&
             (focusedRoute === 'settings' ||
               focusedRoute === 'profileSettings' ||
+              focusedRoute === 'appearanceSettings' ||
               focusedRoute === 'moneySettings' ||
               focusedRoute === 'onrampSettings' ||
               focusedRoute === 'sendSettings' ||

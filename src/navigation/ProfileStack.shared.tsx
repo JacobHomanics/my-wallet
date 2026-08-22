@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 
 import type { ProfileStackParamList } from '@/navigation/types';
+import { AppearanceSettingsScreen } from '@/screens/AppearanceSettingsScreen';
 import { EarnSettingsScreen } from '@/screens/EarnSettingsScreen';
 import { OnrampSettingsScreen } from '@/screens/OnrampSettingsScreen';
 import { ProfileScreen } from '@/screens/ProfileScreen';
@@ -15,6 +16,7 @@ export const profileStackScreens = {
   index: ProfileScreen,
   settings: SettingsScreen,
   profileSettings: ProfileSettingsScreen,
+  appearanceSettings: AppearanceSettingsScreen,
   moneySettings: MoneySettingsScreen,
   onrampSettings: OnrampSettingsScreen,
   sendSettings: SendSettingsScreen,

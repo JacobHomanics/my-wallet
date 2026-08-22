@@ -123,6 +123,7 @@ const PROFILE_STACK_HISTORY: Partial<
 > = {
   settings: ['index'],
   profileSettings: ['index', 'settings'],
+  appearanceSettings: ['index', 'settings'],
   moneySettings: ['index', 'settings'],
   onrampSettings: ['index', 'settings', 'moneySettings'],
   sendSettings: ['index', 'settings', 'moneySettings'],
@@ -477,6 +478,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               index: '',
               settings: 'settings',
               profileSettings: 'settings/profile',
+              appearanceSettings: 'settings/appearance',
               moneySettings: 'settings/money',
               onrampSettings: 'settings/onramp',
               sendSettings: 'settings/send',
