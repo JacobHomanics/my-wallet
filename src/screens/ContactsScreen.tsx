@@ -23,10 +23,10 @@ import {
   type ContactListItem,
 } from '@/hooks/useContacts';
 import { useConfirmDeleteContact } from '@/hooks/useConfirmDeleteContact';
+import { useContactsAdvancedSection } from '@/hooks/useContactsAdvancedSection';
 import { useContactsAllSections } from '@/hooks/useContactsAllSections';
 import { useContactsFilter } from '@/hooks/useContactsFilter';
 import { useContactsSwipe } from '@/hooks/useContactsSwipe';
-import { useContactsTab } from '@/hooks/useContactsTab';
 import type { ContactsStackParamList } from '@/navigation/types';
 import type Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
@@ -275,6 +275,10 @@ export function ContactsScreen() {
     externalContacts,
   });
   const {
+    showContactsTabs,
+    showContactsAdvancedToggle,
+    showContactsAdvanced,
+    toggleContactsAdvanced,
     selectedTab,
     isAllTab,
     isContactsTab,
@@ -282,7 +286,7 @@ export function ContactsScreen() {
     selectAll,
     selectContacts,
     selectExternal,
-  } = useContactsTab();
+  } = useContactsAdvancedSection();
   const {
     contactsExpanded,
     externalGroupExpanded,
@@ -386,23 +390,56 @@ export function ContactsScreen() {
           />
         </View>
 
-        <View style={styles.tabs}>
-          <ContactsTabChip
-            label="All"
-            selected={isAllTab}
-            onPress={selectAll}
-          />
-          <ContactsTabChip
-            label="Contacts"
-            selected={isContactsTab}
-            onPress={selectContacts}
-          />
-          <ContactsTabChip
-            label="External"
-            selected={isExternalTab}
-            onPress={selectExternal}
-          />
-        </View>
+        {showContactsTabs ? (
+          <View style={[styles.tabs, styles.tabsAboveFootnote]}>
+            <ContactsTabChip
+              label="All"
+              selected={isAllTab}
+              onPress={selectAll}
+            />
+            <ContactsTabChip
+              label="Contacts"
+              selected={isContactsTab}
+              onPress={selectContacts}
+            />
+            <ContactsTabChip
+              label="External"
+              selected={isExternalTab}
+              onPress={selectExternal}
+            />
+          </View>
+        ) : null}
+
+        {showContactsAdvancedToggle ? (
+          <Pressable
+            accessibilityLabel={
+              showContactsAdvanced
+                ? 'Hide advanced details'
+                : 'Show advanced details'
+            }
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showContactsAdvanced }}
+            onPress={toggleContactsAdvanced}
+            style={({ pressed }) => [
+              styles.advancedToggle,
+              showContactsAdvanced
+                ? styles.advancedToggleUnderTabs
+                : styles.advancedToggleUnderTitle,
+              pressed && styles.advancedTogglePressed,
+            ]}
+          >
+            <Text style={styles.advancedToggleText}>
+              {showContactsAdvanced
+                ? 'Hide advanced details'
+                : 'Show advanced details'}
+            </Text>
+            <Ionicons
+              name={showContactsAdvanced ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color={colors.textMuted}
+            />
+          </Pressable>
+        ) : null}
 
         <GestureHandlerRootView style={styles.gestureRoot}>
           <ScrollView
@@ -637,7 +674,7 @@ function createStyles(c: ThemeColors) {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    marginBottom: 8,
+    marginBottom: 2,
   },
   topBarTitle: {
     flex: 1,
@@ -653,6 +690,32 @@ function createStyles(c: ThemeColors) {
   addButton: {
     marginHorizontal: 4,
   },
+  advancedToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    alignSelf: 'center',
+    paddingHorizontal: 4,
+  },
+  advancedToggleUnderTitle: {
+    marginTop: 0,
+    paddingTop: 2,
+    paddingBottom: 4,
+  },
+  advancedToggleUnderTabs: {
+    marginTop: 2,
+    paddingTop: 2,
+    paddingBottom: 4,
+  },
+  advancedTogglePressed: {
+    opacity: 0.65,
+  },
+  advancedToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: c.textMuted,
+  },
   tabs: {
     flexDirection: 'row',
     alignSelf: 'center',
@@ -664,6 +727,9 @@ function createStyles(c: ThemeColors) {
     gap: 4,
     backgroundColor: c.surfaceMuted,
     borderRadius: 12,
+  },
+  tabsAboveFootnote: {
+    marginBottom: 0,
   },
   tabChip: {
     flex: 1,
