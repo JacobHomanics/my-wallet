@@ -21,6 +21,8 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 
 export type SendConfigurationCollapsibleProps = SendAdvancedDetailsProps & {
   style?: StyleProp<ViewStyle>;
+  /** When false, only broadcast / sponsorship fields are shown. */
+  includeTokenAllocations?: boolean;
 };
 
 /**
@@ -29,6 +31,7 @@ export type SendConfigurationCollapsibleProps = SendAdvancedDetailsProps & {
  */
 export function SendConfigurationCollapsible({
   style,
+  includeTokenAllocations = true,
   broadcastMode,
   onBroadcastModeChange,
   gasSponsorship,
@@ -75,15 +78,19 @@ export function SendConfigurationCollapsible({
             onGasSponsorshipChange={onGasSponsorshipChange}
           />
 
-          <View style={styles.advancedDivider} />
+          {includeTokenAllocations ? (
+            <>
+              <View style={styles.advancedDivider} />
 
-          <SendAdvancedDetailsCollapsible>
-            <SendTokenAllocations
-              onOpenStrategyPicker={onOpenStrategyPicker}
-              selectedStrategy={selectedStrategy}
-              {...tokenAllocationProps}
-            />
-          </SendAdvancedDetailsCollapsible>
+              <SendAdvancedDetailsCollapsible>
+                <SendTokenAllocations
+                  onOpenStrategyPicker={onOpenStrategyPicker}
+                  selectedStrategy={selectedStrategy}
+                  {...tokenAllocationProps}
+                />
+              </SendAdvancedDetailsCollapsible>
+            </>
+          ) : null}
         </View>
       ) : null}
     </View>
