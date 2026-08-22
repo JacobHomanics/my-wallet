@@ -16,13 +16,14 @@ import { AccountNumber } from '@/components/AccountNumber';
 import { AccountNumberWalletDetails } from '@/components/AccountNumberWalletDetails';
 import { BackButton } from '@/components/BackButton';
 import { IconButton } from '@/components/IconButton';
-import { TaxDetailsCollapsible } from '@/components/TaxDetailsCollapsible';
+import { ServiceFeeModal } from '@/components/ServiceFeeModal';
 import { useAppTax } from '@/hooks/useAppTax';
 import { useConvexUsername } from '@/hooks/useConvexUsername';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { useReceivePaymentUrl } from '@/hooks/useReceivePaymentUrl';
 import { useShareReceiveLink } from '@/hooks/useShareReceiveLink';
+import { useTaxInfoModal } from '@/hooks/useTaxInfoModal';
 import type { HomeStackParamList } from '@/navigation/types';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
@@ -38,8 +39,7 @@ export function ReceiveQrScreen() {
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const route = useRoute<RouteProp<HomeStackParamList, 'receiveQr'>>();
   const usdAmount = route.params.usdAmount;
-  const { ready, url, identityId, ethereumAddress, solanaAddress } =
-    useReceivePaymentUrl(usdAmount);
+  const { ready, url, identityId } = useReceivePaymentUrl(usdAmount);
   const { username } = useConvexUsername();
   const {
     onShare,
@@ -51,6 +51,7 @@ export function ReceiveQrScreen() {
   const { formatFromUsd, formatServiceFeeFromUsd, parseDisplayInputToUsd, currencySymbol } =
     useFiatDisplay();
   const { taxUsdFor, payerTotalUsdFor } = useAppTax();
+  const { taxInfoOpen, openTaxInfo, closeTaxInfo } = useTaxInfoModal();
 
   const usd = parseDisplayInputToUsd(usdAmount);
   const taxUsd = usd != null && usd > 0 ? taxUsdFor(usd) : 0;
@@ -59,6 +60,8 @@ export function ReceiveQrScreen() {
   const amountLabel =
     (payerTotalUsd != null ? formatFromUsd(payerTotalUsd) : null) ??
     `${currencySymbol}${usdAmount}`;
+  const requestLabel =
+    (usd != null ? formatFromUsd(usd) : null) ?? `${currencySymbol}${usdAmount}`;
   const taxLabel = taxUsd > 0 ? formatServiceFeeFromUsd(taxUsd) : null;
 
   return (
@@ -99,16 +102,29 @@ export function ReceiveQrScreen() {
             <ActivityIndicator color={colors.primary} style={styles.loader} />
           ) : (
             <>
-              <Text style={styles.amount} accessibilityRole="header">
-                {amountLabel}
-              </Text>
+              <View style={styles.totalRow}>
+                <Text style={styles.amount} accessibilityRole="header">
+                  {amountLabel}
+                </Text>
+                {taxLabel ? (
+                  <IconButton
+                    accessibilityLabel="Service fee details"
+                    color={colors.textMuted}
+                    icon="help-circle-outline"
+                    iconSize={22}
+                    onPress={openTaxInfo}
+                    size={36}
+                    style={styles.totalHelpButton}
+                  />
+                ) : null}
+              </View>
 
               {taxLabel ? (
-                <TaxDetailsCollapsible
-                  showEvm={Boolean(ethereumAddress)}
-                  showSolana={Boolean(solanaAddress)}
-                  style={styles.taxSection}
+                <ServiceFeeModal
+                  onClose={closeTaxInfo}
+                  requestLabel={requestLabel}
                   taxLabel={taxLabel}
+                  visible={taxInfoOpen}
                 />
               ) : null}
 
@@ -116,7 +132,7 @@ export function ReceiveQrScreen() {
                 <QRCodeStyled
                   data={url}
                   padding={16}
-                  size={200}
+                  size={180}
                   color={colors.primary}
                   style={styles.qr}
                 />
@@ -192,6 +208,13 @@ function createStyles(c: ThemeColors) {
   loader: {
     marginTop: 48,
   },
+  totalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 20,
+  },
   amount: {
     fontSize: 36,
     fontWeight: '700',
@@ -199,13 +222,9 @@ function createStyles(c: ThemeColors) {
     letterSpacing: -0.5,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
-    marginBottom: 8,
   },
-  taxSection: {
-    marginTop: 8,
-    marginBottom: 20,
-    maxWidth: 360,
-    width: '100%',
+  totalHelpButton: {
+    marginTop: 4,
   },
   qrWrap: {
     backgroundColor: c.surface,
