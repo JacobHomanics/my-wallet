@@ -12,6 +12,7 @@ import { BackButton } from '@/components/BackButton';
 import { EligiblePaymentInfoModal } from '@/components/EligiblePaymentInfoModal';
 import { IconButton } from '@/components/IconButton';
 import { useAutoDepositSettings } from '@/hooks/useAutoDepositSettings';
+import { useEarnPreview } from '@/hooks/useEarnPreview';
 import { useEligiblePaymentInfoModal } from '@/hooks/useEligiblePaymentInfoModal';
 import { useIsDesktopWeb } from '@/hooks/useIsDesktopWeb';
 import { usePopToMoneySettings } from '@/hooks/usePopToMoneySettings';
@@ -30,6 +31,7 @@ export function EarnSettingsScreen() {
   const insets = useSafeAreaInsets();
   const isDesktopWeb = useIsDesktopWeb();
   const goMoneySettings = usePopToMoneySettings();
+  const { isPreview } = useEarnPreview();
   const { infoOpen, openInfo, closeInfo } = useEligiblePaymentInfoModal();
   const {
     enabled: autoDepositEnabled,
@@ -115,21 +117,35 @@ export function EarnSettingsScreen() {
             />
           </View>
 
-          <View style={styles.toggleRow}>
+          <View
+            style={[styles.toggleRow, isPreview && styles.toggleRowDisabled]}
+          >
             <View style={styles.toggleText}>
-              <Text style={styles.toggleLabel}>Use vault balance</Text>
-              <Text style={styles.toggleDescription}>
+              <Text
+                style={[
+                  styles.toggleLabel,
+                  isPreview && styles.toggleLabelDisabled,
+                ]}
+              >
+                Use vault balance
+              </Text>
+              <Text
+                style={[
+                  styles.toggleDescription,
+                  isPreview && styles.toggleDescriptionDisabled,
+                ]}
+              >
                 When you make an eligible payment, automatically move money
                 from your vault into your balance
               </Text>
             </View>
             <Switch
               accessibilityLabel="Use vault balance"
-              disabled={vaultSendLoading || vaultSendSaving}
+              disabled={isPreview || vaultSendLoading || vaultSendSaving}
               trackColor={{ false: '#bbf7d0', true: '#86efac' }}
               thumbColor={vaultSendEnabled ? '#166534' : '#f0fdf4'}
               ios_backgroundColor="#bbf7d0"
-              value={vaultSendEnabled}
+              value={isPreview ? false : vaultSendEnabled}
               onValueChange={(value) => {
                 void setVaultSendEnabled(value);
               }}
@@ -224,6 +240,15 @@ function createStyles(c: ThemeColors) {
   toggleDescription: {
     fontSize: 13,
     lineHeight: 18,
+    color: c.textSubtle,
+  },
+  toggleRowDisabled: {
+    opacity: 0.45,
+  },
+  toggleLabelDisabled: {
+    color: c.textMuted,
+  },
+  toggleDescriptionDisabled: {
     color: c.textSubtle,
   },
 });
