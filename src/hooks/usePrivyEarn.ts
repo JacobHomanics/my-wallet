@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAction } from 'convex/react';
 
 import { api } from '../../convex/_generated/api';
+import { useEarnPreview } from '@/hooks/useEarnPreview';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { useUserWallets } from '@/hooks/useUserWallets';
 import type {
@@ -27,6 +28,7 @@ export type UsePrivyEarnResult = {
   acting: boolean;
   error: string | null;
   actionError: string | null;
+  isPreview: boolean;
   vault: EarnVaultDetails | null;
   position: EarnVaultPosition | null;
   vaultBalanceUsd: number;
@@ -56,6 +58,13 @@ function getEarnLoadKey(
  * @see https://docs.privy.io/wallets/actions/earn/setup
  */
 export function usePrivyEarn(): UsePrivyEarnResult {
+  const {
+    isPreview,
+    vault: previewVault,
+    position: previewPosition,
+    vaultBalanceUsd: previewVaultBalanceUsd,
+    walletAssetBalance: previewWalletAssetBalance,
+  } = useEarnPreview();
   const { ready: walletsReady, wallets } = useUserWallets();
   const { tokens, refresh: refreshTokenBalances } = useTokenBalances();
   const getVaultDetails = useAction(api.earn.getVaultDetails);
@@ -77,7 +86,8 @@ export function usePrivyEarn(): UsePrivyEarnResult {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const loading = loadKey === 'pending' || loadedKey !== loadKey;
+  const loading =
+    !isPreview && (loadKey === 'pending' || loadedKey !== loadKey);
 
   const walletAssetBalance = (() => {
     if (!vault?.asset.address) {
@@ -121,7 +131,7 @@ export function usePrivyEarn(): UsePrivyEarnResult {
   }, [ethereumWalletId, getPosition, getVaultDetails]);
 
   useEffect(() => {
-    if (loadKey === 'pending') {
+    if (isPreview || loadKey === 'pending') {
       return;
     }
 
@@ -137,10 +147,10 @@ export function usePrivyEarn(): UsePrivyEarnResult {
     return () => {
       cancelled = true;
     };
-  }, [fetchEarnData, loadKey]);
+  }, [fetchEarnData, isPreview, loadKey]);
 
   const refresh = useCallback(async () => {
-    if (loadKey === 'pending') {
+    if (isPreview || loadKey === 'pending') {
       return;
     }
 
@@ -152,7 +162,7 @@ export function usePrivyEarn(): UsePrivyEarnResult {
     } finally {
       setRefreshing(false);
     }
-  }, [fetchEarnData, loadKey, refreshTokenBalances]);
+  }, [fetchEarnData, isPreview, loadKey, refreshTokenBalances]);
 
   const pollAction = useCallback(
     async (actionId: string) => {
@@ -276,6 +286,27 @@ export function usePrivyEarn(): UsePrivyEarnResult {
     return executeWithdraw({ rawAmount: position.assets_in_vault });
   }, [executeWithdraw, position]);
 
+  if (isPreview) {
+    return {
+      ready: true,
+      configured: true,
+      loading: false,
+      refreshing: false,
+      acting: false,
+      error: null,
+      actionError: null,
+      isPreview: true,
+      vault: previewVault,
+      position: previewPosition,
+      vaultBalanceUsd: previewVaultBalanceUsd,
+      walletAssetBalance: previewWalletAssetBalance,
+      refresh,
+      deposit,
+      withdraw,
+      withdrawAll,
+    };
+  }
+
   return {
     ready: walletsReady,
     configured,
@@ -284,6 +315,7 @@ export function usePrivyEarn(): UsePrivyEarnResult {
     acting,
     error,
     actionError,
+    isPreview: false,
     vault,
     position,
     vaultBalanceUsd,

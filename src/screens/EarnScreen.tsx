@@ -11,7 +11,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { SampleStamp } from '@/components/SampleStamp';
 import { SignUpLoginBanner } from '@/components/SignUpLoginBanner';
+import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
+import { useAuthGatedAction } from '@/hooks/useAuthGatedAction';
 import { usePrivyEarn } from '@/hooks/usePrivyEarn';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
 import {
@@ -36,6 +39,7 @@ export function EarnScreen() {
     acting,
     error,
     actionError,
+    isPreview,
     vault,
     position,
     walletAssetBalance,
@@ -108,6 +112,23 @@ export function EarnScreen() {
     await withdrawAll();
   }, [getTokenAmountFromInput, withdraw, withdrawAll]);
 
+  const {
+    run: onPressDeposit,
+    openAuthPrompt,
+    authPromptOpen,
+    closeAuthPrompt,
+    confirmAuthPrompt,
+  } = useAuthGatedAction(() => {
+    void handleDeposit();
+  });
+  const onPressWithdraw = useCallback(() => {
+    if (isPreview) {
+      openAuthPrompt();
+      return;
+    }
+    void handleWithdraw();
+  }, [handleWithdraw, isPreview, openAuthPrompt]);
+
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
       <View style={styles.content}>
@@ -155,9 +176,16 @@ export function EarnScreen() {
           ) : (
             <View style={styles.main}>
               <Text style={styles.heroLabel}>In vault</Text>
-              <Text style={styles.heroBalance} accessibilityRole="header">
-                {vaultBalanceFiat}
-              </Text>
+              <View style={styles.heroBalanceWrap}>
+                <Text style={styles.heroBalance} accessibilityRole="header">
+                  {vaultBalanceFiat}
+                </Text>
+                {isPreview ? (
+                  <View style={styles.stampFaded} pointerEvents="none">
+                    <SampleStamp />
+                  </View>
+                ) : null}
+              </View>
               {vault ? (
                 <View style={styles.heroMeta}>
                   <Text style={styles.heroHint}>
@@ -201,9 +229,7 @@ export function EarnScreen() {
                   <Pressable
                     accessibilityRole="button"
                     disabled={acting || !ready || !hasValidAmount}
-                    onPress={() => {
-                      void handleDeposit();
-                    }}
+                    onPress={onPressDeposit}
                     style={({ pressed }) => [
                       styles.primaryButton,
                       (acting || !ready || !hasValidAmount) &&
@@ -220,9 +246,7 @@ export function EarnScreen() {
                   <Pressable
                     accessibilityRole="button"
                     disabled={acting || !ready}
-                    onPress={() => {
-                      void handleWithdraw();
-                    }}
+                    onPress={onPressWithdraw}
                     style={({ pressed }) => [
                       styles.secondaryButton,
                       (acting || !ready) && styles.buttonDisabled,
@@ -248,6 +272,11 @@ export function EarnScreen() {
         </ScrollView>
       </View>
       <SignUpLoginBanner />
+      <SignUpLoginPromptModal
+        visible={authPromptOpen}
+        onCancel={closeAuthPrompt}
+        onConfirm={confirmAuthPrompt}
+      />
     </View>
   );
 }
@@ -302,6 +331,10 @@ function createStyles(c: ThemeColors) {
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
+  heroBalanceWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   heroBalance: {
     fontSize: 56,
     fontWeight: '700',
@@ -309,6 +342,10 @@ function createStyles(c: ThemeColors) {
     letterSpacing: -1,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
+  },
+  stampFaded: {
+    ...StyleSheet.absoluteFill,
+    opacity: 0.75,
   },
   heroHint: {
     maxWidth: 320,
