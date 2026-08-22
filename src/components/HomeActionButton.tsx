@@ -6,7 +6,26 @@ import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { ThemeColors } from '@/theme/types';
 
-const ICON_SIZE = 28;
+export type HomeActionButtonSize = 'default' | 'large';
+
+const BUTTON_SIZES = {
+  default: {
+    button: 72,
+    icon: 28,
+    radius: 14,
+    label: 13,
+    lineHeight: 16,
+    gap: 8,
+  },
+  large: {
+    button: 120,
+    icon: 48,
+    radius: 22,
+    label: 16,
+    lineHeight: 20,
+    gap: 12,
+  },
+} as const;
 
 export type HomeActionIcon =
   | {
@@ -22,6 +41,8 @@ type HomeActionButtonProps = {
   label: string;
   onPress: () => void;
   icon: HomeActionIcon;
+  size?: HomeActionButtonSize;
+  selected?: boolean;
 };
 
 /**
@@ -31,38 +52,76 @@ export function HomeActionButton({
   label,
   onPress,
   icon,
+  size = 'default',
+  selected,
 }: HomeActionButtonProps) {
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
+  const metrics = BUTTON_SIZES[size];
   const iconColor = colors.primaryText;
+  const showSelection = selected !== undefined;
+
+  const tile = (
+    <View
+      style={[
+        styles.button,
+        {
+          width: metrics.button,
+          height: metrics.button,
+          borderRadius: metrics.radius,
+        },
+      ]}
+    >
+      {icon.set === 'material' ? (
+        <MaterialCommunityIcons
+          name={icon.name}
+          size={metrics.icon}
+          color={iconColor}
+        />
+      ) : (
+        <Ionicons name={icon.name} size={metrics.icon} color={iconColor} />
+      )}
+    </View>
+  );
 
   return (
     <Pressable
       accessibilityLabel={label}
       accessibilityRole="button"
+      accessibilityState={showSelection ? { selected } : undefined}
       onPress={onPress}
       style={(pressState) => {
         const hovered =
           'hovered' in pressState && Boolean(pressState.hovered);
         return [
           styles.wrap,
+          { gap: metrics.gap },
           hovered && styles.wrapHovered,
           pressState.pressed && styles.wrapPressed,
         ];
       }}
     >
-      <View style={styles.button}>
-        {icon.set === 'material' ? (
-          <MaterialCommunityIcons
-            name={icon.name}
-            size={ICON_SIZE}
-            color={iconColor}
-          />
-        ) : (
-          <Ionicons name={icon.name} size={ICON_SIZE} color={iconColor} />
-        )}
-      </View>
-      <Text style={styles.label}>{label}</Text>
+      {showSelection ? (
+        <View
+          style={[
+            styles.buttonRing,
+            { borderRadius: metrics.radius + 6 },
+            selected && styles.buttonRingSelected,
+          ]}
+        >
+          {tile}
+        </View>
+      ) : (
+        tile
+      )}
+      <Text
+        style={[
+          styles.label,
+          { fontSize: metrics.label, lineHeight: metrics.lineHeight },
+        ]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -71,7 +130,6 @@ function createStyles(c: ThemeColors) {
   return StyleSheet.create({
     wrap: {
       alignItems: 'center',
-      gap: 8,
     },
     wrapHovered: {
       opacity: 0.92,
@@ -79,19 +137,22 @@ function createStyles(c: ThemeColors) {
     wrapPressed: {
       opacity: 0.85,
     },
+    buttonRing: {
+      padding: 4,
+      borderWidth: 2,
+      borderColor: 'transparent',
+    },
+    buttonRingSelected: {
+      borderColor: c.primary,
+    },
     button: {
-      width: 72,
-      height: 72,
-      borderRadius: 14,
       backgroundColor: c.primary,
       alignItems: 'center',
       justifyContent: 'center',
     },
     label: {
       color: c.text,
-      fontSize: 13,
       fontWeight: '600',
-      lineHeight: 16,
       textAlign: 'center',
     },
   });
