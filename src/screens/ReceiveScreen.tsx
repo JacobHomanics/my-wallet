@@ -62,7 +62,9 @@ export function ReceiveScreen() {
               onPress={goHome}
             />
           )}
-          <Text style={styles.topBarTitle}>Receive</Text>
+          <Text accessibilityRole="header" style={styles.topBarTitle}>
+            Receive
+          </Text>
           <IconButton
             accessibilityLabel={shareLabel}
             color={shareColor}
@@ -134,14 +136,15 @@ function createStyles(c: ThemeColors) {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    minHeight: 44,
+    minHeight: 52,
   },
   topBarTitle: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 28,
+    fontWeight: '700',
     color: c.primary,
+    letterSpacing: -0.5,
   },
   webBack: {
     paddingHorizontal: 12,
