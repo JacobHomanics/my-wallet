@@ -2,7 +2,8 @@ import { useCallback, useMemo } from 'react';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {StyleSheet, 
+import {
+  StyleSheet,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -16,6 +17,7 @@ import { DepositBankTipsModal } from '@/components/DepositBankTipsModal';
 import { BalanceBreakdownModal } from '@/components/BalanceBreakdownModal';
 import { IconButton } from '@/components/IconButton';
 import { PhysicalCardWaitlistCallout } from '@/components/PhysicalCardWaitlistCallout';
+import { SampleStamp } from '@/components/SampleStamp';
 import { SignUpLoginPromptModal } from '@/components/SignUpLoginPromptModal';
 import { WithdrawUnsupportedModal } from '@/components/WithdrawUnsupportedModal';
 import { useAuth } from '@/hooks/useAuth';
@@ -33,6 +35,8 @@ import type { HomeStackParamList } from '@/navigation/types';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
 import { useThemeColors } from '@/hooks/useThemeColors';
+
+const HOME_PREVIEW_BALANCE_USD = 13.37;
 
 export function HomeScreen() {
   const colors = useThemeColors();
@@ -88,17 +92,22 @@ export function HomeScreen() {
   }, [refresh, refreshEarn]);
 
   const combinedTotalUsd = useMemo(() => {
+    if (!isAuthenticated) {
+      return HOME_PREVIEW_BALANCE_USD;
+    }
     if (totalUsd == null && vaultBalanceUsd === 0) {
       return null;
     }
     return (totalUsd ?? 0) + vaultBalanceUsd;
-  }, [totalUsd, vaultBalanceUsd]);
+  }, [isAuthenticated, totalUsd, vaultBalanceUsd]);
 
   const totalLabel = formatFromUsd(combinedTotalUsd) ?? defaultFormattedZero;
-  const accountBalanceLabel =
-    formatFromUsd(totalUsd) ?? defaultFormattedZero;
-  const earnBalanceLabel =
-    formatFromUsd(vaultBalanceUsd) ?? defaultFormattedZero;
+  const accountBalanceLabel = !isAuthenticated
+    ? (formatFromUsd(HOME_PREVIEW_BALANCE_USD) ?? defaultFormattedZero)
+    : (formatFromUsd(totalUsd) ?? defaultFormattedZero);
+  const earnBalanceLabel = !isAuthenticated
+    ? (formatFromUsd(0) ?? defaultFormattedZero)
+    : (formatFromUsd(vaultBalanceUsd) ?? defaultFormattedZero);
   const hasWallet = Boolean(ethereumAddress || solanaAddress);
   const showHomeChrome = ready && (hasWallet || !isAuthenticated);
   const balanceLoading = ready && hasWallet && (loading || earnLoading);
@@ -137,7 +146,7 @@ export function HomeScreen() {
       );
     }
 
-    return (
+    const totalRow = (
       <View style={styles.totalRow}>
         <Text style={styles.total} accessibilityRole="header">
           {totalLabel}
@@ -153,6 +162,21 @@ export function HomeScreen() {
         />
       </View>
     );
+
+    if (!isAuthenticated) {
+      return (
+        <View style={styles.totalPreview}>
+          <View style={styles.totalPreviewFrame}>
+            {totalRow}
+            <View style={styles.stampFaded}>
+              <SampleStamp inline />
+            </View>
+          </View>
+        </View>
+      );
+    }
+
+    return totalRow;
   };
 
   const renderActions = () => {
@@ -312,126 +336,146 @@ export function HomeScreen() {
 
 function createStyles(c: ThemeColors) {
   return StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: c.bg,
-  },
-  content: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 32,
-  },
-  hero: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  totalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    container: {
+      flex: 1,
+      backgroundColor: c.bg,
+    },
+    content: {
+      flexGrow: 1,
+      paddingHorizontal: 24,
+      paddingTop: 24,
+      paddingBottom: 32,
+    },
+    hero: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    totalRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+    },
+    totalPreview: {
+      alignItems: 'center',
+      gap: 10,
+    },
+    totalPreviewFrame: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderStyle: 'dashed',
+      borderColor: c.borderStrong,
+    backgroundColor: c.surface,
+    overflow: 'visible',
     gap: 8,
+  },
+  stampFaded: {
+    opacity: 0.75,
   },
   balancePlaceholder: {
-    width: balanceSkeletonLayout.width,
-    height: balanceSkeletonLayout.height,
-  },
-  total: {
-    fontSize: 48,
-    fontWeight: '700',
-    color: c.primary,
-    letterSpacing: -1,
-    fontVariant: ['tabular-nums'],
-    textAlign: 'center',
-  },
-  totalHelpButton: {
-    marginTop: 4,
-  },
-  empty: {
-    fontSize: 15,
-    color: c.textSubtle,
-    textAlign: 'center',
-  },
-  errorBlock: {
-    alignItems: 'center',
-    gap: 16,
-  },
-  errorText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: c.danger,
-    textAlign: 'center',
-  },
-  errorBanner: {
-    marginTop: 12,
-    fontSize: 13,
-    color: c.danger,
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: c.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  retryButtonPressed: {
-    opacity: 0.85,
-  },
-  retryButtonText: {
-    color: c.primaryText,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  actionsGroup: {
-    marginTop: 28,
-    alignItems: 'center',
-    gap: 12,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  payReceiveRequestRow: {
-    paddingTop: 64,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: c.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 10,
-  },
-  actionButtonPressed: {
-    opacity: 0.85,
-  },
-  actionButtonText: {
-    color: c.primaryText,
-    fontSize: 16,
-    fontWeight: '600',
-  },
+      width: balanceSkeletonLayout.width,
+      height: balanceSkeletonLayout.height,
+    },
+    total: {
+      fontSize: 48,
+      fontWeight: '700',
+      color: c.primary,
+      letterSpacing: -1,
+      fontVariant: ['tabular-nums'],
+      textAlign: 'center',
+    },
+    totalHelpButton: {
+      marginTop: 4,
+    },
+    empty: {
+      fontSize: 15,
+      color: c.textSubtle,
+      textAlign: 'center',
+    },
+    errorBlock: {
+      alignItems: 'center',
+      gap: 16,
+    },
+    errorText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: c.danger,
+      textAlign: 'center',
+    },
+    errorBanner: {
+      marginTop: 12,
+      fontSize: 13,
+      color: c.danger,
+      textAlign: 'center',
+    },
+    retryButton: {
+      backgroundColor: c.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 10,
+    },
+    retryButtonPressed: {
+      opacity: 0.85,
+    },
+    retryButtonText: {
+      color: c.primaryText,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    actionsGroup: {
+      marginTop: 28,
+      alignItems: 'center',
+      gap: 12,
+    },
+    actionsRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 12,
+    },
+    payReceiveRequestRow: {
+      paddingTop: 64,
+    },
+    actionButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: c.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 10,
+    },
+    actionButtonPressed: {
+      opacity: 0.85,
+    },
+    actionButtonText: {
+      color: c.primaryText,
+      fontSize: 16,
+      fontWeight: '600',
+    },
 
-  detailsLink: {
-    marginTop: 20,
-    paddingVertical: 4,
-  },
-  transactionsLink: {
-    alignSelf: 'center',
-    paddingVertical: 4,
-  },
-  detailsLinkPressed: {
-    opacity: 0.6,
-  },
-  detailsLinkText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: c.textMuted,
-    textDecorationLine: 'underline',
-  },
-});
+    detailsLink: {
+      marginTop: 20,
+      paddingVertical: 4,
+    },
+    transactionsLink: {
+      alignSelf: 'center',
+      paddingVertical: 4,
+    },
+    detailsLinkPressed: {
+      opacity: 0.6,
+    },
+    detailsLinkText: {
+      fontSize: 15,
+      fontWeight: '500',
+      color: c.textMuted,
+      textDecorationLine: 'underline',
+    },
+  });
 }
