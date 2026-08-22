@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { TokenIcon } from '@/components/TokenIcon';
+import { useSentAdvancedDetails } from '@/hooks/useSentAdvancedDetails';
 import { formatWalletAddress } from '@/hooks/useUserWallets.shared';
 import { getNetworkLabel } from '@/lib/alchemy/networks';
 import {
@@ -21,7 +22,7 @@ import {
   REWARD_TOKEN_NETWORK,
   REWARD_TOKEN_SYMBOL,
 } from '@/lib/rewardToken';
-import type { HomeStackParamList } from '@/navigation/types';
+import type { HomeStackParamList, SentLeg } from '@/navigation/types';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -49,11 +50,24 @@ export function SentScreen() {
     recipientIsFarcaster,
     recipientIsEns,
   } = route.params;
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const {
+    showAdvanced,
+    toggleAdvanced,
+    showTokenDetails,
+    showAdvancedToggle,
+  } = useSentAdvancedDetails();
 
   const onDone = useCallback(() => {
     navigation.navigate('index');
   }, [navigation]);
+
+  const tokenDetails = showTokenDetails ? (
+    <SentTokenDetails
+      legs={legs}
+      rewardAmount={rewardAmount}
+      rewardHash={rewardHash}
+    />
+  ) : null;
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -70,6 +84,8 @@ export function SentScreen() {
           </View>
           <Text style={styles.resultTitle}>Sent</Text>
           <Text style={styles.heroUsd}>{usdLabel}</Text>
+
+          {!showAdvancedToggle ? tokenDetails : null}
 
           {recipientLabel ? (
             <View style={styles.recipientSection}>
@@ -113,82 +129,30 @@ export function SentScreen() {
             </View>
           ) : null}
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ expanded: showAdvanced }}
-            onPress={() => {
-              setShowAdvanced((open) => !open);
-            }}
-            style={({ pressed }) => [
-              styles.advancedToggle,
-              pressed && styles.advancedTogglePressed,
-            ]}
-          >
-            <Text style={styles.advancedToggleText}>
-              {showAdvanced ? 'Hide advanced details' : 'Show advanced details'}
-            </Text>
-            <Ionicons
-              name={showAdvanced ? 'chevron-up' : 'chevron-down'}
-              size={16}
-              color={colors.textMuted}
-            />
-          </Pressable>
-
-          {showAdvanced ? (
-            <View style={styles.advanced}>
-              {legs.map((leg, index) => (
-                <View key={`${leg.hash}-${leg.symbol}`}>
-                  {index > 0 ? <View style={styles.divider} /> : null}
-                  <View style={styles.tokenRow}>
-                    <TokenIcon
-                      logoUrl={leg.logoUrl}
-                      network={leg.network}
-                      size={36}
-                      symbol={leg.symbol}
-                    />
-                    <View style={styles.tokenText}>
-                      <Text style={styles.tokenSymbol}>
-                        {leg.amount} {leg.symbol}
-                        {leg.isTax ? ' (service fee)' : ''}
-                      </Text>
-                      <Text style={styles.tokenMeta}>{leg.networkLabel}</Text>
-                    </View>
-                  </View>
-                  <SummaryRow
-                    label="Transaction"
-                    value={formatWalletAddress(leg.hash, 10, 10)}
-                    mono
-                  />
-                </View>
-              ))}
-              {rewardAmount && rewardHash ? (
-                <View key={`reward-${rewardHash}`}>
-                  {legs.length > 0 ? <View style={styles.divider} /> : null}
-                  <View style={styles.tokenRow}>
-                    <TokenIcon
-                      logoUrl={null}
-                      network={REWARD_TOKEN_NETWORK}
-                      size={36}
-                      symbol={REWARD_TOKEN_SYMBOL}
-                    />
-                    <View style={styles.tokenText}>
-                      <Text style={styles.tokenSymbol}>
-                        {rewardAmount} {REWARD_POINTS_LABEL} (reward)
-                      </Text>
-                      <Text style={styles.tokenMeta}>
-                        {getNetworkLabel(REWARD_TOKEN_NETWORK)}
-                      </Text>
-                    </View>
-                  </View>
-                  <SummaryRow
-                    label="Transaction"
-                    value={formatWalletAddress(rewardHash, 10, 10)}
-                    mono
-                  />
-                </View>
-              ) : null}
-            </View>
+          {showAdvancedToggle ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ expanded: showAdvanced }}
+              onPress={toggleAdvanced}
+              style={({ pressed }) => [
+                styles.advancedToggle,
+                pressed && styles.advancedTogglePressed,
+              ]}
+            >
+              <Text style={styles.advancedToggleText}>
+                {showAdvanced
+                  ? 'Hide advanced details'
+                  : 'Show advanced details'}
+              </Text>
+              <Ionicons
+                name={showAdvanced ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color={colors.textMuted}
+              />
+            </Pressable>
           ) : null}
+
+          {showAdvancedToggle ? tokenDetails : null}
 
           <Pressable
             accessibilityRole="button"
@@ -202,6 +166,80 @@ export function SentScreen() {
           </Pressable>
         </ScrollView>
       </View>
+    </View>
+  );
+}
+
+function SentTokenDetails({
+  legs,
+  rewardAmount,
+  rewardHash,
+}: {
+  legs: SentLeg[];
+  rewardAmount?: string | null;
+  rewardHash?: string | null;
+}) {
+  const styles = useThemedStyles(createStyles);
+  const hasReward = Boolean(rewardAmount && rewardHash);
+
+  if (legs.length === 0 && !hasReward) {
+    return null;
+  }
+
+  return (
+    <View style={styles.tokensPanel}>
+      <Text style={styles.tokensHeader}>Tokens</Text>
+      {legs.map((leg, index) => (
+        <View key={`${leg.hash}-${leg.symbol}`}>
+          {index > 0 ? <View style={styles.divider} /> : null}
+          <View style={styles.tokenRow}>
+            <TokenIcon
+              logoUrl={leg.logoUrl}
+              network={leg.network}
+              size={36}
+              symbol={leg.symbol}
+            />
+            <View style={styles.tokenText}>
+              <Text style={styles.tokenSymbol}>
+                {leg.amount} {leg.symbol}
+                {leg.isTax ? ' (service fee)' : ''}
+              </Text>
+              <Text style={styles.tokenMeta}>{leg.networkLabel}</Text>
+            </View>
+          </View>
+          <SummaryRow
+            label="Transaction"
+            value={formatWalletAddress(leg.hash, 10, 10)}
+            mono
+          />
+        </View>
+      ))}
+      {hasReward ? (
+        <View key={`reward-${rewardHash}`}>
+          {legs.length > 0 ? <View style={styles.divider} /> : null}
+          <View style={styles.tokenRow}>
+            <TokenIcon
+              logoUrl={null}
+              network={REWARD_TOKEN_NETWORK}
+              size={36}
+              symbol={REWARD_TOKEN_SYMBOL}
+            />
+            <View style={styles.tokenText}>
+              <Text style={styles.tokenSymbol}>
+                {rewardAmount} {REWARD_POINTS_LABEL} (reward)
+              </Text>
+              <Text style={styles.tokenMeta}>
+                {getNetworkLabel(REWARD_TOKEN_NETWORK)}
+              </Text>
+            </View>
+          </View>
+          <SummaryRow
+            label="Transaction"
+            value={formatWalletAddress(rewardHash ?? '', 10, 10)}
+            mono
+          />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -355,15 +393,24 @@ function createStyles(c: ThemeColors) {
     fontWeight: '600',
     color: c.textMuted,
   },
-  advanced: {
-    marginTop: 8,
+  tokensPanel: {
+    marginTop: 16,
     alignSelf: 'stretch',
     borderWidth: 1,
     borderColor: c.rowBorder,
     borderRadius: 12,
     backgroundColor: c.surface,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  tokensHeader: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    paddingBottom: 4,
   },
   tokenRow: {
     flexDirection: 'row',
