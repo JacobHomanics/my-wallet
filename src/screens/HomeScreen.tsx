@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from 'react';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {StyleSheet, 
+import {
+  StyleSheet,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -14,18 +14,16 @@ import { BalanceSkeleton, balanceSkeletonLayout } from '@/components/BalanceSkel
 
 import { DepositBankTipsModal } from '@/components/DepositBankTipsModal';
 import { BalanceBreakdownModal } from '@/components/BalanceBreakdownModal';
+import { HomeActionButton } from '@/components/HomeActionButton';
 import { IconButton } from '@/components/IconButton';
 import { PhysicalCardWaitlistCallout } from '@/components/PhysicalCardWaitlistCallout';
 import { WithdrawUnsupportedModal } from '@/components/WithdrawUnsupportedModal';
 import { useBalanceBreakdownModal } from '@/hooks/useBalanceBreakdownModal';
-import { useDepositBankTipsModal } from '@/hooks/useDepositBankTipsModal';
 import { useFiatDisplay } from '@/hooks/useFiatDisplay';
-import { useOpenFreshSend } from '@/hooks/useOpenFreshSend';
-import { useOpenStripeDeposit } from '@/hooks/useOpenStripeDeposit';
+import { useHomeActions } from '@/hooks/useHomeActions';
 import { usePollTokenBalances } from '@/hooks/usePollTokenBalances';
 import { usePrivyEarn } from '@/hooks/usePrivyEarn';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
-import { useWithdrawUnsupportedModal } from '@/hooks/useWithdrawUnsupportedModal';
 import type { HomeStackParamList } from '@/navigation/types';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { ThemeColors } from '@/theme/types';
@@ -56,18 +54,7 @@ export function HomeScreen() {
     enabled: ready && Boolean(ethereumAddress || solanaAddress),
   });
 
-  const openFreshSend = useOpenFreshSend();
-  const { canDeposit, openDeposit } = useOpenStripeDeposit();
-  const {
-    depositTipsOpen,
-    doNotShowAgain,
-    setDoNotShowAgain,
-    openDepositTips,
-    closeDepositTips,
-    continueDepositTips,
-  } = useDepositBankTipsModal(openDeposit);
-  const { withdrawOpen, openWithdraw, closeWithdraw } =
-    useWithdrawUnsupportedModal();
+  const { rows: actionRows, depositTips, withdraw } = useHomeActions();
   const { breakdownOpen, openBreakdown, closeBreakdown } =
     useBalanceBreakdownModal();
   const { formatFromUsd, defaultFormattedZero } = useFiatDisplay();
@@ -163,77 +150,18 @@ export function HomeScreen() {
           <Text style={styles.detailsLinkText}>Show advanced details</Text>
         </Pressable>
         <View style={styles.actionsGroup}>
-          <View style={styles.actionsRow}>
-            {canDeposit ? (
-              <Pressable
-                accessibilityRole="button"
-                onPress={openDepositTips}
-                style={({ pressed }) => [
-                  styles.actionButton,
-                  pressed && styles.actionButtonPressed,
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name="archive-arrow-down-outline"
-                  size={18}
-                  color="#f8fafc"
+          {actionRows.map((row) => (
+            <View key={row.key} style={styles.actionsRow}>
+              {row.items.map((action) => (
+                <HomeActionButton
+                  key={action.key}
+                  icon={action.icon}
+                  label={action.label}
+                  onPress={action.onPress}
                 />
-                <Text style={styles.actionButtonText}>Deposit</Text>
-              </Pressable>
-            ) : null}
-            <Pressable
-              accessibilityRole="button"
-              onPress={openWithdraw}
-              style={({ pressed }) => [
-                styles.actionButton,
-                pressed && styles.actionButtonPressed,
-              ]}
-            >
-              <Ionicons name="business-outline" size={18} color={colors.primaryText} />
-              <Text style={styles.actionButtonText}>Withdraw</Text>
-            </Pressable>
-          </View>
-          <View style={[styles.actionsRow, styles.payReceiveRequestRow]}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={openFreshSend}
-              style={({ pressed }) => [
-                styles.actionButton,
-                pressed && styles.actionButtonPressed,
-              ]}
-            >
-              <Ionicons name="arrow-up" size={18} color={colors.primaryText} />
-              <Text style={styles.actionButtonText}>Pay</Text>
-            </Pressable>
-          </View>
-          <View style={styles.actionsRow}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                navigation.navigate('receive');
-              }}
-              style={({ pressed }) => [
-                styles.actionButton,
-                pressed && styles.actionButtonPressed,
-              ]}
-            >
-              <Ionicons name="arrow-down" size={18} color={colors.primaryText} />
-              <Text style={styles.actionButtonText}>Receive</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                navigation.navigate('request');
-              }}
-              style={({ pressed }) => [
-                styles.actionButton,
-                pressed && styles.actionButtonPressed,
-              ]}
-            >
-              <Ionicons name="cash-outline" size={18} color={colors.primaryText} />
-              <Text style={styles.actionButtonText}>Request</Text>
-            </Pressable>
-          </View>
+              ))}
+            </View>
+          ))}
         </View>
       </>
     );
@@ -274,15 +202,15 @@ export function HomeScreen() {
         ) : null}
       </ScrollView>
       <DepositBankTipsModal
-        visible={depositTipsOpen}
-        doNotShowAgain={doNotShowAgain}
-        onDoNotShowAgainChange={setDoNotShowAgain}
-        onClose={closeDepositTips}
-        onContinue={continueDepositTips}
+        visible={depositTips.depositTipsOpen}
+        doNotShowAgain={depositTips.doNotShowAgain}
+        onDoNotShowAgainChange={depositTips.setDoNotShowAgain}
+        onClose={depositTips.closeDepositTips}
+        onContinue={depositTips.continueDepositTips}
       />
       <WithdrawUnsupportedModal
-        visible={withdrawOpen}
-        onClose={closeWithdraw}
+        visible={withdraw.withdrawOpen}
+        onClose={withdraw.closeWithdraw}
       />
       <BalanceBreakdownModal
         visible={breakdownOpen}
@@ -370,36 +298,15 @@ function createStyles(c: ThemeColors) {
   actionsGroup: {
     marginTop: 28,
     alignItems: 'center',
-    gap: 12,
+    gap: 16,
   },
   actionsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: 16,
   },
-  payReceiveRequestRow: {
-    paddingTop: 64,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: c.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 10,
-  },
-  actionButtonPressed: {
-    opacity: 0.85,
-  },
-  actionButtonText: {
-    color: c.primaryText,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-
   detailsLink: {
     marginTop: 20,
     paddingVertical: 4,
