@@ -40,7 +40,11 @@ export function useHomeActions() {
         key: 'deposit',
         label: 'Deposit',
         onPress: depositTips.openDepositTips,
-        icon: { set: 'material', name: 'archive-arrow-down-outline' },
+        icon: {
+          set: 'material',
+          name: 'bank-outline',
+          badge: { name: 'arrow-down' },
+        },
       });
     }
 
@@ -48,7 +52,11 @@ export function useHomeActions() {
       key: 'withdraw',
       label: 'Withdraw',
       onPress: withdraw.openWithdraw,
-      icon: { name: 'business-outline' },
+      icon: {
+        set: 'material',
+        name: 'bank-outline',
+        badge: { name: 'arrow-up' },
+      },
     });
 
     return [

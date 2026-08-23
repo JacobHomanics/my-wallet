@@ -12,6 +12,7 @@ const BUTTON_SIZES = {
   default: {
     button: 72,
     icon: 28,
+    badge: 16,
     radius: 14,
     label: 13,
     lineHeight: 16,
@@ -20,6 +21,7 @@ const BUTTON_SIZES = {
   large: {
     button: 120,
     icon: 48,
+    badge: 24,
     radius: 22,
     label: 16,
     lineHeight: 20,
@@ -27,7 +29,7 @@ const BUTTON_SIZES = {
   },
 } as const;
 
-export type HomeActionIcon =
+export type HomeActionGlyph =
   | {
     set?: 'ionicons';
     name: ComponentProps<typeof Ionicons>['name'];
@@ -37,6 +39,10 @@ export type HomeActionIcon =
     name: ComponentProps<typeof MaterialCommunityIcons>['name'];
   };
 
+export type HomeActionIcon = HomeActionGlyph & {
+  badge?: HomeActionGlyph;
+};
+
 type HomeActionButtonProps = {
   label: string;
   onPress: () => void;
@@ -44,6 +50,28 @@ type HomeActionButtonProps = {
   size?: HomeActionButtonSize;
   selected?: boolean;
 };
+
+function ActionGlyph({
+  glyph,
+  size,
+  color,
+}: {
+  glyph: HomeActionGlyph;
+  size: number;
+  color: string;
+}) {
+  if (glyph.set === 'material') {
+    return (
+      <MaterialCommunityIcons
+        name={glyph.name}
+        size={size}
+        color={color}
+      />
+    );
+  }
+
+  return <Ionicons name={glyph.name} size={size} color={color} />;
+}
 
 /**
  * Square home action tile: icon in the block, label underneath like a tab item.
@@ -72,15 +100,32 @@ export function HomeActionButton({
         },
       ]}
     >
-      {icon.set === 'material' ? (
-        <MaterialCommunityIcons
-          name={icon.name}
-          size={metrics.icon}
-          color={iconColor}
-        />
-      ) : (
-        <Ionicons name={icon.name} size={metrics.icon} color={iconColor} />
-      )}
+      <View
+        style={[
+          styles.iconCluster,
+          { width: metrics.icon, height: metrics.icon },
+        ]}
+      >
+        <ActionGlyph color={iconColor} glyph={icon} size={metrics.icon} />
+        {icon.badge ? (
+          <View
+            style={[
+              styles.badge,
+              {
+                width: metrics.badge,
+                height: metrics.badge,
+                borderRadius: metrics.badge / 2,
+              },
+            ]}
+          >
+            <ActionGlyph
+              color={iconColor}
+              glyph={icon.badge}
+              size={Math.round(metrics.badge * 0.88)}
+            />
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 
@@ -149,6 +194,19 @@ function createStyles(c: ThemeColors) {
       backgroundColor: c.primary,
       alignItems: 'center',
       justifyContent: 'center',
+      overflow: 'visible',
+    },
+    iconCluster: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    badge: {
+      position: 'absolute',
+      right: -6,
+      bottom: -6,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.primary,
     },
     label: {
       color: c.text,
