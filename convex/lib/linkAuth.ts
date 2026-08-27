@@ -7,6 +7,8 @@
  * every `/v1/crypto/customers/*` call.
  */
 
+import { getStripeSecretKey } from "./stripeCrypto";
+
 const LINK_API_BASE = "https://login.link.com";
 const LINK_AUTH_INTENT_PATH = "/v1/link_auth_intent";
 
@@ -26,6 +28,13 @@ function getLinkOauthClientId(): string {
   return value;
 }
 
+/**
+ * Only the refresh exchange sends this. Link authenticates these endpoints with
+ * the Stripe secret key (verified live: the OAuth client secret is rejected as a
+ * Bearer token everywhere), but the integration guide describes this secret as
+ * the credential that trades refresh tokens for access tokens — a claim we
+ * cannot verify until a consented session exists. Keep sending it there.
+ */
 function getLinkOauthClientSecret(): string {
   const value = process.env.LINK_OAUTH_CLIENT_SECRET?.trim();
   if (!value) {
@@ -68,17 +77,23 @@ export type LinkTokens = {
   scopes: string;
 };
 
+/**
+ * Link's OAuth endpoints authenticate with the Stripe secret key and take JSON.
+ * Verified live against `login.link.com`: an `lwlsk_` OAuth client secret as
+ * Bearer returns 401 Invalid API Key, and a form-encoded body is rejected by
+ * the parser even when the key is right.
+ */
 async function linkRequest<T>(
   path: string,
-  body: URLSearchParams,
+  body: Record<string, string>,
 ): Promise<{ ok: boolean; status: number; data: T }> {
   const response = await fetch(`${LINK_API_BASE}${path}`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${getLinkOauthClientSecret()}`,
-      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Bearer ${getStripeSecretKey()}`,
+      "Content-Type": "application/json",
     },
-    body: body.toString(),
+    body: JSON.stringify(body),
   });
   const data = (await response.json()) as T;
   return { ok: response.ok, status: response.status, data };
@@ -93,14 +108,15 @@ async function linkRequest<T>(
 export async function createLinkAuthIntent(params: {
   email: string;
 }): Promise<LinkAuthIntentResult> {
-  const body = new URLSearchParams();
-  body.set("email", params.email);
-  body.set("oauth_client_id", getLinkOauthClientId());
-  body.set("oauth_scopes", getLinkOauthScopes());
-
   const response = await linkRequest<LinkAuthIntentResponse>(
     LINK_AUTH_INTENT_PATH,
-    body,
+    {
+      email: params.email,
+      oauth_client_id: getLinkOauthClientId(),
+      // A string, not an array: Link rejects arrays with `oauth_scopes must be
+      // a string`.
+      oauth_scopes: getLinkOauthScopes(),
+    },
   );
 
   if (response.status === 404) {
@@ -141,12 +157,9 @@ function toLinkTokens(data: LinkTokenResponse, fallbackScopes: string): LinkToke
 export async function exchangeLinkAuthTokens(params: {
   linkAuthIntentId: string;
 }): Promise<LinkTokens> {
-  const body = new URLSearchParams();
-  body.set("oauth_client_id", getLinkOauthClientId());
-
   const response = await linkRequest<LinkTokenResponse>(
     `${LINK_AUTH_INTENT_PATH}/${encodeURIComponent(params.linkAuthIntentId)}/tokens`,
-    body,
+    { oauth_client_id: getLinkOauthClientId() },
   );
 
   if (!response.ok) {
@@ -171,14 +184,14 @@ export async function refreshLinkAuthTokens(params: {
   linkAuthIntentId: string;
   refreshToken: string;
 }): Promise<LinkTokens> {
-  const body = new URLSearchParams();
-  body.set("oauth_client_id", getLinkOauthClientId());
-  body.set("grant_type", "refresh_token");
-  body.set("refresh_token", params.refreshToken);
-
   const response = await linkRequest<LinkTokenResponse>(
     `${LINK_AUTH_INTENT_PATH}/${encodeURIComponent(params.linkAuthIntentId)}/tokens`,
-    body,
+    {
+      oauth_client_id: getLinkOauthClientId(),
+      oauth_client_secret: getLinkOauthClientSecret(),
+      grant_type: "refresh_token",
+      refresh_token: params.refreshToken,
+    },
   );
 
   if (!response.ok) {
