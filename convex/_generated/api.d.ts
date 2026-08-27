@@ -28,6 +28,7 @@ import type * as lib_evmSendErrors from "../lib/evmSendErrors.js";
 import type * as lib_fetchErc20Balance from "../lib/fetchErc20Balance.js";
 import type * as lib_gasSponsorship from "../lib/gasSponsorship.js";
 import type * as lib_gasTokens from "../lib/gasTokens.js";
+import type * as lib_headlessOnramp from "../lib/headlessOnramp.js";
 import type * as lib_keystoreAddresses from "../lib/keystoreAddresses.js";
 import type * as lib_linkAuth from "../lib/linkAuth.js";
 import type * as lib_loadKeystores from "../lib/loadKeystores.js";
@@ -51,6 +52,7 @@ import type * as lib_walletIdentity from "../lib/walletIdentity.js";
 import type * as lib_withdrawVaultUsdcForSend from "../lib/withdrawVaultUsdcForSend.js";
 import type * as linkAuth from "../linkAuth.js";
 import type * as onramp from "../onramp.js";
+import type * as onrampHeadless from "../onrampHeadless.js";
 import type * as send from "../send.js";
 import type * as users from "../users.js";
 
@@ -81,6 +83,7 @@ declare const fullApi: ApiFromModules<{
   "lib/fetchErc20Balance": typeof lib_fetchErc20Balance;
   "lib/gasSponsorship": typeof lib_gasSponsorship;
   "lib/gasTokens": typeof lib_gasTokens;
+  "lib/headlessOnramp": typeof lib_headlessOnramp;
   "lib/keystoreAddresses": typeof lib_keystoreAddresses;
   "lib/linkAuth": typeof lib_linkAuth;
   "lib/loadKeystores": typeof lib_loadKeystores;
@@ -104,6 +107,7 @@ declare const fullApi: ApiFromModules<{
   "lib/withdrawVaultUsdcForSend": typeof lib_withdrawVaultUsdcForSend;
   linkAuth: typeof linkAuth;
   onramp: typeof onramp;
+  onrampHeadless: typeof onrampHeadless;
   send: typeof send;
   users: typeof users;
 }>;
