@@ -21,7 +21,9 @@ export function isOnrampDestinationSupportedByProvider(
   if (!isOnrampCurrencySupportedOnNetwork(network, currency)) {
     return false;
   }
-  if (providerId === 'stripe-embedded') {
+  // Stripe-hosted flows accept every network/currency pair the app offers;
+  // only the Privy provider is constrained by its own destination table.
+  if (providerId !== 'stripe-embedded-components') {
     return true;
   }
   return getPrivyOnrampDestination({ network, currency }) !== null;

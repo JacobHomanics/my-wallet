@@ -1,3 +1,5 @@
+import { getStripeSecretKey } from "./stripeCrypto";
+
 const STRIPE_ONRAMP_SESSIONS_URL =
   "https://api.stripe.com/v1/crypto/onramp_sessions";
 
@@ -44,16 +46,6 @@ function normalizeSupportedValue<T extends string>(
   return (supported as readonly string[]).includes(normalized)
     ? (normalized as T)
     : null;
-}
-
-function getStripeSecretKey(): string {
-  const key = process.env.STRIPE_SECRET_KEY?.trim();
-  if (!key) {
-    throw new Error(
-      "Missing STRIPE_SECRET_KEY — set it with `npx convex env set STRIPE_SECRET_KEY …`",
-    );
-  }
-  return key;
 }
 
 /**

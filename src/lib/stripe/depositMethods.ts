@@ -1,6 +1,7 @@
 export type DepositMethodId =
   | 'stripe-embedded'
-  | 'stripe-embedded-components';
+  | 'stripe-embedded-components'
+  | 'stripe-headless';
 
 export type DepositMethodOption = {
   id: DepositMethodId;
@@ -19,6 +20,11 @@ export const DEPOSIT_METHODS: readonly DepositMethodOption[] = [
     id: 'stripe-embedded-components',
     label: 'Privy (pre-built components)',
     description: 'Privy modal flow with built-in funding providers.',
+  },
+  {
+    id: 'stripe-headless',
+    label: 'Stripe (headless)',
+    description: 'Native checkout built on Stripe Embedded Components.',
   },
 ] as const;
 

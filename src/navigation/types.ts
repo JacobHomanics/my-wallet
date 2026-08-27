@@ -30,6 +30,8 @@ export type HomeStackParamList = {
   stripeOnramp: undefined;
   /** Stripe Embedded Components Crypto Onramp (web). */
   stripeOnrampComponents: undefined;
+  /** Headless Stripe Crypto Onramp built on Embedded Components (web). */
+  stripeHeadlessOnramp: undefined;
   receiveQr: {
     /** Display-currency amount string entered on the request screen. */
     usdAmount: string;
