@@ -29,6 +29,10 @@ export function useOpenStripeDeposit(): UseOpenStripeDepositResult {
       navigation.navigate('stripeOnramp');
       return;
     }
+    if (selectedProviderId === 'stripe-headless') {
+      navigation.navigate('stripeHeadlessOnramp');
+      return;
+    }
     navigation.navigate('stripeOnrampComponents');
   }, [navigation, selectedProviderId]);
 

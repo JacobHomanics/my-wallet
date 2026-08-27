@@ -100,6 +100,7 @@ const HOME_STACK_HISTORY: Partial<Record<keyof HomeStackParamList, string[]>> =
   request: ['index'],
   stripeOnramp: ['index'],
   stripeOnrampComponents: ['index'],
+  stripeHeadlessOnramp: ['index'],
   receiveQr: ['index', 'request'],
   send: ['index'],
   sendSearch: ['index', 'send'],
@@ -369,6 +370,7 @@ export const rootLinking: LinkingOptions<RootStackParamList> = {
               request: '/request',
               stripeOnramp: '/deposit',
               stripeOnrampComponents: '/deposit/components',
+              stripeHeadlessOnramp: '/deposit/headless',
               receiveQr: {
                 path: '/receive/qr',
                 parse: {
