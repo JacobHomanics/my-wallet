@@ -72,7 +72,8 @@ export default defineSchema({
     linkAuthIntentId: v.string(),
     /** Sent as the `Stripe-OAuth-Token` header. Never leaves the backend. */
     accessToken: v.string(),
-    refreshToken: v.string(),
+    /** Absent when Link issued none: expiry then re-runs the auth intent flow. */
+    refreshToken: v.optional(v.string()),
     /** Epoch ms. */
     accessTokenExpiresAt: v.number(),
     oauthScopes: v.string(),

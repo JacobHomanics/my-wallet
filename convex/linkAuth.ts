@@ -43,7 +43,7 @@ export const upsertSession = internalMutation({
     cryptoCustomerId: v.string(),
     linkAuthIntentId: v.string(),
     accessToken: v.string(),
-    refreshToken: v.string(),
+    refreshToken: v.optional(v.string()),
     accessTokenExpiresAt: v.number(),
     oauthScopes: v.string(),
   },
@@ -79,7 +79,7 @@ export const updateSessionTokens = internalMutation({
   args: {
     sessionId: v.id("linkAuthSessions"),
     accessToken: v.string(),
-    refreshToken: v.string(),
+    refreshToken: v.optional(v.string()),
     accessTokenExpiresAt: v.number(),
   },
   handler: async (ctx, args) => {
@@ -118,15 +118,22 @@ export const resolveSession = internalAction({
       };
     }
 
+    // No refresh token means the session cannot outlive its access token; the
+    // caller's recovery path is the same as a rejected refresh.
+    const storedRefreshToken = session.refreshToken;
+    if (!storedRefreshToken) {
+      return null;
+    }
+
     try {
       const tokens = await refreshLinkAuthTokens({
-        linkAuthIntentId: session.linkAuthIntentId,
-        refreshToken: session.refreshToken,
+        refreshToken: storedRefreshToken,
       });
       await ctx.runMutation(internal.linkAuth.updateSessionTokens, {
         sessionId: session._id,
         accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
+        // Refresh tokens roll, but keep the old one if none came back.
+        refreshToken: tokens.refreshToken ?? storedRefreshToken,
         accessTokenExpiresAt: tokens.accessTokenExpiresAt,
       });
       return {

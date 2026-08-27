@@ -11,6 +11,8 @@ import { getStripeSecretKey } from "./stripeCrypto";
 
 const LINK_API_BASE = "https://login.link.com";
 const LINK_AUTH_INTENT_PATH = "/v1/link_auth_intent";
+/** Refresh lives on the OAuth token endpoint, not under the auth intent. */
+const LINK_TOKEN_PATH = "/auth/token";
 
 /** Minimum scopes the headless flow needs: create ramps + read KYC status. */
 const DEFAULT_LINK_OAUTH_SCOPES = "crypto:ramp,kyc.status:read";
@@ -29,11 +31,9 @@ function getLinkOauthClientId(): string {
 }
 
 /**
- * Only the refresh exchange sends this. Link authenticates these endpoints with
- * the Stripe secret key (verified live: the OAuth client secret is rejected as a
- * Bearer token everywhere), but the integration guide describes this secret as
- * the credential that trades refresh tokens for access tokens — a claim we
- * cannot verify until a consented session exists. Keep sending it there.
+ * Used only by the refresh grant on `/auth/token`, which is the one place Link
+ * asks for OAuth client credentials. The auth-intent endpoints authenticate
+ * with the Stripe secret key instead and reject this value outright.
  */
 function getLinkOauthClientSecret(): string {
   const value = process.env.LINK_OAUTH_CLIENT_SECRET?.trim();
@@ -56,9 +56,16 @@ type LinkAuthIntentResponse = {
 
 type LinkTokenResponse = {
   access_token?: string;
+  /**
+   * The auth-intent exchange nests the refresh token; `/auth/token` returns it
+   * at the top level. Either may be absent — the guide documents the refresh
+   * token as issued only sometimes.
+   */
+  refresh?: { refresh_token?: string; expires_in?: number };
   refresh_token?: string;
   /** Seconds until the access token expires. */
   expires_in?: number;
+  /** Space-separated on the exchange response, comma-separated on refresh. */
   scope?: string;
   error?: { message?: string };
   error_description?: string;
@@ -71,7 +78,12 @@ export type LinkAuthIntentResult =
 
 export type LinkTokens = {
   accessToken: string;
-  refreshToken: string;
+  /**
+   * Absent when Link issued no refresh token. The session then lives only as
+   * long as its access token: expiry sends the user back through the auth
+   * intent flow instead of a refresh.
+   */
+  refreshToken?: string;
   /** Epoch ms. */
   accessTokenExpiresAt: number;
   scopes: string;
@@ -85,15 +97,35 @@ export type LinkTokens = {
  */
 async function linkRequest<T>(
   path: string,
+  body?: Record<string, string>,
+): Promise<{ ok: boolean; status: number; data: T }> {
+  const response = await fetch(`${LINK_API_BASE}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${getStripeSecretKey()}`,
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = (await response.json()) as T;
+  return { ok: response.ok, status: response.status, data };
+}
+
+/**
+ * The refresh grant is a plain OAuth call: form-encoded, and the only Link
+ * endpoint that takes the OAuth client id/secret pair.
+ */
+async function linkFormRequest<T>(
+  path: string,
   body: Record<string, string>,
 ): Promise<{ ok: boolean; status: number; data: T }> {
   const response = await fetch(`${LINK_API_BASE}${path}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${getStripeSecretKey()}`,
-      "Content-Type": "application/json",
+      "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: JSON.stringify(body),
+    body: new URLSearchParams(body).toString(),
   });
   const data = (await response.json()) as T;
   return { ok: response.ok, status: response.status, data };
@@ -133,11 +165,11 @@ export async function createLinkAuthIntent(params: {
 }
 
 function toLinkTokens(data: LinkTokenResponse, fallbackScopes: string): LinkTokens {
-  if (!data.access_token || !data.refresh_token) {
+  if (!data.access_token) {
     throw new Error(
       data.error?.message ??
         data.error_description ??
-        "Link token response was missing tokens.",
+        "Link token response was missing an access token.",
     );
   }
   // Treat a missing expires_in as already-expired so the next call refreshes
@@ -145,7 +177,8 @@ function toLinkTokens(data: LinkTokenResponse, fallbackScopes: string): LinkToke
   const expiresInMs = (data.expires_in ?? 0) * 1000;
   return {
     accessToken: data.access_token,
-    refreshToken: data.refresh_token,
+    // Nested on the auth-intent exchange, top-level on the refresh grant.
+    refreshToken: data.refresh?.refresh_token ?? data.refresh_token,
     accessTokenExpiresAt: Date.now() + expiresInMs,
     scopes: data.scope ?? fallbackScopes,
   };
@@ -157,9 +190,9 @@ function toLinkTokens(data: LinkTokenResponse, fallbackScopes: string): LinkToke
 export async function exchangeLinkAuthTokens(params: {
   linkAuthIntentId: string;
 }): Promise<LinkTokens> {
+  // Documented as a bodyless POST: the intent id in the path is the whole ask.
   const response = await linkRequest<LinkTokenResponse>(
     `${LINK_AUTH_INTENT_PATH}/${encodeURIComponent(params.linkAuthIntentId)}/tokens`,
-    { oauth_client_id: getLinkOauthClientId() },
   );
 
   if (!response.ok) {
@@ -181,18 +214,14 @@ export async function exchangeLinkAuthTokens(params: {
  * through `authenticate` instead of dead-ending the deposit.
  */
 export async function refreshLinkAuthTokens(params: {
-  linkAuthIntentId: string;
   refreshToken: string;
 }): Promise<LinkTokens> {
-  const response = await linkRequest<LinkTokenResponse>(
-    `${LINK_AUTH_INTENT_PATH}/${encodeURIComponent(params.linkAuthIntentId)}/tokens`,
-    {
-      oauth_client_id: getLinkOauthClientId(),
-      oauth_client_secret: getLinkOauthClientSecret(),
-      grant_type: "refresh_token",
-      refresh_token: params.refreshToken,
-    },
-  );
+  const response = await linkFormRequest<LinkTokenResponse>(LINK_TOKEN_PATH, {
+    grant_type: "refresh_token",
+    refresh_token: params.refreshToken,
+    client_id: getLinkOauthClientId(),
+    client_secret: getLinkOauthClientSecret(),
+  });
 
   if (!response.ok) {
     throw new Error(
